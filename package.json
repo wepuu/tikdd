@@ -1,0 +1,34 @@
+{
+  "name": "tikdd",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A multilingual, provider-agnostic public media resolver.",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20.9.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "node scripts/lint.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke:local": "node scripts/smoke.mjs",
+    "canary:providers": "pnpm --filter @tikdd/providers canary",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "docker:version": "node scripts/docker.mjs version",
+    "infra:up": "node scripts/docker.mjs compose up -d postgres redis",
+    "infra:status": "node scripts/docker.mjs compose ps",
+    "infra:down": "node scripts/docker.mjs compose down",
+    "db:migrate": "pnpm --filter @tikdd/persistence db:migrate",
+    "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

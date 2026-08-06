@@ -1,0 +1,395 @@
+import {
+  ProviderAttemptSchema,
+  ResolveResultSchema,
+  type Platform,
+  type ProviderAttempt,
+  type ResolveResult,
+  type ResolveTask,
+  type TaskError
+} from "@tikdd/contracts";
+import {
+  DeliveryTicketRecordIdSchema,
+  EncryptedDeliveryCandidateSchema,
+  type DeliveryMode,
+  type EncryptedDeliveryCandidate
+} from "@tikdd/delivery-core";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
+
+interface TaskRow extends QueryResultRow {
+  id: string;
+  status: ResolveTask["status"];
+  platform: Platform;
+  canonical_url: string;
+  result: unknown | null;
+  error: TaskError | null;
+  created_at: Date;
+  updated_at: Date;
+  expires_at: Date;
+}
+
+export interface NewResolveTask {
+  id: string;
+  platform: Platform;
+  canonicalUrl: string;
+  expiresAt: Date;
+}
+
+interface LockedTaskRow extends QueryResultRow {
+  expires_at: Date;
+  database_now: Date;
+}
+
+interface TicketCandidateRow extends QueryResultRow {
+  candidate_id: string;
+  task_id: string;
+  format_id: string;
+  provider_id: string;
+  mode: DeliveryMode;
+  host_policy_id: string;
+  encryption_algorithm: "aes-256-gcm";
+  encryption_key_id: string;
+  encryption_iv: Buffer;
+  encrypted_payload: Buffer;
+  authentication_tag: Buffer;
+  candidate_expires_at: Date;
+  task_expires_at: Date;
+  database_now: Date;
+}
+
+export interface IssuedDeliveryTicket {
+  mode: DeliveryMode;
+  expiresAt: string;
+}
+
+export interface RedeemedDeliveryCandidate {
+  taskId: string;
+  candidate: EncryptedDeliveryCandidate;
+}
+
+export class TaskCompletionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TaskCompletionError";
+  }
+}
+
+async function insertProviderAttempts(
+  client: PoolClient,
+  taskId: string,
+  rawAttempts: readonly ProviderAttempt[]
+): Promise<void> {
+  for (const rawAttempt of rawAttempts) {
+    const attempt = ProviderAttemptSchema.parse(rawAttempt);
+    await client.query(
+      `INSERT INTO provider_attempts (
+         task_id, provider_id, provider_kind, platform, priority, route_score, status,
+         failure_code, retryable, fallback_allowed, started_at, finished_at, duration_ms
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [
+        taskId,
+        attempt.providerId,
+        attempt.providerKind,
+        attempt.platform,
+        attempt.priority,
+        attempt.routeScore,
+        attempt.status,
+        attempt.failureCode,
+        attempt.retryable,
+        attempt.fallbackAllowed,
+        attempt.startedAt,
+        attempt.finishedAt,
+        attempt.durationMs
+      ]
+    );
+  }
+}
+
+function mapTask(row: TaskRow): ResolveTask {
+  return {
+    id: row.id,
+    status: row.status,
+    platform: row.platform,
+    canonicalUrl: row.canonical_url,
+    result: row.result ? ResolveResultSchema.parse(row.result) : null,
+    error: row.error,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+    expiresAt: row.expires_at.toISOString()
+  };
+}
+
+export function createDatabasePool(databaseUrl = process.env.DATABASE_URL): Pool {
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required.");
+  }
+
+  return new Pool({ connectionString: databaseUrl, max: 10 });
+}
+
+export class TaskRepository {
+  constructor(private readonly pool: Pool) {}
+
+  async create(task: NewResolveTask): Promise<ResolveTask> {
+    const result = await this.pool.query<TaskRow>(
+      `INSERT INTO resolve_tasks (id, status, platform, canonical_url, expires_at)
+       VALUES ($1, 'queued', $2, $3, $4)
+       RETURNING *`,
+      [task.id, task.platform, task.canonicalUrl, task.expiresAt]
+    );
+    return mapTask(result.rows[0] as TaskRow);
+  }
+
+  async getById(id: string): Promise<ResolveTask | null> {
+    const result = await this.pool.query<TaskRow>(
+      `SELECT * FROM resolve_tasks WHERE id = $1 AND expires_at > NOW()`,
+      [id]
+    );
+    return result.rows[0] ? mapTask(result.rows[0]) : null;
+  }
+
+  async markResolving(id: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE resolve_tasks
+       SET status = 'resolving', updated_at = NOW(), error = NULL
+       WHERE id = $1 AND expires_at > NOW()`,
+      [id]
+    );
+  }
+
+  async complete(id: string, result: ResolveResult): Promise<void> {
+    await this.completeWithResolution(id, result, [], []);
+  }
+
+  async completeWithResolution(
+    id: string,
+    rawResult: ResolveResult,
+    rawCandidates: readonly EncryptedDeliveryCandidate[],
+    rawAttempts: readonly ProviderAttempt[]
+  ): Promise<void> {
+    const result = ResolveResultSchema.parse(rawResult);
+    const candidates = rawCandidates.map((candidate) =>
+      EncryptedDeliveryCandidateSchema.parse(candidate)
+    );
+    const attempts = rawAttempts.map((attempt) => ProviderAttemptSchema.parse(attempt));
+    const formatIds = new Set(result.formats.map(({ id: formatId }) => formatId));
+    for (const candidate of candidates) {
+      if (!formatIds.has(candidate.formatId)) {
+        throw new TaskCompletionError("A persisted candidate does not match the public result.");
+      }
+      if (candidate.providerId !== result.provenance.provider) {
+        throw new TaskCompletionError("A persisted candidate has the wrong provider provenance.");
+      }
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const locked = await client.query<LockedTaskRow>(
+        `SELECT expires_at, NOW() AS database_now
+         FROM resolve_tasks
+         WHERE id = $1
+         FOR UPDATE`,
+        [id]
+      );
+      const task = locked.rows[0];
+      if (!task || task.expires_at <= task.database_now) {
+        throw new TaskCompletionError("The task does not exist or has expired.");
+      }
+
+      await client.query("DELETE FROM delivery_candidates WHERE task_id = $1", [id]);
+      for (const candidate of candidates) {
+        const requestedExpiry = new Date(candidate.expiresAt);
+        const effectiveExpiry =
+          requestedExpiry < task.expires_at ? requestedExpiry : task.expires_at;
+        if (effectiveExpiry <= task.database_now) {
+          throw new TaskCompletionError("A delivery candidate is already expired.");
+        }
+        await client.query(
+          `INSERT INTO delivery_candidates (
+             id, task_id, format_id, provider_id, mode, host_policy_id,
+             encryption_algorithm, encryption_key_id, encryption_iv, encrypted_payload,
+             authentication_tag, expires_at
+           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          [
+            candidate.id,
+            id,
+            candidate.formatId,
+            candidate.providerId,
+            candidate.mode,
+            candidate.hostPolicyId,
+            candidate.envelope.algorithm,
+            candidate.envelope.keyId,
+            Buffer.from(candidate.envelope.iv, "base64url"),
+            Buffer.from(candidate.envelope.ciphertext, "base64url"),
+            Buffer.from(candidate.envelope.authTag, "base64url"),
+            effectiveExpiry
+          ]
+        );
+      }
+
+      await insertProviderAttempts(client, id, attempts);
+      const updated = await client.query(
+        `UPDATE resolve_tasks
+         SET status = 'succeeded', result = $2::jsonb, error = NULL, updated_at = NOW()
+         WHERE id = $1 AND expires_at > NOW()`,
+        [id, JSON.stringify(result)]
+      );
+      if (updated.rowCount !== 1) {
+        throw new TaskCompletionError("The task expired before completion.");
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async fail(id: string, error: TaskError): Promise<void> {
+    await this.pool.query(
+      `UPDATE resolve_tasks
+       SET status = 'failed', error = $2::jsonb, updated_at = NOW()
+       WHERE id = $1 AND expires_at > NOW()`,
+      [id, JSON.stringify(error)]
+    );
+  }
+
+  async recordProviderAttempts(id: string, attempts: readonly ProviderAttempt[]): Promise<void> {
+    if (attempts.length === 0) {
+      return;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await insertProviderAttempts(client, id, attempts);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async issueDeliveryTicket(input: {
+    id: string;
+    taskId: string;
+    formatId: string;
+    tokenHash: Uint8Array;
+    maximumTtlMs: number;
+  }): Promise<IssuedDeliveryTicket | null> {
+    const id = DeliveryTicketRecordIdSchema.parse(input.id);
+    const tokenHash = Buffer.from(input.tokenHash);
+    if (tokenHash.byteLength !== 32 || input.maximumTtlMs < 1_000 || input.maximumTtlMs > 300_000) {
+      throw new Error("Delivery ticket parameters are invalid.");
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const selected = await client.query<TicketCandidateRow>(
+        `SELECT dc.id AS candidate_id, dc.task_id, dc.format_id, dc.provider_id, dc.mode,
+           dc.host_policy_id, dc.encryption_algorithm, dc.encryption_key_id, dc.encryption_iv,
+           dc.encrypted_payload, dc.authentication_tag, dc.expires_at AS candidate_expires_at,
+           rt.expires_at AS task_expires_at, NOW() AS database_now
+         FROM delivery_candidates dc
+         JOIN resolve_tasks rt ON rt.id = dc.task_id
+         WHERE dc.task_id = $1 AND dc.format_id = $2 AND rt.status = 'succeeded'
+           AND dc.expires_at > NOW() AND rt.expires_at > NOW()
+         FOR SHARE OF dc, rt`,
+        [input.taskId, input.formatId]
+      );
+      const row = selected.rows[0];
+      if (!row) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      const ttlExpiry = new Date(row.database_now.getTime() + input.maximumTtlMs);
+      const expiresAt = [ttlExpiry, row.candidate_expires_at, row.task_expires_at].reduce(
+        (earliest, value) => (value < earliest ? value : earliest)
+      );
+      await client.query(
+        `INSERT INTO delivery_tickets (id, candidate_id, mode, token_hash, expires_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [id, row.candidate_id, row.mode, tokenHash, expiresAt]
+      );
+      await client.query("COMMIT");
+      return { mode: row.mode, expiresAt: expiresAt.toISOString() };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async redeemDeliveryTicket(tokenHashInput: Uint8Array): Promise<RedeemedDeliveryCandidate | null> {
+    const tokenHash = Buffer.from(tokenHashInput);
+    if (tokenHash.byteLength !== 32) {
+      return null;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const selected = await client.query<TicketCandidateRow>(
+        `SELECT dc.id AS candidate_id, dc.task_id, dc.format_id, dc.provider_id, dc.mode,
+           dc.host_policy_id, dc.encryption_algorithm, dc.encryption_key_id, dc.encryption_iv,
+           dc.encrypted_payload, dc.authentication_tag, dc.expires_at AS candidate_expires_at,
+           rt.expires_at AS task_expires_at, NOW() AS database_now
+         FROM delivery_tickets dt
+         JOIN delivery_candidates dc ON dc.id = dt.candidate_id
+         JOIN resolve_tasks rt ON rt.id = dc.task_id
+         WHERE dt.token_hash = $1 AND dt.redeemed_at IS NULL AND dt.expires_at > NOW()
+           AND dc.expires_at > NOW() AND rt.expires_at > NOW() AND rt.status = 'succeeded'
+           AND dt.mode = dc.mode
+         FOR UPDATE OF dt`,
+        [tokenHash]
+      );
+      const row = selected.rows[0];
+      if (!row) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      await client.query(
+        `UPDATE delivery_tickets SET redeemed_at = NOW()
+         WHERE token_hash = $1 AND redeemed_at IS NULL`,
+        [tokenHash]
+      );
+      await client.query("COMMIT");
+      return {
+        taskId: row.task_id,
+        candidate: EncryptedDeliveryCandidateSchema.parse({
+          id: row.candidate_id,
+          formatId: row.format_id,
+          providerId: row.provider_id,
+          mode: row.mode,
+          hostPolicyId: row.host_policy_id,
+          envelope: {
+            algorithm: row.encryption_algorithm,
+            keyId: row.encryption_key_id,
+            iv: row.encryption_iv.toString("base64url"),
+            ciphertext: row.encrypted_payload.toString("base64url"),
+            authTag: row.authentication_tag.toString("base64url")
+          },
+          expiresAt: row.candidate_expires_at.toISOString()
+        })
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async expireOldTasks(): Promise<number> {
+    const result = await this.pool.query(
+      `UPDATE resolve_tasks SET status = 'expired', updated_at = NOW()
+       WHERE expires_at <= NOW() AND status <> 'expired'`
+    );
+    return result.rowCount ?? 0;
+  }
+}

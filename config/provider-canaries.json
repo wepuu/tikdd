@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "authorization": {
+    "assertedBy": "project-owner",
+    "assertedAt": "2026-08-04",
+    "scope": "The named provider integrations and content URLs are authorized for TikDD technical testing."
+  },
+  "canaries": [
+    {
+      "id": "twittersaver-x-authorized-001",
+      "provider": "twittersaver",
+      "platform": "x",
+      "url": "https://x.com/latestinspace/status/2082235193042022432?s=20"
+    },
+    {
+      "id": "dlpanda-tiktok-authorized-001",
+      "provider": "dlpanda",
+      "platform": "tiktok",
+      "url": "https://www.tiktok.com/@realdonaldtrump/video/7641592261792255262?is_from_webapp=1&sender_device=pc"
+    }
+  ]
+}

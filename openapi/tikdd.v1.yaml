@@ -1,0 +1,462 @@
+openapi: 3.1.0
+info:
+  title: TikDD Control and Delivery API
+  version: 0.1.0
+  description: >-
+    Asynchronous public-media resolution and format delivery. Resolve results never expose provider
+    credentials or provider-native download URLs.
+servers:
+  - url: http://localhost:4000
+    description: Local control API
+tags:
+  - name: Health
+  - name: Platforms
+  - name: Resolve tasks
+  - name: Deliveries
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      responses:
+        "200":
+          description: Process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      responses:
+        "200":
+          description: Dependencies are ready.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: One or more dependencies are unavailable.
+  /v1/platforms:
+    get:
+      tags: [Platforms]
+      operationId: listPlatforms
+      description: >-
+        Lists recognized platform families and their current product support status. A catalog entry
+        is not a guarantee that every URL from the platform can be resolved.
+      responses:
+        "200":
+          description: Platform catalog.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [platforms]
+                properties:
+                  platforms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PlatformSummary"
+  /v1/resolve-tasks:
+    post:
+      tags: [Resolve tasks]
+      operationId: createResolveTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResolveTaskRequest"
+      responses:
+        "202":
+          description: Task accepted.
+          headers:
+            X-Robots-Tag:
+              schema:
+                type: string
+              description: Always prevents task indexing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/UnsupportedUrl"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /v1/resolve-tasks/{taskId}:
+    get:
+      tags: [Resolve tasks]
+      operationId: getResolveTask
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Current task state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveTask"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /v1/deliveries:
+    post:
+      tags: [Deliveries]
+      operationId: createDelivery
+      description: Served by the delivery service on its own origin/port.
+      servers:
+        - url: http://localhost:4002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDeliveryRequest"
+      responses:
+        "201":
+          description: Short-lived delivery created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Delivery"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: The task/format has no valid redirect candidate.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Delivery encryption is not configured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /d/{token}:
+    get:
+      tags: [Deliveries]
+      operationId: redeemDelivery
+      description: >-
+        Atomically consumes an opaque one-use ticket and redirects to a server-validated candidate.
+        The service does not follow the upstream URL or expose it in a JSON response.
+      servers:
+        - url: http://localhost:4002
+      parameters:
+        - $ref: "#/components/parameters/DeliveryToken"
+      responses:
+        "302":
+          description: One-use redirect accepted.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri
+        "410":
+          description: Ticket is invalid, expired, or already redeemed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Decrypted target failed host, mode, header, or DNS validation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  parameters:
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^tsk_[a-f0-9]{32}$'
+    DeliveryToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]{32,256}$'
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    UnsupportedUrl:
+      description: URL platform or shape is unsupported.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    NotFound:
+      description: Resource does not exist or has expired.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ServiceUnavailable:
+      description: Required infrastructure is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+  schemas:
+    Platform:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+      description: Stable TikDD platform-family slug from the platform catalog.
+    PlatformSupportStatus:
+      type: string
+      enum: [stable, experimental, planned, paused]
+    PlatformSummary:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, status, source, providerCount]
+      properties:
+        id:
+          $ref: "#/components/schemas/Platform"
+        displayName:
+          type: string
+        status:
+          $ref: "#/components/schemas/PlatformSupportStatus"
+        source:
+          type: string
+          enum: [curated, yt-dlp]
+        providerCount:
+          type: integer
+          minimum: 0
+    ResolveTaskStatus:
+      type: string
+      enum: [queued, detecting, resolving, succeeded, failed, expired]
+    CreateResolveTaskRequest:
+      type: object
+      additionalProperties: false
+      required: [url, confirmedRights]
+      properties:
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        confirmedRights:
+          type: boolean
+          const: true
+    ResolveTask:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - platform
+        - canonicalUrl
+        - result
+        - error
+        - createdAt
+        - updatedAt
+        - expiresAt
+      properties:
+        id:
+          type: string
+          pattern: '^tsk_[a-f0-9]{32}$'
+        status:
+          $ref: "#/components/schemas/ResolveTaskStatus"
+        platform:
+          $ref: "#/components/schemas/Platform"
+        canonicalUrl:
+          type: string
+          format: uri
+        result:
+          oneOf:
+            - $ref: "#/components/schemas/ResolveResult"
+            - type: "null"
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/TaskError"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    ResolveResult:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, source, media, formats, provenance, warnings]
+      properties:
+        schemaVersion:
+          type: string
+          const: "1.0"
+        source:
+          type: object
+          additionalProperties: false
+          required: [platform, canonicalUrl]
+          properties:
+            platform:
+              $ref: "#/components/schemas/Platform"
+            canonicalUrl:
+              type: string
+              format: uri
+        media:
+          $ref: "#/components/schemas/Media"
+        formats:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/MediaFormat"
+        provenance:
+          $ref: "#/components/schemas/Provenance"
+        warnings:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+    Media:
+      type: object
+      additionalProperties: false
+      required: [id, title, author, thumbnailUrl, durationSeconds, isLive]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          maxLength: 500
+        author:
+          type: [string, "null"]
+        thumbnailUrl:
+          type: [string, "null"]
+          format: uri
+        durationSeconds:
+          type: [number, "null"]
+          minimum: 0
+        isLive:
+          type: boolean
+    MediaFormat:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - container
+        - mimeType
+        - quality
+        - width
+        - height
+        - fps
+        - bitrateKbps
+        - estimatedBytes
+        - videoCodec
+        - audioCodec
+        - hasVideo
+        - hasAudio
+      properties:
+        id:
+          type: string
+        container:
+          type: string
+        mimeType:
+          type: string
+        quality:
+          type: string
+        width:
+          type: [integer, "null"]
+          minimum: 1
+        height:
+          type: [integer, "null"]
+          minimum: 1
+        fps:
+          type: [number, "null"]
+          exclusiveMinimum: 0
+        bitrateKbps:
+          type: [number, "null"]
+          minimum: 0
+        estimatedBytes:
+          type: [integer, "null"]
+          minimum: 0
+        videoCodec:
+          type: [string, "null"]
+        audioCodec:
+          type: [string, "null"]
+        hasVideo:
+          type: boolean
+        hasAudio:
+          type: boolean
+    Provenance:
+      type: object
+      additionalProperties: false
+      required: [provider, kind, cacheHit, resolvedAt]
+      properties:
+        provider:
+          type: string
+        kind:
+          type: string
+          enum: [api, site-adapter, yt-dlp, mock]
+        cacheHit:
+          type: boolean
+        resolvedAt:
+          type: string
+          format: date-time
+    CreateDeliveryRequest:
+      type: object
+      additionalProperties: false
+      required: [taskId, formatId]
+      properties:
+        taskId:
+          type: string
+          pattern: '^tsk_[a-f0-9]{32}$'
+        formatId:
+          type: string
+    Delivery:
+      type: object
+      additionalProperties: false
+      required: [id, mode, url, expiresAt]
+      properties:
+        id:
+          type: string
+        mode:
+          type: string
+          enum: [redirect, proxy, temporary-object]
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+    TaskError:
+      type: object
+      additionalProperties: false
+      required: [code, message, retryable]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/TaskError"
+    Health:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+        service:
+          type: string

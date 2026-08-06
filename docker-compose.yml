@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tikdd
+      POSTGRES_USER: tikdd
+      POSTGRES_PASSWORD: tikdd
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tikdd -d tikdd"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - tikdd-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - tikdd-redis:/data
+
+volumes:
+  tikdd-postgres:
+  tikdd-redis:

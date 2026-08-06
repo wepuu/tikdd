@@ -1,0 +1,21 @@
+{
+  "name": "@tikdd/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "tsx src/worker.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tikdd/contracts": "workspace:*",
+    "@tikdd/delivery-core": "workspace:*",
+    "@tikdd/persistence": "workspace:*",
+    "@tikdd/platform": "workspace:*",
+    "@tikdd/providers": "workspace:*",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0"
+  }
+}
