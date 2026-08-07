@@ -77,7 +77,9 @@ Evidence: `docs/design/implementation-redesign-pass2.png` and
 
 ### Final pass — passed
 
-- No actionable P0, P1, or P2 differences remain.
+- No actionable visual-fidelity P0, P1, or P2 differences remained against the selected reference
+  at the original handoff. A later task-flow audit identified separate P0 journey issues; those are
+  closed in the work item 7.1 section below.
 - Intentional deviations are limited to truthful product copy, multilingual controls, omission of an
   unsupported audience testimonial, and omission of a nonfunctional theme toggle.
 
@@ -88,14 +90,68 @@ Evidence: `docs/design/implementation-redesign-pass2.png` and
 - Submitted the resolver and observed the `Development provider result` success heading.
 - Verified English and Simplified Chinese DOM content and navigation.
 - Verified a clean browser console in a fresh tab: no warnings or errors.
-- `pnpm check` passed: repository text checks, all workspace type checks, 42 tests, and production
+- `pnpm check` passed: repository text checks, all workspace type checks, 45 tests, and production
   builds for Web, API, worker, and delivery.
 
 ## Follow-up polish
 
 - P3: A future theme system may add the reference's moon control when a real dark theme exists.
-- P3: Real media thumbnails can replace the example preview when the public result contract safely
-  supplies an approved thumbnail URL.
+- P3: An approved thumbnail-delivery boundary can replace the neutral resolved-media preview without
+  loading arbitrary upstream image URLs in the browser.
+
+## Work item 7.1 — P0 task-flow closure
+
+Date: 2026-08-07.
+
+### Audit findings closed
+
+- The rights confirmation is now directly beneath the resolver on desktop and mobile. A recognized
+  link visibly explains that confirmation is required while Resolve remains disabled.
+- Editing or clearing the submitted URL resets the rights confirmation.
+- A successful task moves focus and the viewport to the result card. The scroll uses `auto` when the
+  user requests reduced motion.
+- On mobile, a resolving or successful task places the result first and removes feature/process
+  education from the active task path. Empty state restores both sections.
+- Mock or provider-flavored development titles are replaced by localized `Resolved media` /
+  `已解析媒体` copy. The result view exposes no provider or adapter name.
+- Real results use normalized author, duration, platform, and format-count fields when present.
+  Until thumbnail delivery has its own reviewed boundary, the resolved state uses a neutral
+  Phosphor media icon instead of presenting the scenic example as real content.
+
+### Browser evidence
+
+- Desktop empty: `docs/design/work-item-7.1/01-desktop-empty.jpg` (`1433 × 1075`).
+- Desktop recognized, rights required: `docs/design/work-item-7.1/02-desktop-rights-required.jpg`
+  (`1433 × 1075`).
+- Desktop success with result focus: `docs/design/work-item-7.1/03-desktop-success.jpg`
+  (`1433 × 1075`).
+- Mobile success with result-first task order: `docs/design/work-item-7.1/04-mobile-success.jpg`
+  (`375 × 812`).
+- Mobile empty state with education restored: `docs/design/work-item-7.1/05-mobile-empty.jpg`
+  (`375 × 812`).
+- Simplified Chinese empty and success states: `docs/design/work-item-7.1/06-mobile-zh-cn.jpg` and
+  `docs/design/work-item-7.1/07-mobile-zh-success.jpg` (`375 × 812`).
+
+### Interaction verification
+
+- Authorized X link recognition produced a visible rights-required explanation.
+- Confirming rights enabled Resolve; the development mock completed through API, queue, worker, and
+  persistence.
+- On success, `document.activeElement` was the result card in both English and Simplified Chinese.
+- At mobile success, feature and process regions were absent from the rendered accessibility tree;
+  clearing the URL restored both and reset the checkbox.
+- Mobile `scrollWidth` remained `375` at a `390 × 844` requested viewport, with no horizontal
+  overflow.
+- Presentation tests cover real-title preservation, mock/development-title redaction, and duration
+  formatting.
+- Final `pnpm check` passed with 45 tests and production builds for Web, API, worker, and delivery.
+
+### Remaining non-P0 polish
+
+- P1: Raise compact process, format, FAQ, and safety copy to the planned minimum text sizes and
+  re-check contrast at 200% zoom.
+- P2: Add screenshot coverage for terminal failure, retryable failure, and expired-delivery states
+  when those fixtures are available in the browser harness.
 
 ## Final result
 

@@ -20,8 +20,9 @@ boundaries needed for future adapters.
 - Public results deliberately omit upstream media URLs. TwitterSaver now maps its formats to
   encrypted internal candidates, and the delivery service issues one-use redirect tickets guarded
   by an exact host policy and public-DNS validation.
-- The current Web flow can submit and poll a task, but delivery buttons are disabled, provider names
-  are visible, progress is minimal, and user-facing failure messages are not fully localized.
+- The Web flow submits and polls tasks, exposes only normalized format choices, and requests
+  controlled delivery without naming providers. English and Simplified Chinese cover the current
+  validation, progress, failure, result, and delivery states.
 
 ## Target user journey
 
@@ -106,6 +107,36 @@ Exit gate:
 - Automated accessibility checks pass, and screenshot QA covers empty, resolving, success, terminal
   error, retryable error, and expired-delivery states.
 
+### Work item 7.1 — P0 task-flow audit closure
+
+Status: complete on 2026-08-07.
+
+The post-implementation flow audit found that visual fidelity was acceptable but the successful task
+journey still competed with educational content. This closure keeps the selected visual direction
+while making task state the dominant product structure.
+
+Implemented scope:
+
+1. Keep one rights confirmation directly beneath the resolver on desktop and mobile, and show the
+   disabled-action reason beside it.
+2. Reset rights confirmation when the submitted URL changes.
+3. Move focus and the viewport to the result card when resolution succeeds, with reduced-motion
+   behavior preserved.
+4. Put the active result before feature and process education on mobile and hide those educational
+   cards while a task is resolving or ready.
+5. Replace development/provider-flavored mock titles with localized consumer copy.
+6. Show normalized author, duration, platform, and format-count metadata when available.
+7. Use a neutral platform result preview until an approved thumbnail-delivery boundary exists;
+   never load arbitrary upstream thumbnail URLs in the browser.
+
+Exit gate:
+
+- A recognized link explains exactly why Resolve is disabled.
+- A successful desktop or mobile task announces and focuses the result without exposing provider
+  identity or showing an unrelated example image as real media.
+- English and Simplified Chinese preserve equivalent task order, copy, focus, and reduced-motion
+  behavior.
+
 ### Phase 3 — Reliability control plane
 
 Estimated effort: 5–7 engineering days.
@@ -174,7 +205,8 @@ core product loop is proven.
 | 4 | TwitterSaver candidate mapping — complete | Internal contract | Sanitized fixtures and live canary |
 | 5 | Signed redirect delivery — complete | Candidate mapping | SSRF, redirect, DNS, expiry, tamper tests |
 | 6 | Three Product Design directions — complete; option 1 selected | Working vertical slice | Selection recorded in `docs/design/selection-record.md` |
-| 7 | Selected multilingual flow — implementation complete, visual QA blocked | Selected direction | Desktop/mobile comparison pending browser access |
+| 7 | Selected multilingual flow — complete | Selected direction | Desktop/mobile visual QA passed |
+| 7.1 | P0 task-flow audit closure — complete | Flow audit after work item 7 | Resolver/result desktop and mobile interaction QA |
 | 8 | Health aggregation and circuits | Attempt ledger | Failure-injection and hysteresis tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |

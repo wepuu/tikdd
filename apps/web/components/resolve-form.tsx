@@ -15,12 +15,14 @@ import {
   ShieldCheckIcon,
   SlidersHorizontalIcon,
   TiktokLogoIcon,
+  VideoCameraIcon,
   XIcon,
   XLogoIcon,
   YoutubeLogoIcon
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
+import { formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 const deliveryBaseUrl = process.env.NEXT_PUBLIC_DELIVERY_BASE_URL ?? "http://localhost:4002";
@@ -57,6 +59,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
+  const resultCardRef = useRef<HTMLElement>(null);
+  const focusedTaskIdRef = useRef<string | null>(null);
 
   const detectedPlatform = useMemo(() => {
     if (!url.trim()) return null;
@@ -67,6 +71,21 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     const firstFormatId = task?.status === "succeeded" ? task.result?.formats[0]?.id : null;
     setSelectedFormatId(firstFormatId ?? null);
   }, [task]);
+
+  useEffect(() => {
+    if (task?.status !== "succeeded" || focusedTaskIdRef.current === task.id) return;
+    focusedTaskIdRef.current = task.id;
+    const animationFrame = window.requestAnimationFrame(() => {
+      const target = resultCardRef.current;
+      if (!target) return;
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [task?.id, task?.status]);
 
   async function pollTask(taskId: string): Promise<void> {
     for (let attempt = 0; attempt < 40; attempt += 1) {
@@ -115,19 +134,26 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   }
 
   function clearLink(): void {
-    setUrl(""); setTask(null); setSelectedFormatId(null); setError(null); setDeliveryError(null);
+    setUrl(""); setConfirmedRights(false); setTask(null); setSelectedFormatId(null); setError(null); setDeliveryError(null);
   }
 
   const result = task?.status === "succeeded" ? task.result : null;
   const resultFormats = result?.formats ?? [];
   const selectedFormat = resultFormats.find((format) => format.id === selectedFormatId) ?? resultFormats[0];
+  const isTaskFocused = isWorking || Boolean(result);
   const statusText = isWorking
     ? copy.resolving
     : result
       ? copy.ready
       : detectedPlatform
-        ? `${platformName(detectedPlatform)} ${copy.recognized}`
+        ? `${platformName(detectedPlatform)} ${copy.recognized}${confirmedRights ? "" : ` ${copy.confirmRights}`}`
         : copy.waiting;
+  const resultTitle = result ? publicResultTitle(result, copy.resolvedTitle) : isWorking ? copy.resolving : copy.exampleTitle;
+  const resultMeta = result
+    ? [result.media.author, formatMediaDuration(result.media.durationSeconds), `${resultFormats.length} ${copy.formatsAvailable}`].filter(Boolean).join(" · ")
+    : isWorking
+      ? copy.workingMeta
+      : copy.exampleMeta;
 
   return (
     <div className="resolve-experience" id="resolver">
@@ -139,8 +165,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
             <input
               id="source-url" type="url" inputMode="url" autoComplete="url" spellCheck={false}
               value={url}
-              onChange={(event) => { setUrl(event.target.value); setTask(null); setError(null); setDeliveryError(null); }}
-              placeholder={copy.placeholder} aria-describedby="url-status" required
+              onChange={(event) => { setUrl(event.target.value); setConfirmedRights(false); setTask(null); setError(null); setDeliveryError(null); }}
+              placeholder={copy.placeholder} aria-describedby="url-status" aria-invalid={Boolean(url.trim() && !detectedPlatform)} required
             />
             {url ? <button className="clear-link" type="button" onClick={clearLink} aria-label={copy.clear}><XIcon size={18} weight="bold" /></button> : null}
           </div>
@@ -150,11 +176,13 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
             <span>{isWorking ? copy.working : copy.action}</span>
           </button>
         </div>
-        <label className="mobile-rights">
-          <input type="checkbox" checked={confirmedRights} onChange={(event) => setConfirmedRights(event.target.checked)} />
-          <LockSimpleIcon size={15} weight="bold" aria-hidden="true" /><span>{copy.rights}</span>
-        </label>
-        <p id="url-status" className="sr-only" aria-live="polite">{url.trim() && !detectedPlatform ? copy.invalid : statusText}</p>
+        <div className="resolver-guidance">
+          <label className="rights-confirmation">
+            <input type="checkbox" checked={confirmedRights} onChange={(event) => setConfirmedRights(event.target.checked)} />
+            <LockSimpleIcon size={15} weight="bold" aria-hidden="true" /><span>{copy.rights}</span>
+          </label>
+          <p id="url-status" className="url-status" aria-live="polite">{url.trim() && !detectedPlatform ? copy.invalid : statusText}</p>
+        </div>
       </form>
 
       <div className="platform-pills" id="supported">
@@ -172,14 +200,14 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
         {deliveryError ? <p className="error-message">{deliveryError}</p> : null}
       </div>
 
-      <section className="feature-strip" id="features" aria-label={featureLabel}>
-        {features.map(([title, description], index) => {
-          const Icon = featureIcons[index] ?? ShieldCheckIcon;
-          return <article key={title}><span className="feature-icon" aria-hidden="true"><Icon size={30} weight="duotone" /></span><div><h2>{title}</h2><p>{description}</p></div></article>;
-        })}
-      </section>
+      <div className={`experience-grid ${isTaskFocused ? "is-task-focused" : ""}`} id="process">
+        <section className="feature-strip" id="features" aria-label={featureLabel}>
+          {features.map(([title, description], index) => {
+            const Icon = featureIcons[index] ?? ShieldCheckIcon;
+            return <article key={title}><span className="feature-icon" aria-hidden="true"><Icon size={30} weight="duotone" /></span><div><h2>{title}</h2><p>{description}</p></div></article>;
+          })}
+        </section>
 
-      <div className="workspace-grid" id="process">
         <section className="process-card" aria-labelledby="process-title">
           <h2 id="process-title">{process.title}</h2>
           <ol>
@@ -188,28 +216,35 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
               return <li key={title}><span className="step-number">{index + 1}</span><span className="step-icon" aria-hidden="true"><Icon size={23} weight="duotone" /></span><div><h3>{title}</h3><p>{description}</p></div></li>;
             })}
           </ol>
-          <label className="process-rights">
-            <input type="checkbox" checked={confirmedRights} onChange={(event) => setConfirmedRights(event.target.checked)} />
-            <LockSimpleIcon size={14} weight="bold" aria-hidden="true" /><span>{copy.rights}</span>
-          </label>
         </section>
 
-        <section className="result-card" aria-labelledby="result-title">
+        <section className="result-card" ref={resultCardRef} tabIndex={-1} aria-labelledby="result-title" data-state={result ? "ready" : isWorking ? "working" : "example"}>
           <div className="preview-column">
             <h2>{copy.preview}</h2>
-            <div className="preview-media">
-              <img src="/assets/tikdd-mountain-preview.png" alt="" />
-              <span className="play-button" aria-hidden="true"><PlayIcon size={28} weight="fill" /></span>
-              <span className="preview-chip">{result ? platformName(task!.platform) : "4K"}</span>
-            </div>
+            {result ? (
+              <div className="preview-media resolved-preview" aria-label={`${platformName(task!.platform)} ${copy.resolvedPreview}`}>
+                <span className="resolved-preview-icon" aria-hidden="true"><VideoCameraIcon size={44} weight="duotone" /></span>
+                <span className="preview-chip">{platformName(task!.platform)}</span>
+              </div>
+            ) : isWorking ? (
+              <div className="preview-media resolved-preview" aria-label={copy.resolving}>
+                <span className="resolved-preview-icon" aria-hidden="true"><CircleNotchIcon className="spin" size={42} weight="bold" /></span>
+              </div>
+            ) : (
+              <div className="preview-media">
+                <img src="/assets/tikdd-mountain-preview.png" alt="" />
+                <span className="play-button" aria-hidden="true"><PlayIcon size={28} weight="fill" /></span>
+                <span className="preview-chip">4K</span>
+              </div>
+            )}
           </div>
           <div className="format-column">
             <div className="result-heading">
-              <div><span>{result ? copy.ready : copy.example}</span><h2 id="result-title">{result?.media.title ?? copy.exampleTitle}</h2></div>
-              <p>{result ? `${resultFormats.length} ${copy.result.toLowerCase()}` : copy.exampleMeta}</p>
+              <div><span>{result ? copy.ready : isWorking ? copy.working : copy.example}</span><h2 id="result-title">{resultTitle}</h2></div>
+              <p>{resultMeta}</p>
             </div>
             <h3>{copy.result}</h3>
-            <div className="compact-format-list" role={result ? "radiogroup" : undefined} aria-label={copy.result}>
+            {isWorking ? <p className="result-progress" role="status">{copy.workingMeta}</p> : <div className="compact-format-list" role={result ? "radiogroup" : undefined} aria-label={copy.result}>
               {result ? resultFormats.map((format) => {
                 const selected = selectedFormatId === format.id;
                 return (
@@ -220,7 +255,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
               }) : ["2160p (4K)", "1080p (FHD)", "720p (HD)", "480p"].map((quality, index) => (
                 <div className={`compact-format ${index === 0 ? "is-selected" : ""}`} key={quality}><span className="radio-dot" /><strong>MP4</strong><span>{quality}</span><small>{index === 0 ? "120 MB" : "—"}</small></div>
               ))}
-            </div>
+            </div>}
             <button className="download-action" type="button" disabled={!selectedFormat || Boolean(deliveringFormatId)} onClick={() => selectedFormat && void requestDelivery(selectedFormat.id)}>
               {deliveringFormatId ? <CircleNotchIcon className="spin" size={20} weight="bold" /> : <DownloadSimpleIcon size={20} weight="bold" />}
               <span>{deliveringFormatId ? copy.preparingDownload : copy.download}</span>
