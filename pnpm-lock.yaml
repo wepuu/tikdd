@@ -38,6 +38,12 @@ importers:
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@tikdd/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../../packages/rollout-control
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../../packages/routing-health
@@ -50,6 +56,36 @@ importers:
       ioredis:
         specifier: ^5.0.0
         version: 5.11.1
+
+  apps/canary:
+    dependencies:
+      '@tikdd/admission-control':
+        specifier: workspace:*
+        version: link:../../packages/admission-control
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@tikdd/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
+      '@tikdd/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@tikdd/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../../packages/rollout-control
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../../packages/routing-health
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
 
   apps/cleanup:
     dependencies:

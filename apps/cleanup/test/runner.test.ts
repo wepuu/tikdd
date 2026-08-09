@@ -10,7 +10,7 @@ const configuration: CleanupConfiguration = {
   taskHardRetentionMs: 1_000,
   statementTimeoutMs: 1_000,
   timeBudgetMs: 5_000,
-  maxBatches: 12,
+  maxBatches: 14,
   leaseTtlMs: 10_000
 };
 

@@ -26,8 +26,9 @@ Exit criteria: `pnpm check` passes and a Docker-backed mock task completes throu
 - Add one isolated adapter package per site with a manifest, sanitized fixtures, response size
   limits, timeouts, concurrency control, error mapping, and contract tests.
 - Create an authorized test corpus across 5–8 platform families and important URL variants.
-- Build scheduled canaries that measure success rate, p50/p95 latency, available formats, link
-  lifetime, geographic behavior, challenge rate, and estimated cost.
+- Scheduled authorized canaries now persist expiring metadata-only measurements for status, latency,
+  formats, link lifetime, normalized failures, and fallback depth. Geographic comparison and cost
+  calibration remain pilot operations.
 - Provider/platform/region aggregation, revisioned Redis circuit state, atomic half-open leases, and
   Router consumption are implemented behind an explicit versioned-policy gate.
 - A development-only failure-injection adapter proves priority order, fallback, terminal stops, and

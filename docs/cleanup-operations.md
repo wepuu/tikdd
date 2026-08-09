@@ -10,8 +10,9 @@ the authorization boundary: delayed cleanup never makes expired data usable agai
 acquires `tikdd:cleanup:v1:<deployment>:lease`; a second instance skips that interval.
 
 Each stage uses a separate small transaction, stable ordering, a row limit, and
-`FOR UPDATE SKIP LOCKED`: expired tickets and encrypted candidates; expired idempotency and active
-source records; task status expiry; then hard deletion after `expires_at + TASK_HARD_RETENTION_MS`.
+`FOR UPDATE SKIP LOCKED`: expired tickets, encrypted candidates, and canary measurements; expired
+idempotency and active-source records; task status expiry; then hard deletion after
+`expires_at + TASK_HARD_RETENTION_MS`.
 Task deletion cascades to attempts and residual task-owned rows. Cleanup never reads or decrypts
 candidate payloads and never emits task IDs, digests, canonical URLs, or source metadata.
 

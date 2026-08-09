@@ -201,7 +201,7 @@ production permission from inferred circuit health. It defines deny-first provid
 rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
 Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
 anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
-The remaining runtime behavior is scheduled for work items 9.5–9.6.
+The remaining runtime behavior is scheduled for work item 9.6.
 
 #### Work item 9.1 — Runtime rollout rules and emergency deny
 
@@ -248,6 +248,17 @@ deployment-scoped Redis owner lease admits one scheduled run; PostgreSQL stages 
 counts, duration, errors, and stop reason. Migration `0007` supplies cleanup indexes, while
 `pnpm verify:cleanup` proves singleton contention, no-write counting, cascade deletion, fresh-row
 preservation, and zero-change repetition against Docker services.
+
+#### Work item 9.5 — Authorized canaries and protected operational diagnostics
+
+Status: complete on 2026-08-09.
+
+`@tikdd/canary` is an independently scheduled, Redis-singleton probe that requires explicit owner
+authorization, canary-region rollout permission, circuit evaluation, distributed concurrency, and
+sequential routing. Migration `0008` persists only expiring normalized measurements. The protected
+diagnostics route now reports priority, rollout revision, circuit state, recent categorized failures,
+fallback depth, and canary health without exposing URLs, media, candidates, secrets, or caller data.
+`pnpm verify:canary` proves persistence, lease ownership, aggregation, and cleanup on Docker.
 
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
@@ -323,6 +334,7 @@ core product loop is proven.
 | 9.2 | Task idempotency and canonical duplicate admission — complete | ADR-0007 | Contract/OpenAPI parity, HMAC separation, concurrent replay/conflict, capability isolation, and Docker tests |
 | 9.3 | Trusted proxy quotas and distributed concurrency — complete | ADR-0007 | Spoofing, atomic rate/active limits, owner leases, fail-closed Redis, fallback, and Docker tests |
 | 9.4 | Singleton bounded cleanup — complete | ADR-0007 and task expiry | Dry-run, lease contention, cascade, repeat, and Docker tests |
+| 9.5 | Authorized canaries and diagnostics — complete | Work items 8 and 9.1–9.4 | Privacy tests, singleton lease, diagnostics, and Docker persistence/cleanup |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

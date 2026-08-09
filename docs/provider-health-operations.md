@@ -53,9 +53,10 @@ Authorization: Bearer <operator-secret>
 ```
 
 Without the secret, the route is not registered and returns 404. Incorrect credentials return 401.
-Responses are `no-store` and contain only provider ID, platform, region, state, sanitized categorized
-counts, sample sufficiency, latency, transition times, policy version, and revision. They never
-contain submitted URLs, media metadata, raw provider payloads, delivery candidates, or user IDs.
+Responses are `no-store` and combine manifest priority, rollout revision/rule metadata, circuit
+state, categorized recent failures, aggregate fallback depth, and expiring canary health. They never
+contain submitted URLs, media metadata, raw provider payloads, delivery candidates, address/key
+digests, or user histories.
 
 The route is an operator API, not a consumer feature. Keep it behind the deployment's private
 network or gateway in addition to the bearer credential. Do not add it to public OpenAPI or the Web
@@ -75,6 +76,7 @@ transition verification:
 ```sh
 pnpm db:migrate
 pnpm verify:routing-health
+pnpm verify:canary
 ```
 
 Local Docker Compose publishes Redis on host port `16379` by default because Docker Desktop and

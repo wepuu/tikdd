@@ -1,16 +1,16 @@
 {
-  "name": "@tikdd/api",
+  "name": "@tikdd/canary",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "start": "tsx src/service.ts",
+    "execute": "tsx src/run-once.ts",
+    "verify": "tsx src/verify-canary.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@fastify/cors": "^11.0.0",
     "@tikdd/admission-control": "workspace:*",
     "@tikdd/contracts": "workspace:*",
     "@tikdd/persistence": "workspace:*",
@@ -18,8 +18,7 @@
     "@tikdd/providers": "workspace:*",
     "@tikdd/rollout-control": "workspace:*",
     "@tikdd/routing-health": "workspace:*",
-    "bullmq": "^5.0.0",
-    "fastify": "^5.0.0",
-    "ioredis": "^5.0.0"
+    "ioredis": "^5.0.0",
+    "zod": "^4.0.0"
   }
 }

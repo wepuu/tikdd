@@ -31,3 +31,8 @@ pnpm canary:providers
 Routing mode enables the two reviewed site adapters and keeps the development mock last. Its output
 lists only provider IDs, attempt status, and normalized failure codes, making the fallback path
 observable without exposing media data.
+
+The scheduled production-style path is `pnpm canary:start`. It additionally requires an isolated
+`canary-*` region plus affirmative audited rollout, circuit, and distributed concurrency controls.
+See [canary-operations.md](../canary-operations.md). The manual command above remains for bounded
+feasibility checks and is never started by `pnpm dev` or CI.

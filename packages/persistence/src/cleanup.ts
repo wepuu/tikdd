@@ -3,6 +3,7 @@ import { type Pool, type PoolClient, type QueryResultRow } from "pg";
 export const cleanupStages = [
   "deliveryTickets",
   "deliveryCandidates",
+  "canaryMeasurements",
   "idempotencyRecords",
   "activeSourceAdmissions",
   "expiredTasks",
@@ -21,6 +22,7 @@ export interface CleanupPolicy {
 interface CountRow extends QueryResultRow {
   delivery_tickets: string;
   delivery_candidates: string;
+  canary_measurements: string;
   idempotency_records: string;
   active_source_admissions: string;
   expired_tasks: string;
@@ -55,6 +57,20 @@ const stageQueries: Record<CleanupStage, string> = {
       FOR UPDATE SKIP LOCKED
     ), removed AS (
       DELETE FROM delivery_candidates target
+      USING selected
+      WHERE target.id = selected.id
+      RETURNING target.id
+    )
+    SELECT count(*)::int AS affected FROM removed`,
+  canaryMeasurements: `
+    WITH selected AS (
+      SELECT id FROM provider_canary_measurements
+      WHERE expires_at <= NOW()
+      ORDER BY expires_at, id
+      LIMIT $1
+      FOR UPDATE SKIP LOCKED
+    ), removed AS (
+      DELETE FROM provider_canary_measurements target
       USING selected
       WHERE target.id = selected.id
       RETURNING target.id
@@ -147,6 +163,7 @@ export function emptyCleanupCounts(): CleanupCounts {
   return {
     deliveryTickets: 0,
     deliveryCandidates: 0,
+    canaryMeasurements: 0,
     idempotencyRecords: 0,
     activeSourceAdmissions: 0,
     expiredTasks: 0,
@@ -169,6 +186,8 @@ export class CleanupRepository {
             AS delivery_tickets,
           (SELECT count(*) FROM delivery_candidates WHERE expires_at <= NOW())::text
             AS delivery_candidates,
+          (SELECT count(*) FROM provider_canary_measurements WHERE expires_at <= NOW())::text
+            AS canary_measurements,
           (SELECT count(*) FROM resolve_task_idempotency WHERE expires_at <= NOW())::text
             AS idempotency_records,
           (SELECT count(*) FROM active_source_admissions WHERE expires_at <= NOW())::text
@@ -185,6 +204,7 @@ export class CleanupRepository {
       return {
         deliveryTickets: Number(row.delivery_tickets),
         deliveryCandidates: Number(row.delivery_candidates),
+        canaryMeasurements: Number(row.canary_measurements),
         idempotencyRecords: Number(row.idempotency_records),
         activeSourceAdmissions: Number(row.active_source_admissions),
         expiredTasks: Number(row.expired_tasks),

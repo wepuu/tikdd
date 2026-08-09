@@ -14,6 +14,8 @@ import {
 } from "@tikdd/contracts";
 import {
   createDatabasePool,
+  OperationalDiagnosticsRepository,
+  RolloutRuleRepository,
   TaskAdmissionRepository,
   TaskIdempotencyConflictError,
   TaskRepository
@@ -23,6 +25,7 @@ import {
   listPlatformSummaries,
   UnsupportedPlatformError
 } from "@tikdd/platform";
+import { DLPandaProvider, TwitterSaverProvider } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { Queue } from "bullmq";
 import Fastify from "fastify";
@@ -36,6 +39,7 @@ const activeSourceTtlMs = Number.parseInt(process.env.ACTIVE_SOURCE_TTL_MS ?? "3
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
+const workerRegion = process.env.WORKER_REGION ?? "global";
 const admissionConfiguration = loadAdmissionControlConfiguration();
 
 if (
@@ -62,6 +66,8 @@ const app = Fastify({
 });
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
+const operationalDiagnostics = new OperationalDiagnosticsRepository(pool);
+const rolloutRules = new RolloutRuleRepository(pool);
 const taskAdmission = new TaskAdmissionRepository(pool);
 const taskAdmissionHasher = createTaskAdmissionHasherFromEnvironment();
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -105,6 +111,13 @@ app.get("/v1/platforms", async () => ({
 
 registerProviderHealthDiagnostics(app, {
   store: circuitStore,
+  operations: operationalDiagnostics,
+  rollout: rolloutRules,
+  manifests: [
+    new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }).manifest,
+    new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest
+  ],
+  region: workerRegion,
   token: providerDiagnosticsToken
 });
 

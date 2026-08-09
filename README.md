@@ -61,9 +61,11 @@ Applications:
 - API: `http://localhost:4000/health/live`
 - Delivery: `http://localhost:4002/health/live`
 - Cleanup: independent scheduled process; use `pnpm cleanup:start` in its deployment
+- Canary: authorized, rollout-controlled scheduler; use `pnpm canary:start` only after review
 
 Before public traffic, run `pnpm cleanup:dry-run` and `pnpm verify:cleanup`; see the
 [cleanup operations guide](docs/cleanup-operations.md).
+Authorized operational probes are documented in the [canary operations guide](docs/canary-operations.md).
 
 ## Quality gates
 

@@ -343,3 +343,12 @@ Dry-run and execution expose only sanitized row/duration/error metrics. Docker v
 lease contention, no-write counting, task cascade, fresh-row preservation, and zero-change repeat.
 OpenAPI and `@tikdd/contracts` remain unchanged because no serving contract changed. Expanded
 protected diagnostics remain future work.
+
+Work item 9.5 implemented the metadata-only canary and protected diagnostics boundary on 2026-08-09.
+Migration `0008` stores expiring sanitized canary outcomes without URLs, media metadata, provider
+payloads, or delivery secrets. The independent scheduler requires explicit authorization, an
+isolated canary region, an audited affirmative rollout rule, circuit evaluation, distributed
+provider concurrency, sequential fallback, and a Redis singleton lease. The protected diagnostics
+route now combines manifest priority, rollout revision/rules, circuit state, categorized failures,
+aggregate fallback depth, and canary health. It remains outside public OpenAPI/Web. Docker
+verification covers persistence, aggregation, lease ownership, and bounded expiry cleanup.
