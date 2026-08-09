@@ -47,9 +47,10 @@ distributed circuit behavior. Attempts persist the concrete worker region; the o
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
 open and half-open decisions. ADR-0007 defines production admission controls; work item 9.1 now
 implements deny-first provider/platform/region rollout rules, deterministic task cohorts, durable
-audit, and expiring Redis distribution. Idempotency, anonymous quotas, concurrency, and cleanup
-remain scheduled for work items 9.2–9.4. Production policy calibration, yt-dlp isolation, proxying,
-and temporary-object delivery are later milestones.
+audit, and expiring Redis distribution. Work item 9.2 adds HMAC-protected idempotency and active
+canonical-source suppression without cross-caller task sharing. Anonymous quotas, concurrency, and
+cleanup remain scheduled for work items 9.3–9.4. Production policy calibration, yt-dlp isolation,
+proxying, and temporary-object delivery are later milestones.
 
 ## Request lifecycle
 
@@ -98,6 +99,8 @@ Production admission and runtime rollout decisions are defined in
 [ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
 Operator configuration and emergency-stop procedures are documented in
 [Provider rollout operations](../provider-rollout-operations.md).
+Submission replay and duplicate suppression are documented in
+[Resolve task admission](../task-admission-operations.md).
 
 ## Failure policy
 

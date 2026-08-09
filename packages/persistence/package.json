@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "db:migrate": "tsx src/migrate.ts",
     "db:verify-delivery-transaction": "tsx src/verify-delivery-transaction.ts",
-    "db:verify-provider-attempt-region": "tsx src/verify-provider-attempt-region.ts"
+    "db:verify-provider-attempt-region": "tsx src/verify-provider-attempt-region.ts",
+    "db:verify-task-admission": "tsx src/verify-task-admission.ts"
   },
   "dependencies": {
     "@tikdd/contracts": "workspace:*",

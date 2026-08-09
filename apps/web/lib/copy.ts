@@ -25,6 +25,9 @@ const copy = {
       videoAudio: "Video + audio", videoOnly: "Video only", audioOnly: "Audio only",
       download: "Download", preparingDownload: "Preparing",
       resolveError: "This link could not be resolved. Check that it is public and try again.",
+      duplicateInProgress: "This link is already being processed. Try again shortly.",
+      idempotencyConflict: "This request key was already used. Start a new resolution.",
+      admissionUnavailable: "New resolution requests are temporarily unavailable. Try again shortly.",
       timeout: "Resolution is taking longer than expected. Try again shortly.",
       deliveryError: "This format is not available for secure delivery. Resolve the link again.",
       expired: "This task expired. Resolve the link again."
@@ -76,6 +79,9 @@ const copy = {
       columns: { quality: "清晰度", format: "格式", video: "视频", audio: "音频", container: "封装", action: "操作" },
       videoAudio: "视频 + 音频", videoOnly: "仅视频", audioOnly: "仅音频", download: "下载", preparingDownload: "准备中",
       resolveError: "无法解析该链接，请确认页面公开后重试。", timeout: "解析时间超出预期，请稍后重试。",
+      duplicateInProgress: "该链接正在处理中，请稍后重试。",
+      idempotencyConflict: "该请求标识已被使用，请重新发起解析。",
+      admissionUnavailable: "暂时无法接收新的解析请求，请稍后重试。",
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
     },
     features: [

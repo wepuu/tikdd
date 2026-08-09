@@ -28,6 +28,8 @@ import {
 } from "@tikdd/rollout-control";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
+export * from "./task-admission";
+
 interface TaskRow extends QueryResultRow {
   id: string;
   status: ResolveTask["status"];
@@ -436,6 +438,7 @@ export class TaskRepository {
       if (updated.rowCount !== 1) {
         throw new TaskCompletionError("The task expired before completion.");
       }
+      await client.query("DELETE FROM active_source_admissions WHERE task_id = $1", [id]);
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
@@ -447,9 +450,14 @@ export class TaskRepository {
 
   async fail(id: string, error: TaskError): Promise<void> {
     await this.pool.query(
-      `UPDATE resolve_tasks
-       SET status = 'failed', error = $2::jsonb, updated_at = NOW()
-       WHERE id = $1 AND expires_at > NOW()`,
+      `WITH failed_task AS (
+         UPDATE resolve_tasks
+         SET status = 'failed', error = $2::jsonb, updated_at = NOW()
+         WHERE id = $1 AND expires_at > NOW()
+         RETURNING id
+       )
+       DELETE FROM active_source_admissions
+       WHERE task_id IN (SELECT id FROM failed_task)`,
       [id, JSON.stringify(error)]
     );
   }
@@ -612,9 +620,16 @@ export class TaskRepository {
 
   async expireOldTasks(): Promise<number> {
     const result = await this.pool.query(
-      `UPDATE resolve_tasks SET status = 'expired', updated_at = NOW()
-       WHERE expires_at <= NOW() AND status <> 'expired'`
+      `WITH expired_tasks AS (
+         UPDATE resolve_tasks SET status = 'expired', updated_at = NOW()
+         WHERE expires_at <= NOW() AND status <> 'expired'
+         RETURNING id
+       ), released AS (
+         DELETE FROM active_source_admissions
+         WHERE task_id IN (SELECT id FROM expired_tasks)
+       )
+       SELECT count(*)::int AS count FROM expired_tasks`
     );
-    return result.rowCount ?? 0;
+    return Number((result.rows[0] as { count?: number } | undefined)?.count ?? 0);
   }
 }

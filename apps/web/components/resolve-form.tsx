@@ -1,6 +1,6 @@
 "use client";
 
-import type { Delivery, MediaFormat, ResolveTask } from "@tikdd/contracts";
+import type { ApiError, Delivery, MediaFormat, ResolveTask } from "@tikdd/contracts";
 import { detectPlatform, listPlatformDefinitions } from "@tikdd/platform";
 import {
   CheckIcon,
@@ -61,6 +61,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
   const resultCardRef = useRef<HTMLElement>(null);
   const focusedTaskIdRef = useRef<string | null>(null);
+  const submissionKeyRef = useRef<{ url: string; key: string } | null>(null);
 
   const detectedPlatform = useMemo(() => {
     if (!url.trim()) return null;
@@ -104,12 +105,35 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     if (!detectedPlatform || !confirmedRights || isWorking) return;
     setIsWorking(true); setError(null); setDeliveryError(null); setTask(null);
     try {
+      const normalizedUrl = url.trim();
+      const idempotencyKey =
+        submissionKeyRef.current?.url === normalizedUrl
+          ? submissionKeyRef.current.key
+          : crypto.randomUUID();
+      submissionKeyRef.current = { url: normalizedUrl, key: idempotencyKey };
       const response = await fetch(`${apiBaseUrl}/v1/resolve-tasks`, {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), confirmedRights: true })
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": idempotencyKey
+        },
+        body: JSON.stringify({ url: normalizedUrl, confirmedRights: true })
       });
-      if (!response.ok) throw new Error(copy.resolveError);
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as ApiError | null;
+        const code = payload?.error.code;
+        const message =
+          code === "DUPLICATE_IN_PROGRESS"
+            ? copy.duplicateInProgress
+            : code === "IDEMPOTENCY_CONFLICT"
+              ? copy.idempotencyConflict
+              : code === "ADMISSION_UNAVAILABLE"
+                ? copy.admissionUnavailable
+                : copy.resolveError;
+        throw new Error(message);
+      }
       const createdTask = (await response.json()) as ResolveTask;
+      submissionKeyRef.current = null;
       setTask(createdTask);
       await pollTask(createdTask.id);
     } catch (caught) {
@@ -134,6 +158,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   }
 
   function clearLink(): void {
+    submissionKeyRef.current = null;
     setUrl(""); setConfirmedRights(false); setTask(null); setSelectedFormatId(null); setError(null); setDeliveryError(null);
   }
 
@@ -165,7 +190,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
             <input
               id="source-url" type="url" inputMode="url" autoComplete="url" spellCheck={false}
               value={url}
-              onChange={(event) => { setUrl(event.target.value); setConfirmedRights(false); setTask(null); setError(null); setDeliveryError(null); }}
+              onChange={(event) => { submissionKeyRef.current = null; setUrl(event.target.value); setConfirmedRights(false); setTask(null); setError(null); setDeliveryError(null); }}
               placeholder={copy.placeholder} aria-describedby="url-status" aria-invalid={Boolean(url.trim() && !detectedPlatform)} required
             />
             {url ? <button className="clear-link" type="button" onClick={clearLink} aria-label={copy.clear}><XIcon size={18} weight="bold" /></button> : null}

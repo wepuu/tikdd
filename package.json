@@ -26,6 +26,7 @@
     "db:migrate": "pnpm --filter @tikdd/persistence db:migrate",
     "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction",
     "db:verify-provider-attempt-region": "pnpm --filter @tikdd/persistence db:verify-provider-attempt-region",
+    "db:verify-task-admission": "pnpm --filter @tikdd/persistence db:verify-task-admission",
     "verify:routing-health": "pnpm --filter @tikdd/worker verify:routing-health",
     "verify:rollout-control": "pnpm --filter @tikdd/worker verify:rollout-control"
   },

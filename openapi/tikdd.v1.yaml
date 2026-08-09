@@ -63,6 +63,8 @@ paths:
     post:
       tags: [Resolve tasks]
       operationId: createResolveTask
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
         content:
@@ -85,6 +87,25 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "422":
           $ref: "#/components/responses/UnsupportedUrl"
+        "409":
+          description: The idempotency key was already used for a different request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: An equivalent source is already being processed.
+          headers:
+            Retry-After:
+              required: true
+              schema:
+                type: integer
+                minimum: 1
+                maximum: 60
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /v1/resolve-tasks/{taskId}:
@@ -170,6 +191,18 @@ paths:
                 $ref: "#/components/schemas/ApiError"
 components:
   parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >-
+        Opaque high-entropy key. Reusing it with the same request returns the original task;
+        reusing it with a different request returns 409.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$'
     TaskId:
       name: taskId
       in: path

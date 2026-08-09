@@ -2,11 +2,17 @@ import { randomUUID } from "node:crypto";
 import cors from "@fastify/cors";
 import {
   CreateResolveTaskRequestSchema,
+  IdempotencyKeySchema,
   ResolveJobDataSchema,
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
-import { createDatabasePool, TaskRepository } from "@tikdd/persistence";
+import {
+  createDatabasePool,
+  TaskAdmissionRepository,
+  TaskIdempotencyConflictError,
+  TaskRepository
+} from "@tikdd/persistence";
 import {
   detectPlatform,
   listPlatformSummaries,
@@ -17,20 +23,32 @@ import { Queue } from "bullmq";
 import Fastify from "fastify";
 import Redis from "ioredis";
 import { registerProviderHealthDiagnostics } from "./provider-health-diagnostics";
+import { createTaskAdmissionHasherFromEnvironment } from "./task-admission";
 
 const port = Number.parseInt(process.env.API_PORT ?? "4000", 10);
 const taskTtlHours = Number.parseInt(process.env.TASK_TTL_HOURS ?? "24", 10);
+const activeSourceTtlMs = Number.parseInt(process.env.ACTIVE_SOURCE_TTL_MS ?? "300000", 10);
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
 
-if (!Number.isFinite(port) || !Number.isFinite(taskTtlHours)) {
-  throw new Error("API_PORT and TASK_TTL_HOURS must be valid numbers.");
+if (
+  !Number.isFinite(port) ||
+  !Number.isInteger(taskTtlHours) ||
+  taskTtlHours < 1 ||
+  taskTtlHours > 168 ||
+  !Number.isInteger(activeSourceTtlMs) ||
+  activeSourceTtlMs < 30_000 ||
+  activeSourceTtlMs > 15 * 60_000
+) {
+  throw new Error("API_PORT, TASK_TTL_HOURS, and ACTIVE_SOURCE_TTL_MS are invalid.");
 }
 
 const app = Fastify({ logger: true, trustProxy: true });
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
+const taskAdmission = new TaskAdmissionRepository(pool);
+const taskAdmissionHasher = createTaskAdmissionHasherFromEnvironment();
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
 const circuitStore = new RedisCircuitStore(redis);
 const resolveQueue = new Queue<ResolveJobData>("resolve", { connection: redis });
@@ -38,7 +56,7 @@ const resolveQueue = new Queue<ResolveJobData>("resolve", { connection: redis })
 await app.register(cors, {
   origin: webOrigin,
   methods: ["GET", "POST"],
-  allowedHeaders: ["content-type"]
+  allowedHeaders: ["content-type", "idempotency-key"]
 });
 
 app.addHook("onSend", async (request, reply) => {
@@ -83,6 +101,23 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
     });
   }
 
+  const rawIdempotencyKey = request.headers["idempotency-key"];
+  const idempotencyKeyResult =
+    rawIdempotencyKey === undefined
+      ? null
+      : typeof rawIdempotencyKey === "string"
+        ? IdempotencyKeySchema.safeParse(rawIdempotencyKey)
+        : { success: false as const };
+  if (idempotencyKeyResult && !idempotencyKeyResult.success) {
+    return reply.code(400).send({
+      error: {
+        code: "INVALID_IDEMPOTENCY_KEY",
+        message: "Provide a valid opaque Idempotency-Key header.",
+        retryable: false
+      }
+    });
+  }
+
   let detected: ReturnType<typeof detectPlatform>;
   try {
     detected = detectPlatform(requestResult.data.url);
@@ -96,22 +131,78 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
 
   const now = new Date();
   const taskId = `tsk_${randomUUID().replaceAll("-", "")}`;
-  const task = await tasks.create({
-    id: taskId,
-    platform: detected.platform,
-    canonicalUrl: detected.canonicalUrl,
-    expiresAt: new Date(now.getTime() + taskTtlHours * 60 * 60 * 1000)
-  });
+  const taskExpiresAt = new Date(now.getTime() + taskTtlHours * 60 * 60 * 1000);
+  const activeSourceExpiresAt = new Date(
+    Math.min(taskExpiresAt.getTime(), now.getTime() + activeSourceTtlMs)
+  );
+  let admission: Awaited<ReturnType<TaskAdmissionRepository["admit"]>>;
+  try {
+    admission = await taskAdmission.admit({
+      task: {
+        id: taskId,
+        platform: detected.platform,
+        canonicalUrl: detected.canonicalUrl,
+        expiresAt: taskExpiresAt
+      },
+      sourceFingerprint: taskAdmissionHasher.canonicalSource(
+        detected.platform,
+        detected.canonicalUrl
+      ),
+      requestFingerprint: taskAdmissionHasher.request({
+        platform: detected.platform,
+        canonicalUrl: detected.canonicalUrl,
+        confirmedRights: true
+      }),
+      idempotencyKeyDigest:
+        idempotencyKeyResult?.success === true
+          ? taskAdmissionHasher.idempotencyKey(idempotencyKeyResult.data)
+          : null,
+      activeSourceExpiresAt
+    });
+  } catch (error) {
+    if (error instanceof TaskIdempotencyConflictError) {
+      return reply.code(409).send({
+        error: {
+          code: "IDEMPOTENCY_CONFLICT",
+          message: "The idempotency key was already used for a different request.",
+          retryable: false
+        }
+      });
+    }
+    request.log.error(error, "task admission failed");
+    return reply.code(503).send({
+      error: {
+        code: "ADMISSION_UNAVAILABLE",
+        message: "Task admission is temporarily unavailable.",
+        retryable: true
+      }
+    });
+  }
+
+  if (admission.kind === "duplicate") {
+    reply.header("Retry-After", String(admission.retryAfterSeconds));
+    return reply.code(429).send({
+      error: {
+        code: "DUPLICATE_IN_PROGRESS",
+        message: "This link is already being processed. Try again shortly.",
+        retryable: true
+      }
+    });
+  }
+  if (admission.kind === "replayed") {
+    return reply.code(202).send(admission.task);
+  }
+  const task = admission.task;
 
   const jobData = ResolveJobDataSchema.parse({
-    taskId,
+    taskId: task.id,
     sourceUrl: requestResult.data.url,
     platform: detected.platform
   });
 
   try {
     await resolveQueue.add("resolve", jobData, {
-      jobId: taskId,
+      jobId: task.id,
       attempts: 3,
       backoff: { type: "exponential", delay: 1_000 },
       removeOnComplete: 500,
@@ -123,7 +214,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
       message: "The resolver queue is temporarily unavailable.",
       retryable: true
     };
-    await tasks.fail(taskId, taskError);
+    await tasks.fail(task.id, taskError);
     request.log.error(error);
     return reply.code(503).send({ error: taskError });
   }

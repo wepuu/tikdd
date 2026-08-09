@@ -40,7 +40,8 @@ platform has seven consecutive healthy canary runs with documented compliance ap
 
 - Runtime per-provider/platform/region/percentage rules, emergency deny, durable audit, and expiring
   Redis distribution are implemented; production rules remain disabled until reviewed rollout.
-- Add idempotency keys, IP/user quotas, abuse signals, job deduplication, and retention cleanup.
+- Task idempotency, active canonical-source suppression, and task-ID queue deduplication are
+  implemented; IP/user quotas, abuse signals, and retention cleanup remain.
 - Add a provider administration/read-only diagnostics surface for health, circuit state, priority,
   and recent sanitized failures.
 - Store internal delivery candidates separately from the public normalized result, encrypted or

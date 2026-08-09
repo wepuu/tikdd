@@ -311,5 +311,15 @@ schemas, deny-first evaluation, deterministic task cohorts, revisioned Redis sna
 fallback, stale-state denial, and rollback prevention. Migration `0005` adds current rules and
 append-only audit history. The worker applies rollout before circuit health, refuses production
 mocks independently, refreshes the durable revision every five seconds, and exposes only a direct
-operator command outside public OpenAPI. Idempotency, anonymous quota, distributed provider
-concurrency, and cleanup remain future work items.
+operator command outside public OpenAPI. Anonymous quota, distributed provider concurrency, and
+cleanup remain future work items.
+
+Work item 9.2 implemented task idempotency and active-source admission on 2026-08-09. Public
+contracts and OpenAPI now define the optional bounded `Idempotency-Key` plus generic `409`, `429`,
+and `503` outcomes. Domain-separated server-keyed HMACs protect key, request, and canonical-source
+identities. Migration `0006` adds task-bound expiring records. Deterministically ordered advisory
+locks make concurrent first use transactional; only the created winner enqueues a task-ID-keyed
+BullMQ job. Replays return the same task, conflicts reveal no task, and different callers receive
+only a bounded duplicate response. Terminal tasks release source admission without deleting the
+idempotency replay record. Quota identity, distributed provider concurrency, and general cleanup
+remain future work items.

@@ -192,6 +192,22 @@ export const CreateResolveTaskRequestSchema = z.object({
 });
 export type CreateResolveTaskRequest = z.infer<typeof CreateResolveTaskRequestSchema>;
 
+export const IdempotencyKeySchema = z
+  .string()
+  .min(16)
+  .max(128)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+export type IdempotencyKey = z.infer<typeof IdempotencyKeySchema>;
+
+export const ResolveTaskAdmissionErrorCodeSchema = z.enum([
+  "IDEMPOTENCY_CONFLICT",
+  "DUPLICATE_IN_PROGRESS",
+  "ADMISSION_UNAVAILABLE"
+]);
+export type ResolveTaskAdmissionErrorCode = z.infer<
+  typeof ResolveTaskAdmissionErrorCodeSchema
+>;
+
 export const CreateDeliveryRequestSchema = z.object({
   taskId: z.string().regex(/^tsk_[a-f0-9]{32}$/),
   formatId: z.string().min(1).max(160)
