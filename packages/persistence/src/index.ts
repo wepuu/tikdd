@@ -3,6 +3,7 @@ import {
   ResolveResultSchema,
   type Platform,
   type ProviderAttempt,
+  type ProviderFailureCode,
   type ResolveResult,
   type ResolveTask,
   type TaskError
@@ -13,6 +14,10 @@ import {
   type DeliveryMode,
   type EncryptedDeliveryCandidate
 } from "@tikdd/delivery-core";
+import {
+  ProviderHealthObservationSchema,
+  type ProviderHealthObservation
+} from "@tikdd/routing-health";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 interface TaskRow extends QueryResultRow {
@@ -37,6 +42,17 @@ export interface NewResolveTask {
 interface LockedTaskRow extends QueryResultRow {
   expires_at: Date;
   database_now: Date;
+}
+
+interface ProviderHealthObservationRow extends QueryResultRow {
+  task_id: string;
+  provider_id: string;
+  platform: Platform;
+  region: string;
+  status: "succeeded" | "failed";
+  failure_code: ProviderFailureCode | null;
+  duration_ms: number;
+  finished_at: Date;
 }
 
 interface TicketCandidateRow extends QueryResultRow {
@@ -82,14 +98,15 @@ async function insertProviderAttempts(
     const attempt = ProviderAttemptSchema.parse(rawAttempt);
     await client.query(
       `INSERT INTO provider_attempts (
-         task_id, provider_id, provider_kind, platform, priority, route_score, status,
+         task_id, provider_id, provider_kind, platform, region, priority, route_score, status,
          failure_code, retryable, fallback_allowed, started_at, finished_at, duration_ms
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         taskId,
         attempt.providerId,
         attempt.providerKind,
         attempt.platform,
+        attempt.region,
         attempt.priority,
         attempt.routeScore,
         attempt.status,
@@ -271,6 +288,32 @@ export class TaskRepository {
     } finally {
       client.release();
     }
+  }
+
+  async listProviderHealthObservations(since: Date): Promise<ProviderHealthObservation[]> {
+    if (Number.isNaN(since.getTime())) {
+      throw new Error("The provider health observation boundary is invalid.");
+    }
+    const result = await this.pool.query<ProviderHealthObservationRow>(
+      `SELECT DISTINCT ON (task_id, provider_id, platform, region)
+         task_id, provider_id, platform, region, status, failure_code, duration_ms, finished_at
+       FROM provider_attempts
+       WHERE finished_at >= $1
+       ORDER BY task_id, provider_id, platform, region, finished_at DESC, id DESC`,
+      [since]
+    );
+    return result.rows.map((row) =>
+      ProviderHealthObservationSchema.parse({
+        taskId: row.task_id,
+        providerId: row.provider_id,
+        platform: row.platform,
+        region: row.region,
+        status: row.status,
+        failureCode: row.failure_code,
+        durationMs: row.duration_ms,
+        finishedAt: row.finished_at.toISOString()
+      })
+    );
   }
 
   async issueDeliveryTicket(input: {

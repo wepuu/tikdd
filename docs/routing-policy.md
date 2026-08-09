@@ -70,14 +70,27 @@ queue retry handles a short-lived system/upstream outage after every eligible pr
 
 ## Attempt ledger and health
 
-`provider_attempts` records task, provider, platform, kind, static priority, route score, status,
-failure class, retry/fallback decisions, and timing. Raw URLs, provider payloads, cookies, tokens, and
-direct download links are excluded.
+`provider_attempts` records task, provider, platform, actual worker region, kind, static priority,
+route score, status, failure class, retry/fallback decisions, and timing. Raw URLs, provider
+payloads, cookies, tokens, and direct download links are excluded.
 
-The next health implementation will aggregate time-windowed attempts by provider/platform/region,
-with minimum sample sizes and hysteresis. Circuit breakers must distinguish schema failures,
-challenges, timeouts, and platform-wide content failures; one broken extractor must not disable an
-otherwise healthy multi-platform provider.
+ADR-0006 defines each circuit by provider, platform, and the actual worker region. The attempt ledger
+records that region, and the routing health boundary receives the complete tuple. The health worker
+selects the latest observation per task and exact tuple inside a time window, so queue retries of one
+task cannot manufacture the minimum sample size needed to open a circuit.
+
+Schema/integrity, access-friction, and availability failures use separate versioned thresholds.
+Missing, private, authenticated, paid, DRM, geographic-policy, and unsupported-URL outcomes remain
+diagnostic but are neutral to provider circuit health. Opening and recovery use hysteresis. After an
+open cooldown, an atomic Redis lease permits only one bounded half-open probe; only normalized
+successes close the circuit.
+
+PostgreSQL attempts are the durable facts. Revisioned Redis snapshots and probe leases expire and can
+be rebuilt. Snapshot publication uses compare-and-set so an aggregator cannot overwrite a concurrent
+probe transition. If no usable health snapshot is available, the router uses neutral health and
+static manifest order while preserving all existing sequential fallback, attempt, timeout, and
+terminal-error boundaries.
+See [ADR-0006](architecture/adr/0006-provider-health-and-circuits.md).
 
 ## Operational rules
 
@@ -86,4 +99,3 @@ otherwise healthy multi-platform provider.
 - Feature flags can disable one provider/platform/region combination without redeploying Web/API.
 - Provider response fixtures and logs are sanitized before persistence.
 - Priority changes are configuration changes with review, audit history, and rollback.
-

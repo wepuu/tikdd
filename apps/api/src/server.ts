@@ -12,14 +12,17 @@ import {
   listPlatformSummaries,
   UnsupportedPlatformError
 } from "@tikdd/platform";
+import { RedisCircuitStore } from "@tikdd/routing-health";
 import { Queue } from "bullmq";
 import Fastify from "fastify";
 import Redis from "ioredis";
+import { registerProviderHealthDiagnostics } from "./provider-health-diagnostics";
 
 const port = Number.parseInt(process.env.API_PORT ?? "4000", 10);
 const taskTtlHours = Number.parseInt(process.env.TASK_TTL_HOURS ?? "24", 10);
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
 
 if (!Number.isFinite(port) || !Number.isFinite(taskTtlHours)) {
   throw new Error("API_PORT and TASK_TTL_HOURS must be valid numbers.");
@@ -29,6 +32,7 @@ const app = Fastify({ logger: true, trustProxy: true });
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const circuitStore = new RedisCircuitStore(redis);
 const resolveQueue = new Queue<ResolveJobData>("resolve", { connection: redis });
 
 await app.register(cors, {
@@ -60,6 +64,11 @@ app.get("/health/ready", async (_request, reply) => {
 app.get("/v1/platforms", async () => ({
   platforms: listPlatformSummaries()
 }));
+
+registerProviderHealthDiagnostics(app, {
+  store: circuitStore,
+  token: providerDiagnosticsToken
+});
 
 app.post("/v1/resolve-tasks", async (request, reply) => {
   const requestResult = CreateResolveTaskRequestSchema.safeParse(request.body);

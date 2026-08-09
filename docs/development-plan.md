@@ -28,9 +28,10 @@ Exit criteria: `pnpm check` passes and a Docker-backed mock task completes throu
 - Create an authorized test corpus across 5–8 platform families and important URL variants.
 - Build scheduled canaries that measure success rate, p50/p95 latency, available formats, link
   lifetime, geographic behavior, challenge rate, and estimated cost.
-- Implement provider/platform/region circuit state and a health snapshot consumed by the router.
-- Add a local failure-injection adapter to prove priority order, fallback, terminal stops, and route
-  budget exhaustion end to end.
+- Provider/platform/region aggregation, revisioned Redis circuit state, atomic half-open leases, and
+  Router consumption are implemented behind an explicit versioned-policy gate.
+- A development-only failure-injection adapter proves priority order, fallback, terminal stops, and
+  route budget exhaustion without participating in production routing.
 
 Exit criteria: at least two providers demonstrate deterministic fallback, and each launch candidate
 platform has seven consecutive healthy canary runs with documented compliance approval.

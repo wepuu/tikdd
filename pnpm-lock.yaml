@@ -35,6 +35,9 @@ importers:
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../../packages/routing-health
       bullmq:
         specifier: ^5.0.0
         version: 5.81.3
@@ -114,6 +117,9 @@ importers:
       '@tikdd/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../../packages/routing-health
       bullmq:
         specifier: ^5.0.0
         version: 5.81.3
@@ -144,6 +150,9 @@ importers:
       '@tikdd/delivery-core':
         specifier: workspace:*
         version: link:../delivery-core
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../routing-health
       pg:
         specifier: ^8.0.0
         version: 8.22.0
@@ -169,6 +178,21 @@ importers:
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../platform
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../routing-health
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+
+  packages/routing-health:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
       zod:
         specifier: ^4.0.0
         version: 4.4.3

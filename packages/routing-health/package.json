@@ -1,5 +1,5 @@
 {
-  "name": "@tikdd/providers",
+  "name": "@tikdd/routing-health",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,14 +8,11 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "canary": "tsx src/canary.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@tikdd/contracts": "workspace:*",
-    "@tikdd/delivery-core": "workspace:*",
-    "@tikdd/platform": "workspace:*",
-    "@tikdd/routing-health": "workspace:*",
+    "ioredis": "^5.0.0",
     "zod": "^4.0.0"
   }
 }

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
+    "verify:routing-health": "tsx src/verify-routing-health.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -15,6 +16,7 @@
     "@tikdd/persistence": "workspace:*",
     "@tikdd/platform": "workspace:*",
     "@tikdd/providers": "workspace:*",
+    "@tikdd/routing-health": "workspace:*",
     "bullmq": "^5.0.0",
     "ioredis": "^5.0.0"
   }

@@ -141,6 +141,43 @@ Exit gate:
 
 Estimated effort: 5–7 engineering days.
 
+#### Work item 8.0 — Health state and circuit-breaker ADR
+
+Status: complete on 2026-08-07.
+
+[ADR-0006](architecture/adr/0006-provider-health-and-circuits.md) fixes the circuit key as provider,
+platform, and actual worker region; keeps PostgreSQL attempts as durable sanitized observations; and
+uses Redis only for expiring snapshots and atomic half-open probe leases. It also defines failure
+classification, distinct-task sampling, hysteresis, stale-state degradation, and metadata-only
+diagnostic boundaries before persistence or provider-selection code changes.
+
+#### Work item 8.1 — Attempt region and tuple health contract
+
+Status: complete on 2026-08-07.
+
+Provider attempts now require a validated concrete worker region, while provider manifests may use
+either concrete region slugs or `"*"` for eligibility. The health-source contract receives provider,
+platform, and region together. Migration `0004` backfills existing attempts to `global`, enforces the
+region constraint, and adds the tuple health index. Contract, router, persistence, migration-shape,
+and Docker-backed PostgreSQL verification cover the boundary.
+
+#### Work items 8.2–8.5 — Aggregation, distributed circuits, routing, and diagnostics
+
+Status: implemented on 2026-08-07; final Docker PostgreSQL/Redis transition verification is pending.
+
+- `@tikdd/routing-health` implements runtime policy validation, distinct-task sampling, categorized
+  failures, p95 latency, minimum samples, hysteresis, recovery counts, and bounded cooldown growth.
+- Redis state is expiring and revisioned. Compare-and-set publication protects concurrent state, and
+  one atomic lease gates half-open probes.
+- The worker health loop is disabled by default, requires explicit policy JSON, and uses a
+  distributed aggregation lease. Missing Redis health state degrades to neutral static routing.
+- The Provider Router consumes exact provider/platform/region state. A development-only
+  failure-injection adapter verifies fallback and attempt-budget behavior.
+- `/internal/v1/provider-health` is absent unless an independent 32-character bearer secret is
+  configured. It returns only sanitized metadata and is intentionally excluded from public OpenAPI
+  and the consumer Web application.
+- `pnpm verify:routing-health` provides a cleanup-safe PostgreSQL/Redis transition verification.
+
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
@@ -207,7 +244,9 @@ core product loop is proven.
 | 6 | Three Product Design directions — complete; option 1 selected | Working vertical slice | Selection recorded in `docs/design/selection-record.md` |
 | 7 | Selected multilingual flow — complete | Selected direction | Desktop/mobile visual QA passed |
 | 7.1 | P0 task-flow audit closure — complete | Flow audit after work item 7 | Resolver/result desktop and mobile interaction QA |
-| 8 | Health aggregation and circuits | Attempt ledger | Failure-injection and hysteresis tests |
+| 8.0 | Health state and circuit-breaker ADR — complete | Attempt ledger and ADR-0004 | ADR review against routing, persistence, and privacy boundaries |
+| 8.1 | Attempt region and tuple health contract — complete | ADR-0006 | Contract, migration, persistence, and Docker PostgreSQL verification |
+| 8 | Health aggregation and circuits — implemented; Docker transition verification pending | Attempt ledger | Failure-injection, hysteresis, Redis lease, diagnostics, and Docker state-transition tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

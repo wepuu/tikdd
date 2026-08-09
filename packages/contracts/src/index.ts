@@ -9,6 +9,16 @@ export const PlatformSchema = PlatformIdSchema;
 export type PlatformId = z.infer<typeof PlatformIdSchema>;
 export type Platform = PlatformId;
 
+export const RegionIdSchema = z
+  .string()
+  .min(1)
+  .max(32)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export type RegionId = z.infer<typeof RegionIdSchema>;
+
+export const ProviderRegionSchema = z.union([RegionIdSchema, z.literal("*")]);
+export type ProviderRegion = z.infer<typeof ProviderRegionSchema>;
+
 export const PlatformSupportStatusSchema = z.enum([
   "stable",
   "experimental",
@@ -45,7 +55,7 @@ export const ProviderManifestSchema = z
     displayName: z.string().min(1).max(100),
     kind: ProviderKindSchema,
     enabled: z.boolean(),
-    regions: z.array(z.string().min(1).max(32)).min(1),
+    regions: z.array(ProviderRegionSchema).min(1),
     timeoutMs: z.number().int().min(100).max(120_000),
     costWeight: z.number().min(0).max(1000),
     platforms: z.array(ProviderPlatformCapabilitySchema).min(1)
@@ -88,6 +98,7 @@ export const ProviderAttemptSchema = z.object({
   providerId: z.string().min(1).max(100),
   providerKind: ProviderKindSchema,
   platform: PlatformIdSchema,
+  region: RegionIdSchema,
   priority: z.number().int().min(0).max(1000),
   routeScore: z.number(),
   status: z.enum(["succeeded", "failed"]),

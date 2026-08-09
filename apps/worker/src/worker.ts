@@ -1,4 +1,9 @@
-import { ResolveJobDataSchema, type ResolveJobData, type TaskError } from "@tikdd/contracts";
+import {
+  RegionIdSchema,
+  ResolveJobDataSchema,
+  type ResolveJobData,
+  type TaskError
+} from "@tikdd/contracts";
 import { createDatabasePool, TaskRepository } from "@tikdd/persistence";
 import { detectPlatform, listPlatformDefinitions } from "@tikdd/platform";
 import {
@@ -9,12 +14,21 @@ import {
   TwitterSaverProvider,
   type ResolverProvider
 } from "@tikdd/providers";
+import {
+  RedisCircuitStore,
+  RedisProviderRoutingHealthSource
+} from "@tikdd/routing-health";
 import { UnrecoverableError, Worker } from "bullmq";
 import Redis from "ioredis";
 import {
   createCandidateCipherFromEnvironment,
   prepareEncryptedCandidates
 } from "./candidates";
+import {
+  loadProviderHealthConfiguration,
+  startHealthRefreshLoop,
+  type HealthRefreshLoop
+} from "./health";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
@@ -27,9 +41,10 @@ const dlPandaTermsApproved = (process.env.DLPANDA_TERMS_APPROVED ?? "false") ===
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
-const workerRegion = process.env.WORKER_REGION ?? "global";
+const workerRegion = RegionIdSchema.parse(process.env.WORKER_REGION ?? "global");
 const candidateCipher = createCandidateCipherFromEnvironment();
 const allowResolutionOnly = process.env.NODE_ENV !== "production";
+const providerHealth = loadProviderHealthConfiguration();
 
 if (process.env.NODE_ENV === "production" && enableMockProvider) {
   throw new Error("ENABLE_MOCK_PROVIDER must be false in production.");
@@ -44,6 +59,10 @@ if (enableDLPandaProvider && !dlPandaTermsApproved) {
 }
 
 const catalogPlatforms = listPlatformDefinitions().map(({ id }) => id);
+const pool = createDatabasePool();
+const tasks = new TaskRepository(pool);
+const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const circuitStore = new RedisCircuitStore(redis);
 const providers: ResolverProvider[] = [];
 if (enableTwitterSaverProvider) {
   providers.push(new TwitterSaverProvider({ enabled: true }));
@@ -56,11 +75,25 @@ if (enableMockProvider) {
 }
 const router = new ProviderRouter(providers, {
   region: workerRegion,
-  maxAttempts: routeMaxAttempts
+  maxAttempts: routeMaxAttempts,
+  ...(providerHealth.enabled && providerHealth.policy
+    ? { healthSource: new RedisProviderRoutingHealthSource(circuitStore, providerHealth.policy) }
+    : {})
 });
-const pool = createDatabasePool();
-const tasks = new TaskRepository(pool);
-const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
+let healthRefreshLoop: HealthRefreshLoop | null = null;
+if (providerHealth.enabled && providerHealth.policy) {
+  healthRefreshLoop = startHealthRefreshLoop({
+    tasks,
+    store: circuitStore,
+    policy: providerHealth.policy,
+    refreshIntervalMs: providerHealth.refreshIntervalMs,
+    onResult: (message) => process.stdout.write(`${message}\n`),
+    onError: (error) =>
+      process.stderr.write(
+        `Provider health refresh failed: ${error instanceof Error ? error.message : "unknown error"}\n`
+      )
+  });
+}
 
 const worker = new Worker<ResolveJobData>(
   "resolve",
@@ -138,6 +171,7 @@ worker.on("error", (error) => {
 
 const close = async (signal: string) => {
   process.stdout.write(`Worker received ${signal}; shutting down.\n`);
+  healthRefreshLoop?.stop();
   await worker.close();
   redis.disconnect();
   await pool.end();

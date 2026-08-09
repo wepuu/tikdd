@@ -23,7 +23,9 @@
     "infra:status": "node scripts/docker.mjs compose ps",
     "infra:down": "node scripts/docker.mjs compose down",
     "db:migrate": "pnpm --filter @tikdd/persistence db:migrate",
-    "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction"
+    "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction",
+    "db:verify-provider-attempt-region": "pnpm --filter @tikdd/persistence db:verify-provider-attempt-region",
+    "verify:routing-health": "pnpm --filter @tikdd/worker verify:routing-health"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

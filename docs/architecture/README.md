@@ -25,8 +25,9 @@ flowchart LR
     YtDlp --> Normalize
     Normalize --> DB
 
-    DB --> Health["Attempt ledger and health aggregation"]
-    Health --> Router
+    DB --> Health["Attempt-ledger aggregation"]
+    Health --> Circuit[("Redis circuit snapshots<br/>and probe leases")]
+    Circuit --> Router
 
     Web --> Delivery["Delivery service"]
     Delivery --> Redirect["Short-lived redirect"]
@@ -37,8 +38,11 @@ flowchart LR
 The current repository implements the catalog, provider manifests, deterministic ranking,
 sequential fallback, normalized-result validation, an attempt ledger, transactional encrypted
 delivery candidates, and disabled fixture-tested TwitterSaver/DLPanda adapters. TwitterSaver has a
-reviewed redirect-only delivery path. Dynamic health aggregation, approved production rollout,
-yt-dlp isolation, proxying, and temporary-object delivery are later milestones.
+reviewed redirect-only delivery path. ADR-0006 defines tuple-keyed health aggregation and
+distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
+loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
+open and half-open decisions. Production policy calibration and rollout approval, yt-dlp isolation,
+proxying, and temporary-object delivery are later milestones.
 
 ## Request lifecycle
 
@@ -78,6 +82,8 @@ Adding a platform does not make it publicly supported until at least one monitor
 provider meets the launch threshold.
 
 See [Platform catalog](../platform-catalog.md) and [Routing policy](../routing-policy.md).
+Operational configuration and protected diagnostics are documented in
+[Provider health operations](../provider-health-operations.md).
 
 ## Failure policy
 
@@ -126,7 +132,8 @@ restricted content is a transient outage and attempt to bypass it with another p
 - PostgreSQL stores task state, normalized results, provider attempts, encrypted short-lived
   delivery candidates, and hashed one-use tickets. The private candidate and ticket schemas live in
   `@tikdd/delivery-core`; they are not Web/API contracts.
-- Redis carries short-lived jobs and future routing health snapshots; it is not a system of record.
+- Redis carries short-lived jobs plus expiring routing-health snapshots and half-open probe leases;
+  PostgreSQL attempts remain the reconstructable source of truth.
 - A future object store holds expiring artifacts created by merge or transcode jobs.
 
 ## Deployment shape

@@ -1,17 +1,24 @@
 import { createHash } from "node:crypto";
 import {
   ProviderManifestSchema,
+  RegionIdSchema,
   ResolveResultSchema,
   type Platform,
   type ProviderAttempt,
   type ProviderManifest as ProviderManifestContract,
   type ProviderPlatformCapability as ProviderPlatformCapabilityContract,
+  type RegionId,
   type ResolveResult
 } from "@tikdd/contracts";
 import {
   ProviderResolutionSchema,
   type ProviderResolution
 } from "@tikdd/delivery-core";
+import type {
+  ProviderCircuitKey,
+  ProviderRoutingHealthSnapshot,
+  ProviderRoutingHealthSource
+} from "@tikdd/routing-health";
 import {
   NoProviderAvailableError,
   ProviderError,
@@ -19,6 +26,11 @@ import {
 } from "./errors";
 
 export { NoProviderAvailableError, ProviderError, ProviderRoutingError } from "./errors";
+export {
+  FailureInjectionProvider,
+  type FailureInjectionOutcome,
+  type FailureInjectionProviderOptions
+} from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
 export {
   TwitterSaverProvider,
@@ -34,6 +46,11 @@ export interface ResolveInput {
 
 export type ProviderPlatformCapability = ProviderPlatformCapabilityContract;
 export type ProviderManifest = ProviderManifestContract;
+export type {
+  ProviderCircuitKey,
+  ProviderRoutingHealthSnapshot as ProviderHealthSnapshot,
+  ProviderRoutingHealthSource as ProviderHealthSource
+} from "@tikdd/routing-health";
 
 export interface ResolverProvider {
   readonly manifest: ProviderManifest;
@@ -42,19 +59,20 @@ export interface ResolverProvider {
 
 export type ProviderCircuitState = "closed" | "open" | "half-open";
 
-export interface ProviderHealthSnapshot {
-  state: ProviderCircuitState;
-  successRate: number;
-  latencyP95Ms: number;
-}
+class NeutralProviderHealthSource implements ProviderRoutingHealthSource {
+  async get(_key: ProviderCircuitKey): Promise<ProviderRoutingHealthSnapshot> {
+    return {
+      state: "closed",
+      successRate: 0,
+      latencyP95Ms: 0,
+      insufficientData: true,
+      openUntil: null,
+      calculatedAt: new Date().toISOString()
+    };
+  }
 
-export interface ProviderHealthSource {
-  get(providerId: string): ProviderHealthSnapshot;
-}
-
-class HealthyProviderSource implements ProviderHealthSource {
-  get(_providerId: string): ProviderHealthSnapshot {
-    return { state: "closed", successRate: 1, latencyP95Ms: 0 };
+  async acquireProbe(_key: ProviderCircuitKey): Promise<boolean> {
+    return false;
   }
 }
 
@@ -70,9 +88,9 @@ interface RankedProvider {
 }
 
 export interface ProviderRouterOptions {
-  region?: string;
+  region?: RegionId;
   maxAttempts?: number;
-  healthSource?: ProviderHealthSource;
+  healthSource?: ProviderRoutingHealthSource;
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -93,9 +111,9 @@ function normalizeProviderError(error: unknown): ProviderError {
 }
 
 export class ProviderRouter {
-  private readonly region: string;
+  private readonly region: RegionId;
   private readonly maxAttempts: number;
-  private readonly healthSource: ProviderHealthSource;
+  private readonly healthSource: ProviderRoutingHealthSource;
 
   constructor(
     private readonly providers: readonly ResolverProvider[],
@@ -109,9 +127,9 @@ export class ProviderRouter {
       }
       providerIds.add(provider.manifest.id);
     }
-    this.region = options.region ?? "global";
+    this.region = RegionIdSchema.parse(options.region ?? "global");
     this.maxAttempts = options.maxAttempts ?? 4;
-    this.healthSource = options.healthSource ?? new HealthyProviderSource();
+    this.healthSource = options.healthSource ?? new NeutralProviderHealthSource();
   }
 
   getProviderCountsByPlatform(): ReadonlyMap<Platform, number> {
@@ -127,17 +145,31 @@ export class ProviderRouter {
     return counts;
   }
 
-  private rank(platform: Platform): RankedProvider[] {
+  private async rank(platform: Platform): Promise<RankedProvider[]> {
     const ranked: RankedProvider[] = [];
 
     for (const provider of this.providers) {
       const { manifest } = provider;
       const capability = manifest.platforms.find((item) => item.platform === platform);
       const regionMatches = manifest.regions.includes("*") || manifest.regions.includes(this.region);
-      const health = this.healthSource.get(manifest.id);
+      const circuitKey: ProviderCircuitKey = {
+        providerId: manifest.id,
+        platform,
+        region: this.region
+      };
+      const health = await this.healthSource.get(circuitKey);
 
-      if (!manifest.enabled || !capability || !regionMatches || health.state === "open") {
+      if (!manifest.enabled || !capability || !regionMatches) {
         continue;
+      }
+
+      if (health.state !== "closed") {
+        const cooldownElapsed =
+          health.state === "half-open" ||
+          (health.openUntil !== null && new Date(health.openUntil).getTime() <= Date.now());
+        if (!cooldownElapsed || !(await this.healthSource.acquireProbe(circuitKey))) {
+          continue;
+        }
       }
 
       const successRate = clamp(health.successRate, 0, 1);
@@ -154,7 +186,7 @@ export class ProviderRouter {
   }
 
   async resolve(input: ResolveInput): Promise<ProviderRoutingResult> {
-    const ranked = this.rank(input.platform).slice(0, this.maxAttempts);
+    const ranked = (await this.rank(input.platform)).slice(0, this.maxAttempts);
     if (ranked.length === 0) {
       throw new NoProviderAvailableError(input.platform);
     }
@@ -187,6 +219,7 @@ export class ProviderRouter {
           providerId: candidate.provider.manifest.id,
           providerKind: candidate.provider.manifest.kind,
           platform: input.platform,
+          region: this.region,
           priority: candidate.capability.priority,
           routeScore: candidate.score,
           status: "succeeded",
@@ -208,6 +241,7 @@ export class ProviderRouter {
           providerId: candidate.provider.manifest.id,
           providerKind: candidate.provider.manifest.kind,
           platform: input.platform,
+          region: this.region,
           priority: candidate.capability.priority,
           routeScore: candidate.score,
           status: "failed",

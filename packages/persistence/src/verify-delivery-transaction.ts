@@ -81,6 +81,7 @@ const attempt: ProviderAttempt = {
   providerId: "transaction-probe",
   providerKind: "site-adapter",
   platform: "x",
+  region: "global",
   priority: 900,
   routeScore: 900_100,
   status: "succeeded",

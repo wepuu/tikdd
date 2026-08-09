@@ -2,10 +2,14 @@ import type { Platform } from "@tikdd/contracts";
 import type { ProviderResolution } from "@tikdd/delivery-core";
 import { describe, expect, it } from "vitest";
 import {
+  FailureInjectionProvider,
   MockProvider,
   ProviderError,
   ProviderRouter,
   ProviderRoutingError,
+  type ProviderCircuitKey,
+  type ProviderHealthSnapshot,
+  type ProviderHealthSource,
   type ProviderManifest,
   type ResolveInput,
   type ResolverProvider
@@ -63,6 +67,96 @@ describe("ProviderRouter", () => {
     expect(routed.resolution.candidates).toEqual([]);
     expect(routed.attempts).toHaveLength(1);
     expect(routed.attempts[0]?.status).toBe("succeeded");
+    expect(routed.attempts[0]?.region).toBe("global");
+  });
+
+  it("looks up health and records attempts with the complete circuit key", async () => {
+    const keys: ProviderCircuitKey[] = [];
+    const healthSource: ProviderHealthSource = {
+      async get(key): Promise<ProviderHealthSnapshot> {
+        keys.push(key);
+        return {
+          state: "closed",
+          successRate: 1,
+          latencyP95Ms: 0,
+          insufficientData: false,
+          openUntil: null,
+          calculatedAt: new Date().toISOString()
+        };
+      },
+      async acquireProbe() {
+        return false;
+      }
+    };
+    const router = new ProviderRouter([new MockProvider(["youtube"])], {
+      region: "eu-west-1",
+      healthSource
+    });
+
+    const routed = await router.resolve(input);
+
+    expect(keys).toEqual([
+      { providerId: "development-mock", platform: "youtube", region: "eu-west-1" }
+    ]);
+    expect(routed.attempts[0]?.region).toBe("eu-west-1");
+  });
+
+  it("isolates an open circuit to its exact provider, platform, and region", async () => {
+    const calls: string[] = [];
+    const healthSource: ProviderHealthSource = {
+      async get(key) {
+        return {
+          state: key.providerId === "first" ? "open" : "closed",
+          successRate: 0,
+          latencyP95Ms: 0,
+          insufficientData: false,
+          openUntil:
+            key.providerId === "first" ? new Date(Date.now() + 60_000).toISOString() : null,
+          calculatedAt: new Date().toISOString()
+        };
+      },
+      async acquireProbe() {
+        return false;
+      }
+    };
+    const router = new ProviderRouter(
+      [
+        new TestProvider("first", 100, "success", calls),
+        new TestProvider("second", 20, "success", calls)
+      ],
+      { region: "global", healthSource }
+    );
+
+    await router.resolve(input);
+    expect(calls).toEqual(["second"]);
+  });
+
+  it("routes one probe when an open circuit cooldown has elapsed", async () => {
+    const calls: string[] = [];
+    let probeRequests = 0;
+    const healthSource: ProviderHealthSource = {
+      async get() {
+        return {
+          state: "open",
+          successRate: 0,
+          latencyP95Ms: 0,
+          insufficientData: false,
+          openUntil: new Date(Date.now() - 1_000).toISOString(),
+          calculatedAt: new Date().toISOString()
+        };
+      },
+      async acquireProbe() {
+        probeRequests += 1;
+        return true;
+      }
+    };
+    const router = new ProviderRouter([new TestProvider("probe", 100, "success", calls)], {
+      healthSource
+    });
+
+    await router.resolve(input);
+    expect(probeRequests).toBe(1);
+    expect(calls).toEqual(["probe"]);
   });
 
   it("tries providers in descending platform priority", async () => {
@@ -105,5 +199,32 @@ describe("ProviderRouter", () => {
       expect(error).toBeInstanceOf(ProviderRoutingError);
       expect((error as ProviderRoutingError).attempts).toHaveLength(2);
     }
+  });
+
+  it("bounds local failure injection to the configured route attempt budget", async () => {
+    const first = new FailureInjectionProvider({
+      id: "failure-one",
+      platform: "youtube",
+      priority: 100,
+      outcomes: [
+        {
+          kind: "failure",
+          failureCode: "provider_timeout",
+          retryable: true,
+          fallbackAllowed: true
+        }
+      ]
+    });
+    const second = new FailureInjectionProvider({
+      id: "failure-two",
+      platform: "youtube",
+      priority: 90,
+      outcomes: [{ kind: "success" }]
+    });
+    const router = new ProviderRouter([first, second], { maxAttempts: 1 });
+
+    await expect(router.resolve(input)).rejects.toBeInstanceOf(ProviderRoutingError);
+    expect(first.calls).toBe(1);
+    expect(second.calls).toBe(0);
   });
 });
