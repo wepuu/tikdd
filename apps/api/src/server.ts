@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import cors from "@fastify/cors";
 import {
+  RedisAdmissionStore,
+  TrustedProxyResolver,
+  loadAdmissionControlConfiguration
+} from "@tikdd/admission-control";
+import {
   CreateResolveTaskRequestSchema,
   IdempotencyKeySchema,
   ResolveJobDataSchema,
@@ -31,6 +36,7 @@ const activeSourceTtlMs = Number.parseInt(process.env.ACTIVE_SOURCE_TTL_MS ?? "3
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
+const admissionConfiguration = loadAdmissionControlConfiguration();
 
 if (
   !Number.isFinite(port) ||
@@ -44,12 +50,26 @@ if (
   throw new Error("API_PORT, TASK_TTL_HOURS, and ACTIVE_SOURCE_TTL_MS are invalid.");
 }
 
-const app = Fastify({ logger: true, trustProxy: true });
+const app = Fastify({
+  logger: {
+    serializers: {
+      req() {
+        return { service: "api" };
+      }
+    }
+  },
+  trustProxy: false
+});
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
 const taskAdmission = new TaskAdmissionRepository(pool);
 const taskAdmissionHasher = createTaskAdmissionHasherFromEnvironment();
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const admissionStore =
+  admissionConfiguration.enabled && admissionConfiguration.policy
+    ? new RedisAdmissionStore(redis, admissionConfiguration.policy)
+    : null;
+const trustedProxyResolver = new TrustedProxyResolver(admissionConfiguration.trustedProxyCidrs);
 const circuitStore = new RedisCircuitStore(redis);
 const resolveQueue = new Queue<ResolveJobData>("resolve", { connection: redis });
 
@@ -131,10 +151,68 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
 
   const now = new Date();
   const taskId = `tsk_${randomUUID().replaceAll("-", "")}`;
+  const admissionPermitId =
+    idempotencyKeyResult?.success === true
+      ? `adp_${Buffer.from(taskAdmissionHasher.quotaPermit(idempotencyKeyResult.data)).toString("hex")}`
+      : taskId;
+  const admissionReferenceId = `adr_${randomUUID().replaceAll("-", "")}`;
   const taskExpiresAt = new Date(now.getTime() + taskTtlHours * 60 * 60 * 1000);
   const activeSourceExpiresAt = new Date(
     Math.min(taskExpiresAt.getTime(), now.getTime() + activeSourceTtlMs)
   );
+  if (admissionStore && admissionConfiguration.policy) {
+    let clientAddress: string;
+    try {
+      clientAddress = trustedProxyResolver.resolve({
+        socketAddress: request.raw.socket.remoteAddress,
+        forwardedFor: request.headers["x-forwarded-for"]
+      });
+    } catch {
+      return reply.code(400).send({
+        error: {
+          code: "INVALID_REQUEST",
+          message: "The request network path could not be validated.",
+          retryable: false
+        }
+      });
+    }
+    try {
+      const quota = await admissionStore.admitTask({
+        clientIdentityDigest: taskAdmissionHasher.clientAddress(clientAddress),
+        permitId: admissionPermitId,
+        referenceId: admissionReferenceId,
+        permitTtlMs: Math.min(
+          admissionConfiguration.policy.taskPermitTtlMs,
+          taskExpiresAt.getTime() - now.getTime()
+        )
+      });
+      if (quota.kind !== "accepted") {
+        reply.header("Retry-After", String(quota.retryAfterSeconds));
+        return reply.code(429).send({
+          error: {
+            code: quota.kind === "rate-limited" ? "RATE_LIMITED" : "CONCURRENCY_LIMITED",
+            message:
+              quota.kind === "rate-limited"
+                ? "The anonymous request allowance is exhausted."
+                : "Too many resolution tasks are currently active.",
+            retryable: true
+          }
+        });
+      }
+    } catch {
+      await admissionStore
+        .releaseTask(admissionPermitId, admissionReferenceId)
+        .catch(() => undefined);
+      request.log.error("anonymous task quota admission failed");
+      return reply.code(503).send({
+        error: {
+          code: "ADMISSION_UNAVAILABLE",
+          message: "Task admission is temporarily unavailable.",
+          retryable: true
+        }
+      });
+    }
+  }
   let admission: Awaited<ReturnType<TaskAdmissionRepository["admit"]>>;
   try {
     admission = await taskAdmission.admit({
@@ -160,6 +238,11 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
       activeSourceExpiresAt
     });
   } catch (error) {
+    await admissionStore
+      ?.releaseTask(admissionPermitId, admissionReferenceId)
+      .catch(() => {
+        request.log.error("task quota release failed");
+      });
     if (error instanceof TaskIdempotencyConflictError) {
       return reply.code(409).send({
         error: {
@@ -169,7 +252,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
         }
       });
     }
-    request.log.error(error, "task admission failed");
+    request.log.error("task admission failed");
     return reply.code(503).send({
       error: {
         code: "ADMISSION_UNAVAILABLE",
@@ -180,6 +263,11 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
   }
 
   if (admission.kind === "duplicate") {
+    await admissionStore
+      ?.releaseTask(admissionPermitId, admissionReferenceId)
+      .catch(() => {
+        request.log.error("duplicate task quota release failed");
+      });
     reply.header("Retry-After", String(admission.retryAfterSeconds));
     return reply.code(429).send({
       error: {
@@ -190,12 +278,19 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
     });
   }
   if (admission.kind === "replayed") {
+    await admissionStore
+      ?.releaseTask(admissionPermitId, admissionReferenceId)
+      .catch(() => {
+        request.log.error("replayed task quota release failed");
+      });
     return reply.code(202).send(admission.task);
   }
   const task = admission.task;
 
   const jobData = ResolveJobDataSchema.parse({
     taskId: task.id,
+    admissionPermitId,
+    admissionReferenceId,
     sourceUrl: requestResult.data.url,
     platform: detected.platform
   });
@@ -208,14 +303,22 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
       removeOnComplete: 500,
       removeOnFail: 1_000
     });
-  } catch (error) {
+  } catch {
     const taskError: TaskError = {
       code: "QUEUE_UNAVAILABLE",
       message: "The resolver queue is temporarily unavailable.",
       retryable: true
     };
-    await tasks.fail(task.id, taskError);
-    request.log.error(error);
+    try {
+      await tasks.fail(task.id, taskError);
+    } finally {
+      await admissionStore
+        ?.releaseTask(admissionPermitId, admissionReferenceId)
+        .catch(() => {
+          request.log.error("queued task quota release failed");
+        });
+    }
+    request.log.error("resolve queue add failed");
     return reply.code(503).send({ error: taskError });
   }
 

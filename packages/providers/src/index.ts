@@ -86,10 +86,26 @@ export interface ProviderRoutingResult {
   attempts: readonly ProviderAttempt[];
 }
 
+export interface ProviderConcurrencyPermit {
+  release(): Promise<void>;
+}
+
+export interface ProviderConcurrencySource {
+  acquire(key: ProviderCircuitKey): Promise<ProviderConcurrencyPermit | null>;
+}
+
+class UnlimitedProviderConcurrencySource implements ProviderConcurrencySource {
+  async acquire(_key: ProviderCircuitKey): Promise<ProviderConcurrencyPermit> {
+    return { async release() {} };
+  }
+}
+
 interface RankedProvider {
   provider: ResolverProvider;
   capability: ProviderPlatformCapability;
   score: number;
+  circuitKey: ProviderCircuitKey;
+  requiresProbe: boolean;
 }
 
 interface RankingResult {
@@ -104,6 +120,7 @@ export interface ProviderRouterOptions {
   maxAttempts?: number;
   healthSource?: ProviderRoutingHealthSource;
   rolloutSource?: ProviderRolloutSource;
+  concurrencySource?: ProviderConcurrencySource;
   production?: boolean;
 }
 
@@ -129,6 +146,7 @@ export class ProviderRouter {
   private readonly maxAttempts: number;
   private readonly healthSource: ProviderRoutingHealthSource;
   private readonly rolloutSource: ProviderRolloutSource;
+  private readonly concurrencySource: ProviderConcurrencySource;
   private readonly production: boolean;
 
   constructor(
@@ -149,6 +167,8 @@ export class ProviderRouter {
     this.production = options.production ?? process.env.NODE_ENV === "production";
     this.rolloutSource =
       options.rolloutSource ?? new StaticRolloutSource(!this.production, !this.production);
+    this.concurrencySource =
+      options.concurrencySource ?? new UnlimitedProviderConcurrencySource();
   }
 
   getProviderCountsByPlatform(): ReadonlyMap<Platform, number> {
@@ -210,20 +230,22 @@ export class ProviderRouter {
       };
       const health = await this.healthSource.get(circuitKey);
 
+      let requiresProbe = false;
       if (health.state !== "closed") {
         const cooldownElapsed =
           health.state === "half-open" ||
           (health.openUntil !== null && new Date(health.openUntil).getTime() <= Date.now());
-        if (!cooldownElapsed || !(await this.healthSource.acquireProbe(circuitKey))) {
+        if (!cooldownElapsed) {
           continue;
         }
+        requiresProbe = true;
       }
 
       const successRate = clamp(health.successRate, 0, 1);
       const latencyPenalty = Math.min(Math.max(health.latencyP95Ms, 0) / 1000, 50);
       const score =
         capability.priority * 1000 + successRate * 100 - latencyPenalty - manifest.costWeight;
-      ranked.push({ provider, capability, score });
+      ranked.push({ provider, capability, score, circuitKey, requiresProbe });
     }
 
     return {
@@ -239,7 +261,7 @@ export class ProviderRouter {
 
   async resolve(input: ResolveInput): Promise<ProviderRoutingResult> {
     const ranking = await this.rank(input.taskId, input.platform);
-    const ranked = ranking.ranked.slice(0, this.maxAttempts);
+    const ranked = ranking.ranked;
     if (ranked.length === 0) {
       if (
         ranking.manifestEligibleCount > 0 &&
@@ -259,11 +281,35 @@ export class ProviderRouter {
     const attempts: ProviderAttempt[] = [];
 
     for (const candidate of ranked) {
+      if (attempts.length >= this.maxAttempts) {
+        break;
+      }
       const startedAt = new Date();
       const timeoutSignal = AbortSignal.timeout(candidate.provider.manifest.timeoutMs);
       const signal = input.signal
         ? AbortSignal.any([input.signal, timeoutSignal])
         : timeoutSignal;
+      let permit: ProviderConcurrencyPermit | null;
+      try {
+        permit = await this.concurrencySource.acquire(candidate.circuitKey);
+      } catch {
+        permit = null;
+      }
+      if (!permit) {
+        continue;
+      }
+      if (candidate.requiresProbe) {
+        let probeAcquired = false;
+        try {
+          probeAcquired = await this.healthSource.acquireProbe(candidate.circuitKey);
+        } catch {
+          probeAcquired = false;
+        }
+        if (!probeAcquired) {
+          await permit.release().catch(() => undefined);
+          continue;
+        }
+      }
 
       try {
         const rawResolution = await candidate.provider.resolve({ ...input, signal });
@@ -335,6 +381,8 @@ export class ProviderRouter {
             attempts
           );
         }
+      } finally {
+        await permit.release().catch(() => undefined);
       }
     }
 

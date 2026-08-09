@@ -54,6 +54,14 @@ export class TaskAdmissionHasher {
     ]);
   }
 
+  clientAddress(address: string): Uint8Array {
+    return this.digest("client-address", [["address", address]]);
+  }
+
+  quotaPermit(idempotencyKey: string): Uint8Array {
+    return this.digest("quota-permit", [["idempotencyKey", idempotencyKey]]);
+  }
+
   request(input: {
     platform: Platform;
     canonicalUrl: string;

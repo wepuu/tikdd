@@ -21,6 +21,12 @@ describe("task admission fingerprints", () => {
     expect(Buffer.from(hasher.idempotencyKey("018f47a8-1234-7abc-8def-0123456789ab"))).not.toEqual(
       Buffer.from(request)
     );
+    expect(Buffer.from(hasher.clientAddress("203.0.113.7"))).not.toEqual(
+      Buffer.from(hasher.idempotencyKey("203.0.113.7"))
+    );
+    expect(Buffer.from(hasher.quotaPermit("018f47a8-1234-7abc-8def-0123456789ab"))).not.toEqual(
+      Buffer.from(hasher.idempotencyKey("018f47a8-1234-7abc-8def-0123456789ab"))
+    );
   });
 
   it("requires a private canonical base64url key in production", () => {

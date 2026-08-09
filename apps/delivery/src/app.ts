@@ -50,7 +50,7 @@ export async function createDeliveryApp(
   const ticketTtlMs = options.ticketTtlMs ?? 60_000;
   const app = Fastify({
     logger: true,
-    trustProxy: true,
+    trustProxy: false,
     logController: new LogController({ disableRequestLogging: true })
   });
 

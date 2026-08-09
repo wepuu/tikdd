@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
+    "@tikdd/admission-control": "workspace:*",
     "@tikdd/contracts": "workspace:*",
     "@tikdd/persistence": "workspace:*",
     "@tikdd/platform": "workspace:*",

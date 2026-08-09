@@ -59,6 +59,8 @@ the attempt before deciding what happens next.
 
 - `provider_timeout`, `provider_rate_limited`, `provider_challenge`, `provider_schema_changed`,
   `provider_unavailable`, `invalid_result`, and transient internal errors normally allow fallback.
+- A distributed provider concurrency denial makes no upstream attempt and falls through to the next
+  eligible provider without consuming the route attempt budget or a half-open probe.
 - `unsupported_url` can allow fallback because another provider may support that URL variant.
 - `content_not_found`, `content_private`, `authentication_required`, `payment_required`,
   `drm_protected`, and policy-defined geographic restrictions are terminal by default.

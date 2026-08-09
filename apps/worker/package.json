@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@tikdd/admission-control": "workspace:*",
     "@tikdd/contracts": "workspace:*",
     "@tikdd/delivery-core": "workspace:*",
     "@tikdd/persistence": "workspace:*",

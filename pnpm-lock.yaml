@@ -26,6 +26,9 @@ importers:
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.3.0
+      '@tikdd/admission-control':
+        specifier: workspace:*
+        version: link:../../packages/admission-control
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -102,6 +105,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@tikdd/admission-control':
+        specifier: workspace:*
+        version: link:../../packages/admission-control
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -129,6 +135,21 @@ importers:
       ioredis:
         specifier: ^5.0.0
         version: 5.11.1
+
+  packages/admission-control:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+      ipaddr.js:
+        specifier: ^2.4.0
+        version: 2.4.0
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
 
   packages/contracts:
     dependencies:

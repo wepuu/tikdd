@@ -5,6 +5,10 @@ import {
   type TaskError
 } from "@tikdd/contracts";
 import {
+  RedisAdmissionStore,
+  loadAdmissionControlConfiguration
+} from "@tikdd/admission-control";
+import {
   createDatabasePool,
   RolloutRuleRepository,
   TaskRepository
@@ -54,6 +58,7 @@ const candidateCipher = createCandidateCipherFromEnvironment();
 const allowResolutionOnly = process.env.NODE_ENV !== "production";
 const providerHealth = loadProviderHealthConfiguration();
 const rolloutConfiguration = loadRolloutConfiguration();
+const admissionConfiguration = loadAdmissionControlConfiguration();
 const production = process.env.NODE_ENV === "production";
 
 if (process.env.NODE_ENV === "production" && enableMockProvider) {
@@ -72,6 +77,10 @@ const catalogPlatforms = listPlatformDefinitions().map(({ id }) => id);
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
+const admissionStore =
+  admissionConfiguration.enabled && admissionConfiguration.policy
+    ? new RedisAdmissionStore(redis, admissionConfiguration.policy)
+    : null;
 const circuitStore = new RedisCircuitStore(redis);
 const rolloutRules = new RolloutRuleRepository(pool);
 const rolloutRuntime = await createRolloutRuntime({
@@ -99,6 +108,13 @@ const router = new ProviderRouter(providers, {
   region: workerRegion,
   maxAttempts: routeMaxAttempts,
   rolloutSource: rolloutRuntime.source,
+  ...(admissionStore
+    ? {
+        concurrencySource: {
+          acquire: (key) => admissionStore.acquireProvider(key)
+        }
+      }
+    : {}),
   production,
   ...(providerHealth.enabled && providerHealth.policy
     ? { healthSource: new RedisProviderRoutingHealthSource(circuitStore, providerHealth.policy) }
@@ -147,6 +163,13 @@ const worker = new Worker<ResolveJobData>(
         candidates,
         routed.attempts
       );
+      if (data.admissionPermitId && data.admissionReferenceId) {
+        await admissionStore
+          ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
+          .catch(() => {
+            process.stderr.write("Task admission permit release failed.\n");
+          });
+      }
       return {
         taskId: data.taskId,
         provider: routed.resolution.result.provenance.provider
@@ -160,6 +183,13 @@ const worker = new Worker<ResolveJobData>(
             message: error.message,
             retryable: false
           });
+          if (data.admissionPermitId && data.admissionReferenceId) {
+            await admissionStore
+              ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
+              .catch(() => {
+                process.stderr.write("Task admission permit release failed.\n");
+              });
+          }
           throw new UnrecoverableError(error.message);
         }
       }
@@ -177,8 +207,8 @@ worker.on("completed", (job) => {
   process.stdout.write(`Resolved ${job.id ?? "unknown job"}\n`);
 });
 
-worker.on("failed", (job, error) => {
-  process.stderr.write(`Resolver job ${job?.id ?? "unknown"} failed: ${error.message}\n`);
+worker.on("failed", (job) => {
+  process.stderr.write(`Resolver job ${job?.id ?? "unknown"} failed.\n`);
 
   if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
     const taskError: TaskError = {
@@ -186,7 +216,19 @@ worker.on("failed", (job, error) => {
       message: "No resolver provider completed the task.",
       retryable: true
     };
-    void tasks.fail(job.data.taskId, taskError);
+    void tasks
+      .fail(job.data.taskId, taskError)
+      .then(() =>
+        job.data.admissionPermitId && job.data.admissionReferenceId
+          ? admissionStore?.releaseTask(
+              job.data.admissionPermitId,
+              job.data.admissionReferenceId
+            )
+          : undefined
+      )
+      .catch(() => {
+        process.stderr.write("Terminal task admission release failed.\n");
+      });
   }
 });
 

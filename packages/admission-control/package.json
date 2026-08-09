@@ -1,0 +1,20 @@
+{
+  "name": "@tikdd/admission-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "verify:redis": "tsx src/verify-redis.ts"
+  },
+  "dependencies": {
+    "@tikdd/contracts": "workspace:*",
+    "ioredis": "^5.0.0",
+    "ipaddr.js": "^2.4.0",
+    "zod": "^4.0.0"
+  }
+}

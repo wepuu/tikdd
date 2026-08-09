@@ -26,6 +26,8 @@ const copy = {
       download: "Download", preparingDownload: "Preparing",
       resolveError: "This link could not be resolved. Check that it is public and try again.",
       duplicateInProgress: "This link is already being processed. Try again shortly.",
+      rateLimited: "Too many requests were submitted. Wait briefly and try again.",
+      concurrencyLimited: "Too many resolution tasks are active. Try again shortly.",
       idempotencyConflict: "This request key was already used. Start a new resolution.",
       admissionUnavailable: "New resolution requests are temporarily unavailable. Try again shortly.",
       timeout: "Resolution is taking longer than expected. Try again shortly.",
@@ -80,6 +82,8 @@ const copy = {
       videoAudio: "视频 + 音频", videoOnly: "仅视频", audioOnly: "仅音频", download: "下载", preparingDownload: "准备中",
       resolveError: "无法解析该链接，请确认页面公开后重试。", timeout: "解析时间超出预期，请稍后重试。",
       duplicateInProgress: "该链接正在处理中，请稍后重试。",
+      rateLimited: "提交请求过于频繁，请稍后重试。",
+      concurrencyLimited: "当前活动解析任务过多，请稍后重试。",
       idempotencyConflict: "该请求标识已被使用，请重新发起解析。",
       admissionUnavailable: "暂时无法接收新的解析请求，请稍后重试。",
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"

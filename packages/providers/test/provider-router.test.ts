@@ -8,6 +8,7 @@ import {
   ProviderRouter,
   ProviderRoutingError,
   type ProviderCircuitKey,
+  type ProviderConcurrencySource,
   type ProviderHealthSnapshot,
   type ProviderHealthSource,
   type ProviderManifest,
@@ -245,6 +246,37 @@ describe("ProviderRouter", () => {
     const routed = await router.resolve(input);
     expect(calls).toEqual(["first", "second"]);
     expect(routed.attempts.map(({ status }) => status)).toEqual(["failed", "succeeded"]);
+  });
+
+  it("falls back sequentially when a provider concurrency permit is unavailable", async () => {
+    const calls: string[] = [];
+    const acquired: string[] = [];
+    const released: string[] = [];
+    const concurrencySource: ProviderConcurrencySource = {
+      async acquire(key) {
+        acquired.push(key.providerId);
+        if (key.providerId === "busy") return null;
+        return {
+          async release() {
+            released.push(key.providerId);
+          }
+        };
+      }
+    };
+    const router = new ProviderRouter(
+      [
+        new TestProvider("busy", 100, "success", calls),
+        new TestProvider("available", 90, "success", calls)
+      ],
+      { concurrencySource, maxAttempts: 1 }
+    );
+
+    const routed = await router.resolve(input);
+
+    expect(acquired).toEqual(["busy", "available"]);
+    expect(calls).toEqual(["available"]);
+    expect(released).toEqual(["available"]);
+    expect(routed.attempts).toHaveLength(1);
   });
 
   it("does not fall back for terminal policy/content failures", async () => {

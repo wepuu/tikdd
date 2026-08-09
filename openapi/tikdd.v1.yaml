@@ -94,7 +94,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "429":
-          description: An equivalent source is already being processed.
+          description: >-
+            The anonymous rate, active-task concurrency, or equivalent-source allowance is
+            exhausted. The response never identifies another task or internal quota state.
           headers:
             Retry-After:
               required: true
@@ -243,6 +245,14 @@ components:
           schema:
             $ref: "#/components/schemas/ApiError"
   schemas:
+    ResolveTaskAdmissionErrorCode:
+      type: string
+      enum:
+        - IDEMPOTENCY_CONFLICT
+        - DUPLICATE_IN_PROGRESS
+        - RATE_LIMITED
+        - CONCURRENCY_LIMITED
+        - ADMISSION_UNAVAILABLE
     Platform:
       type: string
       minLength: 1

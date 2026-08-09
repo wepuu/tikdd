@@ -201,7 +201,7 @@ production permission from inferred circuit health. It defines deny-first provid
 rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
 Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
 anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
-The remaining runtime behavior is scheduled for work items 9.3–9.6.
+The remaining runtime behavior is scheduled for work items 9.4–9.6.
 
 #### Work item 9.1 — Runtime rollout rules and emergency deny
 
@@ -226,6 +226,18 @@ source receives only `429` plus `Retry-After`. Terminal tasks release the source
 idempotency record remains replayable until task expiry. OpenAPI, contracts, bilingual Web errors,
 Docker verification, and operations documentation cover the boundary.
 
+#### Work item 9.3 — Trusted proxy quotas and distributed concurrency
+
+Status: complete on 2026-08-09.
+
+`@tikdd/admission-control` validates versioned deployment/region policy, resolves client addresses
+only through exact trusted proxy CIDRs, and uses domain-separated HMAC identities. Redis Lua applies
+client/global rate and active-task limits atomically and retains task permits across queue retries.
+The worker owns terminal release and exact provider/platform/region owner leases. Busy providers
+fall through without consuming the attempt budget or a half-open probe. Public contracts, OpenAPI,
+bilingual Web errors, spoofing tests, fail-closed tests, and Docker Redis verification cover the
+boundary.
+
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
@@ -234,8 +246,8 @@ Docker verification, and operations documentation cover the boundary.
    count, failure class, and link lifetime.
 5. Add a protected read-only diagnostics endpoint for priority, circuit state, recent sanitized
    failures, fallback depth, and canary health.
-6. Task idempotency and canonical-URL deduplication are complete; add per-IP quotas, concurrency
-   limits, and expiry cleanup before exposing the pilot to public traffic.
+6. Task idempotency, canonical-URL deduplication, anonymous quotas, and concurrency limits are
+   complete; add bounded expiry cleanup before exposing the pilot to public traffic.
 
 Exit gate:
 
@@ -298,6 +310,7 @@ core product loop is proven.
 | 9.0 | Runtime rollout and abuse-control ADR — complete | Work item 8 | ADR review against routing, persistence, privacy, and delivery boundaries |
 | 9.1 | Runtime rollout rules and emergency deny — complete | ADR-0007 | Rule validation, deny precedence, revision rollback, production mock, and Docker transition tests |
 | 9.2 | Task idempotency and canonical duplicate admission — complete | ADR-0007 | Contract/OpenAPI parity, HMAC separation, concurrent replay/conflict, capability isolation, and Docker tests |
+| 9.3 | Trusted proxy quotas and distributed concurrency — complete | ADR-0007 | Spoofing, atomic rate/active limits, owner leases, fail-closed Redis, fallback, and Docker tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

@@ -311,8 +311,8 @@ schemas, deny-first evaluation, deterministic task cohorts, revisioned Redis sna
 fallback, stale-state denial, and rollback prevention. Migration `0005` adds current rules and
 append-only audit history. The worker applies rollout before circuit health, refuses production
 mocks independently, refreshes the durable revision every five seconds, and exposes only a direct
-operator command outside public OpenAPI. Anonymous quota, distributed provider concurrency, and
-cleanup remain future work items.
+operator command outside public OpenAPI. At that point, anonymous quota, distributed provider
+concurrency, and cleanup remained future work items.
 
 Work item 9.2 implemented task idempotency and active-source admission on 2026-08-09. Public
 contracts and OpenAPI now define the optional bounded `Idempotency-Key` plus generic `409`, `429`,
@@ -321,5 +321,15 @@ identities. Migration `0006` adds task-bound expiring records. Deterministically
 locks make concurrent first use transactional; only the created winner enqueues a task-ID-keyed
 BullMQ job. Replays return the same task, conflicts reveal no task, and different callers receive
 only a bounded duplicate response. Terminal tasks release source admission without deleting the
-idempotency replay record. Quota identity, distributed provider concurrency, and general cleanup
-remain future work items.
+idempotency replay record. At that point, quota identity, distributed provider concurrency, and
+general cleanup remained future work items.
+
+Work item 9.3 implemented trusted-proxy identity, anonymous Redis quotas, active-task permits, and
+provider concurrency on 2026-08-09. The API now disables unrestricted Fastify proxy trust, accepts
+forwarded addresses only through exact reviewed CIDRs, rejects ambiguous chains, and stores only a
+domain-separated address HMAC in expiring Redis keys. One Lua operation applies client/global rate
+and active-task limits; provisional task permits are released on non-winning admission paths and
+terminal worker outcomes. Provider calls acquire owner-scoped leases for the exact provider,
+platform, and region. Busy tuples fall through sequentially without consuming the attempt budget or
+half-open probe. Public `RATE_LIMITED`, `CONCURRENCY_LIMITED`, and `ADMISSION_UNAVAILABLE` responses
+remain capability-safe. General cleanup and expanded protected diagnostics remain future work.

@@ -18,6 +18,8 @@ describe("resolve task admission contracts", () => {
     expect(ResolveTaskAdmissionErrorCodeSchema.options).toEqual([
       "IDEMPOTENCY_CONFLICT",
       "DUPLICATE_IN_PROGRESS",
+      "RATE_LIMITED",
+      "CONCURRENCY_LIMITED",
       "ADMISSION_UNAVAILABLE"
     ]);
   });

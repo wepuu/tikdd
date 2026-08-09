@@ -12,7 +12,9 @@ describe("task admission OpenAPI boundary", () => {
     expect(specification).toContain('"409":');
     expect(specification).toContain('"429":');
     expect(specification).toContain("Retry-After:");
-    expect(specification).toContain("An equivalent source is already being processed.");
+    expect(specification).toContain("RATE_LIMITED");
+    expect(specification).toContain("CONCURRENCY_LIMITED");
+    expect(specification).toContain("equivalent-source allowance");
     expect(specification).not.toMatch(/existing task id|existing result/i);
   });
 });

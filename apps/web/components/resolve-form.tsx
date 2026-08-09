@@ -125,6 +125,10 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
         const message =
           code === "DUPLICATE_IN_PROGRESS"
             ? copy.duplicateInProgress
+            : code === "RATE_LIMITED"
+              ? copy.rateLimited
+              : code === "CONCURRENCY_LIMITED"
+                ? copy.concurrencyLimited
             : code === "IDEMPOTENCY_CONFLICT"
               ? copy.idempotencyConflict
               : code === "ADMISSION_UNAVAILABLE"

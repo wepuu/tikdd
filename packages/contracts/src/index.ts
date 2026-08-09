@@ -202,6 +202,8 @@ export type IdempotencyKey = z.infer<typeof IdempotencyKeySchema>;
 export const ResolveTaskAdmissionErrorCodeSchema = z.enum([
   "IDEMPOTENCY_CONFLICT",
   "DUPLICATE_IN_PROGRESS",
+  "RATE_LIMITED",
+  "CONCURRENCY_LIMITED",
   "ADMISSION_UNAVAILABLE"
 ]);
 export type ResolveTaskAdmissionErrorCode = z.infer<
@@ -224,6 +226,11 @@ export type Delivery = z.infer<typeof DeliverySchema>;
 
 export const ResolveJobDataSchema = z.object({
   taskId: z.string().regex(/^tsk_[a-f0-9]{32}$/),
+  admissionPermitId: z
+    .string()
+    .regex(/^(?:tsk_[a-f0-9]{32}|adp_[a-f0-9]{64})$/)
+    .optional(),
+  admissionReferenceId: z.string().regex(/^adr_[a-f0-9]{32}$/).optional(),
   sourceUrl: z.string().url(),
   platform: PlatformSchema
 });
