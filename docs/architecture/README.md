@@ -53,9 +53,10 @@ audit, and expiring Redis distribution. Work item 9.2 adds HMAC-protected idempo
 canonical-source suppression without cross-caller task sharing. Work item 9.3 adds explicit proxy
 trust, privacy-preserving anonymous quotas, and distributed provider concurrency. Work item 9.4
 adds independently scheduled singleton cleanup with bounded PostgreSQL stages, hard retention,
-sanitized metrics, and Docker-backed repeat/cascade verification. Production policy calibration,
-yt-dlp isolation, proxying, and
-temporary-object delivery are later milestones.
+sanitized metrics, and Docker-backed repeat/cascade verification. Work item 9.5 adds
+rollout-controlled metadata-only canaries and expanded protected diagnostics.
+Work item 9.6 closes ADR-0007 with one Docker/CI failure-matrix gate. Production policy calibration,
+yt-dlp isolation, proxying, and temporary-object delivery are later milestones.
 
 ## Request lifecycle
 

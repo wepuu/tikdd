@@ -46,8 +46,8 @@ platform has seven consecutive healthy canary runs with documented compliance ap
   also implemented. Independently scheduled bounded retention cleanup, dry-run metrics, and
   Docker-backed cascade/repeat verification are implemented; authenticated user policy and broader
   abuse signals remain.
-- Add a provider administration/read-only diagnostics surface for health, circuit state, priority,
-  and recent sanitized failures.
+- A protected read-only diagnostics surface reports health, rollout, priority, recent sanitized
+  failures, fallback depth, and canary health without entering public OpenAPI or Web.
 - Store internal delivery candidates separately from the public normalized result, encrypted or
   short-lived.
 - Publish 3–5 stable platform families based on evidence; keep experimental/planned entries out of

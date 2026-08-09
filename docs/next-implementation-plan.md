@@ -201,7 +201,7 @@ production permission from inferred circuit health. It defines deny-first provid
 rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
 Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
 anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
-The remaining runtime behavior is scheduled for work item 9.6.
+All ADR-0007 runtime behavior and its integrated verification gate are complete.
 
 #### Work item 9.1 — Runtime rollout rules and emergency deny
 
@@ -260,13 +260,23 @@ diagnostics route now reports priority, rollout revision, circuit state, recent 
 fallback depth, and canary health without exposing URLs, media, candidates, secrets, or caller data.
 `pnpm verify:canary` proves persistence, lease ownership, aggregation, and cleanup on Docker.
 
+#### Work item 9.6 — Integrated Docker failure matrix and work item 9 closure
+
+Status: complete on 2026-08-09.
+
+`pnpm verify:work-item-9` composes migrations, rollout kill-switch/stale-state denial, concurrent
+idempotency and duplicate suppression, Redis quota/concurrency limits, circuit failure/recovery,
+bounded cleanup, canary retention, and the full repository quality gate. All eight stages passed
+locally against Docker PostgreSQL/Redis, including 27 test files and 106 tests. GitHub CI now runs
+the identical service-backed gate. Aggregate work item 9 is complete.
+
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
 3. Runtime provider/platform/region/percentage rules and an immediate deny switch are complete.
-4. Schedule authorized canaries and persist only sanitized measurements: status, latency, format
-   count, failure class, and link lifetime.
-5. Add a protected read-only diagnostics endpoint for priority, circuit state, recent sanitized
+4. Scheduled authorized canaries persist only sanitized status, latency, format count, failure
+   class, and link-lifetime measurements.
+5. The protected read-only diagnostics endpoint reports priority, circuit state, recent sanitized
    failures, fallback depth, and canary health.
 6. Task idempotency, canonical-URL deduplication, anonymous quotas, concurrency limits, and bounded
    expiry cleanup are complete before exposing the pilot to public traffic.
@@ -335,7 +345,8 @@ core product loop is proven.
 | 9.3 | Trusted proxy quotas and distributed concurrency — complete | ADR-0007 | Spoofing, atomic rate/active limits, owner leases, fail-closed Redis, fallback, and Docker tests |
 | 9.4 | Singleton bounded cleanup — complete | ADR-0007 and task expiry | Dry-run, lease contention, cascade, repeat, and Docker tests |
 | 9.5 | Authorized canaries and diagnostics — complete | Work items 8 and 9.1–9.4 | Privacy tests, singleton lease, diagnostics, and Docker persistence/cleanup |
-| 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
+| 9.6 | Integrated Docker failure matrix — complete | Work items 9.1–9.5 | Eight-stage gate plus full `pnpm check` |
+| 9 | Flags, quotas, dedupe, cleanup — complete | Health state | Docker-backed end-to-end gate passed |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 
 Every work item ends with `pnpm check`. Boundary changes also update OpenAPI, contracts, migrations,

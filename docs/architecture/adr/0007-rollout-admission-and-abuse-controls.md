@@ -352,3 +352,10 @@ provider concurrency, sequential fallback, and a Redis singleton lease. The prot
 route now combines manifest priority, rollout revision/rules, circuit state, categorized failures,
 aggregate fallback depth, and canary health. It remains outside public OpenAPI/Web. Docker
 verification covers persistence, aggregation, lease ownership, and bounded expiry cleanup.
+
+Work item 9.6 closed the ADR implementation on 2026-08-09. `pnpm verify:work-item-9` runs the full
+PostgreSQL/Redis matrix for migrations, emergency denial, stale and unavailable rollout state,
+idempotent concurrency, capability-safe duplication, quota and provider permits, circuit recovery,
+bounded cleanup, and canary retention, then runs `pnpm check`. The gate passed all eight stages with
+27 test files and 106 tests, and is now the GitHub CI job with service containers. Work item 9 is
+complete; production policy calibration and staged provider rollout remain separate operations.

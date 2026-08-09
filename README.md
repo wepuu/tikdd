@@ -74,6 +74,8 @@ pnpm check
 ```
 
 This runs formatting/lint checks, TypeScript checks, unit tests, and production builds.
+With PostgreSQL and Redis available, `pnpm verify:work-item-9` additionally runs the complete
+rollout, admission, health, cleanup, and canary Docker gate used by CI.
 With local infrastructure and the API/worker running, `pnpm smoke:local` verifies an Instagram task
 through the asynchronous mock route.
 

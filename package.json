@@ -36,7 +36,8 @@
     "verify:cleanup": "pnpm --filter @tikdd/cleanup verify",
     "verify:routing-health": "pnpm --filter @tikdd/worker verify:routing-health",
     "verify:rollout-control": "pnpm --filter @tikdd/worker verify:rollout-control",
-    "verify:admission-control": "pnpm --filter @tikdd/admission-control verify:redis"
+    "verify:admission-control": "pnpm --filter @tikdd/admission-control verify:redis",
+    "verify:work-item-9": "node scripts/verify-work-item-9.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

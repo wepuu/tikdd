@@ -141,7 +141,43 @@ try {
     [ambiguousRuleB]
   );
   assert.equal(rolledBack.rows[0]?.count, 0);
-  process.stdout.write("Provider rollout PostgreSQL and Redis verification passed.\n");
+
+  const staleSnapshot = await repository.loadSnapshot();
+  staleSnapshot.generatedAt = new Date(Date.now() - 60_000).toISOString();
+  await store.putSnapshot(staleSnapshot, 30_000);
+  const staleSource = new RuntimeProviderRolloutSource(
+    store,
+    async () => staleSnapshot,
+    cohortKey,
+    5_000
+  );
+  assert.deepEqual(await staleSource.decide(request), {
+    allowed: false,
+    reason: "stale_snapshot",
+    ruleId: null,
+    snapshotRevision: staleSnapshot.revision,
+    bucket: null
+  });
+  const unavailableSource = new RuntimeProviderRolloutSource(
+    {
+      getSnapshot: async () => {
+        throw new Error("redis unavailable");
+      }
+    } as unknown as RedisRolloutStore,
+    async () => {
+      throw new Error("database unavailable");
+    },
+    cohortKey,
+    5_000
+  );
+  assert.deepEqual(await unavailableSource.decide(request), {
+    allowed: false,
+    reason: "control_unavailable",
+    ruleId: null,
+    snapshotRevision: null,
+    bucket: null
+  });
+  process.stdout.write("Provider rollout kill-switch, stale-state, and failure verification passed.\n");
 } finally {
   const verificationRuleIds = [ruleId, ambiguousRuleA, ambiguousRuleB];
   await pool.query("DELETE FROM provider_rollout_rule_audit WHERE rule_id = ANY($1::text[])", [
