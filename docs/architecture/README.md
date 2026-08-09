@@ -11,11 +11,15 @@ handle.
 flowchart LR
     Web["Localized Web<br/>SSR and static content"] --> API["Control API"]
     API --> Catalog["Platform catalog<br/>host recognition and status"]
-    API --> DB[(PostgreSQL)]
-    API --> Queue[(Redis and BullMQ)]
+    API --> Admission["Admission controls<br/>deny, cohort, quota, dedupe"]
+    Admission --> DB[(PostgreSQL)]
+    Admission --> Queue[(Redis and BullMQ)]
+    DB --> Rollout["Versioned rollout policy<br/>and audit"]
+    Rollout --> Admission
 
     Queue --> Worker["Resolver worker"]
     Worker --> Router["Capability router<br/>eligibility, score, fallback budget"]
+    Rollout --> Router
     Router --> Registry["Provider manifests<br/>platform, region, priority, limits"]
     Registry --> AdapterA["Third-party site adapter A"]
     Registry --> AdapterB["Third-party API B"]
@@ -41,27 +45,31 @@ delivery candidates, and disabled fixture-tested TwitterSaver/DLPanda adapters. 
 reviewed redirect-only delivery path. ADR-0006 defines tuple-keyed health aggregation and
 distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
-open and half-open decisions. Production policy calibration and rollout approval, yt-dlp isolation,
-proxying, and temporary-object delivery are later milestones.
+open and half-open decisions. ADR-0007 defines the not-yet-implemented production rollout,
+idempotency, anonymous admission, concurrency, and cleanup boundaries. Production policy
+calibration, yt-dlp isolation, proxying, and temporary-object delivery are later milestones.
 
 ## Request lifecycle
 
 1. The API parses an HTTP(S) URL and matches its hostname against the curated platform catalog. It
    never fetches the submitted URL during recognition.
-2. The API stores a short-lived task and enqueues only the task identifiers and resolution input.
-3. The worker builds an eligible provider set using `enabled`, platform capability, worker region,
-   and circuit state.
-4. Eligible providers are ordered by the platform-specific static priority plus bounded health,
+2. Before public rollout, the API must apply ADR-0007 idempotency, duplicate, quota, and concurrency
+   admission; the worker must require an affirmative runtime rollout rule.
+3. An admitted request stores a short-lived task and enqueues only the task identifiers and
+   resolution input.
+4. The worker builds an eligible provider set using manifest capability, rollout permission, worker
+   region, and circuit state.
+5. Eligible providers are ordered by the platform-specific static priority plus bounded health,
    latency, and cost signals. Static priority remains the dominant signal.
-5. The router calls one provider at a time. A retryable provider failure consumes one fallback slot;
+6. The router calls one provider at a time. A retryable provider failure consumes one fallback slot;
    private, paid, authenticated, DRM-protected, and other terminal failures stop immediately.
-6. Every provider output is parsed as an internal `ProviderResolution`. Its public result passes
+7. Every provider output is parsed as an internal `ProviderResolution`. Its public result passes
    `ResolveResultSchema`; its generic candidates pass the private `@tikdd/delivery-core` schemas.
    Provider-native fields and direct URLs never enter the public result model.
-7. On success, the worker encrypts candidate secrets and atomically writes the result, replacement
+8. On success, the worker encrypts candidate secrets and atomically writes the result, replacement
    candidate set, and sanitized attempt ledger. It is the source for future health scoring and
    operational dashboards.
-8. The separate delivery service can issue an opaque, one-use ticket for a redirect candidate. It
+9. The separate delivery service can issue an opaque, one-use ticket for a redirect candidate. It
    redeems the ticket atomically, decrypts the target, revalidates the provider/mode/exact-host
    policy and all DNS answers, then emits one 302 without following the upstream URL. Controlled
    streaming and expiring objects remain deferred.
@@ -84,6 +92,8 @@ provider meets the launch threshold.
 See [Platform catalog](../platform-catalog.md) and [Routing policy](../routing-policy.md).
 Operational configuration and protected diagnostics are documented in
 [Provider health operations](../provider-health-operations.md).
+Production admission and runtime rollout decisions are defined in
+[ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
 
 ## Failure policy
 

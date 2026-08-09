@@ -192,6 +192,17 @@ reads, publication to Redis `open`, a single atomic half-open probe lease, and r
 Its temporary PostgreSQL rows and Redis keys were removed, both containers remained healthy, and
 the final `pnpm check` passed with 69 tests.
 
+#### Work item 9.0 — Runtime rollout and abuse-control ADR
+
+Status: complete on 2026-08-09.
+
+[ADR-0007](architecture/adr/0007-rollout-admission-and-abuse-controls.md) separates explicit
+production permission from inferred circuit health. It defines deny-first provider/platform/region
+rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
+Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
+anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
+Runtime behavior remains scheduled for work items 9.1–9.6.
+
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
@@ -261,6 +272,7 @@ core product loop is proven.
 | 8.0 | Health state and circuit-breaker ADR — complete | Attempt ledger and ADR-0004 | ADR review against routing, persistence, and privacy boundaries |
 | 8.1 | Attempt region and tuple health contract — complete | ADR-0006 | Contract, migration, persistence, and Docker PostgreSQL verification |
 | 8 | Health aggregation and circuits — complete | Attempt ledger | Failure-injection, hysteresis, Redis lease, diagnostics, and Docker state-transition tests |
+| 9.0 | Runtime rollout and abuse-control ADR — complete | Work item 8 | ADR review against routing, persistence, privacy, and delivery boundaries |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 
