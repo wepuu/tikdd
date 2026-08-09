@@ -163,7 +163,7 @@ and Docker-backed PostgreSQL verification cover the boundary.
 
 #### Work items 8.2–8.5 — Aggregation, distributed circuits, routing, and diagnostics
 
-Status: implemented on 2026-08-07; final Docker PostgreSQL/Redis transition verification is pending.
+Status: complete on 2026-08-09.
 
 - `@tikdd/routing-health` implements runtime policy validation, distinct-task sampling, categorized
   failures, p95 latency, minimum samples, hysteresis, recovery counts, and bounded cooldown growth.
@@ -177,6 +177,20 @@ Status: implemented on 2026-08-07; final Docker PostgreSQL/Redis transition veri
   configured. It returns only sanitized metadata and is intentionally excluded from public OpenAPI
   and the consumer Web application.
 - `pnpm verify:routing-health` provides a cleanup-safe PostgreSQL/Redis transition verification.
+
+#### Work item 8.6 — Docker transition verification closure
+
+Status: complete on 2026-08-09.
+
+Windows/Hyper-V reserved the TCP range containing both `6379` and `6380`, which prevented Docker
+Desktop from publishing Redis even though neither port had a listening process. Local Compose now
+publishes container port `6379` through configurable host port `REDIS_HOST_PORT`, defaulting to
+`16379`; API and worker local defaults use the matching URL.
+
+The Docker-backed verification applied migrations `0001`–`0004` and proved PostgreSQL observation
+reads, publication to Redis `open`, a single atomic half-open probe lease, and recovery to `closed`.
+Its temporary PostgreSQL rows and Redis keys were removed, both containers remained healthy, and
+the final `pnpm check` passed with 69 tests.
 
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
@@ -246,7 +260,7 @@ core product loop is proven.
 | 7.1 | P0 task-flow audit closure — complete | Flow audit after work item 7 | Resolver/result desktop and mobile interaction QA |
 | 8.0 | Health state and circuit-breaker ADR — complete | Attempt ledger and ADR-0004 | ADR review against routing, persistence, and privacy boundaries |
 | 8.1 | Attempt region and tuple health contract — complete | ADR-0006 | Contract, migration, persistence, and Docker PostgreSQL verification |
-| 8 | Health aggregation and circuits — implemented; Docker transition verification pending | Attempt ledger | Failure-injection, hysteresis, Redis lease, diagnostics, and Docker state-transition tests |
+| 8 | Health aggregation and circuits — complete | Attempt ledger | Failure-injection, hysteresis, Redis lease, diagnostics, and Docker state-transition tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

@@ -15,7 +15,7 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required.");
 }
-const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const suffix = randomUUID().replaceAll("-", "").slice(0, 12);
 const key: ProviderCircuitKey = {
   providerId: `health-verification-${suffix}`,

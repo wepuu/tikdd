@@ -20,7 +20,7 @@ import { registerProviderHealthDiagnostics } from "./provider-health-diagnostics
 
 const port = Number.parseInt(process.env.API_PORT ?? "4000", 10);
 const taskTtlHours = Number.parseInt(process.env.TASK_TTL_HOURS ?? "24", 10);
-const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
 

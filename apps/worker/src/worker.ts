@@ -30,7 +30,7 @@ import {
   type HealthRefreshLoop
 } from "./health";
 
-const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
 const enableTwitterSaverProvider =
   (process.env.ENABLE_TWITTERSAVER_PROVIDER ?? "false") === "true";

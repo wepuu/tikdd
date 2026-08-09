@@ -77,6 +77,11 @@ pnpm db:migrate
 pnpm verify:routing-health
 ```
 
+Local Docker Compose publishes Redis on host port `16379` by default because Docker Desktop and
+Hyper-V can reserve the traditional `6379` range on Windows. Override `REDIS_HOST_PORT` and keep
+`REDIS_URL` aligned when another host port is required; Redis still listens on `6379` inside the
+container.
+
 The verification creates isolated temporary task and circuit keys, proves PostgreSQL observation
 reads, open-state publication, single half-open lease, and recovery to closed, then removes its test
 records and Redis keys.
