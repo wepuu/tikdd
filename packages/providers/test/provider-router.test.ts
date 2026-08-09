@@ -52,6 +52,7 @@ class TestProvider implements ResolverProvider {
 }
 
 const input: ResolveInput = {
+  taskId: "tsk_0123456789abcdef0123456789abcdef",
   sourceUrl: "https://youtu.be/abcdefghijk",
   canonicalUrl: "https://youtu.be/abcdefghijk",
   platform: "youtube"
@@ -99,6 +100,81 @@ describe("ProviderRouter", () => {
       { providerId: "development-mock", platform: "youtube", region: "eu-west-1" }
     ]);
     expect(routed.attempts[0]?.region).toBe("eu-west-1");
+  });
+
+  it("applies rollout permission before reading circuit health", async () => {
+    let healthReads = 0;
+    const router = new ProviderRouter([new TestProvider("denied", 100, "success", [])], {
+      rolloutSource: {
+        async decide() {
+          return {
+            allowed: false,
+            reason: "matching_deny",
+            ruleId: "deny-provider",
+            snapshotRevision: 3,
+            bucket: null
+          };
+        }
+      },
+      healthSource: {
+        async get() {
+          healthReads += 1;
+          throw new Error("Health must not be read for a denied route.");
+        },
+        async acquireProbe() {
+          return false;
+        }
+      }
+    });
+
+    await expect(router.resolve(input)).rejects.toMatchObject({
+      name: "ProviderRoutingError",
+      retryable: false
+    });
+    expect(healthReads).toBe(0);
+  });
+
+  it("keeps missing rollout control retryable while failing closed", async () => {
+    const router = new ProviderRouter([new TestProvider("unavailable", 100, "success", [])], {
+      rolloutSource: {
+        async decide() {
+          return {
+            allowed: false,
+            reason: "control_unavailable",
+            ruleId: null,
+            snapshotRevision: null,
+            bucket: null
+          };
+        }
+      }
+    });
+
+    await expect(router.resolve(input)).rejects.toMatchObject({
+      name: "NoProviderAvailableError",
+      retryable: true
+    });
+  });
+
+  it("refuses a production mock even when a rollout source grants it", async () => {
+    const router = new ProviderRouter([new MockProvider(["youtube"])], {
+      production: true,
+      rolloutSource: {
+        async decide() {
+          return {
+            allowed: true,
+            reason: "allowed",
+            ruleId: "unsafe-mock-grant",
+            snapshotRevision: 1,
+            bucket: 0
+          };
+        }
+      }
+    });
+
+    await expect(router.resolve(input)).rejects.toMatchObject({
+      name: "ProviderRoutingError",
+      retryable: false
+    });
   });
 
   it("isolates an open circuit to its exact provider, platform, and region", async () => {

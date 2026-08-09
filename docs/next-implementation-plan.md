@@ -201,12 +201,23 @@ production permission from inferred circuit health. It defines deny-first provid
 rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
 Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
 anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
-Runtime behavior remains scheduled for work items 9.1–9.6.
+The remaining runtime behavior is scheduled for work items 9.2–9.6.
+
+#### Work item 9.1 — Runtime rollout rules and emergency deny
+
+Status: complete on 2026-08-09.
+
+`@tikdd/rollout-control` validates unambiguous rules, applies deny-first matching, assigns stable
+URL-free task cohorts, rejects production mocks, publishes revisioned expiring Redis snapshots, and
+fails closed on stale authorization. Migration `0005` stores current rules and append-only operator
+audit. The worker evaluates rollout before circuit health and refreshes PostgreSQL state within five
+seconds. `pnpm rollout:apply` is the narrow direct operator path; `pnpm verify:rollout-control`
+proves a Docker-backed allow-to-emergency-deny transition and cleanup.
 
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
-3. Move enablement to provider/platform/region/percentage flags with an immediate kill switch.
+3. Runtime provider/platform/region/percentage rules and an immediate deny switch are complete.
 4. Schedule authorized canaries and persist only sanitized measurements: status, latency, format
    count, failure class, and link lifetime.
 5. Add a protected read-only diagnostics endpoint for priority, circuit state, recent sanitized
@@ -273,6 +284,7 @@ core product loop is proven.
 | 8.1 | Attempt region and tuple health contract — complete | ADR-0006 | Contract, migration, persistence, and Docker PostgreSQL verification |
 | 8 | Health aggregation and circuits — complete | Attempt ledger | Failure-injection, hysteresis, Redis lease, diagnostics, and Docker state-transition tests |
 | 9.0 | Runtime rollout and abuse-control ADR — complete | Work item 8 | ADR review against routing, persistence, privacy, and delivery boundaries |
+| 9.1 | Runtime rollout rules and emergency deny — complete | ADR-0007 | Rule validation, deny precedence, revision rollback, production mock, and Docker transition tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

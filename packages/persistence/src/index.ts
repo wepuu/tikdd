@@ -18,6 +18,14 @@ import {
   ProviderHealthObservationSchema,
   type ProviderHealthObservation
 } from "@tikdd/routing-health";
+import {
+  RolloutRuleChangeSchema,
+  RolloutRuleSchema,
+  RolloutSnapshotSchema,
+  type RolloutRule,
+  type RolloutRuleChange,
+  type RolloutSnapshot
+} from "@tikdd/rollout-control";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 interface TaskRow extends QueryResultRow {
@@ -55,6 +63,28 @@ interface ProviderHealthObservationRow extends QueryResultRow {
   finished_at: Date;
 }
 
+interface RolloutRuleRow extends QueryResultRow {
+  rule_id: string;
+  provider_id: string;
+  platform: string;
+  region: string;
+  enabled: boolean;
+  allocation_bps: number;
+  revision: string;
+  activates_at: Date;
+  expires_at: Date | null;
+}
+
+interface RolloutRevisionRow extends QueryResultRow {
+  revision: string;
+  database_now: Date;
+}
+
+interface RolloutAuditRevisionRow extends QueryResultRow {
+  revision: string;
+  created_at: Date;
+}
+
 interface TicketCandidateRow extends QueryResultRow {
   candidate_id: string;
   task_id: string;
@@ -86,6 +116,158 @@ export class TaskCompletionError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "TaskCompletionError";
+  }
+}
+
+export class RolloutRuleConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RolloutRuleConflictError";
+  }
+}
+
+function mapRolloutRule(row: RolloutRuleRow): RolloutRule {
+  return RolloutRuleSchema.parse({
+    id: row.rule_id,
+    providerId: row.provider_id,
+    platform: row.platform,
+    region: row.region,
+    enabled: row.enabled,
+    allocationBps: row.allocation_bps,
+    revision: Number(row.revision),
+    activatesAt: row.activates_at.toISOString(),
+    expiresAt: row.expires_at?.toISOString() ?? null
+  });
+}
+
+export class RolloutRuleRepository {
+  constructor(private readonly pool: Pool) {}
+
+  async applyChange(input: RolloutRuleChange): Promise<RolloutRule> {
+    const change = RolloutRuleChangeSchema.parse(input);
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext('tikdd:provider-rollout-rules'))");
+      const selected = await client.query<RolloutRuleRow>(
+        `SELECT rule_id, provider_id, platform, region, enabled, allocation_bps,
+           revision::text, activates_at, expires_at
+         FROM provider_rollout_rules
+         WHERE rule_id = $1
+         FOR UPDATE`,
+        [change.rule.id]
+      );
+      const previous = selected.rows[0] ? mapRolloutRule(selected.rows[0]) : null;
+      if (previous === null && change.expectedRevision !== null) {
+        throw new RolloutRuleConflictError("The rollout rule does not exist at the expected revision.");
+      }
+      if (previous !== null && previous.revision !== change.expectedRevision) {
+        throw new RolloutRuleConflictError("The rollout rule revision changed before this update.");
+      }
+
+      const next = RolloutRuleSchema.parse({
+        ...change.rule,
+        revision: (previous?.revision ?? 0) + 1
+      });
+      const updated = await client.query<RolloutRuleRow>(
+        `INSERT INTO provider_rollout_rules (
+           rule_id, provider_id, platform, region, enabled, allocation_bps, revision,
+           activates_at, expires_at, change_reason
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         ON CONFLICT (rule_id) DO UPDATE SET
+           provider_id = EXCLUDED.provider_id,
+           platform = EXCLUDED.platform,
+           region = EXCLUDED.region,
+           enabled = EXCLUDED.enabled,
+           allocation_bps = EXCLUDED.allocation_bps,
+           revision = EXCLUDED.revision,
+           activates_at = EXCLUDED.activates_at,
+           expires_at = EXCLUDED.expires_at,
+           change_reason = EXCLUDED.change_reason,
+           updated_at = NOW()
+         RETURNING rule_id, provider_id, platform, region, enabled, allocation_bps,
+           revision::text, activates_at, expires_at`,
+        [
+          next.id,
+          next.providerId,
+          next.platform,
+          next.region,
+          next.enabled,
+          next.allocationBps,
+          next.revision,
+          next.activatesAt,
+          next.expiresAt,
+          change.reason
+        ]
+      );
+      const persisted = mapRolloutRule(updated.rows[0] as RolloutRuleRow);
+      const auditResult = await client.query<RolloutAuditRevisionRow>(
+        `INSERT INTO provider_rollout_rule_audit (
+           rule_id, operator_id, reason, previous_revision, new_revision, before_rule, after_rule
+         ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb)
+         RETURNING id::text AS revision, created_at`,
+        [
+          persisted.id,
+          change.operatorId,
+          change.reason,
+          previous?.revision ?? null,
+          persisted.revision,
+          previous ? JSON.stringify(previous) : null,
+          JSON.stringify(persisted)
+        ]
+      );
+      const auditRevision = auditResult.rows[0] as RolloutAuditRevisionRow;
+      const allRules = await client.query<RolloutRuleRow>(
+        `SELECT rule_id, provider_id, platform, region, enabled, allocation_bps,
+           revision::text, activates_at, expires_at
+         FROM provider_rollout_rules
+         ORDER BY rule_id`
+      );
+      RolloutSnapshotSchema.parse({
+        schemaVersion: "1",
+        revision: Number(auditRevision.revision),
+        generatedAt: auditRevision.created_at.toISOString(),
+        rules: allRules.rows.map(mapRolloutRule)
+      });
+      await client.query("COMMIT");
+      return persisted;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async loadSnapshot(): Promise<RolloutSnapshot> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      const revisionResult = await client.query<RolloutRevisionRow>(
+        `SELECT COALESCE(MAX(id), 0)::text AS revision, NOW() AS database_now
+         FROM provider_rollout_rule_audit`
+      );
+      const rulesResult = await client.query<RolloutRuleRow>(
+        `SELECT rule_id, provider_id, platform, region, enabled, allocation_bps,
+           revision::text, activates_at, expires_at
+         FROM provider_rollout_rules
+         ORDER BY rule_id`
+      );
+      const revision = revisionResult.rows[0] as RolloutRevisionRow;
+      const snapshot = RolloutSnapshotSchema.parse({
+        schemaVersion: "1",
+        revision: Number(revision.revision),
+        generatedAt: revision.database_now.toISOString(),
+        rules: rulesResult.rows.map(mapRolloutRule)
+      });
+      await client.query("COMMIT");
+      return snapshot;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
 

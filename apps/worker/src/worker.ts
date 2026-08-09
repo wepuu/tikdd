@@ -4,7 +4,11 @@ import {
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
-import { createDatabasePool, TaskRepository } from "@tikdd/persistence";
+import {
+  createDatabasePool,
+  RolloutRuleRepository,
+  TaskRepository
+} from "@tikdd/persistence";
 import { detectPlatform, listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
@@ -29,6 +33,10 @@ import {
   startHealthRefreshLoop,
   type HealthRefreshLoop
 } from "./health";
+import {
+  createRolloutRuntime,
+  loadRolloutConfiguration
+} from "./rollout";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
@@ -45,6 +53,8 @@ const workerRegion = RegionIdSchema.parse(process.env.WORKER_REGION ?? "global")
 const candidateCipher = createCandidateCipherFromEnvironment();
 const allowResolutionOnly = process.env.NODE_ENV !== "production";
 const providerHealth = loadProviderHealthConfiguration();
+const rolloutConfiguration = loadRolloutConfiguration();
+const production = process.env.NODE_ENV === "production";
 
 if (process.env.NODE_ENV === "production" && enableMockProvider) {
   throw new Error("ENABLE_MOCK_PROVIDER must be false in production.");
@@ -63,6 +73,18 @@ const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
 const circuitStore = new RedisCircuitStore(redis);
+const rolloutRules = new RolloutRuleRepository(pool);
+const rolloutRuntime = await createRolloutRuntime({
+  redis,
+  repository: rolloutRules,
+  configuration: rolloutConfiguration,
+  production,
+  onResult: (message) => process.stdout.write(`${message}\n`),
+  onError: (error) =>
+    process.stderr.write(
+      `Provider rollout refresh failed: ${error instanceof Error ? error.message : "unknown error"}\n`
+    )
+});
 const providers: ResolverProvider[] = [];
 if (enableTwitterSaverProvider) {
   providers.push(new TwitterSaverProvider({ enabled: true }));
@@ -76,6 +98,8 @@ if (enableMockProvider) {
 const router = new ProviderRouter(providers, {
   region: workerRegion,
   maxAttempts: routeMaxAttempts,
+  rolloutSource: rolloutRuntime.source,
+  production,
   ...(providerHealth.enabled && providerHealth.policy
     ? { healthSource: new RedisProviderRoutingHealthSource(circuitStore, providerHealth.policy) }
     : {})
@@ -104,6 +128,7 @@ const worker = new Worker<ResolveJobData>(
 
     try {
       const routed = await router.resolve({
+        taskId: data.taskId,
         sourceUrl: data.sourceUrl,
         canonicalUrl: detected.canonicalUrl,
         platform: data.platform,
@@ -172,6 +197,7 @@ worker.on("error", (error) => {
 const close = async (signal: string) => {
   process.stdout.write(`Worker received ${signal}; shutting down.\n`);
   healthRefreshLoop?.stop();
+  rolloutRuntime.stop();
   await worker.close();
   redis.disconnect();
   await pool.end();

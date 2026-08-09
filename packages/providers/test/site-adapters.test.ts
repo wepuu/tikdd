@@ -12,6 +12,7 @@ const fixture = async (name: string) =>
   readFile(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)), "utf8");
 
 const xInput: ResolveInput = {
+  taskId: "tsk_0123456789abcdef0123456789abcdef",
   sourceUrl: "https://x.com/authorized/status/123456",
   canonicalUrl: "https://x.com/authorized/status/123456",
   platform: "x"
@@ -112,6 +113,7 @@ describe("DLPandaProvider", () => {
     const provider = new DLPandaProvider({ enabled: true, fetchImpl });
 
     const resolution = await provider.resolve({
+      taskId: "tsk_1123456789abcdef0123456789abcdef",
       sourceUrl: "https://www.tiktok.com/@authorized/video/123456",
       canonicalUrl: "https://www.tiktok.com/@authorized/video/123456",
       platform: "tiktok"
@@ -147,6 +149,7 @@ describe("DLPandaProvider", () => {
 
     await expect(
       provider.resolve({
+        taskId: "tsk_2123456789abcdef0123456789abcdef",
         sourceUrl: "https://www.bilibili.com/video/BVfixture",
         canonicalUrl: "https://www.bilibili.com/video/BVfixture",
         platform: "bilibili"

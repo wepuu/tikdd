@@ -38,7 +38,8 @@ platform has seven consecutive healthy canary runs with documented compliance ap
 
 ## Milestone 2 — First production resolution path
 
-- Enable reviewed providers behind per-provider, platform, region, and percentage flags.
+- Runtime per-provider/platform/region/percentage rules, emergency deny, durable audit, and expiring
+  Redis distribution are implemented; production rules remain disabled until reviewed rollout.
 - Add idempotency keys, IP/user quotas, abuse signals, job deduplication, and retention cleanup.
 - Add a provider administration/read-only diagnostics surface for health, circuit state, priority,
   and recent sanitized failures.

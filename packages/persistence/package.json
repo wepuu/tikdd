@@ -16,6 +16,7 @@
   "dependencies": {
     "@tikdd/contracts": "workspace:*",
     "@tikdd/delivery-core": "workspace:*",
+    "@tikdd/rollout-control": "workspace:*",
     "@tikdd/routing-health": "workspace:*",
     "pg": "^8.0.0"
   },

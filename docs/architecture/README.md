@@ -45,9 +45,11 @@ delivery candidates, and disabled fixture-tested TwitterSaver/DLPanda adapters. 
 reviewed redirect-only delivery path. ADR-0006 defines tuple-keyed health aggregation and
 distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
-open and half-open decisions. ADR-0007 defines the not-yet-implemented production rollout,
-idempotency, anonymous admission, concurrency, and cleanup boundaries. Production policy
-calibration, yt-dlp isolation, proxying, and temporary-object delivery are later milestones.
+open and half-open decisions. ADR-0007 defines production admission controls; work item 9.1 now
+implements deny-first provider/platform/region rollout rules, deterministic task cohorts, durable
+audit, and expiring Redis distribution. Idempotency, anonymous quotas, concurrency, and cleanup
+remain scheduled for work items 9.2–9.4. Production policy calibration, yt-dlp isolation, proxying,
+and temporary-object delivery are later milestones.
 
 ## Request lifecycle
 
@@ -94,6 +96,8 @@ Operational configuration and protected diagnostics are documented in
 [Provider health operations](../provider-health-operations.md).
 Production admission and runtime rollout decisions are defined in
 [ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
+Operator configuration and emergency-stop procedures are documented in
+[Provider rollout operations](../provider-rollout-operations.md).
 
 ## Failure policy
 

@@ -117,6 +117,9 @@ importers:
       '@tikdd/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../../packages/rollout-control
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../../packages/routing-health
@@ -150,6 +153,9 @@ importers:
       '@tikdd/delivery-core':
         specifier: workspace:*
         version: link:../delivery-core
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../rollout-control
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../routing-health
@@ -178,9 +184,24 @@ importers:
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../platform
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../rollout-control
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../routing-health
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+
+  packages/rollout-control:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
       zod:
         specifier: ^4.0.0
         version: 4.4.3

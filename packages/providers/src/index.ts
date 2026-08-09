@@ -20,6 +20,10 @@ import type {
   ProviderRoutingHealthSource
 } from "@tikdd/routing-health";
 import {
+  StaticRolloutSource,
+  type ProviderRolloutSource
+} from "@tikdd/rollout-control";
+import {
   NoProviderAvailableError,
   ProviderError,
   ProviderRoutingError
@@ -38,6 +42,7 @@ export {
 } from "./adapters/twitter-saver";
 
 export interface ResolveInput {
+  taskId: string;
   sourceUrl: string;
   canonicalUrl: string;
   platform: Platform;
@@ -87,10 +92,19 @@ interface RankedProvider {
   score: number;
 }
 
+interface RankingResult {
+  ranked: RankedProvider[];
+  manifestEligibleCount: number;
+  rolloutEligibleCount: number;
+  rolloutControlUnavailable: boolean;
+}
+
 export interface ProviderRouterOptions {
   region?: RegionId;
   maxAttempts?: number;
   healthSource?: ProviderRoutingHealthSource;
+  rolloutSource?: ProviderRolloutSource;
+  production?: boolean;
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -114,6 +128,8 @@ export class ProviderRouter {
   private readonly region: RegionId;
   private readonly maxAttempts: number;
   private readonly healthSource: ProviderRoutingHealthSource;
+  private readonly rolloutSource: ProviderRolloutSource;
+  private readonly production: boolean;
 
   constructor(
     private readonly providers: readonly ResolverProvider[],
@@ -130,6 +146,9 @@ export class ProviderRouter {
     this.region = RegionIdSchema.parse(options.region ?? "global");
     this.maxAttempts = options.maxAttempts ?? 4;
     this.healthSource = options.healthSource ?? new NeutralProviderHealthSource();
+    this.production = options.production ?? process.env.NODE_ENV === "production";
+    this.rolloutSource =
+      options.rolloutSource ?? new StaticRolloutSource(!this.production, !this.production);
   }
 
   getProviderCountsByPlatform(): ReadonlyMap<Platform, number> {
@@ -145,23 +164,51 @@ export class ProviderRouter {
     return counts;
   }
 
-  private async rank(platform: Platform): Promise<RankedProvider[]> {
+  private async rank(taskId: string, platform: Platform): Promise<RankingResult> {
     const ranked: RankedProvider[] = [];
+    let manifestEligibleCount = 0;
+    let rolloutEligibleCount = 0;
+    let rolloutControlUnavailable = false;
 
     for (const provider of this.providers) {
       const { manifest } = provider;
       const capability = manifest.platforms.find((item) => item.platform === platform);
       const regionMatches = manifest.regions.includes("*") || manifest.regions.includes(this.region);
+
+      if (!manifest.enabled || !capability || !regionMatches) {
+        continue;
+      }
+      manifestEligibleCount += 1;
+      if (this.production && manifest.kind === "mock") {
+        continue;
+      }
+      let rollout;
+      try {
+        rollout = await this.rolloutSource.decide({
+          taskId,
+          providerId: manifest.id,
+          providerKind: manifest.kind,
+          platform,
+          region: this.region
+        });
+      } catch {
+        rolloutControlUnavailable = true;
+        continue;
+      }
+      if (!rollout.allowed) {
+        if (rollout.reason === "control_unavailable" || rollout.reason === "stale_snapshot") {
+          rolloutControlUnavailable = true;
+        }
+        continue;
+      }
+      rolloutEligibleCount += 1;
+
       const circuitKey: ProviderCircuitKey = {
         providerId: manifest.id,
         platform,
         region: this.region
       };
       const health = await this.healthSource.get(circuitKey);
-
-      if (!manifest.enabled || !capability || !regionMatches) {
-        continue;
-      }
 
       if (health.state !== "closed") {
         const cooldownElapsed =
@@ -179,15 +226,33 @@ export class ProviderRouter {
       ranked.push({ provider, capability, score });
     }
 
-    return ranked.sort(
-      (left, right) =>
-        right.score - left.score || left.provider.manifest.id.localeCompare(right.provider.manifest.id)
-    );
+    return {
+      ranked: ranked.sort(
+        (left, right) =>
+          right.score - left.score || left.provider.manifest.id.localeCompare(right.provider.manifest.id)
+      ),
+      manifestEligibleCount,
+      rolloutEligibleCount,
+      rolloutControlUnavailable
+    };
   }
 
   async resolve(input: ResolveInput): Promise<ProviderRoutingResult> {
-    const ranked = (await this.rank(input.platform)).slice(0, this.maxAttempts);
+    const ranking = await this.rank(input.taskId, input.platform);
+    const ranked = ranking.ranked.slice(0, this.maxAttempts);
     if (ranked.length === 0) {
+      if (
+        ranking.manifestEligibleCount > 0 &&
+        ranking.rolloutEligibleCount === 0 &&
+        !ranking.rolloutControlUnavailable
+      ) {
+        throw new ProviderRoutingError(
+          "This platform is not currently available.",
+          "provider_unavailable",
+          false,
+          []
+        );
+      }
       throw new NoProviderAvailableError(input.platform);
     }
 

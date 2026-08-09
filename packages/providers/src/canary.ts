@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { detectPlatform } from "@tikdd/platform";
 import { z } from "zod";
@@ -84,6 +85,7 @@ async function main(): Promise<void> {
       }
 
       const input = {
+        taskId: `tsk_${randomUUID().replaceAll("-", "")}`,
         sourceUrl: canary.url,
         canonicalUrl: detected.canonicalUrl,
         platform: detected.platform,

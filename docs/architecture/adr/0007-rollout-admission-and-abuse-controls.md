@@ -303,6 +303,13 @@ recovery. Cleanup is incremental and logically expired data is already inaccessi
 
 ## Implementation status
 
-Work item 9.0 accepted this boundary on 2026-08-09. No runtime flag, public contract, persistence,
-quota, proxy-trust, or cleanup behavior changes are authorized merely by accepting the ADR; those
-changes land in work items 9.1–9.6 with their required migrations and tests.
+Work item 9.0 accepted this boundary on 2026-08-09 without changing runtime behavior. The following
+work items implement each portion with their required migrations and tests.
+
+Work item 9.1 implemented the rollout portion on 2026-08-09. `@tikdd/rollout-control` owns runtime
+schemas, deny-first evaluation, deterministic task cohorts, revisioned Redis snapshots, durable
+fallback, stale-state denial, and rollback prevention. Migration `0005` adds current rules and
+append-only audit history. The worker applies rollout before circuit health, refuses production
+mocks independently, refreshes the durable revision every five seconds, and exposes only a direct
+operator command outside public OpenAPI. Idempotency, anonymous quota, distributed provider
+concurrency, and cleanup remain future work items.

@@ -96,8 +96,8 @@ See [ADR-0006](architecture/adr/0006-provider-health-and-circuits.md).
 
 - No unbounded loops and no automatic parallel fan-out.
 - No fallback intended to bypass private, paid, authenticated, DRM, or permission restrictions.
-- ADR-0007 requires versioned runtime rules to disable one provider/platform/region combination
-  without redeploying Web/API. Until work item 9.1 lands, process-level enablement is not sufficient
-  for production rollout.
+- Versioned runtime rules can disable one provider/platform/region combination without redeploying
+  Web/API. Process-level enablement remains only a hard prerequisite and is not sufficient for
+  production rollout.
 - Provider response fixtures and logs are sanitized before persistence.
 - Priority changes are configuration changes with review, audit history, and rollback.
