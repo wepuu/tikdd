@@ -14,6 +14,8 @@ flowchart LR
     API --> Admission["Admission controls<br/>deny, cohort, quota, dedupe"]
     Admission --> DB[(PostgreSQL)]
     Admission --> Queue[(Redis and BullMQ)]
+    Cleanup["Scheduled bounded cleanup"] --> DB
+    Cleanup --> Queue
     DB --> Rollout["Versioned rollout policy<br/>and audit"]
     Rollout --> Admission
 
@@ -49,8 +51,10 @@ open and half-open decisions. ADR-0007 defines production admission controls; wo
 implements deny-first provider/platform/region rollout rules, deterministic task cohorts, durable
 audit, and expiring Redis distribution. Work item 9.2 adds HMAC-protected idempotency and active
 canonical-source suppression without cross-caller task sharing. Work item 9.3 adds explicit proxy
-trust, privacy-preserving anonymous quotas, and distributed provider concurrency. Bounded cleanup
-remains work item 9.4. Production policy calibration, yt-dlp isolation, proxying, and
+trust, privacy-preserving anonymous quotas, and distributed provider concurrency. Work item 9.4
+adds independently scheduled singleton cleanup with bounded PostgreSQL stages, hard retention,
+sanitized metrics, and Docker-backed repeat/cascade verification. Production policy calibration,
+yt-dlp isolation, proxying, and
 temporary-object delivery are later milestones.
 
 ## Request lifecycle

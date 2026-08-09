@@ -27,6 +27,10 @@
     "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction",
     "db:verify-provider-attempt-region": "pnpm --filter @tikdd/persistence db:verify-provider-attempt-region",
     "db:verify-task-admission": "pnpm --filter @tikdd/persistence db:verify-task-admission",
+    "cleanup:start": "pnpm --filter @tikdd/cleanup start",
+    "cleanup:run": "pnpm --filter @tikdd/cleanup execute",
+    "cleanup:dry-run": "pnpm --filter @tikdd/cleanup dry-run",
+    "verify:cleanup": "pnpm --filter @tikdd/cleanup verify",
     "verify:routing-health": "pnpm --filter @tikdd/worker verify:routing-health",
     "verify:rollout-control": "pnpm --filter @tikdd/worker verify:rollout-control",
     "verify:admission-control": "pnpm --filter @tikdd/admission-control verify:redis"

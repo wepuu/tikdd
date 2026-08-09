@@ -1,0 +1,19 @@
+{
+  "name": "@tikdd/cleanup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/service.ts",
+    "start": "tsx src/service.ts",
+    "execute": "tsx src/run-once.ts",
+    "dry-run": "tsx src/run-once.ts --dry-run",
+    "verify": "tsx src/verify-cleanup.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tikdd/persistence": "workspace:*",
+    "ioredis": "^5.0.0"
+  }
+}

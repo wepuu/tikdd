@@ -51,6 +51,15 @@ importers:
         specifier: ^5.0.0
         version: 5.11.1
 
+  apps/cleanup:
+    dependencies:
+      '@tikdd/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+
   apps/delivery:
     dependencies:
       '@fastify/cors':

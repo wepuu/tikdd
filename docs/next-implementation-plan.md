@@ -201,7 +201,7 @@ production permission from inferred circuit health. It defines deny-first provid
 rollout rules, deterministic URL-free task cohorts, an auditable PostgreSQL source with expiring
 Redis distribution, capability-safe idempotency and duplicate suppression, trusted-proxy-derived
 anonymous quotas, distributed concurrency permits, bounded cleanup, and generic public errors.
-The remaining runtime behavior is scheduled for work items 9.4–9.6.
+The remaining runtime behavior is scheduled for work items 9.5–9.6.
 
 #### Work item 9.1 — Runtime rollout rules and emergency deny
 
@@ -238,6 +238,17 @@ fall through without consuming the attempt budget or a half-open probe. Public c
 bilingual Web errors, spoofing tests, fail-closed tests, and Docker Redis verification cover the
 boundary.
 
+#### Work item 9.4 — Singleton bounded cleanup and retention
+
+Status: complete on 2026-08-09.
+
+`@tikdd/cleanup` runs independently from Web, API, resolver workers, and delivery. A
+deployment-scoped Redis owner lease admits one scheduled run; PostgreSQL stages use stable ordering,
+`FOR UPDATE SKIP LOCKED`, and separate batch transactions. Dry-run and execution report sanitized
+counts, duration, errors, and stop reason. Migration `0007` supplies cleanup indexes, while
+`pnpm verify:cleanup` proves singleton contention, no-write counting, cascade deletion, fresh-row
+preservation, and zero-change repetition against Docker services.
+
 1. Aggregate attempt-ledger windows by provider, platform, and region.
 2. Add circuit states with minimum sample sizes, separate failure-class thresholds, hysteresis, and
    automatic half-open probes.
@@ -246,8 +257,8 @@ boundary.
    count, failure class, and link lifetime.
 5. Add a protected read-only diagnostics endpoint for priority, circuit state, recent sanitized
    failures, fallback depth, and canary health.
-6. Task idempotency, canonical-URL deduplication, anonymous quotas, and concurrency limits are
-   complete; add bounded expiry cleanup before exposing the pilot to public traffic.
+6. Task idempotency, canonical-URL deduplication, anonymous quotas, concurrency limits, and bounded
+   expiry cleanup are complete before exposing the pilot to public traffic.
 
 Exit gate:
 
@@ -311,6 +322,7 @@ core product loop is proven.
 | 9.1 | Runtime rollout rules and emergency deny — complete | ADR-0007 | Rule validation, deny precedence, revision rollback, production mock, and Docker transition tests |
 | 9.2 | Task idempotency and canonical duplicate admission — complete | ADR-0007 | Contract/OpenAPI parity, HMAC separation, concurrent replay/conflict, capability isolation, and Docker tests |
 | 9.3 | Trusted proxy quotas and distributed concurrency — complete | ADR-0007 | Spoofing, atomic rate/active limits, owner leases, fail-closed Redis, fallback, and Docker tests |
+| 9.4 | Singleton bounded cleanup — complete | ADR-0007 and task expiry | Dry-run, lease contention, cascade, repeat, and Docker tests |
 | 9 | Flags, quotas, dedupe, cleanup | Health state | Docker-backed end-to-end tests |
 | 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
 

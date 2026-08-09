@@ -48,8 +48,9 @@ fingerprint, task reference, and expiry. `active_source_admissions` stores only 
 32-byte platform/canonical-source fingerprint, task reference, and expiry.
 
 Raw idempotency keys are never persisted or logged. URL fingerprints are server-keyed HMACs rather
-than enumerable plain hashes. Admission records cascade with task deletion. General physical expiry
-cleanup remains work item 9.4; reads and admission transactions already enforce logical expiry.
+than enumerable plain hashes. Admission records cascade with task deletion. Physical expiry is
+handled by the independently scheduled bounded cleanup service from work item 9.4; serving paths
+continue to enforce logical expiry independently.
 
 ## Concurrency model
 

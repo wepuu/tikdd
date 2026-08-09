@@ -60,6 +60,10 @@ Applications:
 - Web: `http://localhost:3000/en` and `http://localhost:3000/zh-CN`
 - API: `http://localhost:4000/health/live`
 - Delivery: `http://localhost:4002/health/live`
+- Cleanup: independent scheduled process; use `pnpm cleanup:start` in its deployment
+
+Before public traffic, run `pnpm cleanup:dry-run` and `pnpm verify:cleanup`; see the
+[cleanup operations guide](docs/cleanup-operations.md).
 
 ## Quality gates
 

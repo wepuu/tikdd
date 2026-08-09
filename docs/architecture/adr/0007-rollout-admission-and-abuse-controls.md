@@ -332,4 +332,14 @@ and active-task limits; provisional task permits are released on non-winning adm
 terminal worker outcomes. Provider calls acquire owner-scoped leases for the exact provider,
 platform, and region. Busy tuples fall through sequentially without consuming the attempt budget or
 half-open probe. Public `RATE_LIMITED`, `CONCURRENCY_LIMITED`, and `ADMISSION_UNAVAILABLE` responses
-remain capability-safe. General cleanup and expanded protected diagnostics remain future work.
+remain capability-safe. At that point, general cleanup and expanded protected diagnostics remained
+future work.
+
+Work item 9.4 implemented bounded physical cleanup on 2026-08-09. Migration `0007` adds stable
+compound indexes without changing retained data or public contracts. The separately deployable
+`@tikdd/cleanup` process uses a deployment-scoped owner lease, fixed stage order, one small
+`SKIP LOCKED` transaction per batch, statement/run/batch budgets, and configurable hard retention.
+Dry-run and execution expose only sanitized row/duration/error metrics. Docker verification proves
+lease contention, no-write counting, task cascade, fresh-row preservation, and zero-change repeat.
+OpenAPI and `@tikdd/contracts` remain unchanged because no serving contract changed. Expanded
+protected diagnostics remain future work.

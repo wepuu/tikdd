@@ -42,7 +42,9 @@ platform has seven consecutive healthy canary runs with documented compliance ap
   Redis distribution are implemented; production rules remain disabled until reviewed rollout.
 - Task idempotency, active canonical-source suppression, and task-ID queue deduplication are
   implemented. Trusted-proxy-derived anonymous quotas plus distributed provider concurrency are
-  also implemented; authenticated user policy, broader abuse signals, and retention cleanup remain.
+  also implemented. Independently scheduled bounded retention cleanup, dry-run metrics, and
+  Docker-backed cascade/repeat verification are implemented; authenticated user policy and broader
+  abuse signals remain.
 - Add a provider administration/read-only diagnostics surface for health, circuit state, priority,
   and recent sanitized failures.
 - Store internal delivery candidates separately from the public normalized result, encrypted or

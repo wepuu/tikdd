@@ -29,6 +29,7 @@ import {
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 export * from "./task-admission";
+export * from "./cleanup";
 
 interface TaskRow extends QueryResultRow {
   id: string;
@@ -618,18 +619,4 @@ export class TaskRepository {
     }
   }
 
-  async expireOldTasks(): Promise<number> {
-    const result = await this.pool.query(
-      `WITH expired_tasks AS (
-         UPDATE resolve_tasks SET status = 'expired', updated_at = NOW()
-         WHERE expires_at <= NOW() AND status <> 'expired'
-         RETURNING id
-       ), released AS (
-         DELETE FROM active_source_admissions
-         WHERE task_id IN (SELECT id FROM expired_tasks)
-       )
-       SELECT count(*)::int AS count FROM expired_tasks`
-    );
-    return Number((result.rows[0] as { count?: number } | undefined)?.count ?? 0);
-  }
 }
