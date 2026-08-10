@@ -48,15 +48,17 @@ function makeTaskId(): string {
   return `tsk_${randomUUID().replaceAll("-", "")}`;
 }
 
-async function recordAttempt(status: "succeeded" | "failed"): Promise<void> {
+async function recordAttempt(
+  status: "succeeded" | "failed",
+  startedAt: Date
+): Promise<void> {
   const taskId = makeTaskId();
   taskIds.push(taskId);
-  const now = new Date();
   await tasks.create({
     id: taskId,
     platform: "x",
     canonicalUrl: `https://x.com/health-verification/status/${taskIds.length}`,
-    expiresAt: new Date(now.getTime() + 60 * 60 * 1_000)
+    expiresAt: new Date(startedAt.getTime() + 60 * 60 * 1_000)
   });
   const attempt: ProviderAttempt = {
     ...key,
@@ -67,8 +69,8 @@ async function recordAttempt(status: "succeeded" | "failed"): Promise<void> {
     failureCode: status === "failed" ? "provider_timeout" : null,
     retryable: status === "failed" ? true : null,
     fallbackAllowed: status === "failed" ? true : null,
-    startedAt: now.toISOString(),
-    finishedAt: new Date(now.getTime() + 5).toISOString(),
+    startedAt: startedAt.toISOString(),
+    finishedAt: new Date(startedAt.getTime() + 5).toISOString(),
     durationMs: 5
   };
   await tasks.recordProviderAttempts(taskId, [attempt]);
@@ -86,11 +88,17 @@ const filteredSource = {
 };
 
 try {
-  await Promise.all([recordAttempt("failed"), recordAttempt("failed"), recordAttempt("succeeded")]);
+  const scenarioNow = new Date();
+  await Promise.all([
+    recordAttempt("failed", new Date(scenarioNow.getTime() - 3_000)),
+    recordAttempt("failed", new Date(scenarioNow.getTime() - 2_000)),
+    recordAttempt("succeeded", new Date(scenarioNow.getTime() - 1_000))
+  ]);
   const openedRefresh = await refreshCircuitHealth({
     source: filteredSource,
     store,
-    policy
+    policy,
+    now: scenarioNow
   });
   assert.equal(openedRefresh.updatedCount, 1);
   const opened = await store.getSnapshot(key);
@@ -99,21 +107,27 @@ try {
   assert.ok(opened);
   const cooldownElapsed = {
     ...opened,
-    openUntil: new Date(Date.now() - 1_000).toISOString()
+    openUntil: new Date(scenarioNow.getTime() - 1_000).toISOString()
   };
   assert.equal(
     await store.putSnapshot(cooldownElapsed, opened.revision, policy.snapshotTtlMs),
     true
   );
+  const probeAt = new Date(scenarioNow.getTime() + 2_000);
   const probeResults = await Promise.all([
-    store.acquireProbe(key, policy),
-    store.acquireProbe(key, policy)
+    store.acquireProbe(key, policy, probeAt),
+    store.acquireProbe(key, policy, probeAt)
   ]);
   assert.equal(probeResults.filter(Boolean).length, 1);
   assert.equal((await store.getSnapshot(key))?.state, "half-open");
 
-  await recordAttempt("succeeded");
-  const recoveredRefresh = await refreshCircuitHealth({ source: filteredSource, store, policy });
+  await recordAttempt("succeeded", new Date(probeAt.getTime() + 1_000));
+  const recoveredRefresh = await refreshCircuitHealth({
+    source: filteredSource,
+    store,
+    policy,
+    now: new Date(probeAt.getTime() + 2_000)
+  });
   assert.equal(recoveredRefresh.updatedCount, 1);
   assert.equal((await store.getSnapshot(key))?.state, "closed");
 
