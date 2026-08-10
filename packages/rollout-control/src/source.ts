@@ -4,15 +4,18 @@ import {
 import {
   ProviderRolloutRequestSchema,
   RolloutDecisionSchema,
+  PilotGuardSnapshotSchema,
   RolloutSnapshotSchema,
   type ProviderRolloutRequest,
   type ProviderRolloutSource,
   type RolloutDecision,
-  type RolloutSnapshot
+  type RolloutSnapshot,
+  type PilotGuardSnapshot
 } from "./model";
 import type { RedisRolloutStore } from "./redis";
 
 export type DurableRolloutLoader = () => Promise<RolloutSnapshot>;
+export type DurablePilotGuardLoader = () => Promise<PilotGuardSnapshot>;
 
 export class StaticRolloutSource implements ProviderRolloutSource {
   constructor(private readonly allowed: boolean, private readonly development = false) {}
@@ -38,7 +41,12 @@ export class RuntimeProviderRolloutSource implements ProviderRolloutSource {
     private readonly loadDurable: DurableRolloutLoader,
     private readonly cohortKey: Uint8Array,
     private readonly maximumStaleMs: number,
-    private readonly now: () => Date = () => new Date()
+    private readonly now: () => Date = () => new Date(),
+    private readonly guard?: {
+      loadDurable: DurablePilotGuardLoader;
+      required: boolean;
+      maximumStaleMs: number;
+    }
   ) {
     if (!Number.isInteger(maximumStaleMs) || maximumStaleMs < 5_000 || maximumStaleMs > 60_000) {
       throw new Error("Rollout maximum stale interval is invalid.");
@@ -100,7 +108,23 @@ export class RuntimeProviderRolloutSource implements ProviderRolloutSource {
         bucket: null
       });
     }
-    return evaluateRollout({ snapshot, request, cohortKey: this.cohortKey, now });
+    let guardSnapshot: PilotGuardSnapshot | undefined;
+    if (this.guard) {
+      try {
+        guardSnapshot = PilotGuardSnapshotSchema.parse(await this.guard.loadDurable());
+      } catch {
+        guardSnapshot = undefined;
+      }
+    }
+    return evaluateRollout({
+      snapshot,
+      request,
+      cohortKey: this.cohortKey,
+      now,
+      ...(guardSnapshot ? { guardSnapshot } : {}),
+      guardRequired: this.guard?.required ?? false,
+      ...(this.guard ? { maximumGuardStaleMs: this.guard.maximumStaleMs } : {})
+    });
   }
 }
 

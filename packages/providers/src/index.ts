@@ -37,6 +37,11 @@ export {
 } from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
 export {
+  SSSTwitterProvider,
+  type SSSTwitterProviderOptions,
+  type SSSTwitterQualificationEvidence
+} from "./adapters/ssstwitter";
+export {
   TwitterSaverProvider,
   type TwitterSaverProviderOptions
 } from "./adapters/twitter-saver";

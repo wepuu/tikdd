@@ -23,10 +23,19 @@ describe("detectPlatform", () => {
 
   it("rejects host suffix spoofing", () => {
     expect(isSupportedPlatformUrl("https://youtube.com.attacker.example/watch?v=1")).toBe(false);
+    expect(isSupportedPlatformUrl("https://x.com.attacker.example/user/status/1")).toBe(false);
   });
 
   it("rejects non-http schemes", () => {
     expect(isSupportedPlatformUrl("file:///etc/passwd")).toBe(false);
+  });
+
+  it.each([
+    "https://user:password@x.com/example/status/123",
+    "https://x.com:8443/example/status/123",
+    "https://t.co/fixture-short-link"
+  ])("rejects unsafe or unresolved X indirection before provider execution: %s", (url) => {
+    expect(isSupportedPlatformUrl(url)).toBe(false);
   });
 
   it.each([
@@ -36,6 +45,15 @@ describe("detectPlatform", () => {
       "https://www.tiktok.com/@creator/video/123"
     ]
   ])("removes platform share tracking from %s", (input, expected) => {
+    expect(detectPlatform(input).canonicalUrl).toBe(expected);
+  });
+
+  it.each([
+    ["https://twitter.com/example/status/123?s=20", "https://x.com/example/status/123"],
+    ["https://mobile.twitter.com/example/status/123?utm_source=share", "https://x.com/example/status/123"],
+    ["https://www.x.com/example/status/123#fragment", "https://x.com/example/status/123"],
+    ["http://x.com/example/status/123/photo/1", "https://x.com/example/status/123/photo/1"]
+  ])("canonicalizes X aliases and post variants: %s", (input, expected) => {
     expect(detectPlatform(input).canonicalUrl).toBe(expected);
   });
 });

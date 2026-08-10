@@ -270,6 +270,9 @@ export function detectPlatform(
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new UnsupportedPlatformError("Only HTTP and HTTPS URLs are accepted.");
   }
+  if (url.username || url.password || (url.port && url.port !== "80" && url.port !== "443")) {
+    throw new UnsupportedPlatformError("Embedded credentials and custom ports are not accepted.");
+  }
 
   const platform = platformForHost(url.hostname, catalog);
   if (!platform) {
@@ -277,8 +280,12 @@ export function detectPlatform(
   }
 
   url.protocol = "https:";
+  url.port = "";
   url.hash = "";
   removeTrackingParameters(url);
+  if (platform === "x") {
+    url.hostname = "x.com";
+  }
 
   return { platform, canonicalUrl: url.toString() };
 }

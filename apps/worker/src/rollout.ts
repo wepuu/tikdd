@@ -1,4 +1,4 @@
-import { RolloutRuleRepository } from "@tikdd/persistence";
+import { PilotControlRepository, RolloutRuleRepository } from "@tikdd/persistence";
 import {
   RedisRolloutStore,
   RolloutDecisionSchema,
@@ -16,6 +16,7 @@ export interface RolloutConfiguration {
   refreshIntervalMs: number;
   snapshotTtlMs: number;
   maximumStaleMs: number;
+  guardRequired: boolean;
 }
 
 function parseInteger(name: string, raw: string | undefined, fallback: number): number {
@@ -68,6 +69,14 @@ export function loadRolloutConfiguration(
     environment.PROVIDER_ROLLOUT_MAX_STALE_MS,
     15_000
   );
+  const guardRequired = parseBoolean(
+    "PROVIDER_PILOT_GUARD_REQUIRED",
+    environment.PROVIDER_PILOT_GUARD_REQUIRED,
+    false
+  );
+  if (guardRequired && !enabled) {
+    throw new Error("PROVIDER_PILOT_GUARD_REQUIRED requires PROVIDER_ROLLOUT_ENABLED.");
+  }
   if (refreshIntervalMs < 1_000 || refreshIntervalMs > 5_000) {
     throw new Error("PROVIDER_ROLLOUT_REFRESH_MS must be between 1000 and 5000.");
   }
@@ -99,7 +108,8 @@ export function loadRolloutConfiguration(
     cohortKey,
     refreshIntervalMs,
     snapshotTtlMs,
-    maximumStaleMs
+    maximumStaleMs,
+    guardRequired
   };
 }
 
@@ -141,6 +151,7 @@ export interface RolloutRuntime {
 export async function createRolloutRuntime(input: {
   redis: Redis;
   repository: RolloutRuleRepository;
+  pilotRepository?: PilotControlRepository;
   configuration: RolloutConfiguration;
   production: boolean;
   onResult?: (message: string) => void;
@@ -160,7 +171,20 @@ export async function createRolloutRuntime(input: {
     store,
     loadDurable,
     configuration.cohortKey,
-    configuration.maximumStaleMs
+    configuration.maximumStaleMs,
+    () => new Date(),
+    configuration.guardRequired
+      ? {
+          loadDurable: () => {
+            if (!input.pilotRepository) {
+              throw new Error("Pilot guard repository is required.");
+            }
+            return input.pilotRepository.loadGuardSnapshot();
+          },
+          required: true,
+          maximumStaleMs: configuration.maximumStaleMs
+        }
+      : undefined
   );
   let lastPublishedRevision: number | null = null;
   const refresh = async () => {

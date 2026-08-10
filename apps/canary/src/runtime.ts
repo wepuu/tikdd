@@ -2,7 +2,12 @@ import { readFile } from "node:fs/promises";
 import { RedisAdmissionStore, loadAdmissionControlConfiguration } from "@tikdd/admission-control";
 import { CircuitPolicySchema } from "@tikdd/routing-health";
 import { OperationalDiagnosticsRepository, RolloutRuleRepository, createDatabasePool } from "@tikdd/persistence";
-import { DLPandaProvider, ProviderRouter, TwitterSaverProvider } from "@tikdd/providers";
+import {
+  DLPandaProvider,
+  ProviderRouter,
+  SSSTwitterProvider,
+  TwitterSaverProvider
+} from "@tikdd/providers";
 import { RedisRolloutStore, RuntimeProviderRolloutSource } from "@tikdd/rollout-control";
 import { RedisCircuitStore, RedisProviderRoutingHealthSource } from "@tikdd/routing-health";
 import Redis from "ioredis";
@@ -11,8 +16,8 @@ import { loadCanarySchedulerConfiguration } from "./configuration";
 import { RedisCanaryLease } from "./lease";
 import { runCanaries } from "./runner";
 
-const ConfigSchema = z.object({
-  version: z.literal(1),
+export const CanaryFileSchema = z.object({
+  version: z.literal(2),
   authorization: z.object({
     assertedBy: z.string().min(1),
     assertedAt: z.iso.date(),
@@ -20,7 +25,7 @@ const ConfigSchema = z.object({
   }),
   canaries: z.array(z.object({
     id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    provider: z.enum(["twittersaver", "dlpanda"]),
+    provider: z.enum(["twittersaver", "dlpanda", "ssstwitter"]),
     platform: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     url: z.string().url()
   })).min(1)
@@ -36,7 +41,7 @@ export async function executeCanaryRun() {
   const healthPolicy = CircuitPolicySchema.parse(JSON.parse(healthPolicyRaw));
   const admission = loadAdmissionControlConfiguration();
   if (!admission.policy) throw new Error("ADMISSION_CONTROL_POLICY_JSON is required.");
-  const config = ConfigSchema.parse(JSON.parse(await readFile(new URL("../../../config/provider-canaries.json", import.meta.url), "utf8")));
+  const config = CanaryFileSchema.parse(JSON.parse(await readFile(new URL("../../../config/provider-canaries.json", import.meta.url), "utf8")));
   const pool = createDatabasePool(databaseUrl);
   const redis = new Redis(redisUrl, { maxRetriesPerRequest: 1, enableOfflineQueue: false, lazyConnect: true });
   await redis.connect();
@@ -50,7 +55,11 @@ export async function executeCanaryRun() {
   const circuits = new RedisCircuitStore(redis);
   const admissionStore = new RedisAdmissionStore(redis, admission.policy);
   const router = new ProviderRouter(
-    [new TwitterSaverProvider({ enabled: true }), new DLPandaProvider({ enabled: true })],
+    [
+      new TwitterSaverProvider({ enabled: true }),
+      new SSSTwitterProvider({ enabled: true }),
+      new DLPandaProvider({ enabled: true })
+    ],
     {
       region: configuration.region,
       maxAttempts: 4,

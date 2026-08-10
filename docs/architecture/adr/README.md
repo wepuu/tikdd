@@ -7,6 +7,7 @@
 - [ADR-0005: Internal delivery candidates and secure redirect boundary](0005-internal-delivery-candidates.md)
 - [ADR-0006: Provider health aggregation and distributed circuit breakers](0006-provider-health-and-circuits.md)
 - [ADR-0007: Runtime rollout, admission, and abuse-control boundary](0007-rollout-admission-and-abuse-controls.md)
+- [ADR-0008: Provider qualification, pilot evidence, and bounded rollback controls](0008-provider-qualification-and-pilot-controls.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

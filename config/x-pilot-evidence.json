@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "requiredConsecutiveDays": 7,
+  "providers": ["twittersaver", "ssstwitter"],
+  "dailyReviews": []
+}

@@ -26,6 +26,7 @@ PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL=<secret with at least 32 random bytes>
 PROVIDER_ROLLOUT_REFRESH_MS=5000
 PROVIDER_ROLLOUT_SNAPSHOT_TTL_MS=30000
 PROVIDER_ROLLOUT_MAX_STALE_MS=15000
+PROVIDER_PILOT_GUARD_REQUIRED=false
 ```
 
 The cohort key belongs in the deployment secret manager, must be identical across workers in the
@@ -35,6 +36,44 @@ mock remains available only outside production.
 
 Process-level provider enablement and terms approval remain hard prerequisites. A rollout rule can
 only reduce the provider manifest's platform, region, timeout, and production-safety boundaries.
+
+SSSTwitter has an additional delivery-evidence gate. It remains disabled unless all three settings
+are explicit:
+
+```text
+ENABLE_SSSTWITTER_PROVIDER=true
+SSSTWITTER_TERMS_APPROVED=true
+SSSTWITTER_DELIVERY_AUDIT_APPROVED=true
+```
+
+The final flag may be set only after the bounded media host, redirect, MIME, required-header, and
+link-lifetime review is recorded in `docs/providers/ssstwitter.md`. Rollout rules cannot bypass
+these process-level gates.
+
+`PROVIDER_PILOT_GUARD_REQUIRED` stays `false` while the selected tuple is only canary-ready and
+production/commercial approval is not established. After the independent approval gate and three
+complete internal calibration days, lock a reviewed policy, persist its first guard, publish the
+operator grant, and enable this setting together. A required guard is exact-tuple and fail-closed:
+missing, stale, expired, or zero-cap state denies new attempts.
+
+## Work item 10.5 calibration boundary
+
+- Technical canaries stay in explicit `canary-*` regions and do not count as internal/public
+  approval.
+- Numeric thresholds cannot be stored as a locked policy until the calibration timestamps cover
+  at least three complete days. They must come from reviewed measured baselines.
+- The evaluator compares only bounded aggregate counts/rates and p95 latency. Its evidence and
+  audit records prohibit URLs, task/candidate IDs, media metadata, headers, cookies, payloads, and
+  raw errors.
+- An unhealthy or stale window can reduce to the last healthy allocation or deny. A healthy window
+  after reduction keeps the same cap and emits `eligible_for_review`; an operator must explicitly
+  clear/replace the guard and separately change the rollout rule to increase traffic.
+- Promotions remain audited operator changes at internal, 5%, 25%, 50%, and 100%. A provider-wide
+  deny still wins before both the operator grant and guard, and workers observe its snapshot without
+  a Web/API deployment.
+
+The deterministic implementation can be verified before production approval, but it is not the
+three-day calibration or seven-day rollout evidence required to close work item 10.
 
 ## Apply a reviewed rule
 
@@ -100,9 +139,12 @@ With the local PostgreSQL and Redis containers healthy:
 ```sh
 pnpm db:migrate
 pnpm verify:rollout-control
+pnpm verify:pilot-control
 pnpm check
 ```
 
 The integration verification creates isolated rule IDs, proves enable and no-deploy emergency deny,
 checks both audit revisions, and restores the previous Redis snapshot before removing its database
-records.
+records. The pilot verification uses only synthetic aggregate evidence, proves automatic reduction,
+recovery hold, explicit operator restoration bounded by the existing grant, append-only audit, and
+cleanup. It is a control test and never counts as real calibration or rollout evidence.

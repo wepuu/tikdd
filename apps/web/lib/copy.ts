@@ -21,10 +21,17 @@ const copy = {
       exampleMeta: "Format choices appear after a link is resolved.",
       resolvedTitle: "Resolved media", resolvedPreview: "resolved media preview",
       formatsAvailable: "format choices", workingMeta: "TikDD is checking the available formats.",
+      workingLonger: "Still checking available formats. Some supported links take longer; you can keep this page open.",
       columns: { quality: "Quality", format: "Format", video: "Video", audio: "Audio", container: "Container", action: "Action" },
       videoAudio: "Video + audio", videoOnly: "Video only", audioOnly: "Audio only",
-      download: "Download", preparingDownload: "Preparing",
+      download: "Prepare download", preparingDownload: "Preparing",
+      deliveryReady: "Your short-lived download link is ready.", startDownload: "Start download",
+      deliveryExpired: "This download link expired or was already used.", regenerateDownload: "Create a new link",
+      statusLabel: "Task status",
       resolveError: "This link could not be resolved. Check that it is public and try again.",
+      retryableTitle: "Temporarily unavailable", retryableDescription: "TikDD could not finish this request. Try the same link again shortly.",
+      unavailableTitle: "Video unavailable", unavailableDescription: "This page may be private, restricted, removed, or unsupported. Use another public link you can access.",
+      expiredTitle: "Resolution expired", expiredDescription: "The saved formats are no longer available. Resolve the link again to refresh them.",
       duplicateInProgress: "This link is already being processed. Try again shortly.",
       rateLimited: "Too many requests were submitted. Wait briefly and try again.",
       concurrencyLimited: "Too many resolution tasks are active. Try again shortly.",
@@ -78,14 +85,23 @@ const copy = {
       preview: "预览", example: "示例结果", exampleTitle: "山间湖泊 4K", exampleMeta: "链接解析完成后将在这里显示可用格式。",
       resolvedTitle: "已解析媒体", resolvedPreview: "已解析媒体预览",
       formatsAvailable: "种可用格式", workingMeta: "TikDD 正在检查可用格式。",
+      workingLonger: "仍在检查可用格式。部分受支持链接需要更长时间，你可以保持本页打开。",
       columns: { quality: "清晰度", format: "格式", video: "视频", audio: "音频", container: "封装", action: "操作" },
-      videoAudio: "视频 + 音频", videoOnly: "仅视频", audioOnly: "仅音频", download: "下载", preparingDownload: "准备中",
-      resolveError: "无法解析该链接，请确认页面公开后重试。", timeout: "解析时间超出预期，请稍后重试。",
+      videoAudio: "视频 + 音频", videoOnly: "仅视频", audioOnly: "仅音频",
+      download: "准备下载", preparingDownload: "准备中",
+      deliveryReady: "短期下载链接已准备好。", startDownload: "开始下载",
+      deliveryExpired: "下载链接已过期或已使用。", regenerateDownload: "创建新链接",
+      statusLabel: "任务状态",
+      resolveError: "无法解析该链接，请确认页面公开后重试。",
+      retryableTitle: "暂时无法完成", retryableDescription: "TikDD 未能完成本次请求，请稍后使用同一链接重试。",
+      unavailableTitle: "视频不可用", unavailableDescription: "页面可能为私密、受限、已删除或暂不支持。请使用你有权访问的其他公开链接。",
+      expiredTitle: "解析结果已过期", expiredDescription: "已保存的格式不再可用，请重新解析链接以刷新结果。",
       duplicateInProgress: "该链接正在处理中，请稍后重试。",
       rateLimited: "提交请求过于频繁，请稍后重试。",
       concurrencyLimited: "当前活动解析任务过多，请稍后重试。",
       idempotencyConflict: "该请求标识已被使用，请重新发起解析。",
       admissionUnavailable: "暂时无法接收新的解析请求，请稍后重试。",
+      timeout: "解析时间超出预期，请稍后重试。",
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
     },
     features: [
@@ -112,7 +128,7 @@ const copy = {
     },
     trust: {
       title: "围绕安全交付设计", labels: "限定范围 · 短期有效 · 单次使用",
-      description: "公开结果不会包含第三方下载地址或秘密请求头。"
+      description: "公开结果不会包含第三方下载地址或私密请求头。"
     },
     legal: "TikDD 与页面中列出的平台不存在隶属关系。仅下载你拥有或已获授权使用的内容。"
   }

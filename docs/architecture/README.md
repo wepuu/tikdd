@@ -56,7 +56,13 @@ adds independently scheduled singleton cleanup with bounded PostgreSQL stages, h
 sanitized metrics, and Docker-backed repeat/cascade verification. Work item 9.5 adds
 rollout-controlled metadata-only canaries and expanded protected diagnostics.
 Work item 9.6 closes ADR-0007 with one Docker/CI failure-matrix gate. Production policy calibration,
-yt-dlp isolation, proxying, and temporary-object delivery are later milestones.
+yt-dlp isolation, proxying, and temporary-object delivery are later milestones. ADR-0008 now fixes
+the qualification lifecycle and evidence boundary for work item 10: operator grants remain the only
+way to raise traffic, while a separately audited automatic guard may only hold, reduce, or deny an
+existing grant. Numeric pilot SLOs are locked only after three complete internal calibration days.
+Work item 10.1 selected the disabled, `canary-ready` SSSTwitter adapter as the second X
+implementation candidate after a corrected-parser canary returned two formats and one sanitized
+media hostname. Delivery policy activation and worker registration remain blocked on work item 10.2.
 
 ## Request lifecycle
 
@@ -103,6 +109,8 @@ Operational configuration and protected diagnostics are documented in
 [Provider health operations](../provider-health-operations.md).
 Production admission and runtime rollout decisions are defined in
 [ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
+[ADR-0008](adr/0008-provider-qualification-and-pilot-controls.md) defines provider qualification,
+pilot evidence, promotion authority, and bounded automatic rollback.
 Operator configuration and emergency-stop procedures are documented in
 [Provider rollout operations](../provider-rollout-operations.md).
 Submission replay and duplicate suppression are documented in

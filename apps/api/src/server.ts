@@ -25,12 +25,13 @@ import {
   listPlatformSummaries,
   UnsupportedPlatformError
 } from "@tikdd/platform";
-import { DLPandaProvider, TwitterSaverProvider } from "@tikdd/providers";
+import { DLPandaProvider, SSSTwitterProvider, TwitterSaverProvider } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { Queue } from "bullmq";
 import Fastify from "fastify";
 import Redis from "ioredis";
 import { registerProviderHealthDiagnostics } from "./provider-health-diagnostics";
+import { toPublicResolveTask } from "./public-task";
 import { createTaskAdmissionHasherFromEnvironment } from "./task-admission";
 
 const port = Number.parseInt(process.env.API_PORT ?? "4000", 10);
@@ -115,6 +116,7 @@ registerProviderHealthDiagnostics(app, {
   rollout: rolloutRules,
   manifests: [
     new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }).manifest,
+    new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }).manifest,
     new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
@@ -296,7 +298,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
       .catch(() => {
         request.log.error("replayed task quota release failed");
       });
-    return reply.code(202).send(admission.task);
+    return reply.code(202).send(toPublicResolveTask(admission.task));
   }
   const task = admission.task;
 
@@ -335,7 +337,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
     return reply.code(503).send({ error: taskError });
   }
 
-  return reply.code(202).send(task);
+  return reply.code(202).send(toPublicResolveTask(task));
 });
 
 app.get<{ Params: { taskId: string } }>("/v1/resolve-tasks/:taskId", async (request, reply) => {
@@ -349,7 +351,7 @@ app.get<{ Params: { taskId: string } }>("/v1/resolve-tasks/:taskId", async (requ
       }
     });
   }
-  return task;
+  return toPublicResolveTask(task);
 });
 
 const close = async (signal: string) => {

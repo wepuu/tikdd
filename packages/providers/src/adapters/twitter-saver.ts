@@ -74,7 +74,7 @@ export class TwitterSaverProvider implements ResolverProvider {
       displayName: "TwitterSaver",
       kind: "site-adapter",
       enabled: options.enabled ?? false,
-      regions: ["*"],
+      regions: ["global", "canary-global"],
       timeoutMs: 15_000,
       costWeight: 10,
       platforms: [{ platform: "x", priority: 900 }]
@@ -147,6 +147,15 @@ export class TwitterSaverProvider implements ResolverProvider {
 
     if (payload.status !== "ok" || !payload.data) {
       const message = payload.msg?.slice(0, 300) || "TwitterSaver could not resolve this URL.";
+      if (/private|protected/i.test(message)) {
+        throw new ProviderError("The X post is private.", "content_private", false, false);
+      }
+      if (/deleted|not found|unavailable/i.test(message)) {
+        throw new ProviderError("The X post is unavailable.", "content_not_found", false, false);
+      }
+      if (/not available in (?:your|this) (?:country|region)|geo(?:graphically)? restricted/i.test(message)) {
+        throw new ProviderError("The X post is region restricted.", "geo_restricted", false, false);
+      }
       throw new ProviderError(message, "unsupported_url", false, true);
     }
 

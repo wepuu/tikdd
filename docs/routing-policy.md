@@ -103,3 +103,17 @@ See [ADR-0006](architecture/adr/0006-provider-health-and-circuits.md).
   production rollout.
 - Provider response fixtures and logs are sanitized before persistence.
 - Priority changes are configuration changes with review, audit history, and rollback.
+
+## X pilot order
+
+The reviewed X route is explicit and deterministic in `global` and the isolated `canary-global`
+region:
+
+1. `twittersaver`, priority 900;
+2. `ssstwitter`, priority 800.
+
+The 100-point separation dominates health and cost adjustments. TwitterSaver private, deleted, and
+geographic outcomes are terminal; challenges, upstream availability failures, and unsupported URL
+variants may fall through to SSSTwitter. SSSTwitter is never used to bypass a terminal content or
+policy result. Neither provider is eligible in an unreviewed region, and the development mock is
+rejected in production even when a rollout source attempts to grant it.

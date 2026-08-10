@@ -365,6 +365,7 @@ components:
         warnings:
           type: array
           maxItems: 20
+          description: Reserved for normalized public notices; current task responses return an empty array.
           items:
             type: string
     Media:
@@ -443,11 +444,14 @@ components:
       properties:
         provider:
           type: string
+          description: Generic public resolver identity; provider implementation names are never returned.
         kind:
           type: string
           enum: [api, site-adapter, yt-dlp, mock]
+          description: Public task responses use api; provider implementation kinds remain internal.
         cacheHit:
           type: boolean
+          description: Public task responses currently return false to avoid exposing routing internals.
         resolvedAt:
           type: string
           format: date-time

@@ -189,8 +189,16 @@ export const TWITTERSAVER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   hosts: ["dl.snapcdn.app"]
 });
 
+export const SSSTWITTER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ssstwitter-media-v1",
+  providerId: "ssstwitter",
+  modes: ["redirect"],
+  hosts: ["ssscdn.io"]
+});
+
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
-  [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY]
+  [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
+  [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

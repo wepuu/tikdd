@@ -1,5 +1,10 @@
 # TikDD development roadmap
 
+The current execution sequence continues in
+[the work item 11 implementation plan](work-item-11-implementation-plan.md): freeze the verified X
+baseline, make local pilot startup reproducible, audit the actual download journey, then complete
+the evidence/evaluator path before any staged traffic or broader platform expansion.
+
 The roadmap grows platform coverage through measured provider capabilities rather than promising
 everything listed by an extractor project. A platform becomes indexable and advertised only after a
 production provider meets its reliability and policy threshold.
@@ -33,6 +38,18 @@ Exit criteria: `pnpm check` passes and a Docker-backed mock task completes throu
   Router consumption are implemented behind an explicit versioned-policy gate.
 - A development-only failure-injection adapter proves priority order, fallback, terminal stops, and
   route budget exhaustion without participating in production routing.
+- [ADR-0008](architecture/adr/0008-provider-qualification-and-pilot-controls.md) defines the
+  candidate-to-stable qualification lifecycle, independent technical-test and production approval,
+  three-day internal SLO calibration, operator-only promotion, and a future restrictive automatic
+  guard. Its implementation begins with work item 10.1; no provider is enabled by this decision
+  alone.
+- Work item 10.1 rejected DLPanda/X in the current region after `provider_challenge` and selected
+  SSSTwitter at `canary-ready` after a corrected-parser canary. SSSTwitter remains disabled and out
+  of the worker until work item 10.2 completes its exact delivery-host policy and candidate mapping.
+- Work item 10.6 provides `pnpm verify:work-item-10`, a 12-stage offline Docker/CI gate covering both
+  real X adapters, routing, delivery, rollout/guard controls, cleanup, public-state contracts,
+  verification-residue checks, and the full repository build. It passes while the separate
+  sanitized seven-day evidence index remains `pending`; production traffic stays denied.
 
 Exit criteria: at least two providers demonstrate deterministic fallback, and each launch candidate
 platform has seven consecutive healthy canary runs with documented compliance approval.

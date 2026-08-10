@@ -73,11 +73,22 @@ describe("worker rollout configuration", () => {
     expect(() => loadRolloutConfiguration({ PROVIDER_ROLLOUT_ENABLED: "true" })).toThrow(
       /COHORT_KEY/
     );
+    expect(() => loadRolloutConfiguration({ PROVIDER_PILOT_GUARD_REQUIRED: "true" })).toThrow(
+      /requires PROVIDER_ROLLOUT_ENABLED/
+    );
     expect(() =>
       loadRolloutConfiguration({
         PROVIDER_ROLLOUT_ENABLED: "true",
         PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL: "not+base64url"
       })
     ).toThrow(/base64url/);
+  });
+
+  it("loads the pilot guard as an independent fail-closed gate", () => {
+    expect(loadRolloutConfiguration({
+      PROVIDER_ROLLOUT_ENABLED: "true",
+      PROVIDER_PILOT_GUARD_REQUIRED: "true",
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL: Buffer.alloc(32, 3).toString("base64url")
+    }).guardRequired).toBe(true);
   });
 });

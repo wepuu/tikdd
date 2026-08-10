@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import {
   ProviderRolloutRequestSchema,
   RolloutDecisionSchema,
+  PilotGuardSnapshotSchema,
   RolloutSnapshotSchema,
   type ProviderRolloutRequest,
   type RolloutDecision,
@@ -48,6 +49,9 @@ export function evaluateRollout(input: {
   request: ProviderRolloutRequest;
   cohortKey: Uint8Array;
   now?: Date;
+  guardSnapshot?: unknown;
+  guardRequired?: boolean;
+  maximumGuardStaleMs?: number;
 }): RolloutDecision {
   const snapshot = RolloutSnapshotSchema.parse(input.snapshot);
   const request = ProviderRolloutRequestSchema.parse(input.request);
@@ -91,9 +95,23 @@ export function evaluateRollout(input: {
   }
 
   const bucket = rolloutBucket(grant.id, request.taskId, input.cohortKey);
+  if (bucket >= grant.allocationBps) {
+    return RolloutDecisionSchema.parse({ allowed: false, reason: "outside_allocation", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+  }
+  if (input.guardRequired || input.guardSnapshot) {
+    if (!input.guardSnapshot) return RolloutDecisionSchema.parse({ allowed: false, reason: "guard_unavailable", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+    const guards = PilotGuardSnapshotSchema.parse(input.guardSnapshot);
+    const maximumStaleMs = input.maximumGuardStaleMs ?? 60_000;
+    const ageMs = now.getTime() - new Date(guards.generatedAt).getTime();
+    if (ageMs < -5_000 || ageMs > maximumStaleMs) return RolloutDecisionSchema.parse({ allowed: false, reason: "stale_guard", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+    const guard = guards.guards.find((candidate) => candidate.providerId === request.providerId && candidate.platform === request.platform && candidate.region === request.region);
+    if (!guard || new Date(guard.expiresAt) <= now) return RolloutDecisionSchema.parse({ allowed: false, reason: "guard_unavailable", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+    if (guard.capBps === 0) return RolloutDecisionSchema.parse({ allowed: false, reason: "automatic_guard_denied", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+    if (bucket >= Math.min(grant.allocationBps, guard.capBps)) return RolloutDecisionSchema.parse({ allowed: false, reason: "outside_guard_allocation", ruleId: grant.id, snapshotRevision: snapshot.revision, bucket });
+  }
   return RolloutDecisionSchema.parse({
-    allowed: bucket < grant.allocationBps,
-    reason: bucket < grant.allocationBps ? "allowed" : "outside_allocation",
+    allowed: true,
+    reason: "allowed",
     ruleId: grant.id,
     snapshotRevision: snapshot.revision,
     bucket

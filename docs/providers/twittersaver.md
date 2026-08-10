@@ -8,6 +8,8 @@
 - Technical review: 2026-08-04
 - Test authorization: project owner asserted on 2026-08-04
 - Production approval: not established; production enablement remains blocked
+- Reviewed routing regions: `global`, `canary-global`
+- X routing priority: 900 (primary)
 
 ## Public workflow observed
 
@@ -26,6 +28,10 @@ If the landing page contains Cloudflare Turnstile, the adapter returns `provider
 allows routing fallback. It does not call challenge-solving services or the site's local verification
 fallback. HTTP 429, upstream outage, malformed JSON, provider misses, and changed markup map to the
 shared TikDD error taxonomy.
+
+Private, deleted, unavailable, and geographic-policy outcomes are terminal and do not allow the
+secondary provider to retry the same content. Only typed transient or unsupported-variant outcomes
+may enter sequential fallback.
 
 ## Terms gate
 
@@ -56,3 +62,9 @@ default and requires both runtime flags.
   [canary-authorization.md](canary-authorization.md).
 - Monitor response schema, challenges, 429 rate, p95 latency, empty MP4 results, and redirect hosts.
 - Kill switch: `ENABLE_TWITTERSAVER_PROVIDER=false`.
+## Pilot closure evidence
+
+The sanitized cross-provider operational evidence index is
+[`config/x-pilot-evidence.json`](../../config/x-pilot-evidence.json). Its status remains `pending`;
+technical canary evidence does not establish production/commercial approval or satisfy the required
+seven consecutive daily reviews.

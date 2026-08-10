@@ -10,6 +10,7 @@ import {
 } from "@tikdd/admission-control";
 import {
   createDatabasePool,
+  PilotControlRepository,
   RolloutRuleRepository,
   TaskRepository
 } from "@tikdd/persistence";
@@ -19,6 +20,7 @@ import {
   MockProvider,
   ProviderRouter,
   ProviderRoutingError,
+  SSSTwitterProvider,
   TwitterSaverProvider,
   type ResolverProvider
 } from "@tikdd/providers";
@@ -41,6 +43,7 @@ import {
   createRolloutRuntime,
   loadRolloutConfiguration
 } from "./rollout";
+import { loadSSSTwitterActivationConfiguration } from "./provider-activation";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
@@ -50,6 +53,7 @@ const enableDLPandaProvider = (process.env.ENABLE_DLPANDA_PROVIDER ?? "false") =
 const twitterSaverTermsApproved =
   (process.env.TWITTERSAVER_TERMS_APPROVED ?? "false") === "true";
 const dlPandaTermsApproved = (process.env.DLPANDA_TERMS_APPROVED ?? "false") === "true";
+const ssstwitterActivation = loadSSSTwitterActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -83,9 +87,11 @@ const admissionStore =
     : null;
 const circuitStore = new RedisCircuitStore(redis);
 const rolloutRules = new RolloutRuleRepository(pool);
+const pilotControls = new PilotControlRepository(pool);
 const rolloutRuntime = await createRolloutRuntime({
   redis,
   repository: rolloutRules,
+  pilotRepository: pilotControls,
   configuration: rolloutConfiguration,
   production,
   onResult: (message) => process.stdout.write(`${message}\n`),
@@ -100,6 +106,9 @@ if (enableTwitterSaverProvider) {
 }
 if (enableDLPandaProvider) {
   providers.push(new DLPandaProvider({ enabled: true }));
+}
+if (ssstwitterActivation.enabled) {
+  providers.push(new SSSTwitterProvider({ enabled: true }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

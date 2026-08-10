@@ -73,6 +73,17 @@ Authorized operational probes are documented in the [canary operations guide](do
 pnpm check
 ```
 
+The production-shaped X pilot has an additional deterministic Docker gate:
+
+```sh
+pnpm verify:work-item-10
+```
+
+It runs migrations, fixture-only provider/routing/delivery/public-state contracts, audited rollout
+and pilot controls, admission, circuit, canary-metadata, cleanup, and the full repository check. It
+never runs a live provider canary. The external three-day calibration and seven-day evidence remain
+a separate operational gate.
+
 This runs formatting/lint checks, TypeScript checks, unit tests, and production builds.
 With PostgreSQL and Redis available, `pnpm verify:work-item-9` additionally runs the complete
 rollout, admission, health, cleanup, and canary Docker gate used by CI.

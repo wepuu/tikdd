@@ -157,6 +157,25 @@ Date: 2026-08-07.
 
 final result: passed
 
+## Work item 10.4 — real-journey state audit
+
+Date: 2026-08-10.
+
+- Preserved the selected Signal Runway visual direction and replaced misleading example-result
+  reuse with explicit retryable, unavailable/private, and expired states.
+- Added a slower-resolution live update without an ETA or routing detail.
+- Split delivery into opaque-link preparation and user-initiated download, with in-place expiry and
+  one-time-use regeneration.
+- Verified desktop and requested 360-pixel mobile English/Simplified Chinese parity, terminal result
+  focus, no horizontal overflow, 44-pixel touch targets, and keyboard radio navigation.
+- Confirmed the consumer result contains no provider identity, fallback depth, circuit state,
+  internal warnings, or upstream media URL.
+
+Full findings and 19 screenshots: `docs/design/work-item-10-4-audit.md` and
+`docs/design/work-item-10-4/`.
+
+P0 findings remaining: 0. Final result: passed.
+
 ## Work item 8 — Product Design boundary review
 
 Date: 2026-08-07.

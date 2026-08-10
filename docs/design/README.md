@@ -25,3 +25,9 @@ When the visual phase begins:
 
 The detailed sequence, exploration axes, review scorecard, and completion gate are recorded in
 [`work-item-6-execution-plan.md`](work-item-6-execution-plan.md).
+
+The provider-agnostic public state rules applied during the two-provider X routing implementation
+are recorded in [`work-item-10-3-public-state-contract.md`](work-item-10-3-public-state-contract.md).
+
+The real desktop and 360-pixel mobile state audit, P0 corrections, and screenshot evidence are
+recorded in [`work-item-10-4-audit.md`](work-item-10-4-audit.md).

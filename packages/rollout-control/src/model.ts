@@ -151,7 +151,11 @@ export const RolloutDecisionReasonSchema = z.enum([
   "stale_snapshot",
   "control_unavailable",
   "production_mock_denied",
-  "development_bypass"
+  "development_bypass",
+  "automatic_guard_denied",
+  "outside_guard_allocation",
+  "guard_unavailable",
+  "stale_guard"
 ]);
 export type RolloutDecisionReason = z.infer<typeof RolloutDecisionReasonSchema>;
 
@@ -167,3 +171,124 @@ export type RolloutDecision = z.infer<typeof RolloutDecisionSchema>;
 export interface ProviderRolloutSource {
   decide(request: ProviderRolloutRequest): Promise<RolloutDecision>;
 }
+
+export const PilotGuardReasonSchema = z.enum([
+  "healthy_hold",
+  "insufficient_samples",
+  "stale_evidence",
+  "absolute_stop",
+  "resolution_error",
+  "latency",
+  "challenge",
+  "invalid_result",
+  "delivery_error"
+]);
+export type PilotGuardReason = z.infer<typeof PilotGuardReasonSchema>;
+
+export const PilotGuardActionSchema = z.enum([
+  "hold",
+  "reduce",
+  "deny",
+  "eligible_for_review"
+]);
+export type PilotGuardAction = z.infer<typeof PilotGuardActionSchema>;
+
+const BasisPointsSchema = z.number().int().min(0).max(10_000);
+
+export const PilotPolicySchema = z.object({
+  id: RolloutRuleIdSchema,
+  version: z.number().int().positive(),
+  providerId: RolloutProviderIdSchema,
+  platform: PlatformIdSchema,
+  region: RegionIdSchema,
+  calibrationStartedAt: z.string().datetime(),
+  calibrationCompletedAt: z.string().datetime(),
+  lockedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  minimumSamples: z.number().int().positive(),
+  maximumEvidenceAgeMs: z.number().int().min(60_000).max(7 * 24 * 60 * 60 * 1_000),
+  staleAction: z.enum(["reduce", "deny"]),
+  rollbackAllocationBps: BasisPointsSchema,
+  thresholds: z.object({
+    minimumResolutionSuccessBps: BasisPointsSchema,
+    maximumP95LatencyMs: z.number().int().positive(),
+    maximumChallengeRateBps: BasisPointsSchema,
+    maximumInvalidResultRateBps: BasisPointsSchema,
+    minimumDeliverySuccessBps: BasisPointsSchema
+  })
+}).superRefine((policy, context) => {
+  const calibrationMs = new Date(policy.calibrationCompletedAt).getTime() - new Date(policy.calibrationStartedAt).getTime();
+  if (calibrationMs < 3 * 24 * 60 * 60 * 1_000) {
+    context.addIssue({ code: "custom", message: "A locked pilot policy requires three complete calibration days.", path: ["calibrationCompletedAt"] });
+  }
+  if (new Date(policy.lockedAt) < new Date(policy.calibrationCompletedAt)) {
+    context.addIssue({ code: "custom", message: "Policy lock time cannot precede calibration completion.", path: ["lockedAt"] });
+  }
+  if (new Date(policy.expiresAt) <= new Date(policy.lockedAt)) {
+    context.addIssue({ code: "custom", message: "Pilot policy expiry must follow its lock time.", path: ["expiresAt"] });
+  }
+});
+export type PilotPolicy = z.infer<typeof PilotPolicySchema>;
+
+export const PilotEvidenceSchema = z.object({
+  providerId: RolloutProviderIdSchema,
+  platform: PlatformIdSchema,
+  region: RegionIdSchema,
+  windowStartedAt: z.string().datetime(),
+  windowEndedAt: z.string().datetime(),
+  collectedAt: z.string().datetime(),
+  distinctSamples: z.number().int().nonnegative(),
+  resolutionSuccessBps: BasisPointsSchema,
+  p95LatencyMs: z.number().int().nonnegative(),
+  challengeRateBps: BasisPointsSchema,
+  invalidResultRateBps: BasisPointsSchema,
+  deliverySuccessBps: BasisPointsSchema,
+  absoluteStop: z.boolean()
+}).refine((evidence) => new Date(evidence.windowEndedAt) > new Date(evidence.windowStartedAt), {
+  message: "Evidence window must end after it starts.",
+  path: ["windowEndedAt"]
+});
+export type PilotEvidence = z.infer<typeof PilotEvidenceSchema>;
+
+export const PilotGuardSchema = z.object({
+  providerId: RolloutProviderIdSchema,
+  platform: PlatformIdSchema,
+  region: RegionIdSchema,
+  policyId: RolloutRuleIdSchema,
+  policyVersion: z.number().int().positive(),
+  capBps: BasisPointsSchema,
+  lastHealthyAllocationBps: BasisPointsSchema,
+  action: PilotGuardActionSchema,
+  reason: PilotGuardReasonSchema,
+  evidenceWindowStartedAt: z.string().datetime(),
+  evidenceWindowEndedAt: z.string().datetime(),
+  revision: z.number().int().positive(),
+  updatedAt: z.string().datetime(),
+  expiresAt: z.string().datetime()
+});
+export type PilotGuard = z.infer<typeof PilotGuardSchema>;
+
+export const PilotGuardSnapshotSchema = z.object({
+  schemaVersion: z.literal("1"),
+  revision: z.number().int().nonnegative(),
+  generatedAt: z.string().datetime(),
+  guards: z.array(PilotGuardSchema).max(10_000)
+}).superRefine((snapshot, context) => {
+  const tuples = new Set<string>();
+  snapshot.guards.forEach((guard, index) => {
+    const tuple = `${guard.providerId}\0${guard.platform}\0${guard.region}`;
+    if (tuples.has(tuple)) context.addIssue({ code: "custom", message: "Duplicate pilot guard tuple.", path: ["guards", index] });
+    tuples.add(tuple);
+  });
+});
+export type PilotGuardSnapshot = z.infer<typeof PilotGuardSnapshotSchema>;
+
+export const PilotGuardSampleSummarySchema = z.object({
+  distinctSamples: z.number().int().nonnegative(),
+  resolutionSuccessBps: BasisPointsSchema,
+  p95LatencyMs: z.number().int().nonnegative(),
+  challengeRateBps: BasisPointsSchema,
+  invalidResultRateBps: BasisPointsSchema,
+  deliverySuccessBps: BasisPointsSchema
+});
+export type PilotGuardSampleSummary = z.infer<typeof PilotGuardSampleSummarySchema>;

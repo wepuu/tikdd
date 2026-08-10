@@ -15,6 +15,7 @@
     "lint": "node scripts/lint.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:work-item-10:contracts": "vitest run packages/providers/test/site-adapters.test.ts packages/providers/test/x-routing-contract.test.ts packages/providers/test/provider-router.test.ts packages/delivery-core/test/delivery-core.test.ts apps/delivery/test/app.test.ts apps/worker/test/provider-activation.test.ts apps/worker/test/rollout.test.ts packages/rollout-control/test/pilot-guard.test.ts packages/platform/test/detect-platform.test.ts apps/api/test/public-task.test.ts apps/web/test/task-presentation.test.ts apps/web/test/result-presentation.test.ts apps/canary/test/configuration.test.ts apps/canary/test/runtime-config.test.ts packages/contracts/test/task-admission-openapi.test.ts",
     "smoke:local": "node scripts/smoke.mjs",
     "canary:providers": "pnpm --filter @tikdd/providers canary",
     "canary:start": "pnpm --filter @tikdd/canary start",
@@ -36,8 +37,12 @@
     "verify:cleanup": "pnpm --filter @tikdd/cleanup verify",
     "verify:routing-health": "pnpm --filter @tikdd/worker verify:routing-health",
     "verify:rollout-control": "pnpm --filter @tikdd/worker verify:rollout-control",
+    "verify:pilot-control": "pnpm --filter @tikdd/worker verify:pilot-control",
+    "verify:work-item-10:residue": "pnpm --filter @tikdd/worker verify:work-item-10-residue",
     "verify:admission-control": "pnpm --filter @tikdd/admission-control verify:redis",
-    "verify:work-item-9": "node scripts/verify-work-item-9.mjs"
+    "verify:work-item-9": "node scripts/verify-work-item-9.mjs",
+    "verify:work-item-10:evidence": "node scripts/verify-work-item-10-evidence.mjs",
+    "verify:work-item-10": "node scripts/verify-work-item-10.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

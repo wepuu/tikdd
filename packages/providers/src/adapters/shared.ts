@@ -141,32 +141,94 @@ export async function requestText(
   url: URL,
   init: RequestInit,
   allowedHosts: ReadonlySet<string>,
-  maximumBytes = 2_000_000
+  options: {
+    maximumBytes?: number;
+    expectedContentTypes?: readonly string[];
+    maximumRedirects?: number;
+  } = {}
 ): Promise<{ body: string; cookie: string; response: Response }> {
-  let response: Response;
-  try {
-    response = await fetchImpl(url, init);
-  } catch (error) {
-    if (init.signal?.aborted) {
-      throw error;
+  const maximumBytes = options.maximumBytes ?? 2_000_000;
+  const maximumRedirects = options.maximumRedirects ?? 3;
+  let currentUrl = new URL(url);
+  let currentInit: RequestInit = { ...init, redirect: "manual" };
+  let response: Response | null = null;
+  let cookie = "";
+
+  for (let redirectCount = 0; redirectCount <= maximumRedirects; redirectCount += 1) {
+    try {
+      response = await fetchImpl(currentUrl, currentInit);
+    } catch (error) {
+      if (init.signal?.aborted) {
+        throw error;
+      }
+      throw new ProviderError(
+        "The provider could not be reached.",
+        "provider_unavailable",
+        true,
+        true
+      );
     }
-    throw new ProviderError(
-      "The provider could not be reached.",
-      "provider_unavailable",
-      true,
-      true
-    );
+
+    const responseCookie = cookiesFrom(response);
+    if (responseCookie) {
+      cookie = [cookie, responseCookie].filter(Boolean).join("; ");
+    }
+
+    if (![301, 302, 303, 307, 308].includes(response.status)) {
+      break;
+    }
+    if (redirectCount === maximumRedirects) {
+      throw new ProviderError("The provider exceeded its redirect limit.", "invalid_result", true, true);
+    }
+    const location = response.headers.get("location");
+    if (!location) {
+      throw new ProviderError("The provider returned an invalid redirect.", "invalid_result", true, true);
+    }
+    let nextUrl: URL;
+    try {
+      nextUrl = new URL(location, currentUrl);
+    } catch {
+      throw new ProviderError("The provider returned an invalid redirect.", "invalid_result", true, true);
+    }
+    if (nextUrl.protocol !== "https:" || !allowedHosts.has(nextUrl.hostname.toLowerCase())) {
+      throw new ProviderError(
+        "The provider redirected outside its allowlist.",
+        "invalid_result",
+        false,
+        true
+      );
+    }
+
+    const headers = new Headers(currentInit.headers);
+    if (cookie) {
+      headers.set("cookie", cookie);
+    }
+    const changesToGet =
+      response.status === 303 ||
+      ((response.status === 301 || response.status === 302) &&
+        (currentInit.method ?? "GET").toUpperCase() === "POST");
+    if (changesToGet) {
+      headers.delete("content-type");
+      headers.delete("content-length");
+      currentInit = { ...currentInit, method: "GET", body: null, headers };
+    } else {
+      currentInit = { ...currentInit, headers };
+    }
+    currentUrl = nextUrl;
   }
 
+  if (!response) {
+    throw new ProviderError("The provider returned no response.", "provider_unavailable", true, true);
+  }
   let finalUrl: URL;
   try {
-    finalUrl = new URL(response.url || url);
+    finalUrl = new URL(response.url || currentUrl);
   } catch {
-    throw new ProviderError("The provider returned an invalid redirect.", "invalid_result", true, true);
+    throw new ProviderError("The provider returned an invalid URL.", "invalid_result", true, true);
   }
   if (finalUrl.protocol !== "https:" || !allowedHosts.has(finalUrl.hostname.toLowerCase())) {
     throw new ProviderError(
-      "The provider redirected outside its allowlist.",
+      "The provider returned a response outside its allowlist.",
       "invalid_result",
       false,
       true
@@ -189,8 +251,20 @@ export async function requestText(
   if (!response.ok) {
     throw new ProviderError("The provider endpoint changed.", "provider_schema_changed", true, true);
   }
+  const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+  if (
+    options.expectedContentTypes &&
+    (!contentType || !options.expectedContentTypes.includes(contentType))
+  ) {
+    throw new ProviderError(
+      "The provider returned an unexpected content type.",
+      "invalid_result",
+      true,
+      true
+    );
+  }
 
-  return { body, cookie: cookiesFrom(response), response };
+  return { body, cookie, response };
 }
 
 function normalizedContainer(format: ParsedFormat): string {

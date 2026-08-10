@@ -3,36 +3,29 @@ import { readFile } from "node:fs/promises";
 import { detectPlatform } from "@tikdd/platform";
 import { z } from "zod";
 import { DLPandaProvider } from "./adapters/dlpanda";
+import { SSSTwitterProvider } from "./adapters/ssstwitter";
 import { TwitterSaverProvider } from "./adapters/twitter-saver";
+import {
+  CanaryProviderIdSchema,
+  ProviderCanaryConfigSchema,
+  selectProviderCanaries,
+  type CanaryProviderId
+} from "./canary-config";
 import { ProviderError } from "./errors";
 import { MockProvider, ProviderRouter, type ResolverProvider } from "./index";
 
-const ProviderIdSchema = z.enum(["twittersaver", "dlpanda"]);
-type ProviderId = z.infer<typeof ProviderIdSchema>;
-
-const CanaryConfigSchema = z.object({
-  version: z.literal(1),
-  authorization: z.object({
-    assertedBy: z.string().min(1),
-    assertedAt: z.iso.date(),
-    scope: z.string().min(1)
-  }),
-  canaries: z
-    .array(
-      z.object({
-        id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-        provider: ProviderIdSchema,
-        platform: z.string().min(1),
-        url: z.string().url()
-      })
-    )
-    .min(1)
-});
-
-const providers: Record<ProviderId, ResolverProvider> = {
+const providers: Record<CanaryProviderId, ResolverProvider> = {
   twittersaver: new TwitterSaverProvider({ enabled: true }),
-  dlpanda: new DLPandaProvider({ enabled: true })
+  dlpanda: new DLPandaProvider({ enabled: true }),
+  ssstwitter: new SSSTwitterProvider({ enabled: true })
 };
+
+function qualificationHosts(provider: ResolverProvider): readonly string[] {
+  if (provider instanceof SSSTwitterProvider) {
+    return provider.consumeQualificationEvidence()?.candidateHosts ?? [];
+  }
+  return [];
+}
 
 function failureCode(error: unknown): string {
   if (error instanceof ProviderError) {
@@ -44,6 +37,36 @@ function failureCode(error: unknown): string {
   return "internal_error";
 }
 
+async function auditDeliveryCandidate(
+  candidate: { targetUrl: string },
+  observedAfterMs: number
+): Promise<{
+  host: string;
+  status: number;
+  redirectHost: string | null;
+  contentType: string | null;
+  contentLength: string | null;
+  durationMs: number;
+  observedAfterMs: number;
+}> {
+  const auditStartedAt = Date.now();
+  const response = await fetch(candidate.targetUrl, {
+    method: "HEAD",
+    redirect: "manual",
+    signal: AbortSignal.timeout(10_000)
+  });
+  const location = response.headers.get("location");
+  return {
+    host: new URL(candidate.targetUrl).hostname,
+    status: response.status,
+    redirectHost: location ? new URL(location, candidate.targetUrl).hostname : null,
+    contentType: response.headers.get("content-type")?.split(";", 1)[0] ?? null,
+    contentLength: response.headers.get("content-length"),
+    durationMs: Date.now() - auditStartedAt,
+    observedAfterMs
+  };
+}
+
 async function main(): Promise<void> {
   if (process.env.TIKDD_CANARY_AUTHORIZED !== "true") {
     throw new Error(
@@ -52,18 +75,21 @@ async function main(): Promise<void> {
   }
 
   const configUrl = new URL("../../../config/provider-canaries.json", import.meta.url);
-  const config = CanaryConfigSchema.parse(JSON.parse(await readFile(configUrl, "utf8")));
+  const config = ProviderCanaryConfigSchema.parse(JSON.parse(await readFile(configUrl, "utf8")));
   const providerFilter = process.env.CANARY_PROVIDER
-    ? ProviderIdSchema.parse(process.env.CANARY_PROVIDER)
-    : null;
+    ? CanaryProviderIdSchema.parse(process.env.CANARY_PROVIDER)
+    : undefined;
   const mode = z.enum(["direct", "routing"]).parse(process.env.CANARY_MODE ?? "direct");
-  const selected = config.canaries.filter(
-    (canary) => providerFilter === null || canary.provider === providerFilter
-  );
-
-  if (selected.length === 0) {
-    throw new Error("No canaries matched CANARY_PROVIDER.");
-  }
+  const deliveryLifetimeDelayMs = z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(5 * 60 * 1000)
+    .parse(process.env.CANARY_AUDIT_LIFETIME_DELAY_MS ?? "0");
+  const selected = selectProviderCanaries(config, {
+    id: process.env.CANARY_ID,
+    provider: providerFilter
+  });
 
   process.stdout.write(
     `${JSON.stringify({
@@ -101,27 +127,31 @@ async function main(): Promise<void> {
       const resolution = routed?.resolution ?? (await providers[canary.provider].resolve(input));
       const result = resolution.result;
       const candidateHosts = process.env.CANARY_REPORT_HOSTS === "true"
-        ? [...new Set(resolution.candidates.map((candidate) => new URL(candidate.targetUrl).hostname))]
+        ? [...new Set([
+            ...resolution.candidates.map((candidate) => new URL(candidate.targetUrl).hostname),
+            ...qualificationHosts(providers[canary.provider])
+          ])]
             .sort()
         : null;
-      const deliveryAudit = process.env.CANARY_AUDIT_DELIVERY === "true"
-        ? await Promise.all(
-            resolution.candidates.map(async (candidate) => {
-              const response = await fetch(candidate.targetUrl, {
-                method: "HEAD",
-                redirect: "manual",
-                signal: AbortSignal.timeout(10_000)
-              });
-              const location = response.headers.get("location");
-              return {
-                host: new URL(candidate.targetUrl).hostname,
-                status: response.status,
-                redirectHost: location ? new URL(location, candidate.targetUrl).hostname : null,
-                contentType: response.headers.get("content-type")?.split(";", 1)[0] ?? null
-              };
-            })
-          )
-        : null;
+      let deliveryAudit = null;
+      if (process.env.CANARY_AUDIT_DELIVERY === "true") {
+        if (deliveryLifetimeDelayMs > 0) {
+          const candidate = resolution.candidates[0];
+          if (!candidate) {
+            throw new Error("The provider returned no candidate for the delivery lifetime audit.");
+          }
+          const initial = await auditDeliveryCandidate(candidate, 0);
+          await new Promise((resolve) => setTimeout(resolve, deliveryLifetimeDelayMs));
+          const delayed = await auditDeliveryCandidate(candidate, deliveryLifetimeDelayMs);
+          deliveryAudit = [initial, delayed];
+        } else {
+          deliveryAudit = await Promise.all(
+            resolution.candidates
+              .slice(0, 2)
+              .map((candidate) => auditDeliveryCandidate(candidate, 0))
+          );
+        }
+      }
       process.stdout.write(
         `${JSON.stringify({
           event: "canary_result",

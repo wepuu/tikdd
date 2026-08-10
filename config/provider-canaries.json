@@ -1,9 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
   "authorization": {
     "assertedBy": "project-owner",
     "assertedAt": "2026-08-04",
-    "scope": "The named provider integrations and content URLs are authorized for TikDD technical testing."
+    "scope": "Only the exact provider, platform, and URL tuples enumerated below are authorized for bounded TikDD technical testing."
   },
   "canaries": [
     {

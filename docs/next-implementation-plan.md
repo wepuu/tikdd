@@ -1,5 +1,10 @@
 # TikDD next implementation plan
 
+> Current continuation: [Work item 11 implementation plan](work-item-11-implementation-plan.md).
+> The verified local X download now shifts the next priority to reproducible pilot operation,
+> actual-journey Product Design QA, and privacy-safe evidence automation. Broader platform rollout
+> remains deferred.
+
 ## Product decision
 
 The next objective is a narrow, production-shaped X download pilot, not broader catalog marketing.
@@ -291,25 +296,54 @@ Exit gate:
 
 ### Phase 4 — Real redundancy and controlled rollout
 
-Estimated effort: 5–10 engineering days plus a seven-day observation window.
+Detailed execution and acceptance criteria are recorded in
+[Work item 10 implementation plan](work-item-10-implementation-plan.md).
 
-1. Add a second authorized X-capable adapter using the provider template, fixture suite, canary gate,
-   allowlists, and kill switch.
-2. Expand the authorized corpus to URL variants such as short links, quoted posts, multi-video posts,
-   image-only posts, deleted content, private content, and region-restricted content.
-3. Run both real providers through sequential fallback; the development mock must not participate in
-   staging or production success paths.
-4. Roll out by region and percentage: internal only, 5%, 25%, 50%, then 100%, with automatic rollback
-   on error-rate or latency thresholds.
-5. Begin TikTok only after selecting a second real adapter for regions where DLPanda presents a
-   challenge. YouTube follows the same gate rather than being advertised from catalog recognition
-   alone.
+Estimated effort: 9–15 engineering days plus a seven-day observation window.
+
+#### Work item 10.0 — Provider qualification and pilot-control ADR
+
+Status: complete on 2026-08-10.
+
+[ADR-0008](architecture/adr/0008-provider-qualification-and-pilot-controls.md) defines the
+qualification lifecycle from candidate through stable or paused, keeps technical-test authorization
+separate from production approval, and requires three complete internal calibration days before
+numeric pilot SLOs are locked. Operators alone may grant or increase traffic. Automatic evaluation
+uses a separate revisioned guard that can only hold, reduce, or deny an existing grant, and every
+decision is tied to sanitized evidence, a policy version, and an audit revision.
+
+1. ADR-0008 fixes provider qualification, evidence, SLO calibration, promotion, rollback, and
+   operator authority before production provider-selection changes. Complete.
+2. Qualify DLPanda as the first candidate for the second X route, but select another explicitly
+   authorized provider if its regional challenge or delivery boundary cannot pass safely.
+3. Complete the selected adapter with normalized formats, reviewed delivery candidates, exact host
+   policies, fixtures, canaries, and a kill switch.
+4. Prove deterministic two-provider fallback across an expanded authorized X corpus; the development
+   mock must not participate in staging or production success paths.
+5. Audit the real desktop and mobile user journey for primary success, fallback success, terminal
+   failure, retryable failure, delivery, and expiry before public traffic.
+6. Calibrate three days of internal evidence, then roll out by region and percentage: internal only,
+   5%, 25%, 50%, then 100%, with bounded automatic rollback.
+7. Close the phase with one deterministic Docker/CI gate plus a separate seven-day authorized canary
+   evidence record.
+
+Work item 10.1 is currently in progress. Exact canary-ID selection is implemented, and the project
+owner authorized one DLPanda/X request on 2026-08-10. It returned `provider_challenge` after 1,467 ms
+without media requests or bypass attempts, so DLPanda remains `fixture-ready` and is paused for X in
+the current `global` region. Its one-time tuple was removed after the run. Closing 10.1 now requires
+another explicitly authorized X provider, or a separately reviewed and authorized DLPanda region.
+SSSTwitter is now the authorized replacement candidate. Its first response exposed a page-scope
+parser defect, so that result is excluded from qualification evidence. The parser now requires the
+complete `#result` subtree. An explicitly approved repeat succeeded in 4,931 ms with two normalized
+formats and only `ssscdn.io` as sanitized host evidence. SSSTwitter is selected at `canary-ready`;
+the consumed tuple was removed, and delivery validation moves to work item 10.2.
 
 Exit gate:
 
 - Two real X providers demonstrate deterministic fallback and seven consecutive healthy canary runs.
 - Success rate, p95 latency, fallback depth, delivery failures, and provider challenge rate meet the
   pilot SLO.
+- P0 product-flow findings are closed in English and Simplified Chinese on desktop and mobile.
 - The mock provider is disabled outside development.
 
 ## Deferred until after the pilot
@@ -347,7 +381,14 @@ core product loop is proven.
 | 9.5 | Authorized canaries and diagnostics — complete | Work items 8 and 9.1–9.4 | Privacy tests, singleton lease, diagnostics, and Docker persistence/cleanup |
 | 9.6 | Integrated Docker failure matrix — complete | Work items 9.1–9.5 | Eight-stage gate plus full `pnpm check` |
 | 9 | Flags, quotas, dedupe, cleanup — complete | Health state | Docker-backed end-to-end gate passed |
-| 10 | Second real X adapter | Canary framework | Seven-day staged rollout evidence |
+| 10.0 | Provider qualification and pilot-control ADR — complete | Work item 9 | ADR review of approval, SLO, rollback, audit, and privacy boundaries |
+| 10.1 | Second X provider qualification — complete | ADR-0008 and authorized replacement | SSSTwitter selected after sanitized regional canary and reviewed provider record |
+| 10.2 | Production-complete second adapter — complete | Selected provider evidence | Candidate parity, exact host policy, request security, activation gates, typed errors, and four-minute proxy-path lifetime evidence pass |
+| 10.3 | Two-provider routing and X corpus — complete | Two deliverable adapters | Real-adapter deterministic fallback, terminal-stop, circuit, concurrency, corpus, ticket, and public-projection tests pass |
+| 10.4 | Real-journey Product Design audit — complete | Two-provider application states | Desktop/mobile bilingual P0 closure and screenshot QA passed |
+| 10.5 | Control plane complete; operational observation pending | Independent production/commercial approval | Three-day calibration and seven-day evidence remain real-time gates |
+| 10.6 | Deterministic gate implemented; external closure pending | Production approval and real-time observation | `pnpm verify:work-item-10` plus seven-day evidence |
+| 10 | Second real X adapter and controlled pilot | Canary framework | Two real providers and reviewed staged-rollout evidence |
 
 Every work item ends with `pnpm check`. Boundary changes also update OpenAPI, contracts, migrations,
 security documentation, and the relevant ADR in the same change.

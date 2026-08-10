@@ -210,4 +210,38 @@ describe("reviewed delivery network policy", () => {
       ])
     ).rejects.toThrow(/exclusively to public/);
   });
+
+  it("allows only the exact reviewed SSSTwitter media host", () => {
+    expect(
+      assertDeliveryTargetPolicy({
+        providerId: "ssstwitter",
+        mode: "redirect",
+        hostPolicyId: "ssstwitter-media-v1",
+        targetUrl: "https://ssscdn.io/fixture/video.mp4"
+      }).hostname
+    ).toBe("ssscdn.io");
+
+    for (const targetUrl of [
+      "https://media.ssscdn.io/fixture/video.mp4",
+      "https://ssscdn.io.example.test/fixture/video.mp4"
+    ]) {
+      expect(() =>
+        assertDeliveryTargetPolicy({
+          providerId: "ssstwitter",
+          mode: "redirect",
+          hostPolicyId: "ssstwitter-media-v1",
+          targetUrl
+        })
+      ).toThrow(/not allowed/);
+    }
+
+    expect(() =>
+      assertDeliveryTargetPolicy({
+        providerId: "twittersaver",
+        mode: "redirect",
+        hostPolicyId: "ssstwitter-media-v1",
+        targetUrl: "https://ssscdn.io/fixture/video.mp4"
+      })
+    ).toThrow(/reviewed host policy/);
+  });
 });

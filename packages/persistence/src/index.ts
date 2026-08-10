@@ -31,6 +31,7 @@ import { Pool, type PoolClient, type QueryResultRow } from "pg";
 export * from "./task-admission";
 export * from "./cleanup";
 export * from "./operational-diagnostics";
+export * from "./pilot-control";
 
 interface TaskRow extends QueryResultRow {
   id: string;
