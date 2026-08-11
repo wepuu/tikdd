@@ -32,6 +32,9 @@ importers:
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@tikdd/deployment-preflight':
+        specifier: workspace:*
+        version: link:../../packages/deployment-preflight
       '@tikdd/persistence':
         specifier: workspace:*
         version: link:../../packages/persistence
@@ -114,6 +117,24 @@ importers:
         specifier: ^5.0.0
         version: 5.11.0
 
+  apps/evidence:
+    dependencies:
+      '@tikdd/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../../packages/rollout-control
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+
+  apps/preflight:
+    dependencies:
+      '@tikdd/deployment-preflight':
+        specifier: workspace:*
+        version: link:../../packages/deployment-preflight
+
   apps/web:
     dependencies:
       '@fontsource-variable/noto-sans-sc':
@@ -159,6 +180,9 @@ importers:
       '@tikdd/delivery-core':
         specifier: workspace:*
         version: link:../../packages/delivery-core
+      '@tikdd/deployment-preflight':
+        specifier: workspace:*
+        version: link:../../packages/deployment-preflight
       '@tikdd/persistence':
         specifier: workspace:*
         version: link:../../packages/persistence
@@ -207,6 +231,12 @@ importers:
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../contracts
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+
+  packages/deployment-preflight:
+    dependencies:
       zod:
         specifier: ^4.0.0
         version: 4.4.3

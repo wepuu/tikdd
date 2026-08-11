@@ -2,8 +2,9 @@
 
 > Current continuation: [Work item 11 implementation plan](work-item-11-implementation-plan.md).
 > The verified local X download now shifts the next priority to reproducible pilot operation,
-> actual-journey Product Design QA, and privacy-safe evidence automation. Broader platform rollout
-> remains deferred.
+> actual-journey Product Design QA, and privacy-safe evidence automation. Work items 11.1–11.4 are
+> complete; the consolidated work item 11 engineering gate is ready. Personal deployment settings,
+> Provider-use confirmation, and real 11.6 elapsed calibration remain operationally pending.
 
 ## Product decision
 
@@ -28,6 +29,17 @@ boundaries needed for future adapters.
 - The Web flow submits and polls tasks, exposes only normalized format choices, and requests
   controlled delivery without naming providers. English and Simplified Chinese cover the current
   validation, progress, failure, result, and delivery states.
+- `pnpm dev` now supervises one reproducible Mock-only local stack; `pnpm dev:pilot` fails closed
+  without current-shell authorization, exact providers, approvals, ephemeral delivery material,
+  and page-host egress; `pnpm dev:stop` leaves PostgreSQL and Redis data intact.
+- A newly authorized real X journey now has desktop and 360-pixel Product Design evidence through
+  resolution, controlled delivery, natural expiry, regeneration, and a redeemed one-use browser
+  handoff. English and Simplified Chinese handoff feedback is explicit and all audited P0/P1 issues
+  are closed; live fallback remains a named evidence limit because the primary route succeeded.
+- [ADR-0009](architecture/adr/0009-pilot-evidence-and-delivery-outcomes.md) is implemented by the
+  exact tuple/class evidence store, distinct-task UTC aggregation, sanitized delivery outcomes,
+  deterministic replay/retention, and scheduled restrictive evaluator. It grants no traffic;
+  work item 11.5 must establish the internal deployment preflight before any pilot authorization.
 
 ## Target user journey
 
@@ -389,6 +401,13 @@ core product loop is proven.
 | 10.5 | Control plane complete; operational observation pending | Independent production/commercial approval | Three-day calibration and seven-day evidence remain real-time gates |
 | 10.6 | Deterministic gate implemented; external closure pending | Production approval and real-time observation | `pnpm verify:work-item-10` plus seven-day evidence |
 | 10 | Second real X adapter and controlled pilot | Canary framework | Two real providers and reviewed staged-rollout evidence |
+| 11.0 | Work item 10 baseline — complete | Verified work item 10 | Git baseline and remote push |
+| 11.1 | Reproducible local Pilot launcher — complete | 11.0 | Fail-closed startup, bounded stop, and retention checks |
+| 11.2 | Authorized real-journey audit — complete | 11.1 | Bilingual desktop/mobile P0/P1 closure |
+| 11.3 | Pilot evidence and delivery-outcome ADR — complete | ADR-0008 and 10.5 | ADR-0009 privacy, aggregation, retention, and evaluator review |
+| 11.4 | Evidence aggregator and restrictive evaluator — complete | 11.3 | Migration, replay, cleanup, privacy, stale-state, and Docker tests pass |
+| 11.5 | Internal deployment preflight — implementation complete, settings pending | 11.4 and deployment decisions | Fail-closed control passes; deployment ID, region, proxy mode, Provider use, and real signals remain |
+| 11.6 | Consolidated engineering gate — complete; observation pending | 11.5 | Offline CI baseline passes; real three-day calibration and seven-day observation cannot be simulated |
 
 Every work item ends with `pnpm check`. Boundary changes also update OpenAPI, contracts, migrations,
 security documentation, and the relevant ADR in the same change.

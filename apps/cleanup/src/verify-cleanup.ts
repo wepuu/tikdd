@@ -57,10 +57,10 @@ async function insertFixture(input: {
   );
   await pool.query(
     `INSERT INTO delivery_candidates (
-       id, task_id, format_id, provider_id, mode, host_policy_id, encryption_algorithm,
+       id, task_id, format_id, provider_id, platform, region, observation_class, mode, host_policy_id, encryption_algorithm,
        encryption_key_id, encryption_iv, encrypted_payload, authentication_tag,
        created_at, updated_at, expires_at
-     ) VALUES ($1, $2, 'fixture', 'cleanup-verifier', 'redirect', 'cleanup-verifier',
+     ) VALUES ($1, $2, 'fixture', 'cleanup-verifier', 'x', 'global', 'public', 'redirect', 'cleanup-verifier',
        'aes-256-gcm', 'cleanup-verifier-v1', $3, $4, $5, $6, $6, $7)`,
     [input.candidateId, input.taskId, Buffer.alloc(12, 1), Buffer.alloc(32, 2), Buffer.alloc(16, 3), input.createdAt, input.expiresAt]
   );
@@ -170,6 +170,7 @@ try {
     `${JSON.stringify({ dryRun: dryRun.rows, firstRun: firstRun.rows, repeatedRun: repeatedRun.rows, cascadeVerified: true, leaseContentionVerified: true })}\n`
   );
 } finally {
+  await pool.query("DELETE FROM provider_delivery_outcomes WHERE provider_id='cleanup-verifier'").catch(() => undefined);
   await pool.query("DELETE FROM resolve_tasks WHERE id = ANY($1)", [taskIds]).catch(() => undefined);
   await redis.del(leaseSource.storageKey()).catch(() => undefined);
   await Promise.all([pool.end(), redis.quit().catch(() => undefined)]);

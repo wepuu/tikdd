@@ -31,7 +31,14 @@ export class PilotControlRepository {
       [policy.id,policy.version,policy.providerId,policy.platform,policy.region,JSON.stringify(policy),policy.calibrationStartedAt,
        policy.calibrationCompletedAt,policy.lockedAt,policy.expiresAt,reviewerId]);
   }
-  async applyGuard(input: { guard: PilotGuard; expectedRevision: number | null; actorId: string; sampleSummary: PilotGuardSampleSummary; actorType?: "evaluator" | "operator"; operatorGrantAllocationBps?: number }): Promise<PilotGuard> {
+  async listActivePolicies(now = new Date()): Promise<PilotPolicy[]> {
+    const result = await this.pool.query<{ policy: unknown }>(
+      `SELECT policy FROM provider_pilot_policies
+       WHERE locked_at<=$1 AND expires_at>$1
+       ORDER BY provider_id,platform,region,version DESC`, [now]);
+    return result.rows.map((row) => PilotPolicySchema.parse(row.policy));
+  }
+  async applyGuard(input: { guard: PilotGuard; expectedRevision: number | null; actorId: string; sampleSummary: PilotGuardSampleSummary; actorType?: "evaluator" | "operator"; operatorGrantAllocationBps?: number; expectedRolloutRevision?: number; verifyEvidenceRevisions?: boolean }): Promise<PilotGuard> {
     const guard = PilotGuardSchema.parse(input.guard);
     const actorId = RolloutOperatorIdSchema.parse(input.actorId);
     const summary = PilotGuardSampleSummarySchema.parse(input.sampleSummary);
@@ -45,6 +52,14 @@ export class PilotControlRepository {
       const previous = selected.rows[0] ? mapGuard(selected.rows[0]) : null;
       if ((previous?.revision ?? null) !== input.expectedRevision) throw new PilotGuardConflictError("Pilot guard revision changed before evaluation was persisted.");
       const actorType = input.actorType ?? "evaluator";
+      if(actorType==="evaluator"&&input.expectedRolloutRevision!==undefined){const rollout=await client.query<{revision:string}>(`SELECT COALESCE(MAX(id),0)::text AS revision FROM provider_rollout_rule_audit`);if(Number(rollout.rows[0]?.revision??0)!==input.expectedRolloutRevision)throw new PilotGuardConflictError("Rollout authorization changed before evaluation was persisted.");}
+      if(actorType==="evaluator"&&input.verifyEvidenceRevisions===true){const evidence=await client.query<{revision:string}>(`SELECT aggregate_revision::text AS revision FROM provider_daily_evidence
+        WHERE provider_id=$1 AND platform=$2 AND region=$3 AND observation_class=$4
+          AND aggregation_version=$5 AND taxonomy_version=$6
+          AND utc_day >= $7::timestamptz::date AND utc_day < $8::timestamptz::date AND expires_at>NOW()
+        ORDER BY utc_day`,[guard.providerId,guard.platform,guard.region,summary.observationClass,
+          summary.aggregationVersion,summary.taxonomyVersion,guard.evidenceWindowStartedAt,guard.evidenceWindowEndedAt]);
+        if(evidence.rows.map((row)=>Number(row.revision)).join(",")!==summary.dayRevisions.join(","))throw new PilotGuardConflictError("Evidence revisions changed before evaluation was persisted.");}
       if (previous && guard.capBps > previous.capBps && actorType !== "operator") throw new PilotGuardConflictError("Automation cannot raise a pilot guard cap.");
       if (actorType === "operator" && (!Number.isInteger(input.operatorGrantAllocationBps) || guard.capBps > (input.operatorGrantAllocationBps ?? -1))) {
         throw new PilotGuardConflictError("An operator guard cannot exceed the existing operator grant.");

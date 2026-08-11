@@ -15,6 +15,7 @@ import {
   type DeliveryDnsLookup
 } from "@tikdd/delivery-core";
 import type {
+  DeliveryEvidenceContext,
   IssuedDeliveryTicket,
   RedeemedDeliveryCandidate
 } from "@tikdd/persistence";
@@ -29,6 +30,12 @@ export interface DeliveryRepository {
     maximumTtlMs: number;
   }): Promise<IssuedDeliveryTicket | null>;
   redeemDeliveryTicket(tokenHash: Uint8Array): Promise<RedeemedDeliveryCandidate | null>;
+  recordDeliveryRedemptionOutcome(input: {
+    context: DeliveryEvidenceContext;
+    result: "passed" | "candidate_expired" | "host_rejected" | "dns_rejected" | "mode_rejected" | "internal_error";
+    durationMs: number;
+    browserHandoff: boolean;
+  }): Promise<void>;
 }
 
 export interface CreateDeliveryAppOptions {
@@ -127,6 +134,7 @@ export async function createDeliveryApp(
   });
 
   app.get<{ Params: { token: string } }>("/d/:token", async (request, reply) => {
+    const startedAt = Date.now();
     const token = DeliveryTokenSchema.safeParse(request.params.token);
     if (!token.success || !options.cipher) {
       return reply.code(410).send({
@@ -140,6 +148,7 @@ export async function createDeliveryApp(
       });
     }
 
+    let target: URL;
     try {
       const secret = options.cipher.open(redeemed.candidate.envelope, {
         purpose: "delivery-candidate",
@@ -150,15 +159,17 @@ export async function createDeliveryApp(
       if (Object.keys(secret.secretHeaders).length > 0) {
         throw new Error("Redirect delivery cannot use server-held headers.");
       }
-      const target = assertDeliveryTargetPolicy({
+      target = assertDeliveryTargetPolicy({
         providerId: redeemed.candidate.providerId,
         mode: redeemed.candidate.mode,
         hostPolicyId: redeemed.candidate.hostPolicyId,
         targetUrl: secret.targetUrl
       });
-      await assertPublicDeliveryDns(target.hostname, options.dnsLookup);
-      return reply.redirect(target.toString(), 302);
     } catch {
+      await options.repository.recordDeliveryRedemptionOutcome({
+        context: redeemed.evidence, result: "host_rejected",
+        durationMs: Date.now()-startedAt, browserHandoff: false
+      });
       return reply.code(502).send({
         error: {
           code: "DELIVERY_TARGET_REJECTED",
@@ -166,6 +177,25 @@ export async function createDeliveryApp(
         }
       });
     }
+    try {
+      await assertPublicDeliveryDns(target.hostname, options.dnsLookup);
+    } catch {
+      await options.repository.recordDeliveryRedemptionOutcome({
+        context: redeemed.evidence, result: "dns_rejected",
+        durationMs: Date.now()-startedAt, browserHandoff: false
+      });
+      return reply.code(502).send({
+        error: {
+          code: "DELIVERY_TARGET_REJECTED",
+          message: "The delivery target failed its security validation."
+        }
+      });
+    }
+    await options.repository.recordDeliveryRedemptionOutcome({
+      context: redeemed.evidence, result: "passed",
+      durationMs: Date.now()-startedAt, browserHandoff: true
+    });
+    return reply.redirect(target.toString(), 302);
   });
 
   return app;

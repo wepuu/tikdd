@@ -44,16 +44,42 @@ Provider-specific reviews live under [`docs/providers`](docs/providers/).
 Requirements: Node.js 20.9+, pnpm 11+, Docker with Compose.
 
 ```bash
-cp .env.example .env
 pnpm install
-pnpm infra:up
-pnpm db:migrate
 pnpm dev
+# In a second terminal after the ready URL is printed:
 pnpm smoke:local
+pnpm dev:stop
 ```
+
+`pnpm dev` is the default offline profile. It starts exactly one Web, API, Worker, and Delivery
+process tree, starts/checks PostgreSQL and Redis, applies migrations, verifies HTTP and Worker queue
+readiness, and prints `http://localhost:3000/en`. A second start fails instead of selecting another
+port. `pnpm dev:stop` terminates only the recorded TikDD process trees and leaves both Docker data
+volumes running. The original `pnpm dev` terminal remains the stack supervisor and exits normally
+after `pnpm dev:stop` removes its ownership state.
 
 `scripts/docker.mjs` also discovers a per-user Docker Desktop installation on Windows when
 `docker.exe` is not on `PATH`. Set `DOCKER_BIN` to override it.
+
+For a separately authorized local technical pilot, set every gate in the current shell and name the
+exact adapters before running `pnpm dev:pilot`. For example, PowerShell with an explicit local HTTP
+proxy:
+
+```powershell
+$env:TIKDD_LOCAL_LIVE_AUTHORIZED = "true"
+$env:TIKDD_PILOT_PROVIDERS = "twittersaver,ssstwitter"
+$env:TWITTERSAVER_TERMS_APPROVED = "true"
+$env:SSSTWITTER_TERMS_APPROVED = "true"
+$env:SSSTWITTER_DELIVERY_AUDIT_APPROVED = "true"
+$env:TIKDD_PILOT_PROXY_URL = "http://127.0.0.1:10808"
+pnpm dev:pilot
+```
+
+The launcher ignores inherited proxy variables, generates delivery encryption material only in
+memory for that launch, checks TLS egress to every selected provider page host, and never persists
+the proxy, key, authorization flag, submitted URL, or provider response. This profile is a bounded
+technical-test path, not production approval or public rollout permission. See
+[the local pilot launcher record](docs/work-item-11-1-implementation.md).
 
 Applications:
 
@@ -62,6 +88,8 @@ Applications:
 - Delivery: `http://localhost:4002/health/live`
 - Cleanup: independent scheduled process; use `pnpm cleanup:start` in its deployment
 - Canary: authorized, rollout-controlled scheduler; use `pnpm canary:start` only after review
+- Evidence: independent UTC aggregator/restrictive evaluator; use `pnpm evidence:start` only with
+  locked policy, deployment ownership, and the reviewed diagnostics credential boundary
 
 Before public traffic, run `pnpm cleanup:dry-run` and `pnpm verify:cleanup`; see the
 [cleanup operations guide](docs/cleanup-operations.md).
@@ -83,6 +111,38 @@ It runs migrations, fixture-only provider/routing/delivery/public-state contract
 and pilot controls, admission, circuit, canary-metadata, cleanup, and the full repository check. It
 never runs a live provider canary. The external three-day calibration and seven-day evidence remain
 a separate operational gate.
+
+Work item 11 adds the privacy-safe evidence and evaluator gate:
+
+```sh
+pnpm verify:work-item-11
+```
+
+It verifies UTC replay, distinct-task collapse, sanitized delivery outcomes, restrictive-only
+evaluation, expiring Redis Guard publication, protected aggregate diagnostics, cleanup, residue,
+and the full repository check without live provider traffic.
+
+The merged work item 11 engineering baseline, including deployment preflight and an explicit check
+that real-time evidence is still pending, uses the single CI command:
+
+```sh
+pnpm verify:work-item-11-baseline
+```
+
+This command never contacts a real Provider or enables Pilot traffic. The real three-day calibration
+and seven-day observation remain elapsed operating work for the personal site owner.
+
+The internal deployment boundary is separately fail-closed. Its checked-in plan remains pending
+until the personal deployment settings and Provider-use confirmations are supplied:
+
+```sh
+pnpm verify:work-item-11-5
+pnpm preflight:internal
+```
+
+Only a fully ready preflight can create a short-lived runtime-bound attestation, and both API and
+Worker require it before labeling tasks as internal evidence. See
+[internal deployment preflight operations](docs/internal-deployment-preflight.md).
 
 This runs formatting/lint checks, TypeScript checks, unit tests, and production builds.
 With PostgreSQL and Redis available, `pnpm verify:work-item-9` additionally runs the complete

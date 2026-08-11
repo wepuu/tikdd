@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
+    "probe:readiness": "tsx src/probe-readiness.ts",
     "rollout:apply": "tsx src/apply-rollout-rule.ts",
     "verify:rollout-control": "tsx src/verify-rollout-control.ts",
     "verify:pilot-control": "tsx src/verify-pilot-control.ts",
@@ -18,6 +19,7 @@
     "@tikdd/admission-control": "workspace:*",
     "@tikdd/contracts": "workspace:*",
     "@tikdd/delivery-core": "workspace:*",
+    "@tikdd/deployment-preflight": "workspace:*",
     "@tikdd/persistence": "workspace:*",
     "@tikdd/platform": "workspace:*",
     "@tikdd/providers": "workspace:*",

@@ -1,0 +1,27 @@
+import { createHash,timingSafeEqual } from "node:crypto";
+import type { EvidenceDiagnosticQuery } from "@tikdd/persistence";
+import type { PilotDailyEvidence,PilotGuardSnapshot,PilotObservationClass,PilotPolicy } from "@tikdd/rollout-control";
+import type { FastifyInstance } from "fastify";
+
+export interface PilotEvidenceDiagnosticStore {
+  listDailyEvidence(query:EvidenceDiagnosticQuery):Promise<PilotDailyEvidence[]>;
+  latestEvaluatorRun():Promise<Record<string,unknown>|null>;
+  recordExport(query:EvidenceDiagnosticQuery,actorId:string,dayCount:number):Promise<void>;
+}
+function tokenMatches(authorization:string|undefined,expected:string):boolean {const provided=authorization?.startsWith("Bearer ")?authorization.slice(7):"";return timingSafeEqual(createHash("sha256").update(expected).digest(),createHash("sha256").update(provided).digest());}
+function parseQuery(raw:Record<string,unknown>):EvidenceDiagnosticQuery|null {
+  const {providerId,platform,region,observationClass,fromDay,toDay}=raw;
+  if(typeof providerId!=="string"||!/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(providerId)||typeof platform!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(platform)||typeof region!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(region)||!["canary","internal","public"].includes(String(observationClass))||typeof fromDay!=="string"||typeof toDay!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(fromDay)||!/^\d{4}-\d{2}-\d{2}$/.test(toDay))return null;
+  return {providerId,platform,region,observationClass:observationClass as PilotObservationClass,fromDay,toDay};
+}
+export function registerPilotEvidenceDiagnostics(app:FastifyInstance,options:{store:PilotEvidenceDiagnosticStore;pilot:{listActivePolicies(now?:Date):Promise<PilotPolicy[]>;loadGuardSnapshot():Promise<PilotGuardSnapshot>};token:string|null;actorId:string|null}):void {
+  if(options.token===null)return;if(options.token.length<32)throw new Error("PILOT_EVIDENCE_DIAGNOSTICS_TOKEN must contain at least 32 characters.");
+  if(!options.actorId||!/^[A-Za-z0-9]+(?:[._:@-][A-Za-z0-9]+)*$/.test(options.actorId))throw new Error("PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID is required when evidence diagnostics are enabled.");
+  const authorize=(value:string|undefined)=>tokenMatches(value,options.token as string);const headers=(reply:{header(name:string,value:string):unknown})=>{reply.header("Cache-Control","no-store");reply.header("X-Robots-Tag","noindex, nofollow, noarchive");};
+  app.get<{Querystring:Record<string,unknown>}>("/internal/v1/pilot-evidence",async(request,reply)=>{headers(reply);if(!authorize(request.headers.authorization))return reply.code(401).send({error:{code:"UNAUTHORIZED",message:"Pilot evidence authorization is required.",retryable:false}});const query=parseQuery(request.query);if(!query)return reply.code(400).send({error:{code:"INVALID_REQUEST",message:"Provide one exact evidence tuple, class, and UTC date range.",retryable:false}});
+    try{const [days,policies,guards,evaluator]=await Promise.all([options.store.listDailyEvidence(query),options.pilot.listActivePolicies(),options.pilot.loadGuardSnapshot(),options.store.latestEvaluatorRun()]);const policy=policies.find((item)=>item.providerId===query.providerId&&item.platform===query.platform&&item.region===query.region&&item.observationClass===query.observationClass)??null;const guard=guards.guards.find((item)=>item.providerId===query.providerId&&item.platform===query.platform&&item.region===query.region)??null;const latest=days.at(-1)??null;
+      return {generatedAt:new Date().toISOString(),scope:query,freshness:{latestUtcDay:latest?.utcDay??null,completeness:latest?.completeness??null,generatedAt:latest?.generatedAt??null,sourceWatermark:latest?.sourceWatermark??null},sufficiency:{distinctSamples:days.reduce((sum,item)=>sum+item.distinctResolutionTasks,0),requiredSamples:policy?.minimumSamples??null,dayCount:days.length,requiredDays:policy?.evaluationDays??null},policy:policy?{id:policy.id,version:policy.version,observationClass:policy.observationClass,evaluationDays:policy.evaluationDays,aggregationVersion:policy.aggregationVersion,taxonomyVersion:policy.taxonomyVersion,expiresAt:policy.expiresAt}:null,guard:guard?{capBps:guard.capBps,action:guard.action,reason:guard.reason,revision:guard.revision,updatedAt:guard.updatedAt,expiresAt:guard.expiresAt}:null,evaluator,days};
+    }catch{return reply.code(400).send({error:{code:"INVALID_REQUEST",message:"The evidence range is invalid or unavailable.",retryable:false}});}});
+  app.get<{Querystring:Record<string,unknown>}>("/internal/v1/pilot-evidence/export",async(request,reply)=>{headers(reply);if(!authorize(request.headers.authorization))return reply.code(401).send({error:{code:"UNAUTHORIZED",message:"Pilot evidence authorization is required.",retryable:false}});const query=parseQuery(request.query);if(!query)return reply.code(400).send({error:{code:"INVALID_REQUEST",message:"Provide one exact evidence tuple, class, and UTC date range.",retryable:false}});
+    try{const days=await options.store.listDailyEvidence(query);await options.store.recordExport(query,options.actorId as string,days.length);reply.header("Content-Disposition",`attachment; filename="tikdd-evidence-${query.fromDay}-${query.toDay}.json"`);return {schemaVersion:"1",exportedAt:new Date().toISOString(),scope:query,days};}catch{return reply.code(400).send({error:{code:"INVALID_REQUEST",message:"The evidence range is invalid or unavailable.",retryable:false}});}});
+}

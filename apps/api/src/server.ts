@@ -12,9 +12,12 @@ import {
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
+import { assertInternalStartup } from "@tikdd/deployment-preflight";
 import {
   createDatabasePool,
   OperationalDiagnosticsRepository,
+  PilotControlRepository,
+  PilotEvidenceRepository,
   RolloutRuleRepository,
   TaskAdmissionRepository,
   TaskIdempotencyConflictError,
@@ -31,6 +34,7 @@ import { Queue } from "bullmq";
 import Fastify from "fastify";
 import Redis from "ioredis";
 import { registerProviderHealthDiagnostics } from "./provider-health-diagnostics";
+import { registerPilotEvidenceDiagnostics } from "./pilot-evidence-diagnostics";
 import { toPublicResolveTask } from "./public-task";
 import { createTaskAdmissionHasherFromEnvironment } from "./task-admission";
 
@@ -40,8 +44,11 @@ const activeSourceTtlMs = Number.parseInt(process.env.ACTIVE_SOURCE_TTL_MS ?? "3
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
+const pilotEvidenceDiagnosticsToken = process.env.PILOT_EVIDENCE_DIAGNOSTICS_TOKEN || null;
+const pilotEvidenceDiagnosticsActorId = process.env.PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID || null;
 const workerRegion = process.env.WORKER_REGION ?? "global";
 const admissionConfiguration = loadAdmissionControlConfiguration();
+const observationClass = assertInternalStartup();
 
 if (
   !Number.isFinite(port) ||
@@ -68,6 +75,8 @@ const app = Fastify({
 const pool = createDatabasePool();
 const tasks = new TaskRepository(pool);
 const operationalDiagnostics = new OperationalDiagnosticsRepository(pool);
+const pilotEvidence = new PilotEvidenceRepository(pool);
+const pilotControl = new PilotControlRepository(pool);
 const rolloutRules = new RolloutRuleRepository(pool);
 const taskAdmission = new TaskAdmissionRepository(pool);
 const taskAdmissionHasher = createTaskAdmissionHasherFromEnvironment();
@@ -121,6 +130,12 @@ registerProviderHealthDiagnostics(app, {
   ],
   region: workerRegion,
   token: providerDiagnosticsToken
+});
+registerPilotEvidenceDiagnostics(app, {
+  store: pilotEvidence,
+  pilot: pilotControl,
+  token: pilotEvidenceDiagnosticsToken,
+  actorId: pilotEvidenceDiagnosticsActorId
 });
 
 app.post("/v1/resolve-tasks", async (request, reply) => {
@@ -235,7 +250,8 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
         id: taskId,
         platform: detected.platform,
         canonicalUrl: detected.canonicalUrl,
-        expiresAt: taskExpiresAt
+        expiresAt: taskExpiresAt,
+        observationClass
       },
       sourceFingerprint: taskAdmissionHasher.canonicalSource(
         detected.platform,

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "scope": {
+    "deploymentId": null,
+    "region": null,
+    "platform": "x",
+    "providers": ["twittersaver", "ssstwitter"]
+  },
+  "network": {
+    "trustedProxyMode": null,
+    "providerPageHosts": ["twittersaver.net", "ssstwitter.com"]
+  },
+  "providerUse": [
+    { "providerId": "twittersaver", "termsConfirmed": false, "productionUseConfirmed": false },
+    { "providerId": "ssstwitter", "termsConfirmed": false, "productionUseConfirmed": false }
+  ],
+  "bounds": {
+    "attestationTtlMs": 600000,
+    "cleanupMaximumAgeMs": 300000,
+    "evidenceMaximumAgeMs": 600000,
+    "emergencyDenyMaximumPropagationMs": 15000
+  }
+}

@@ -4,6 +4,7 @@ import {
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
+import { assertInternalStartup } from "@tikdd/deployment-preflight";
 import {
   RedisAdmissionStore,
   loadAdmissionControlConfiguration
@@ -64,6 +65,15 @@ const providerHealth = loadProviderHealthConfiguration();
 const rolloutConfiguration = loadRolloutConfiguration();
 const admissionConfiguration = loadAdmissionControlConfiguration();
 const production = process.env.NODE_ENV === "production";
+const localStackReadinessToken = process.env.LOCAL_STACK_READINESS_TOKEN ?? null;
+assertInternalStartup();
+
+if (
+  localStackReadinessToken !== null &&
+  !/^[a-f0-9]{32}$/.test(localStackReadinessToken)
+) {
+  throw new Error("LOCAL_STACK_READINESS_TOKEN must be a 32-character lowercase hex value.");
+}
 
 if (process.env.NODE_ENV === "production" && enableMockProvider) {
   throw new Error("ENABLE_MOCK_PROVIDER must be false in production.");
@@ -212,6 +222,25 @@ const worker = new Worker<ResolveJobData>(
   }
 );
 
+const readinessWorker = localStackReadinessToken
+  ? new Worker<{ nonce: string }>(
+      `tikdd-local-readiness-${localStackReadinessToken}`,
+      async (job) => {
+        if (job.name !== "probe" || job.data.nonce !== localStackReadinessToken) {
+          throw new Error("The local stack readiness probe is invalid.");
+        }
+        return { nonce: localStackReadinessToken };
+      },
+      { connection: redis, concurrency: 1 }
+    )
+  : null;
+
+readinessWorker?.once("completed", () => {
+  void readinessWorker.close().catch(() => {
+    process.stderr.write("Local Worker readiness queue shutdown failed.\n");
+  });
+});
+
 worker.on("completed", (job) => {
   process.stdout.write(`Resolved ${job.id ?? "unknown job"}\n`);
 });
@@ -249,6 +278,7 @@ const close = async (signal: string) => {
   process.stdout.write(`Worker received ${signal}; shutting down.\n`);
   healthRefreshLoop?.stop();
   rolloutRuntime.stop();
+  await readinessWorker?.close();
   await worker.close();
   redis.disconnect();
   await pool.end();

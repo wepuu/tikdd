@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ProviderAttemptSchema,
   ResolveResultSchema,
@@ -32,6 +33,7 @@ export * from "./task-admission";
 export * from "./cleanup";
 export * from "./operational-diagnostics";
 export * from "./pilot-control";
+export * from "./pilot-evidence";
 
 interface TaskRow extends QueryResultRow {
   id: string;
@@ -43,6 +45,7 @@ interface TaskRow extends QueryResultRow {
   created_at: Date;
   updated_at: Date;
   expires_at: Date;
+  observation_class: "internal" | "public";
 }
 
 export interface NewResolveTask {
@@ -50,11 +53,13 @@ export interface NewResolveTask {
   platform: Platform;
   canonicalUrl: string;
   expiresAt: Date;
+  observationClass?: "internal" | "public";
 }
 
 interface LockedTaskRow extends QueryResultRow {
   expires_at: Date;
   database_now: Date;
+  observation_class: "internal" | "public";
 }
 
 interface ProviderHealthObservationRow extends QueryResultRow {
@@ -91,6 +96,7 @@ interface RolloutAuditRevisionRow extends QueryResultRow {
 }
 
 interface TicketCandidateRow extends QueryResultRow {
+  ticket_id: string;
   candidate_id: string;
   task_id: string;
   format_id: string;
@@ -105,6 +111,9 @@ interface TicketCandidateRow extends QueryResultRow {
   candidate_expires_at: Date;
   task_expires_at: Date;
   database_now: Date;
+  platform: Platform;
+  region: string;
+  observation_class: "internal" | "public";
 }
 
 export interface IssuedDeliveryTicket {
@@ -112,9 +121,19 @@ export interface IssuedDeliveryTicket {
   expiresAt: string;
 }
 
+export interface DeliveryEvidenceContext {
+  ticketId: string;
+  providerId: string;
+  platform: Platform;
+  region: string;
+  observationClass: "internal" | "public";
+  mode: DeliveryMode;
+}
+
 export interface RedeemedDeliveryCandidate {
   taskId: string;
   candidate: EncryptedDeliveryCandidate;
+  evidence: DeliveryEvidenceContext;
 }
 
 export class TaskCompletionError extends Error {
@@ -335,10 +354,10 @@ export class TaskRepository {
 
   async create(task: NewResolveTask): Promise<ResolveTask> {
     const result = await this.pool.query<TaskRow>(
-      `INSERT INTO resolve_tasks (id, status, platform, canonical_url, expires_at)
-       VALUES ($1, 'queued', $2, $3, $4)
+      `INSERT INTO resolve_tasks (id, status, platform, canonical_url, expires_at, observation_class)
+       VALUES ($1, 'queued', $2, $3, $4, $5)
        RETURNING *`,
-      [task.id, task.platform, task.canonicalUrl, task.expiresAt]
+      [task.id, task.platform, task.canonicalUrl, task.expiresAt, task.observationClass ?? "public"]
     );
     return mapTask(result.rows[0] as TaskRow);
   }
@@ -375,6 +394,8 @@ export class TaskRepository {
       EncryptedDeliveryCandidateSchema.parse(candidate)
     );
     const attempts = rawAttempts.map((attempt) => ProviderAttemptSchema.parse(attempt));
+    const successfulAttempt = attempts.find((attempt) =>
+      attempt.status === "succeeded" && attempt.providerId === result.provenance.provider);
     const formatIds = new Set(result.formats.map(({ id: formatId }) => formatId));
     for (const candidate of candidates) {
       if (!formatIds.has(candidate.formatId)) {
@@ -389,7 +410,7 @@ export class TaskRepository {
     try {
       await client.query("BEGIN");
       const locked = await client.query<LockedTaskRow>(
-        `SELECT expires_at, NOW() AS database_now
+        `SELECT expires_at, observation_class, NOW() AS database_now
          FROM resolve_tasks
          WHERE id = $1
          FOR UPDATE`,
@@ -402,6 +423,9 @@ export class TaskRepository {
 
       await client.query("DELETE FROM delivery_candidates WHERE task_id = $1", [id]);
       for (const candidate of candidates) {
+        if (!successfulAttempt) {
+          throw new TaskCompletionError("A delivery candidate requires an attributable successful provider attempt.");
+        }
         const requestedExpiry = new Date(candidate.expiresAt);
         const effectiveExpiry =
           requestedExpiry < task.expires_at ? requestedExpiry : task.expires_at;
@@ -410,15 +434,18 @@ export class TaskRepository {
         }
         await client.query(
           `INSERT INTO delivery_candidates (
-             id, task_id, format_id, provider_id, mode, host_policy_id,
+             id, task_id, format_id, provider_id, platform, region, observation_class, mode, host_policy_id,
              encryption_algorithm, encryption_key_id, encryption_iv, encrypted_payload,
              authentication_tag, expires_at
-           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
           [
             candidate.id,
             id,
             candidate.formatId,
             candidate.providerId,
+            result.source.platform,
+            successfulAttempt.region,
+            task.observation_class,
             candidate.mode,
             candidate.hostPolicyId,
             candidate.envelope.algorithm,
@@ -526,7 +553,8 @@ export class TaskRepository {
     try {
       await client.query("BEGIN");
       const selected = await client.query<TicketCandidateRow>(
-        `SELECT dc.id AS candidate_id, dc.task_id, dc.format_id, dc.provider_id, dc.mode,
+        `SELECT '' AS ticket_id,dc.id AS candidate_id,dc.task_id,dc.format_id,dc.provider_id,dc.mode,
+           dc.platform,dc.region,dc.observation_class,
            dc.host_policy_id, dc.encryption_algorithm, dc.encryption_key_id, dc.encryption_iv,
            dc.encrypted_payload, dc.authentication_tag, dc.expires_at AS candidate_expires_at,
            rt.expires_at AS task_expires_at, NOW() AS database_now
@@ -551,6 +579,16 @@ export class TaskRepository {
          VALUES ($1, $2, $3, $4, $5)`,
         [id, row.candidate_id, row.mode, tokenHash, expiresAt]
       );
+      await client.query(
+        `INSERT INTO provider_delivery_outcomes
+         (outcome_id,provider_id,platform,region,observation_class,mode,stage,result_class,duration_ms,
+          delivery_policy_version,taxonomy_version,occurred_at,expires_at)
+         VALUES ($1,$2,$3,$4,$5,$6,'ticket_creation','succeeded',0,1,1,$7,$8)`,
+        [randomUUID(),row.provider_id,row.platform,row.region,row.observation_class,row.mode,
+         row.database_now,new Date(row.database_now.getTime()+35*86_400_000)]
+      );
+      await client.query(
+        `UPDATE delivery_tickets SET ticket_creation_outcome_emitted=TRUE WHERE id=$1`, [id]);
       await client.query("COMMIT");
       return { mode: row.mode, expiresAt: expiresAt.toISOString() };
     } catch (error) {
@@ -571,7 +609,8 @@ export class TaskRepository {
     try {
       await client.query("BEGIN");
       const selected = await client.query<TicketCandidateRow>(
-        `SELECT dc.id AS candidate_id, dc.task_id, dc.format_id, dc.provider_id, dc.mode,
+        `SELECT dt.id AS ticket_id,dc.id AS candidate_id,dc.task_id,dc.format_id,dc.provider_id,dc.mode,
+           dc.platform,dc.region,dc.observation_class,
            dc.host_policy_id, dc.encryption_algorithm, dc.encryption_key_id, dc.encryption_iv,
            dc.encrypted_payload, dc.authentication_tag, dc.expires_at AS candidate_expires_at,
            rt.expires_at AS task_expires_at, NOW() AS database_now
@@ -597,6 +636,10 @@ export class TaskRepository {
       await client.query("COMMIT");
       return {
         taskId: row.task_id,
+        evidence: {
+          ticketId: row.ticket_id, providerId: row.provider_id, platform: row.platform,
+          region: row.region, observationClass: row.observation_class, mode: row.mode
+        },
         candidate: EncryptedDeliveryCandidateSchema.parse({
           id: row.candidate_id,
           formatId: row.format_id,
@@ -613,6 +656,56 @@ export class TaskRepository {
           expiresAt: row.candidate_expires_at.toISOString()
         })
       };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async recordDeliveryRedemptionOutcome(input: {
+    context: DeliveryEvidenceContext;
+    result: "passed" | "candidate_expired" | "host_rejected" | "dns_rejected" | "mode_rejected" | "internal_error";
+    durationMs: number;
+    browserHandoff: boolean;
+  }): Promise<void> {
+    const durationMs = Math.max(0, Math.min(120_000, Math.round(input.durationMs)));
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const ticket = await client.query<{ database_now: Date; validation: boolean; handoff: boolean }>(
+        `SELECT NOW() AS database_now,redirect_validation_outcome_emitted AS validation,
+           browser_handoff_outcome_emitted AS handoff
+         FROM delivery_tickets WHERE id=$1 FOR UPDATE`, [input.context.ticketId]);
+      const row = ticket.rows[0];
+      if (!row) throw new Error("Delivery ticket evidence context is no longer available.");
+      const expiresAt = new Date(row.database_now.getTime()+35*86_400_000);
+      if (!row.validation) {
+        await client.query(
+          `INSERT INTO provider_delivery_outcomes
+           (outcome_id,provider_id,platform,region,observation_class,mode,stage,result_class,duration_ms,
+            delivery_policy_version,taxonomy_version,occurred_at,expires_at)
+           VALUES ($1,$2,$3,$4,$5,$6,'redirect_validation',$7,$8,1,1,$9,$10)`,
+          [randomUUID(),input.context.providerId,input.context.platform,input.context.region,
+           input.context.observationClass,input.context.mode,input.result,durationMs,row.database_now,expiresAt]);
+        await client.query(
+          `UPDATE delivery_tickets SET redirect_validation_outcome_emitted=TRUE WHERE id=$1`,
+          [input.context.ticketId]);
+      }
+      if (input.browserHandoff && !row.handoff) {
+        await client.query(
+          `INSERT INTO provider_delivery_outcomes
+           (outcome_id,provider_id,platform,region,observation_class,mode,stage,result_class,duration_ms,
+            delivery_policy_version,taxonomy_version,occurred_at,expires_at)
+           VALUES ($1,$2,$3,$4,$5,$6,'browser_handoff','redirect_issued',$7,1,1,$8,$9)`,
+          [randomUUID(),input.context.providerId,input.context.platform,input.context.region,
+           input.context.observationClass,input.context.mode,durationMs,row.database_now,expiresAt]);
+        await client.query(
+          `UPDATE delivery_tickets SET browser_handoff_outcome_emitted=TRUE WHERE id=$1`,
+          [input.context.ticketId]);
+      }
+      await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

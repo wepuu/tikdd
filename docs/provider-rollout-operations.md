@@ -5,6 +5,15 @@ Work item 9.1 implements the runtime provider authorization boundary defined by
 independent from provider health: a route needs both an affirmative rollout decision and circuit
 permission.
 
+Operational evidence for a real guard additionally follows
+[ADR-0009](architecture/adr/0009-pilot-evidence-and-delivery-outcomes.md): exact tuple/class UTC
+buckets, distinct-task sample sufficiency, aggregate-only delivery outcomes, and operator-reviewed
+recovery are mandatory. Work item 11.4 implements that projection and restrictive evaluator; it
+still cannot authorize pilot traffic or replace the external approval and observation gates.
+Work item 11.5 additionally requires a current runtime-bound internal preflight attestation before
+API or Worker startup can produce internal evidence. The attestation never replaces a rollout rule
+or production/commercial approval.
+
 ## Storage and propagation
 
 - PostgreSQL tables `provider_rollout_rules` and `provider_rollout_rule_audit` are the durable source

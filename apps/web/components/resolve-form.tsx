@@ -158,6 +158,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [deliveryExpired, setDeliveryExpired] = useState(false);
+  const [deliveryHandedOff, setDeliveryHandedOff] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [workingLonger, setWorkingLonger] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
@@ -281,6 +282,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     setTask(null);
     setDelivery(null);
     setDeliveryExpired(false);
+    setDeliveryHandedOff(false);
     setDeliveryError(null);
     try {
       const normalizedUrl = url.trim();
@@ -329,6 +331,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     setDeliveryError(null);
     setDelivery(null);
     setDeliveryExpired(false);
+    setDeliveryHandedOff(false);
     try {
       if (qaScenarioRef.current) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -366,6 +369,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     setSubmissionError(null);
     setDelivery(null);
     setDeliveryExpired(false);
+    setDeliveryHandedOff(false);
     setDeliveryError(null);
   }
 
@@ -373,6 +377,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     setSelectedFormatId(formatId);
     setDelivery(null);
     setDeliveryExpired(false);
+    setDeliveryHandedOff(false);
     setDeliveryError(null);
   }
 
@@ -448,6 +453,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
                 setSubmissionError(null);
                 setDelivery(null);
                 setDeliveryExpired(false);
+                setDeliveryHandedOff(false);
                 setDeliveryError(null);
               }}
               placeholder={copy.placeholder} aria-describedby="url-status" aria-invalid={Boolean(url.trim() && !detectedPlatform)} required
@@ -579,14 +585,21 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
                       href={delivery.url}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={() => setDeliveryExpired(true)}
+                      onClick={() => {
+                        setDeliveryHandedOff(true);
+                        setDeliveryExpired(true);
+                      }}
                     >
                       <DownloadSimpleIcon size={20} weight="bold" /><span>{copy.startDownload}</span>
                     </a>
                   </div>
                 ) : (
                   <>
-                    {deliveryExpired ? <p className="delivery-note" role="status">{copy.deliveryExpired}</p> : null}
+                    {deliveryHandedOff ? (
+                      <p className="delivery-note" role="status">{copy.deliveryHandedOff}</p>
+                    ) : deliveryExpired ? (
+                      <p className="delivery-note" role="status">{copy.deliveryExpired}</p>
+                    ) : null}
                     {deliveryError ? <p className="delivery-note is-error" role="alert">{deliveryError}</p> : null}
                     <button
                       className="download-action"

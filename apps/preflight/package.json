@@ -1,0 +1,15 @@
+{
+  "name": "@tikdd/preflight",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/run.ts",
+    "verify": "tsx src/verify.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tikdd/deployment-preflight": "workspace:*"
+  }
+}

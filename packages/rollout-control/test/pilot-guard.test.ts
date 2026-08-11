@@ -13,15 +13,21 @@ const policy = PilotPolicySchema.parse({
   id: "x-canary-global-v1", version: 1, providerId: "ssstwitter", platform: "x", region: "canary-global",
   calibrationStartedAt: "2026-08-06T00:00:00.000Z", calibrationCompletedAt: "2026-08-09T00:00:00.000Z",
   lockedAt: "2026-08-09T01:00:00.000Z", expiresAt: "2026-09-09T01:00:00.000Z",
+  observationClass: "public", evaluationDays: 1, recoveryDays: 1, cooldownMs: 60_000,
+  aggregationVersion: 1, taxonomyVersion: 1, calibrationDayRevisions: [1, 2, 3],
   minimumSamples: 100, maximumEvidenceAgeMs: 3_600_000, staleAction: "reduce", rollbackAllocationBps: 500,
-  thresholds: { minimumResolutionSuccessBps: 9500, maximumP95LatencyMs: 8000, maximumChallengeRateBps: 200, maximumInvalidResultRateBps: 100, minimumDeliverySuccessBps: 9800 }
+  thresholds: { minimumResolutionSuccessBps: 9500, maximumP95LatencyMs: 8000, maximumChallengeRateBps: 200,
+    maximumTimeoutRateBps: 200, maximumInvalidResultRateBps: 100, minimumDeliverySuccessBps: 9800,
+    minimumCandidateCoverageBps: 10000, maximumFallbackDepthP95: 2, maximumExpiryRateBps: 500 }
 });
 const evidence: PilotEvidence = {
   providerId: "ssstwitter", platform: "x", region: "canary-global",
   windowStartedAt: "2026-08-10T10:00:00.000Z", windowEndedAt: "2026-08-10T11:00:00.000Z",
   collectedAt: "2026-08-10T11:30:00.000Z", distinctSamples: 120,
+  observationClass: "public", aggregationVersion: 1, taxonomyVersion: 1, dayRevisions: [1], completeDays: 1, sealedDays: 1,
   resolutionSuccessBps: 9800, p95LatencyMs: 6000, challengeRateBps: 100,
-  invalidResultRateBps: 25, deliverySuccessBps: 9900, absoluteStop: false
+  timeoutRateBps: 50, invalidResultRateBps: 25, deliverySuccessBps: 9900,
+  candidateCoverageBps: 10000, fallbackDepthP95: 1, expiryRateBps: 100, absoluteStop: false
 };
 
 describe("pilot automatic guard", () => {
@@ -36,8 +42,8 @@ describe("pilot automatic guard", () => {
     expect(recovered).toMatchObject({ action: "eligible_for_review", capBps: 500, lastHealthyAllocationBps: 500 });
   });
 
-  it("holds insufficient samples and reduces stale evidence", () => {
-    expect(evaluatePilotGuard({ policy, evidence: { ...evidence, distinctSamples: 99 }, operatorAllocationBps: 2500, currentGuard: null, now })).toMatchObject({ action: "hold", reason: "insufficient_samples", capBps: 2500 });
+  it("reduces active public traffic for insufficient or stale evidence", () => {
+    expect(evaluatePilotGuard({ policy, evidence: { ...evidence, distinctSamples: 99 }, operatorAllocationBps: 2500, currentGuard: null, now })).toMatchObject({ action: "reduce", reason: "insufficient_samples", capBps: 500 });
     expect(evaluatePilotGuard({ policy, evidence, operatorAllocationBps: 2500, currentGuard: null, now: new Date("2026-08-10T13:00:00.001Z") })).toMatchObject({ action: "reduce", reason: "stale_evidence", capBps: 500 });
   });
 
@@ -56,5 +62,19 @@ describe("pilot automatic guard", () => {
     const base = { snapshot: { schemaVersion: "1" as const, revision: 1, generatedAt: now.toISOString(), rules: [grant] }, request: { taskId: "tsk_0123456789abcdef0123456789abcdef", providerId: "ssstwitter", providerKind: "site-adapter" as const, platform: "x", region: "canary-global" }, cohortKey: Buffer.alloc(32, 1), now, guardRequired: true };
     expect(evaluateRollout(base)).toMatchObject({ allowed: false, reason: "guard_unavailable" });
     expect(evaluateRollout({ ...base, guardSnapshot: { schemaVersion: "1", revision: 1, generatedAt: "2026-08-10T10:00:00.000Z", guards: [] }, maximumGuardStaleMs: 60_000 })).toMatchObject({ allowed: false, reason: "stale_guard" });
+  });
+
+  it.each([
+    ["challenge", { challengeRateBps: 201 }],
+    ["timeout", { timeoutRateBps: 201 }],
+    ["invalid_result", { invalidResultRateBps: 101 }],
+    ["delivery_error", { deliverySuccessBps: 9799 }],
+    ["candidate_coverage", { candidateCoverageBps: 9999 }],
+    ["fallback_depth", { fallbackDepthP95: 3 }],
+    ["expiry", { expiryRateBps: 501 }],
+    ["incompatible_evidence", { taxonomyVersion: 2 }]
+  ] as const)("reduces for %s without granting traffic", (reason, changed) => {
+    expect(evaluatePilotGuard({ policy, evidence: { ...evidence, ...changed }, operatorAllocationBps: 2500, currentGuard: null, now }))
+      .toMatchObject({ action: "reduce", reason, capBps: 500 });
   });
 });
