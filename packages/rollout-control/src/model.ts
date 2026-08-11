@@ -181,7 +181,12 @@ export const PilotGuardReasonSchema = z.enum([
   "latency",
   "challenge",
   "invalid_result",
-  "delivery_error"
+  "delivery_error",
+  "candidate_coverage",
+  "fallback_depth",
+  "timeout",
+  "expiry",
+  "incompatible_evidence"
 ]);
 export type PilotGuardReason = z.infer<typeof PilotGuardReasonSchema>;
 
@@ -205,6 +210,13 @@ export const PilotPolicySchema = z.object({
   calibrationCompletedAt: z.string().datetime(),
   lockedAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
+  observationClass: z.enum(["internal", "public"]),
+  evaluationDays: z.number().int().min(1).max(7),
+  recoveryDays: z.number().int().min(1).max(7),
+  cooldownMs: z.number().int().min(60_000).max(30 * 24 * 60 * 60 * 1_000),
+  aggregationVersion: z.number().int().positive(),
+  taxonomyVersion: z.number().int().positive(),
+  calibrationDayRevisions: z.array(z.number().int().positive()).length(3),
   minimumSamples: z.number().int().positive(),
   maximumEvidenceAgeMs: z.number().int().min(60_000).max(7 * 24 * 60 * 60 * 1_000),
   staleAction: z.enum(["reduce", "deny"]),
@@ -213,8 +225,12 @@ export const PilotPolicySchema = z.object({
     minimumResolutionSuccessBps: BasisPointsSchema,
     maximumP95LatencyMs: z.number().int().positive(),
     maximumChallengeRateBps: BasisPointsSchema,
+    maximumTimeoutRateBps: BasisPointsSchema,
     maximumInvalidResultRateBps: BasisPointsSchema,
-    minimumDeliverySuccessBps: BasisPointsSchema
+    minimumDeliverySuccessBps: BasisPointsSchema,
+    minimumCandidateCoverageBps: BasisPointsSchema,
+    maximumFallbackDepthP95: z.number().int().min(0).max(99),
+    maximumExpiryRateBps: BasisPointsSchema
   })
 }).superRefine((policy, context) => {
   const calibrationMs = new Date(policy.calibrationCompletedAt).getTime() - new Date(policy.calibrationStartedAt).getTime();
@@ -234,6 +250,12 @@ export const PilotEvidenceSchema = z.object({
   providerId: RolloutProviderIdSchema,
   platform: PlatformIdSchema,
   region: RegionIdSchema,
+  observationClass: z.enum(["internal", "public"]),
+  aggregationVersion: z.number().int().positive(),
+  taxonomyVersion: z.number().int().positive(),
+  dayRevisions: z.array(z.number().int().positive()).min(1).max(7),
+  completeDays: z.number().int().min(1).max(7),
+  sealedDays: z.number().int().min(0).max(7),
   windowStartedAt: z.string().datetime(),
   windowEndedAt: z.string().datetime(),
   collectedAt: z.string().datetime(),
@@ -241,12 +263,23 @@ export const PilotEvidenceSchema = z.object({
   resolutionSuccessBps: BasisPointsSchema,
   p95LatencyMs: z.number().int().nonnegative(),
   challengeRateBps: BasisPointsSchema,
+  timeoutRateBps: BasisPointsSchema,
   invalidResultRateBps: BasisPointsSchema,
   deliverySuccessBps: BasisPointsSchema,
+  candidateCoverageBps: BasisPointsSchema,
+  fallbackDepthP95: z.number().int().min(0).max(99),
+  expiryRateBps: BasisPointsSchema,
   absoluteStop: z.boolean()
-}).refine((evidence) => new Date(evidence.windowEndedAt) > new Date(evidence.windowStartedAt), {
-  message: "Evidence window must end after it starts.",
-  path: ["windowEndedAt"]
+}).superRefine((evidence, context) => {
+  if (new Date(evidence.windowEndedAt) <= new Date(evidence.windowStartedAt)) {
+    context.addIssue({ code: "custom", message: "Evidence window must end after it starts.", path: ["windowEndedAt"] });
+  }
+  if (evidence.dayRevisions.length !== evidence.completeDays) {
+    context.addIssue({ code: "custom", message: "Every complete evidence day requires one revision.", path: ["dayRevisions"] });
+  }
+  if (evidence.sealedDays > evidence.completeDays) {
+    context.addIssue({ code: "custom", message: "Sealed evidence days cannot exceed complete days.", path: ["sealedDays"] });
+  }
 });
 export type PilotEvidence = z.infer<typeof PilotEvidenceSchema>;
 
@@ -288,7 +321,15 @@ export const PilotGuardSampleSummarySchema = z.object({
   resolutionSuccessBps: BasisPointsSchema,
   p95LatencyMs: z.number().int().nonnegative(),
   challengeRateBps: BasisPointsSchema,
+  timeoutRateBps: BasisPointsSchema,
   invalidResultRateBps: BasisPointsSchema,
-  deliverySuccessBps: BasisPointsSchema
+  deliverySuccessBps: BasisPointsSchema,
+  candidateCoverageBps: BasisPointsSchema,
+  fallbackDepthP95: z.number().int().min(0).max(99),
+  expiryRateBps: BasisPointsSchema,
+  observationClass: z.enum(["internal", "public"]),
+  aggregationVersion: z.number().int().positive(),
+  taxonomyVersion: z.number().int().positive(),
+  dayRevisions: z.array(z.number().int().positive()).min(1).max(7)
 });
 export type PilotGuardSampleSummary = z.infer<typeof PilotGuardSampleSummarySchema>;

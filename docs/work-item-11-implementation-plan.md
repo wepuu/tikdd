@@ -80,6 +80,11 @@ Exit gate:
 - missing provider egress is reported before the user submits a URL;
 - real adapters still cannot start without explicit technical-test authorization.
 
+Implementation status (2026-08-10): complete. The attached supervisor in `scripts/local-stack.mjs`
+owns the exact four-service process set and local readiness lifecycle. The offline, duplicate-start,
+Worker smoke, bounded-stop, Docker-retention, fail-closed Pilot authorization, and clean-worktree
+checks pass. See [the implementation record](work-item-11-1-implementation.md).
+
 Expected effort: 1–2 days.
 
 ### Work item 11.2 — Actual-success Product Design audit
@@ -107,6 +112,14 @@ Exit gate:
 
 Expected effort: 1 day after one exact live test authorization.
 
+Implementation status (2026-08-10): complete. A newly authorized X journey completed through real
+resolution, format selection, ticket expiry, regeneration, and a redeemed one-use browser handoff.
+The audit closed the new-tab/handoff-feedback and 44-pixel desktop-target P1 findings, repeated
+English and Simplified Chinese desktop/360-pixel QA, and left zero P0 or P1 findings. The primary
+route succeeded twice, so live fallback was not manufactured; the current deterministic slower
+state and this evidence limit are recorded in the
+[work item 11.2 audit](design/work-item-11-2-audit.md).
+
 ### Work item 11.3 — Pilot evidence and delivery-outcome ADR
 
 Create a new ADR before adding persistence or scheduled evaluation.
@@ -131,6 +144,13 @@ Exit gate:
 - all stored and exported evidence is demonstrably free of public content and delivery secrets.
 
 Expected effort: 0.5–1 day.
+
+Implementation status (2026-08-10): complete. [ADR-0009](architecture/adr/0009-pilot-evidence-and-delivery-outcomes.md)
+locks exact tuple/class attribution, one-task sample collapse, unlinkable delivery outcomes, UTC
+daily completeness and 48-hour sealing, deterministic replay, bounded retention, five-minute
+singleton restrictive evaluation, optimistic concurrency, cooldown/recovery review, and protected
+aggregate-only diagnostics/export. It deliberately grants no traffic and leaves migrations,
+aggregation, and scheduling to work item 11.4.
 
 ### Work item 11.4 — Evidence aggregator and scheduled restrictive evaluator
 
@@ -159,35 +179,53 @@ Exit gate:
 
 Expected effort: 2–3 days.
 
+Implementation status (2026-08-11): complete. Migration `0010` adds privacy-bounded delivery
+outcomes, UTC daily summaries, late-evidence counters, calibration/review records, evaluator runs,
+and cleanup indexes. The singleton Evidence service deterministically rebuilds exact
+provider/platform/region/class days, applies locked policies through a restrictive-only Guard, and
+publishes expiring revisioned Redis snapshots. Protected diagnostics/export remain aggregate-only,
+outside public OpenAPI, and require an independent credential. The Product Design information
+architecture review found no P0/P1 issue and intentionally added no consumer admin UI. The
+Docker-backed `pnpm verify:work-item-11` gate passes without live provider traffic and leaves no
+verification residue. See [the implementation record](work-item-11-4-implementation.md).
+
 ### Work item 11.5 — Internal deployment preflight
 
 Prepare but do not enable traffic.
 
-1. Define the reviewed internal region, deployment identity, trusted proxy boundary, secret
-   ownership, provider egress, Redis/PostgreSQL durability, cleanup schedule, diagnostics
-   credential, alert route, and rollback owners.
-2. Verify real providers remain process-disabled until production/commercial approval references
-   are current and in scope.
-3. Rehearse provider-wide deny, stale rollout, stale guard, database/Redis loss, Worker restart,
-   delivery expiry, cleanup delay, and recovery review without Web/API deployment.
-4. Produce a preflight report containing only opaque approval/evidence references and sanitized
-   aggregate results.
+1. Define the internal region, deployment identity, direct/trusted-proxy boundary, Provider egress,
+   Redis/PostgreSQL availability, cleanup/evidence schedule, diagnostics credential, and emergency
+   disable path.
+2. Verify real Providers remain process-disabled until the site owner explicitly confirms their
+   terms and production use for the selected deployment.
+3. Rehearse provider-wide deny, stale rollout, stale Guard, database/Redis loss, Worker restart,
+   delivery expiry, cleanup delay, and manual recovery without Web/API deployment.
+4. Produce a sanitized technical readiness report without an audit or approval workflow.
 
 Exit gate:
 
-- every absolute prerequisite in ADR-0008 has an owner and current opaque reference;
+- every required technical setting and Provider-use confirmation is present;
 - a missing prerequisite prevents `internal` startup;
 - emergency deny propagation and fail-closed behavior meet the reviewed bound.
 
-Expected effort: 1 day; production/commercial approval is an external dependency.
+Expected effort: 1 day; Provider terms and production-use confirmation remain site-owner decisions.
+
+Implementation status (2026-08-11): engineering complete; site-owner settings pending. The strict
+technical plan, sanitized report, short-lived runtime-bound attestation, API/Worker startup
+enforcement, internal observation attribution, and offline failure exercises are implemented. The
+checked-in plan remains `pending` until deployment identity, region, proxy mode, Provider-use
+confirmation, and current technical signals are supplied. There is no multi-role audit or approval
+workflow. See [the implementation record](work-item-11-5-implementation.md) and
+[operations guide](internal-deployment-preflight.md).
 
 ### Work item 11.6 — Real calibration and staged X pilot
 
-This work starts only after the independent approval gate passes.
+Operational execution starts only after the site owner confirms Provider use and the real technical
+preflight passes. TikDD does not add a multi-role approval or audit feature for this personal site.
 
 1. Run at least three complete consecutive internal days.
 2. Review measured baselines and lock the first numeric policy; do not pre-fill thresholds.
-3. Promote one reviewed region through internal, 5%, 25%, 50%, and 100% only by audited operator
+3. Promote one region through internal, 5%, 25%, 50%, and 100% only through explicit site-owner
    decisions after each required observation window.
 4. Exercise automatic rollback, manual provider-wide deny, stale telemetry, cooldown, recovery
    eligibility, and operator restoration against the approved deployment.
@@ -205,17 +243,23 @@ Exit gate:
 
 Expected effort: 3 internal days plus at least 7 external observation days.
 
+Engineering status (2026-08-11): complete; elapsed observation not started. The consolidated
+`pnpm verify:work-item-11-baseline` gate is wired into CI and proves the evidence, preflight,
+fail-closed rollout, cleanup, privacy, residue, and repository boundaries without live Provider
+traffic. The remaining three-day calibration and seven-day observation are operational facts, not
+source-code work, and remain `pending`. See [the engineering closure](work-item-11-6-implementation.md).
+
 ## Priority and dependencies
 
 | Order | Work item | Can start now | Blocking dependency |
 | --- | --- | --- | --- |
-| 1 | 11.0 baseline | Yes | Current verified worktree |
-| 2 | 11.1 local launcher | Yes | 11.0 |
-| 3 | 11.2 real Product Design audit | With exact authorization | 11.1 and one reviewed test URL |
-| 4 | 11.3 evidence ADR | Yes | ADR-0008 and 10.5 implementation |
-| 5 | 11.4 aggregator/evaluator | After ADR | 11.3 |
-| 6 | 11.5 deployment preflight | Partially | 11.4 and deployment decisions |
-| 7 | 11.6 staged pilot | No | Independent approval and all preflight gates |
+| 1 | 11.0 baseline — complete | Complete | Current verified worktree |
+| 2 | 11.1 local launcher — complete | Complete | 11.0 |
+| 3 | 11.2 real Product Design audit — complete | Complete | 11.1 and one reviewed test URL |
+| 4 | 11.3 evidence ADR — complete | Complete | ADR-0008 and 10.5 implementation |
+| 5 | 11.4 aggregator/evaluator — complete | Complete | 11.3 |
+| 6 | 11.5 deployment preflight — implementation complete, settings pending | Awaiting site owner | Deployment ID, region, proxy mode, and Provider-use confirmation |
+| 7 | 11.6 engineering gate — complete; staged observation pending | Awaiting site owner | Provider-use confirmation, real preflight, and elapsed evidence windows |
 
 Engineering work before the external gate is approximately 6–8 days. Real-time calibration and
 observation cannot be compressed or replaced with fixtures.
@@ -228,8 +272,8 @@ observation cannot be compressed or replaced with fixtures.
 - Work item 11.4: protected diagnostics information architecture review; no consumer admin UI.
 - Work item 11.6: repeat the success/fallback/expiry journey review before 25% and after 100%.
 
-## First executable step
+## Next executable step
 
-Start work item 11.0 by reviewing, committing, and pushing the verified work item 10 baseline. Then
-implement 11.1 so future local tests start one clean stack with explicit provider egress and no
-manual process cleanup.
+The work item 11 engineering baseline is ready to merge. After deployment details are known, choose
+the personal deployment ID, runtime region and proxy mode, confirm permitted production use for
+each enabled Provider, and run the real technical preflight before starting elapsed calibration.

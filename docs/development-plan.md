@@ -1,9 +1,11 @@
 # TikDD development roadmap
 
 The current execution sequence continues in
-[the work item 11 implementation plan](work-item-11-implementation-plan.md): freeze the verified X
-baseline, make local pilot startup reproducible, audit the actual download journey, then complete
-the evidence/evaluator path before any staged traffic or broader platform expansion.
+[the work item 11 implementation plan](work-item-11-implementation-plan.md): the verified X baseline
+and reproducible local Pilot launcher, real-journey audit, evidence ADR, and restrictive evidence
+evaluator, internal-preflight enforcement, and the consolidated CI baseline are complete. Personal
+deployment settings, Provider-use confirmation, and real elapsed calibration remain before any
+staged traffic or broader platform expansion.
 
 The roadmap grows platform coverage through measured provider capabilities rather than promising
 everything listed by an extractor project. A platform becomes indexable and advertised only after a
@@ -43,6 +45,15 @@ Exit criteria: `pnpm check` passes and a Docker-backed mock task completes throu
   three-day internal SLO calibration, operator-only promotion, and a future restrictive automatic
   guard. Its implementation begins with work item 10.1; no provider is enabled by this decision
   alone.
+- [ADR-0009](architecture/adr/0009-pilot-evidence-and-delivery-outcomes.md) is implemented with exact
+  provider/platform/region/class evidence windows, distinct-task sampling, unlinkable delivery
+  outcomes, UTC sealing/replay/retention, protected aggregate diagnostics, and a scheduled
+  restrictive evaluator. Work item 11.5 adds the final fail-closed engineering boundary before
+  reviewed internal deployment inputs.
+- Work item 11.5 implements a deny-first deployment plan/report, short-lived runtime-bound
+  attestation, API/Worker internal-startup enforcement, and deterministic failure rehearsal. Its
+  checked-in plan remains pending until deployment scope, Provider-use confirmation, and current
+  technical signals exist; no audit workflow is planned.
 - Work item 10.1 rejected DLPanda/X in the current region after `provider_challenge` and selected
   SSSTwitter at `canary-ready` after a corrected-parser canary. SSSTwitter remains disabled and out
   of the worker until work item 10.2 completes its exact delivery-host policy and candidate mapping.

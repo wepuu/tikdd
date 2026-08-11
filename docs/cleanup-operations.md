@@ -10,8 +10,9 @@ the authorization boundary: delayed cleanup never makes expired data usable agai
 acquires `tikdd:cleanup:v1:<deployment>:lease`; a second instance skips that interval.
 
 Each stage uses a separate small transaction, stable ordering, a row limit, and
-`FOR UPDATE SKIP LOCKED`: expired tickets, encrypted candidates, and canary measurements; expired
-idempotency and active-source records; task status expiry; then hard deletion after
+`FOR UPDATE SKIP LOCKED`: expired tickets and their anonymous expiry outcomes, delivery outcomes,
+encrypted candidates, canary measurements, daily evidence, calibration/review records, and Pilot
+audits; expired idempotency and active-source records; task status expiry; then hard deletion after
 `expires_at + TASK_HARD_RETENTION_MS`.
 Task deletion cascades to attempts and residual task-owned rows. Cleanup never reads or decrypts
 candidate payloads and never emits task IDs, digests, canonical URLs, or source metadata.
@@ -62,4 +63,5 @@ The Docker probe verifies no-write dry-run counts, singleton contention, bounded
 fresh-row preservation, complete cleanup, lease release, and a zero-change repeated run.
 
 To pause physical deletion, stop only cleanup; logical expiry remains enforced. Retention can be
-lengthened before restart. Migration `0007` contains performance indexes, not new retained data.
+lengthened before restart. Migration `0010` adds evidence cleanup stages and indexes; it does not
+permit cleanup to delete a source bucket before its 48-hour sealing boundary.

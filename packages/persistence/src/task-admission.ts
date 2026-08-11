@@ -17,6 +17,7 @@ interface TaskRow extends QueryResultRow {
   created_at: Date;
   updated_at: Date;
   expires_at: Date;
+  observation_class: "internal" | "public";
 }
 
 interface IdempotencyTaskRow extends TaskRow {
@@ -56,6 +57,7 @@ export interface TaskAdmissionInput {
     platform: Platform;
     canonicalUrl: string;
     expiresAt: Date;
+    observationClass?: "internal" | "public";
   };
   sourceFingerprint: Uint8Array;
   requestFingerprint: Uint8Array;
@@ -79,6 +81,7 @@ export class TaskAdmissionRepository {
   constructor(private readonly pool: Pool) {}
 
   async admit(input: TaskAdmissionInput): Promise<TaskAdmissionResult> {
+    const observationClass = input.task.observationClass ?? "public";
     const sourceFingerprint = digest(input.sourceFingerprint, "sourceFingerprint");
     const requestFingerprint = digest(input.requestFingerprint, "requestFingerprint");
     const idempotencyKeyDigest = input.idempotencyKeyDigest
@@ -120,6 +123,9 @@ export class TaskAdmissionRepository {
         );
         const existing = replay.rows[0];
         if (existing) {
+          if (existing.observation_class !== observationClass) {
+            throw new TaskIdempotencyConflictError();
+          }
           if (!timingSafeEqual(existing.request_fingerprint, requestFingerprint)) {
             throw new TaskIdempotencyConflictError();
           }
@@ -154,10 +160,10 @@ export class TaskAdmissionRepository {
       }
 
       const created = await client.query<TaskRow>(
-        `INSERT INTO resolve_tasks (id, status, platform, canonical_url, expires_at)
-         VALUES ($1, 'queued', $2, $3, $4)
+        `INSERT INTO resolve_tasks (id, status, platform, canonical_url, expires_at, observation_class)
+         VALUES ($1, 'queued', $2, $3, $4, $5)
          RETURNING *`,
-        [input.task.id, input.task.platform, input.task.canonicalUrl, input.task.expiresAt]
+        [input.task.id, input.task.platform, input.task.canonicalUrl, input.task.expiresAt, observationClass]
       );
       await client.query(
         `INSERT INTO active_source_admissions (source_fingerprint, task_id, expires_at)

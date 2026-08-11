@@ -2,7 +2,7 @@
 
 This internal package owns runtime-validated provider rollout rules, deny-first evaluation,
 deterministic task cohorts, revisioned Redis snapshots, fail-closed authorization reads, and the
-restrictive automatic pilot guard defined by ADR-0008.
+restrictive automatic pilot guard defined by ADR-0008 and its evidence semantics from ADR-0009.
 
 It does not own provider manifests, circuit health, task admission quotas, public API errors, or
 delivery policy. The Provider Router applies its decision after static manifest eligibility and
@@ -26,5 +26,6 @@ Key invariants:
   exact provider/platform/region tuple.
 
 See [ADR-0007](../../docs/architecture/adr/0007-rollout-admission-and-abuse-controls.md),
-[ADR-0008](../../docs/architecture/adr/0008-provider-qualification-and-pilot-controls.md), and
+[ADR-0008](../../docs/architecture/adr/0008-provider-qualification-and-pilot-controls.md),
+[ADR-0009](../../docs/architecture/adr/0009-pilot-evidence-and-delivery-outcomes.md), and
 [provider rollout operations](../../docs/provider-rollout-operations.md).

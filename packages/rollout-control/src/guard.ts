@@ -9,7 +9,8 @@ import {
 } from "./model";
 
 function sameTuple(policy: PilotPolicy, evidence: PilotEvidence): boolean {
-  return policy.providerId === evidence.providerId && policy.platform === evidence.platform && policy.region === evidence.region;
+  return policy.providerId === evidence.providerId && policy.platform === evidence.platform &&
+    policy.region === evidence.region && policy.observationClass === evidence.observationClass;
 }
 
 export function evaluatePilotGuard(input: {
@@ -36,29 +37,50 @@ export function evaluatePilotGuard(input: {
   const evidenceAgeMs = now.getTime() - new Date(evidence.collectedAt).getTime();
   const stale = evidenceAgeMs < 0 || evidenceAgeMs > policy.maximumEvidenceAgeMs;
   const insufficient = evidence.distinctSamples < policy.minimumSamples;
+  const incompatible = evidence.aggregationVersion !== policy.aggregationVersion ||
+    evidence.taxonomyVersion !== policy.taxonomyVersion || evidence.completeDays !== policy.evaluationDays;
   let reason: PilotGuardReason = "healthy_hold";
   let action: PilotGuard["action"] = "eligible_for_review";
   let capBps = currentCap;
 
   if (evidence.absoluteStop) {
     reason = "absolute_stop"; action = "deny"; capBps = 0;
+  } else if (incompatible) {
+    reason = "incompatible_evidence";
+    capBps = Math.min(currentCap, current?.lastHealthyAllocationBps ?? policy.rollbackAllocationBps);
+    action = capBps === 0 ? "deny" : "reduce";
   } else if (stale) {
     reason = "stale_evidence";
     capBps = policy.staleAction === "deny" ? 0 : Math.min(currentCap, current?.lastHealthyAllocationBps ?? policy.rollbackAllocationBps);
     action = capBps === 0 ? "deny" : "reduce";
   } else if (insufficient) {
-    reason = "insufficient_samples"; action = "hold";
+    reason = "insufficient_samples";
+    if (input.operatorAllocationBps > 0) {
+      capBps = policy.staleAction === "deny" ? 0 : Math.min(currentCap, current?.lastHealthyAllocationBps ?? policy.rollbackAllocationBps);
+      action = capBps === 0 ? "deny" : "reduce";
+    } else {
+      action = "hold";
+    }
   } else {
     const breach: PilotGuardReason | null =
       evidence.resolutionSuccessBps < policy.thresholds.minimumResolutionSuccessBps ? "resolution_error" :
       evidence.p95LatencyMs > policy.thresholds.maximumP95LatencyMs ? "latency" :
       evidence.challengeRateBps > policy.thresholds.maximumChallengeRateBps ? "challenge" :
+      evidence.timeoutRateBps > policy.thresholds.maximumTimeoutRateBps ? "timeout" :
       evidence.invalidResultRateBps > policy.thresholds.maximumInvalidResultRateBps ? "invalid_result" :
-      evidence.deliverySuccessBps < policy.thresholds.minimumDeliverySuccessBps ? "delivery_error" : null;
+      evidence.deliverySuccessBps < policy.thresholds.minimumDeliverySuccessBps ? "delivery_error" :
+      evidence.candidateCoverageBps < policy.thresholds.minimumCandidateCoverageBps ? "candidate_coverage" :
+      evidence.fallbackDepthP95 > policy.thresholds.maximumFallbackDepthP95 ? "fallback_depth" :
+      evidence.expiryRateBps > policy.thresholds.maximumExpiryRateBps ? "expiry" : null;
     if (breach) {
       reason = breach;
       capBps = Math.min(currentCap, current?.lastHealthyAllocationBps ?? policy.rollbackAllocationBps);
       action = capBps === 0 ? "deny" : "reduce";
+    } else if (!current) {
+      action = "hold";
+    } else if (current.capBps < input.operatorAllocationBps) {
+      const cooldownComplete = now.getTime()-new Date(current.updatedAt).getTime() >= policy.cooldownMs;
+      action = cooldownComplete && evidence.sealedDays >= policy.recoveryDays ? "eligible_for_review" : "hold";
     }
   }
 

@@ -15,19 +15,28 @@ const policy: PilotPolicy = {
   id: policyId, version: 1, providerId, platform: "x", region: "canary-verification",
   calibrationStartedAt: "2026-08-06T00:00:00.000Z", calibrationCompletedAt: "2026-08-09T00:00:00.000Z",
   lockedAt: "2026-08-09T01:00:00.000Z", expiresAt: "2026-09-09T01:00:00.000Z",
+  observationClass: "public", evaluationDays: 1, recoveryDays: 1, cooldownMs: 60_000,
+  aggregationVersion: 1, taxonomyVersion: 1, calibrationDayRevisions: [1, 2, 3],
   minimumSamples: 100, maximumEvidenceAgeMs: 3_600_000, staleAction: "reduce", rollbackAllocationBps: 500,
   thresholds: { minimumResolutionSuccessBps: 9500, maximumP95LatencyMs: 8000, maximumChallengeRateBps: 200,
-    maximumInvalidResultRateBps: 100, minimumDeliverySuccessBps: 9800 }
+    maximumTimeoutRateBps: 200, maximumInvalidResultRateBps: 100, minimumDeliverySuccessBps: 9800,
+    minimumCandidateCoverageBps: 10000, maximumFallbackDepthP95: 2, maximumExpiryRateBps: 500 }
 };
 const evidence: PilotEvidence = {
   providerId, platform: "x", region: "canary-verification", windowStartedAt: "2026-08-10T10:00:00.000Z",
   windowEndedAt: "2026-08-10T11:00:00.000Z", collectedAt: "2026-08-10T11:30:00.000Z", distinctSamples: 120,
-  resolutionSuccessBps: 9800, p95LatencyMs: 9000, challengeRateBps: 100, invalidResultRateBps: 25,
-  deliverySuccessBps: 9900, absoluteStop: false
+  observationClass: "public", aggregationVersion: 1, taxonomyVersion: 1, dayRevisions: [1], completeDays: 1, sealedDays: 1,
+  resolutionSuccessBps: 9800, p95LatencyMs: 9000, challengeRateBps: 100, timeoutRateBps: 50,
+  invalidResultRateBps: 25, deliverySuccessBps: 9900, candidateCoverageBps: 10000,
+  fallbackDepthP95: 1, expiryRateBps: 100, absoluteStop: false
 };
 const summary = { distinctSamples: evidence.distinctSamples, resolutionSuccessBps: evidence.resolutionSuccessBps,
   p95LatencyMs: evidence.p95LatencyMs, challengeRateBps: evidence.challengeRateBps,
-  invalidResultRateBps: evidence.invalidResultRateBps, deliverySuccessBps: evidence.deliverySuccessBps };
+  timeoutRateBps: evidence.timeoutRateBps, invalidResultRateBps: evidence.invalidResultRateBps,
+  deliverySuccessBps: evidence.deliverySuccessBps, candidateCoverageBps: evidence.candidateCoverageBps,
+  fallbackDepthP95: evidence.fallbackDepthP95, expiryRateBps: evidence.expiryRateBps,
+  observationClass: evidence.observationClass, aggregationVersion: evidence.aggregationVersion,
+  taxonomyVersion: evidence.taxonomyVersion, dayRevisions: evidence.dayRevisions };
 
 try {
   await repository.lockPolicy({ policy, reviewerId: "docker-verification" });

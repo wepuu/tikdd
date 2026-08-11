@@ -31,3 +31,10 @@ are recorded in [`work-item-10-3-public-state-contract.md`](work-item-10-3-publi
 
 The real desktop and 360-pixel mobile state audit, P0 corrections, and screenshot evidence are
 recorded in [`work-item-10-4-audit.md`](work-item-10-4-audit.md).
+
+The newly authorized actual-success journey, browser-handoff correction, bilingual QA, and current
+evidence limits are recorded in [`work-item-11-2-audit.md`](work-item-11-2-audit.md).
+
+The Product Design information hierarchy and no-consumer-admin decision for aggregate-only Pilot
+diagnostics are recorded in
+[`work-item-11-4-diagnostics-ia.md`](work-item-11-4-diagnostics-ia.md).

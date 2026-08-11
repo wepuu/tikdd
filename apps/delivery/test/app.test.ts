@@ -76,8 +76,13 @@ class MemoryDeliveryRepository implements DeliveryRepository {
       return null;
     }
     this.redeemed = true;
-    return { taskId, candidate: this.encryptedCandidate };
+    return { taskId, candidate: this.encryptedCandidate, evidence: {
+      ticketId: "dtk_dddddddddddddddddddddddddddddddd", providerId: this.encryptedCandidate.providerId,
+      platform: "x", region: "global", observationClass: "public", mode: "redirect"
+    } };
   }
+
+  async recordDeliveryRedemptionOutcome(): Promise<void> {}
 }
 
 async function appFor(address: string, fixture: DeliveryFixture = defaultFixture) {

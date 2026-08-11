@@ -89,6 +89,22 @@ The run completed in 244,026 ms. Its temporary tuple was removed immediately and
 is consumed. This evidence supports a four-minute maximum internal candidate lifetime for the
 observed redirect policy; it does not authorize production traffic or another live request.
 
+## Consumed work item 11.2 product-journey authorization
+
+On 2026-08-10 the project owner authorized the exact public X URL
+`https://x.com/Xiaoniu6161/status/2086495430360334558?s=20` for the work item 11.2 Product Design
+journey. Scope allowed submission to TwitterSaver and SSSTwitter with bounded priority fallback,
+creation of short-lived delivery tickets, one real browser download handoff, natural expiry, and
+regeneration. Account cookies, private content, challenge bypass, and access-control bypass were
+forbidden.
+
+The journey issued two real resolutions because the first candidate expired during state capture.
+TwitterSaver succeeded first in 3,408 ms and 931 ms, so SSSTwitter was not contacted and live
+fallback was not manufactured. Three redirect tickets were created; two expired unused and the
+final ticket was redeemed once by the browser. No provider response, direct media URL, secret
+header, cookie, or media body was stored in the audit. This authorization is consumed and does not
+authorize another live request.
+
 To verify priority routing and fallback without persisting provider responses, add:
 
 ```powershell

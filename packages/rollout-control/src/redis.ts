@@ -1,6 +1,8 @@
 import type Redis from "ioredis";
 import {
+  PilotGuardSnapshotSchema,
   RolloutSnapshotSchema,
+  type PilotGuardSnapshot,
   type RolloutSnapshot
 } from "./model";
 
@@ -64,3 +66,26 @@ export class RedisRolloutStore {
 }
 
 export const rolloutRedisKeys = Object.freeze({ snapshotKey, changeChannel });
+
+const pilotGuardSnapshotKey = "tikdd:pilot-guard:v1:snapshot";
+const pilotGuardChangeChannel = "tikdd:pilot-guard:v1:changed";
+
+export class RedisPilotGuardStore {
+  constructor(private readonly redis: Redis) {}
+
+  async getSnapshot(): Promise<PilotGuardSnapshot | null> {
+    const raw = await this.redis.get(pilotGuardSnapshotKey);
+    if (!raw) return null;
+    try { return PilotGuardSnapshotSchema.parse(JSON.parse(raw)); } catch { return null; }
+  }
+
+  async putSnapshot(snapshotInput: PilotGuardSnapshot, ttlMs: number): Promise<boolean> {
+    const snapshot = PilotGuardSnapshotSchema.parse(snapshotInput);
+    if (!Number.isInteger(ttlMs) || ttlMs < 5_000 || ttlMs > 24*60*60*1_000) throw new Error("Pilot guard snapshot TTL is invalid.");
+    const result = await this.redis.eval(publishSnapshotScript,1,pilotGuardSnapshotKey,
+      String(snapshot.revision),JSON.stringify(snapshot),String(ttlMs),pilotGuardChangeChannel);
+    return Number(result)===1;
+  }
+}
+
+export const pilotGuardRedisKeys = Object.freeze({ snapshotKey: pilotGuardSnapshotKey, changeChannel: pilotGuardChangeChannel });

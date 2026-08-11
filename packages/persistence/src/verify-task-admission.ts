@@ -65,6 +65,12 @@ try {
     ),
     TaskIdempotencyConflictError
   );
+  await assert.rejects(
+    admission.admit(
+      input(nextTaskId(), { task: { ...input("unused").task, id: taskIds.at(-1) as string, observationClass: "internal" } })
+    ),
+    TaskIdempotencyConflictError
+  );
 
   const duplicate = await admission.admit(
     input(nextTaskId(), { idempotencyKeyDigest: randomBytes(32) })
@@ -122,18 +128,29 @@ try {
     warnings: []
   });
 
+  const internal = await admission.admit(
+    input(nextTaskId(), {
+      task: { ...input("unused").task, id: taskIds.at(-1) as string, observationClass: "internal" },
+      idempotencyKeyDigest: randomBytes(32)
+    })
+  );
+  assert.equal(internal.kind, "created");
+
   const persisted = await pool.query(
     `SELECT
        (SELECT count(*) FROM resolve_tasks WHERE canonical_url = $1)::int AS task_count,
        (SELECT count(*) FROM resolve_task_idempotency i
           JOIN resolve_tasks t ON t.id = i.task_id WHERE t.canonical_url = $1)::int AS key_count,
        (SELECT count(*) FROM active_source_admissions a
-          JOIN resolve_tasks t ON t.id = a.task_id WHERE t.canonical_url = $1)::int AS active_count`,
+          JOIN resolve_tasks t ON t.id = a.task_id WHERE t.canonical_url = $1)::int AS active_count,
+       (SELECT count(*) FROM resolve_tasks WHERE canonical_url = $1
+          AND observation_class = 'internal')::int AS internal_count`,
     [`https://x.com/admission-verification/status/${suffix}`]
   );
-  assert.equal(persisted.rows[0]?.task_count, 2);
-  assert.equal(persisted.rows[0]?.key_count, 2);
-  assert.equal(persisted.rows[0]?.active_count, 0);
+  assert.equal(persisted.rows[0]?.task_count, 3);
+  assert.equal(persisted.rows[0]?.key_count, 3);
+  assert.equal(persisted.rows[0]?.active_count, 1);
+  assert.equal(persisted.rows[0]?.internal_count, 1);
   process.stdout.write("Task admission PostgreSQL concurrency verification passed.\n");
 } finally {
   if (taskIds.length > 0) {
