@@ -6,19 +6,11 @@ const allowedDevOrigins = process.env.TIKDD_ALLOWED_DEV_ORIGINS
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  distDir: process.env.WEB_NEXT_DIST_DIR ?? (process.env.NODE_ENV === "development" ? ".next-web-dev" : ".next-web-production"),
   ...(allowedDevOrigins?.length ? { allowedDevOrigins } : {}),
   poweredByHeader: false,
   reactStrictMode: true,
-  transpilePackages: ["@tikdd/contracts", "@tikdd/platform"],
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/en",
-        permanent: false
-      }
-    ];
-  }
+  transpilePackages: ["@tikdd/admin-contracts", "@tikdd/contracts", "@tikdd/platform"]
 };
 
 export default nextConfig;

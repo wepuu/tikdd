@@ -1,19 +1,19 @@
 {
   "schemaVersion": 1,
-  "status": "pending",
+  "status": "ready",
   "scope": {
-    "deploymentId": null,
-    "region": null,
+    "deploymentId": "tikdd",
+    "region": "nl",
     "platform": "x",
     "providers": ["twittersaver", "ssstwitter"]
   },
   "network": {
-    "trustedProxyMode": null,
+    "trustedProxyMode": "trusted-proxy",
     "providerPageHosts": ["twittersaver.net", "ssstwitter.com"]
   },
   "providerUse": [
-    { "providerId": "twittersaver", "termsConfirmed": false, "productionUseConfirmed": false },
-    { "providerId": "ssstwitter", "termsConfirmed": false, "productionUseConfirmed": false }
+    { "providerId": "twittersaver", "termsConfirmed": true, "productionUseConfirmed": true },
+    { "providerId": "ssstwitter", "termsConfirmed": true, "productionUseConfirmed": true }
   ],
   "bounds": {
     "attestationTtlMs": 600000,

@@ -35,7 +35,7 @@ describe("provider operational contracts", () => {
         regions: ["*", "eu-west-1"],
         timeoutMs: 1_000,
         costWeight: 0,
-        platforms: [{ platform: "x", priority: 900 }]
+        platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"] }]
       }).regions
     ).toEqual(["*", "eu-west-1"]);
   });

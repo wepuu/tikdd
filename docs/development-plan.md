@@ -3,9 +3,9 @@
 The current execution sequence continues in
 [the work item 11 implementation plan](work-item-11-implementation-plan.md): the verified X baseline
 and reproducible local Pilot launcher, real-journey audit, evidence ADR, and restrictive evidence
-evaluator, internal-preflight enforcement, and the consolidated CI baseline are complete. Personal
-deployment settings, Provider-use confirmation, and real elapsed calibration remain before any
-staged traffic or broader platform expansion.
+evaluator, internal-preflight enforcement, and the consolidated CI baseline are complete. The
+Netherlands deployment scope and Provider use are confirmed; live runtime signals and real elapsed
+calibration remain before any staged traffic or broader platform expansion.
 
 The roadmap grows platform coverage through measured provider capabilities rather than promising
 everything listed by an extractor project. A platform becomes indexable and advertised only after a

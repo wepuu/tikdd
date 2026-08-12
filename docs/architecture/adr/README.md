@@ -9,6 +9,9 @@
 - [ADR-0007: Runtime rollout, admission, and abuse-control boundary](0007-rollout-admission-and-abuse-controls.md)
 - [ADR-0008: Provider qualification, pilot evidence, and bounded rollback controls](0008-provider-qualification-and-pilot-controls.md)
 - [ADR-0009: Pilot evidence, delivery outcomes, and restrictive evaluation](0009-pilot-evidence-and-delivery-outcomes.md)
+- [ADR-0010: Owner control plane, route-policy overlay, and content publication](0010-owner-control-plane-routing-and-publication.md)
+- [ADR-0011: Password-authenticated owner console](0011-password-authenticated-owner-console.md)
+- [ADR-0012: Provider capability matrix and platform-aware production routing](0012-provider-capability-matrix-and-platform-aware-routing.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

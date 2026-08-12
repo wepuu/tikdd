@@ -25,6 +25,7 @@
     "@tikdd/providers": "workspace:*",
     "@tikdd/rollout-control": "workspace:*",
     "@tikdd/routing-health": "workspace:*",
+    "@tikdd/route-policy": "workspace:*",
     "bullmq": "^5.0.0",
     "ioredis": "^5.0.0"
   }

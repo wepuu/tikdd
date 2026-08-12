@@ -169,7 +169,7 @@ export class SSSTwitterProvider implements ResolverProvider {
       regions: ["global", "canary-global"],
       timeoutMs: 18_000,
       costWeight: 15,
-      platforms: [{ platform: "x", priority: 800 }]
+      platforms: [{ platform: "x", priority: 800, deliveryModes: ["redirect"] }]
     };
   }
 

@@ -15,9 +15,11 @@
     "db:verify-task-admission": "tsx src/verify-task-admission.ts"
   },
   "dependencies": {
+    "@tikdd/admin-contracts": "workspace:*",
     "@tikdd/contracts": "workspace:*",
     "@tikdd/delivery-core": "workspace:*",
     "@tikdd/rollout-control": "workspace:*",
+    "@tikdd/route-policy": "workspace:*",
     "@tikdd/routing-health": "workspace:*",
     "pg": "^8.0.0"
   },

@@ -107,18 +107,18 @@ export class DLPandaProvider implements ResolverProvider {
       timeoutMs: 18_000,
       costWeight: 20,
       platforms: [
-        { platform: "tiktok", priority: 820 },
-        { platform: "douyin", priority: 800 },
-        { platform: "xiaohongshu", priority: 780 },
-        { platform: "x", priority: 700 },
-        { platform: "bilibili", priority: 650 },
-        { platform: "weibo", priority: 620 },
-        { platform: "vimeo", priority: 580 },
-        { platform: "facebook", priority: 560 },
-        { platform: "snapchat", priority: 540 },
-        { platform: "pinterest", priority: 520 },
-        { platform: "xigua", priority: 500 },
-        { platform: "oasis", priority: 480 }
+        { platform: "tiktok", priority: 820, deliveryModes: [] },
+        { platform: "douyin", priority: 800, deliveryModes: [] },
+        { platform: "xiaohongshu", priority: 780, deliveryModes: [] },
+        { platform: "x", priority: 700, deliveryModes: [] },
+        { platform: "bilibili", priority: 650, deliveryModes: [] },
+        { platform: "weibo", priority: 620, deliveryModes: [] },
+        { platform: "vimeo", priority: 580, deliveryModes: [] },
+        { platform: "facebook", priority: 560, deliveryModes: [] },
+        { platform: "snapchat", priority: 540, deliveryModes: [] },
+        { platform: "pinterest", priority: 520, deliveryModes: [] },
+        { platform: "xigua", priority: 500, deliveryModes: [] },
+        { platform: "oasis", priority: 480, deliveryModes: [] }
       ]
     };
   }

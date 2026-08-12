@@ -11,6 +11,7 @@ import {
   type ResolveResult
 } from "@tikdd/contracts";
 import {
+  CompleteProviderResolutionSchema,
   ProviderResolutionSchema,
   type ProviderResolution
 } from "@tikdd/delivery-core";
@@ -36,6 +37,7 @@ export {
   type FailureInjectionProviderOptions
 } from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
+export { ProviderCanaryConfigSchema, selectProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,
   type SSSTwitterProviderOptions,
@@ -96,7 +98,16 @@ export interface ProviderConcurrencyPermit {
 }
 
 export interface ProviderConcurrencySource {
-  acquire(key: ProviderCircuitKey): Promise<ProviderConcurrencyPermit | null>;
+  acquire(key: ProviderCircuitKey, maximumLimitOverride?: number): Promise<ProviderConcurrencyPermit | null>;
+}
+
+export interface ProviderPreferencePolicy {
+  orderedProviderIds: readonly string[];
+  concurrencyCaps: readonly { providerId: string; limit: number }[];
+}
+
+export interface ProviderPreferenceSource {
+  get(platform: Platform, region: RegionId): Promise<ProviderPreferencePolicy | null>;
 }
 
 class UnlimitedProviderConcurrencySource implements ProviderConcurrencySource {
@@ -111,6 +122,7 @@ interface RankedProvider {
   score: number;
   circuitKey: ProviderCircuitKey;
   requiresProbe: boolean;
+  concurrencyLimitOverride: number | undefined;
 }
 
 interface RankingResult {
@@ -126,6 +138,7 @@ export interface ProviderRouterOptions {
   healthSource?: ProviderRoutingHealthSource;
   rolloutSource?: ProviderRolloutSource;
   concurrencySource?: ProviderConcurrencySource;
+  preferenceSource?: ProviderPreferenceSource;
   production?: boolean;
 }
 
@@ -153,6 +166,7 @@ export class ProviderRouter {
   private readonly rolloutSource: ProviderRolloutSource;
   private readonly concurrencySource: ProviderConcurrencySource;
   private readonly production: boolean;
+  private readonly preferenceSource: ProviderPreferenceSource | null;
 
   constructor(
     private readonly providers: readonly ResolverProvider[],
@@ -174,6 +188,7 @@ export class ProviderRouter {
       options.rolloutSource ?? new StaticRolloutSource(!this.production, !this.production);
     this.concurrencySource =
       options.concurrencySource ?? new UnlimitedProviderConcurrencySource();
+    this.preferenceSource = options.preferenceSource ?? null;
   }
 
   getProviderCountsByPlatform(): ReadonlyMap<Platform, number> {
@@ -194,6 +209,9 @@ export class ProviderRouter {
     let manifestEligibleCount = 0;
     let rolloutEligibleCount = 0;
     let rolloutControlUnavailable = false;
+    let preference: ProviderPreferencePolicy | null = null;
+    try { preference = await this.preferenceSource?.get(platform, this.region) ?? null; } catch { preference = null; }
+    const preferencePositions = new Map(preference?.orderedProviderIds.map((id,index)=>[id,index]) ?? []);
 
     for (const provider of this.providers) {
       const { manifest } = provider;
@@ -204,7 +222,7 @@ export class ProviderRouter {
         continue;
       }
       manifestEligibleCount += 1;
-      if (this.production && manifest.kind === "mock") {
+      if (this.production && (manifest.kind === "mock" || capability.deliveryModes.length === 0)) {
         continue;
       }
       let rollout;
@@ -248,9 +266,11 @@ export class ProviderRouter {
 
       const successRate = clamp(health.successRate, 0, 1);
       const latencyPenalty = Math.min(Math.max(health.latencyP95Ms, 0) / 1000, 50);
-      const score =
-        capability.priority * 1000 + successRate * 100 - latencyPenalty - manifest.costWeight;
-      ranked.push({ provider, capability, score, circuitKey, requiresProbe });
+      const baseScore = capability.priority * 1000 + successRate * 100 - latencyPenalty - manifest.costWeight;
+      const position=preferencePositions.get(manifest.id);
+      const score = position === undefined ? baseScore : (preferencePositions.size-position+1)*1_000_000_000+baseScore;
+      const concurrencyLimitOverride=preference?.concurrencyCaps.find(({providerId})=>providerId===manifest.id)?.limit;
+      ranked.push({ provider, capability, score, circuitKey, requiresProbe, concurrencyLimitOverride });
     }
 
     return {
@@ -296,7 +316,7 @@ export class ProviderRouter {
         : timeoutSignal;
       let permit: ProviderConcurrencyPermit | null;
       try {
-        permit = await this.concurrencySource.acquire(candidate.circuitKey);
+        permit = await this.concurrencySource.acquire(candidate.circuitKey, candidate.concurrencyLimitOverride);
       } catch {
         permit = null;
       }
@@ -320,7 +340,16 @@ export class ProviderRouter {
         const rawResolution = await candidate.provider.resolve({ ...input, signal });
         let resolution: ProviderResolution;
         try {
-          resolution = ProviderResolutionSchema.parse(rawResolution);
+          resolution = (this.production
+            ? CompleteProviderResolutionSchema
+            : ProviderResolutionSchema).parse(rawResolution);
+          if (
+            resolution.result.source.platform !== input.platform ||
+            resolution.result.provenance.provider !== candidate.provider.manifest.id ||
+            resolution.candidates.some(({ mode }) => !candidate.capability.deliveryModes.includes(mode))
+          ) {
+            throw new Error("The normalized result is outside the declared Provider capability.");
+          }
         } catch {
           throw new ProviderError(
             "The provider returned an invalid normalized result.",
@@ -413,7 +442,7 @@ export class MockProvider implements ResolverProvider {
       regions: ["*"],
       timeoutMs: 5_000,
       costWeight: 0,
-      platforms: platforms.map((platform) => ({ platform, priority: 10 }))
+      platforms: platforms.map((platform) => ({ platform, priority: 10, deliveryModes: [] }))
     };
   }
 

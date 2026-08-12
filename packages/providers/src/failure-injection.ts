@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import {
   ResolveResultSchema,
   type Platform,
+  type ProviderDeliveryMode,
   type ProviderFailureCode,
   type RegionId
 } from "@tikdd/contracts";
@@ -24,6 +25,7 @@ export interface FailureInjectionProviderOptions {
   priority: number;
   outcomes: readonly FailureInjectionOutcome[];
   region?: RegionId | "*";
+  deliveryModes?: readonly ProviderDeliveryMode[];
 }
 
 export class FailureInjectionProvider implements ResolverProvider {
@@ -47,7 +49,11 @@ export class FailureInjectionProvider implements ResolverProvider {
       regions: [options.region ?? "*"],
       timeoutMs: 1_000,
       costWeight: 0,
-      platforms: [{ platform: options.platform, priority: options.priority }]
+      platforms: [{
+        platform: options.platform,
+        priority: options.priority,
+        deliveryModes: [...(options.deliveryModes ?? [])]
+      }]
     };
   }
 

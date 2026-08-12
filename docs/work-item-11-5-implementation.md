@@ -1,7 +1,8 @@
 # Work item 11.5 implementation record
 
-Engineering status: complete on 2026-08-11. Runtime plan: pending site-owner settings. Pilot traffic
-remains disabled.
+Engineering status: complete on 2026-08-11. Deployment `tikdd`, region `nl`, and trusted
+Cloudflare/Nginx ingress are selected, and the site owner confirmed production use of both X
+Providers. Real runtime signals remain pending, so Pilot traffic remains disabled.
 
 ## Delivered
 

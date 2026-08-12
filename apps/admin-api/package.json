@@ -1,0 +1,28 @@
+{
+  "name": "@tikdd/admin-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tikdd/admin-contracts": "workspace:*",
+    "@tikdd/admission-control": "workspace:*",
+    "@tikdd/contracts": "workspace:*",
+    "@tikdd/persistence": "workspace:*",
+    "@tikdd/platform": "workspace:*",
+    "@tikdd/providers": "workspace:*",
+    "@tikdd/rollout-control": "workspace:*",
+    "@tikdd/routing-health": "workspace:*",
+    "@tikdd/route-policy": "workspace:*",
+    "bullmq": "^5.0.0",
+    "fastify": "^5.0.0",
+    "ioredis": "^5.0.0",
+    "jose": "^6.0.0",
+    "zod": "^4.0.0"
+  }
+}

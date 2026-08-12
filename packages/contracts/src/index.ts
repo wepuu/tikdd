@@ -39,10 +39,24 @@ export type PlatformSummary = z.infer<typeof PlatformSummarySchema>;
 export const ProviderKindSchema = z.enum(["api", "site-adapter", "yt-dlp", "mock"]);
 export type ProviderKind = z.infer<typeof ProviderKindSchema>;
 
-export const ProviderPlatformCapabilitySchema = z.object({
-  platform: PlatformIdSchema,
-  priority: z.number().int().min(0).max(1000)
-});
+export const ProviderDeliveryModeSchema = z.enum(["redirect", "proxy", "temporary-object"]);
+export type ProviderDeliveryMode = z.infer<typeof ProviderDeliveryModeSchema>;
+
+export const ProviderPlatformCapabilitySchema = z
+  .strictObject({
+    platform: PlatformIdSchema,
+    priority: z.number().int().min(0).max(1000),
+    deliveryModes: z.array(ProviderDeliveryModeSchema).max(3)
+  })
+  .superRefine((capability, context) => {
+    if (new Set(capability.deliveryModes).size !== capability.deliveryModes.length) {
+      context.addIssue({
+        code: "custom",
+        message: `Duplicate delivery mode for ${capability.platform}.`,
+        path: ["deliveryModes"]
+      });
+    }
+  });
 export type ProviderPlatformCapability = z.infer<typeof ProviderPlatformCapabilitySchema>;
 
 export const ProviderManifestSchema = z
@@ -218,7 +232,7 @@ export type CreateDeliveryRequest = z.infer<typeof CreateDeliveryRequestSchema>;
 
 export const DeliverySchema = z.object({
   id: z.string().min(1),
-  mode: z.enum(["redirect", "proxy", "temporary-object"]),
+  mode: ProviderDeliveryModeSchema,
   url: z.string().url(),
   expiresAt: z.string().datetime()
 });

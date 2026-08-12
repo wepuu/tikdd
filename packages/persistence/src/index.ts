@@ -34,6 +34,12 @@ export * from "./cleanup";
 export * from "./operational-diagnostics";
 export * from "./pilot-control";
 export * from "./pilot-evidence";
+export * from "./admin-control-plane";
+export * from "./admin-route-policy";
+export * from "./admin-platform-presentation";
+export * from "./admin-content-management";
+export * from "./admin-content-publication";
+export * from "./admin-authentication";
 
 interface TaskRow extends QueryResultRow {
   id: string;

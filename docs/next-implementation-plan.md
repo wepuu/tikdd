@@ -1,10 +1,16 @@
 # TikDD next implementation plan
 
+> Owner control-plane continuation: work items 12.7 through 12.9.1 are complete. The next implementation
+> slice is work item 12.10 (bounded settings and recovery tools), followed by the integrated work
+> item 12 gate in 12.11. See
+> [the work item 12 plan](work-item-12-implementation-plan.md).
+
 > Current continuation: [Work item 11 implementation plan](work-item-11-implementation-plan.md).
 > The verified local X download now shifts the next priority to reproducible pilot operation,
 > actual-journey Product Design QA, and privacy-safe evidence automation. Work items 11.1–11.4 are
-> complete; the consolidated work item 11 engineering gate is ready. Personal deployment settings,
-> Provider-use confirmation, and real 11.6 elapsed calibration remain operationally pending.
+> complete; the consolidated work item 11 engineering gate is ready. Deployment `tikdd` in region
+> `nl` behind Cloudflare/Nginx is selected and Provider use is confirmed; live runtime signals and
+> real 11.6 elapsed calibration remain operationally pending.
 
 ## Product decision
 

@@ -1,6 +1,12 @@
 node_modules/
 .pnpm-store/
 .next/
+.next-admin-dev/
+.next-web-dev/
+.next-web-build/
+.next-web-production/
+.next-qa-*/
+.tikdd-admin-runtime/
 dist/
 coverage/
 .turbo/

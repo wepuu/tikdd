@@ -27,6 +27,11 @@ Start with [the architecture guide](docs/architecture/README.md),
 [next implementation plan](docs/next-implementation-plan.md). Read the
 [ADR index](docs/architecture/adr/README.md) before changing service boundaries.
 
+The owner control plane currently includes route policy, platform presentation, locale/content
+modeling, and the work item 12.7 publication proofing desk. Snapshot promotion is fail-closed: a
+candidate becomes active only after Web acknowledgement. See the
+[12.7 implementation record](docs/work-item-12-7-implementation.md).
+
 ## Platform and provider model
 
 The initial catalog recognizes 22 platform families, including TikTok, YouTube, X, Instagram,
@@ -50,6 +55,17 @@ pnpm dev
 pnpm smoke:local
 pnpm dev:stop
 ```
+
+Private owner console:
+
+```powershell
+pnpm db:migrate
+.\admin-account.cmd init --username owner
+pnpm admin:dev
+pnpm admin:status
+```
+
+Open `http://localhost:3001/login`; `pnpm admin:stop` stops only recorded TikDD Admin processes.
 
 `pnpm dev` is the default offline profile. It starts exactly one Web, API, Worker, and Delivery
 process tree, starts/checks PostgreSQL and Redis, applies migrations, verifies HTTP and Worker queue

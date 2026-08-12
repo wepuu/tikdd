@@ -11,11 +11,12 @@ import {
 } from "@tikdd/admission-control";
 import {
   createDatabasePool,
+  AdminRoutePolicyRepository,
   PilotControlRepository,
   RolloutRuleRepository,
   TaskRepository
 } from "@tikdd/persistence";
-import { detectPlatform, listPlatformDefinitions } from "@tikdd/platform";
+import { listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
   MockProvider,
@@ -31,6 +32,7 @@ import {
 } from "@tikdd/routing-health";
 import { UnrecoverableError, Worker } from "bullmq";
 import Redis from "ioredis";
+import { RedisRoutePolicyStore, RuntimeRoutePolicySource } from "@tikdd/route-policy";
 import {
   createCandidateCipherFromEnvironment,
   prepareEncryptedCandidates
@@ -45,6 +47,7 @@ import {
   loadRolloutConfiguration
 } from "./rollout";
 import { loadSSSTwitterActivationConfiguration } from "./provider-activation";
+import { ResolveJobPlatformMismatchError, verifyResolveJobPlatform } from "./platform-consistency";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
@@ -65,6 +68,9 @@ const providerHealth = loadProviderHealthConfiguration();
 const rolloutConfiguration = loadRolloutConfiguration();
 const admissionConfiguration = loadAdmissionControlConfiguration();
 const production = process.env.NODE_ENV === "production";
+const deploymentId = process.env.TIKDD_DEPLOYMENT_ID ?? (production ? "" : "tikdd");
+if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deploymentId)) throw new Error("TIKDD_DEPLOYMENT_ID is invalid.");
+const routePolicyMaximumStaleMs = Number.parseInt(process.env.ADMIN_ROUTE_POLICY_TTL_MS ?? "60000",10);
 const localStackReadinessToken = process.env.LOCAL_STACK_READINESS_TOKEN ?? null;
 assertInternalStartup();
 
@@ -97,6 +103,7 @@ const admissionStore =
     : null;
 const circuitStore = new RedisCircuitStore(redis);
 const rolloutRules = new RolloutRuleRepository(pool);
+const routePolicies = new AdminRoutePolicyRepository(pool, deploymentId);
 const pilotControls = new PilotControlRepository(pool);
 const rolloutRuntime = await createRolloutRuntime({
   redis,
@@ -110,6 +117,11 @@ const rolloutRuntime = await createRolloutRuntime({
       `Provider rollout refresh failed: ${error instanceof Error ? error.message : "unknown error"}\n`
     )
 });
+const routePolicySource = new RuntimeRoutePolicySource(
+  new RedisRoutePolicyStore(redis),
+  () => routePolicies.loadRuntimeSnapshot(deploymentId, workerRegion),
+  routePolicyMaximumStaleMs
+);
 const providers: ResolverProvider[] = [];
 if (enableTwitterSaverProvider) {
   providers.push(new TwitterSaverProvider({ enabled: true }));
@@ -127,10 +139,11 @@ const router = new ProviderRouter(providers, {
   region: workerRegion,
   maxAttempts: routeMaxAttempts,
   rolloutSource: rolloutRuntime.source,
+  preferenceSource: routePolicySource,
   ...(admissionStore
     ? {
         concurrencySource: {
-          acquire: (key) => admissionStore.acquireProvider(key)
+          acquire: (key, maximumLimitOverride) => admissionStore.acquireProvider(key, maximumLimitOverride)
         }
       }
     : {}),
@@ -158,15 +171,15 @@ const worker = new Worker<ResolveJobData>(
   "resolve",
   async (job) => {
     const data = ResolveJobDataSchema.parse(job.data);
-    const detected = detectPlatform(data.sourceUrl);
     await tasks.markResolving(data.taskId);
 
     try {
+      const detected = verifyResolveJobPlatform(data);
       const routed = await router.resolve({
         taskId: data.taskId,
         sourceUrl: data.sourceUrl,
         canonicalUrl: detected.canonicalUrl,
-        platform: data.platform,
+        platform: detected.platform,
         signal: AbortSignal.timeout(routeTimeoutMs)
       });
 
@@ -194,6 +207,19 @@ const worker = new Worker<ResolveJobData>(
         provider: routed.resolution.result.provenance.provider
       };
     } catch (error) {
+      if (error instanceof ResolveJobPlatformMismatchError) {
+        await tasks.fail(data.taskId, {
+          code: error.code,
+          message: error.message,
+          retryable: false
+        });
+        if (data.admissionPermitId && data.admissionReferenceId) {
+          await admissionStore
+            ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
+            .catch(() => process.stderr.write("Task admission permit release failed.\n"));
+        }
+        throw new UnrecoverableError(error.message);
+      }
       if (error instanceof ProviderRoutingError) {
         await tasks.recordProviderAttempts(data.taskId, error.attempts);
         if (!error.retryable) {

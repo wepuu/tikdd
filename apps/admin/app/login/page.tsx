@@ -1,0 +1,2 @@
+import { LoginForm } from "../../components/login-form";import { cookies } from "next/headers";import { redirect } from "next/navigation";import { cookieName,getAdminSession } from "../../lib/admin-auth-client";
+export const dynamic="force-dynamic";export default async function LoginPage(){const jar=await cookies();if(await getAdminSession(jar.get(cookieName())?.value??null))redirect("/");return <LoginForm/>;}

@@ -63,6 +63,14 @@ existing grant. Numeric pilot SLOs are locked only after three complete internal
 Work item 10.1 selected the disabled, `canary-ready` SSSTwitter adapter as the second X
 implementation candidate after a corrected-parser canary returned two formats and one sanitized
 media hostname. Delivery policy activation and worker registration remain blocked on work item 10.2.
+ADR-0010 defines the personal-owner control plane for work item 12: Provider manifests and platform
+host rules remain code-owned, while versioned Admin policies may only order or narrow eligible
+routes. Multilingual content and SEO publish through immutable snapshots consumed by Web without a
+runtime dependency on the Admin API.
+Work item 12.1 implements its internal contract and persistence foundation: strict sanitized Admin
+schemas, manifest-bound route preference validation, canonical locale and structured content
+models, immutable revision/head tables, seeded `en`/`zh-CN` locales, and a read-only published
+snapshot adapter. No authenticated Admin API or mutation is active yet.
 
 ## Request lifecycle
 
@@ -99,7 +107,9 @@ The platform catalog answers "what service does this URL belong to?" It owns sta
 display names, host rules, yt-dlp extractor references, and product status.
 
 The provider registry answers "which resolver can handle this platform here and now?" Each manifest
-owns its provider kind, enabled state, regions, timeout, cost weight, and a priority per platform.
+owns its provider kind, enabled state, regions, timeout, cost weight, and an explicit priority plus
+reviewed delivery modes per platform. An empty delivery-mode list is resolution-only and cannot
+receive production download traffic; ADR-0012 defines the result and Admin narrowing rules.
 Adding a provider does not require editing platform detection when its platforms already exist.
 Adding a platform does not make it publicly supported until at least one monitored production
 provider meets the launch threshold.
@@ -117,6 +127,8 @@ Submission replay and duplicate suppression are documented in
 [Resolve task admission](../task-admission-operations.md).
 Anonymous quotas and provider concurrency are documented in
 [Admission control operations](../admission-control-operations.md).
+[ADR-0010](adr/0010-owner-control-plane-routing-and-publication.md) defines Admin authentication,
+route-policy overlays, structured multilingual publishing, and derived SEO boundaries.
 
 ## Failure policy
 

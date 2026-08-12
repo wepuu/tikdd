@@ -11,7 +11,7 @@ async function visit(path) {
   for (const entry of entries) {
     const child = join(path, entry.name);
     if (entry.isDirectory()) {
-      if (!ignoredDirectories.has(entry.name)) {
+      if (!ignoredDirectories.has(entry.name) && !entry.name.startsWith(".next-")) {
         await visit(child);
       }
       continue;

@@ -136,6 +136,7 @@ const copy = {
   }
 } as const;
 
-export type SiteCopy = (typeof copy)[Locale];
+type Widen<T> = T extends string ? string : T extends readonly (infer Item)[] ? Widen<Item>[] : T extends object ? { -readonly [Key in keyof T]: Widen<T[Key]> } : T;
+export type SiteCopy = Widen<(typeof copy)[Locale]>;
 export function isLocale(value: string): value is Locale { return locales.includes(value as Locale); }
-export function getCopy(locale: Locale): SiteCopy { return copy[locale]; }
+export function getCopy(locale: Locale): SiteCopy { return copy[locale] as unknown as SiteCopy; }

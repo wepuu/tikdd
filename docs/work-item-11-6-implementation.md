@@ -23,8 +23,8 @@ records remain because they are required for rollback, stale-state protection, a
 
 ## Runtime work that cannot be completed in source control
 
-1. Choose the real deployment ID, Worker region, and direct/trusted-proxy mode.
-2. Confirm Provider terms and permitted production use for that deployment.
+1. Deploy instance `tikdd` in region `nl` behind the configured Cloudflare/Nginx trusted ingress.
+2. Production use of TwitterSaver and SSSTwitter is confirmed for this deployment.
 3. Pass the real technical preflight and start an internal observation class with its short-lived
    attestation.
 4. Collect three complete sealed internal UTC days before locking measured numeric policy values.

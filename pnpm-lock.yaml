@@ -21,6 +21,85 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@24.13.3)(tsx@4.23.4)
 
+  apps/admin:
+    dependencies:
+      '@fontsource-variable/noto-sans-sc':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/plus-jakarta-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@phosphor-icons/react':
+        specifier: ^2.1.10
+        version: 2.1.10(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tikdd/admin-contracts':
+        specifier: workspace:*
+        version: link:../../packages/admin-contracts
+      next:
+        specifier: 16.2.12
+        version: 16.2.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.4(@types/react@19.2.18)
+
+  apps/admin-api:
+    dependencies:
+      '@tikdd/admin-contracts':
+        specifier: workspace:*
+        version: link:../../packages/admin-contracts
+      '@tikdd/admission-control':
+        specifier: workspace:*
+        version: link:../../packages/admission-control
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@tikdd/persistence':
+        specifier: workspace:*
+        version: link:../../packages/persistence
+      '@tikdd/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@tikdd/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
+      '@tikdd/rollout-control':
+        specifier: workspace:*
+        version: link:../../packages/rollout-control
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../../packages/route-policy
+      '@tikdd/routing-health':
+        specifier: workspace:*
+        version: link:../../packages/routing-health
+      bullmq:
+        specifier: ^5.0.0
+        version: 5.81.3
+      fastify:
+        specifier: ^5.0.0
+        version: 5.11.0
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+      jose:
+        specifier: ^6.0.0
+        version: 6.2.8
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+
   apps/api:
     dependencies:
       '@fastify/cors':
@@ -146,6 +225,9 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tikdd/admin-contracts':
+        specifier: workspace:*
+        version: link:../../packages/admin-contracts
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -155,6 +237,9 @@ importers:
       next:
         specifier: 16.2.12
         version: 16.2.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      pg:
+        specifier: ^8.0.0
+        version: 8.22.0
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -162,6 +247,9 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
     devDependencies:
+      '@types/pg':
+        specifier: ^8.0.0
+        version: 8.20.3
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.18
@@ -195,6 +283,9 @@ importers:
       '@tikdd/rollout-control':
         specifier: workspace:*
         version: link:../../packages/rollout-control
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../../packages/route-policy
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../../packages/routing-health
@@ -204,6 +295,15 @@ importers:
       ioredis:
         specifier: ^5.0.0
         version: 5.11.1
+
+  packages/admin-contracts:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
 
   packages/admission-control:
     dependencies:
@@ -243,6 +343,9 @@ importers:
 
   packages/persistence:
     dependencies:
+      '@tikdd/admin-contracts':
+        specifier: workspace:*
+        version: link:../admin-contracts
       '@tikdd/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -252,6 +355,9 @@ importers:
       '@tikdd/rollout-control':
         specifier: workspace:*
         version: link:../rollout-control
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../route-policy
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../routing-health
@@ -291,6 +397,18 @@ importers:
         version: 4.4.3
 
   packages/rollout-control:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      ioredis:
+        specifier: ^5.0.0
+        version: 5.11.1
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+
+  packages/route-policy:
     dependencies:
       '@tikdd/contracts':
         specifier: workspace:*
@@ -1121,6 +1239,9 @@ packages:
   ipaddr.js@2.4.0:
     resolution: {integrity: sha512-9VGk3HGanVE6JoZXHiCpnGy5X0jYDnN4EA4lntFPj+1vIWlFhIylq2CrrCOJH9EAhc5CYhq18F2Av2tgoAPsYQ==}
     engines: {node: '>= 10'}
+
+  jose@6.2.8:
+    resolution: {integrity: sha512-Bsdjwm3Qsd/P0jR+BHDe3LytDfY7WBq2HmCCLIwuVRHMuEC9ae7/R474GIUdF1NgCyZjzVo/A9DOiOBtXq8ZoQ==}
 
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
@@ -2124,6 +2245,8 @@ snapshots:
       - supports-color
 
   ipaddr.js@2.4.0: {}
+
+  jose@6.2.8: {}
 
   js-tokens@9.0.1: {}
 

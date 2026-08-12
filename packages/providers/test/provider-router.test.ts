@@ -1,4 +1,4 @@
-import type { Platform } from "@tikdd/contracts";
+import { ProviderManifestSchema, type Platform, type ProviderDeliveryMode } from "@tikdd/contracts";
 import type { ProviderResolution } from "@tikdd/delivery-core";
 import { describe, expect, it } from "vitest";
 import {
@@ -25,7 +25,8 @@ class TestProvider implements ResolverProvider {
     priority: number,
     private readonly outcome: "success" | "retryable" | "terminal",
     calls: string[],
-    platform: Platform = "youtube"
+    platform: Platform = "youtube",
+    deliveryModes: readonly ProviderDeliveryMode[] = ["redirect"]
   ) {
     this.calls = calls;
     this.manifest = {
@@ -36,7 +37,7 @@ class TestProvider implements ResolverProvider {
       regions: ["*"],
       timeoutMs: 1_000,
       costWeight: 0,
-      platforms: [{ platform, priority }]
+      platforms: [{ platform, priority, deliveryModes: [...deliveryModes] }]
     };
   }
 
@@ -48,7 +49,27 @@ class TestProvider implements ResolverProvider {
     if (this.outcome === "terminal") {
       throw new ProviderError("private", "content_private", false, false);
     }
-    return new MockProvider([input.platform]).resolve(input);
+    const resolution = await new MockProvider([input.platform]).resolve(input);
+    const mode = this.manifest.platforms[0]?.deliveryModes[0];
+    return {
+      ...resolution,
+      result: {
+        ...resolution.result,
+        provenance: {
+          ...resolution.result.provenance,
+          provider: this.manifest.id,
+          kind: this.manifest.kind
+        }
+      },
+      candidates: mode ? [{
+        formatId: resolution.result.formats[0]!.id,
+        mode,
+        targetUrl: "https://media.example.test/video.mp4",
+        hostPolicyId: "test-media-v1",
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        secretHeaders: {}
+      }] : []
+    };
   }
 }
 
@@ -60,6 +81,15 @@ const input: ResolveInput = {
 };
 
 describe("ProviderRouter", () => {
+  it("applies a published preference only after rollout eligibility and passes a narrowing concurrency cap",async()=>{
+    const calls:string[]=[];const limits:Array<number|undefined>=[];
+    const router=new ProviderRouter([new TestProvider("primary",900,"success",calls),new TestProvider("preferred",100,"success",calls)],{
+      rolloutSource:{async decide(){return {allowed:true,reason:"allowed" as const,ruleId:"grant",snapshotRevision:1,bucket:1};}},
+      preferenceSource:{async get(){return {orderedProviderIds:["preferred"],concurrencyCaps:[{providerId:"preferred",limit:2}]};}},
+      concurrencySource:{async acquire(_key,limit){limits.push(limit);return {async release(){}};}}
+    });
+    await router.resolve(input);expect(calls).toEqual(["preferred"]);expect(limits).toEqual([2]);
+  });
   it("returns a normalized mock result", async () => {
     const router = new ProviderRouter([new MockProvider(["youtube"])]);
     const routed = await router.resolve(input);
@@ -176,6 +206,101 @@ describe("ProviderRouter", () => {
       name: "ProviderRoutingError",
       retryable: false
     });
+  });
+
+  it("rejects incomplete, duplicate, and unknown Manifest capability declarations", () => {
+    const base = {
+      id: "invalid-provider",
+      displayName: "Invalid Provider",
+      kind: "site-adapter" as const,
+      enabled: true,
+      regions: ["*"],
+      timeoutMs: 1_000,
+      costWeight: 0
+    };
+    expect(() => ProviderManifestSchema.parse({
+      ...base,
+      platforms: [{ platform: "x", priority: 1 }]
+    })).toThrow();
+    expect(() => ProviderManifestSchema.parse({
+      ...base,
+      platforms: [{ platform: "x", priority: 1, deliveryModes: ["redirect", "redirect"] }]
+    })).toThrow("Duplicate delivery mode");
+    expect(() => ProviderManifestSchema.parse({
+      ...base,
+      platforms: [{ platform: "x", priority: 1, deliveryModes: ["stream"] }]
+    })).toThrow();
+    expect(() => ProviderManifestSchema.parse({
+      ...base,
+      platforms: [
+        { platform: "x", priority: 1, deliveryModes: [] },
+        { platform: "x", priority: 2, deliveryModes: [] }
+      ]
+    })).toThrow("Duplicate platform capability");
+  });
+
+  it("does not call resolution-only Providers for production requests", async () => {
+    const calls: string[] = [];
+    const resolutionOnly = new TestProvider("resolution-only", 1_000, "success", calls, "youtube", []);
+    const deliverable = new TestProvider("deliverable", 10, "success", calls);
+    const router = new ProviderRouter([resolutionOnly, deliverable], {
+      production: true,
+      rolloutSource: { async decide() { return { allowed: true, reason: "allowed" as const, ruleId: "grant", snapshotRevision: 1, bucket: 0 }; } }
+    });
+    await expect(router.resolve(input)).resolves.toMatchObject({ resolution: { result: { provenance: { provider: "deliverable" } } } });
+    expect(calls).toEqual(["deliverable"]);
+  });
+
+  it("falls back when a candidate mode exceeds the platform capability", async () => {
+    const calls: string[] = [];
+    const invalid = new TestProvider("invalid-mode", 100, "success", calls);
+    const originalResolve = invalid.resolve.bind(invalid);
+    invalid.resolve = async (resolveInput) => {
+      const resolution = await originalResolve(resolveInput);
+      return { ...resolution, candidates: resolution.candidates.map((candidate) => ({ ...candidate, mode: "proxy" as const })) };
+    };
+    const fallback = new TestProvider("valid-mode", 90, "success", calls);
+    const router = new ProviderRouter([invalid, fallback], {
+      production: true,
+      rolloutSource: { async decide() { return { allowed: true, reason: "allowed" as const, ruleId: "grant", snapshotRevision: 1, bucket: 0 }; } }
+    });
+    const routed = await router.resolve(input);
+    expect(calls).toEqual(["invalid-mode", "valid-mode"]);
+    expect(routed.attempts[0]).toMatchObject({ failureCode: "invalid_result" });
+  });
+
+  it("falls back when a Provider result claims the wrong platform or Provider", async () => {
+    const calls: string[] = [];
+    const invalid = new TestProvider("actual", 100, "success", calls);
+    invalid.resolve = async (resolveInput) => {
+      calls.push("actual");
+      const resolution = await new MockProvider([resolveInput.platform]).resolve(resolveInput);
+      return {
+        ...resolution,
+        result: {
+          ...resolution.result,
+          source: { ...resolution.result.source, platform: "x" },
+          provenance: { ...resolution.result.provenance, provider: "claimed" }
+        }
+      };
+    };
+    const fallback = new TestProvider("fallback", 90, "success", calls);
+    const routed = await new ProviderRouter([invalid, fallback]).resolve(input);
+    expect(calls).toEqual(["actual", "fallback"]);
+    expect(routed.attempts[0]).toMatchObject({ providerId: "actual", failureCode: "invalid_result" });
+  });
+
+  it("keeps manual order isolated to one platform", async () => {
+    const calls: string[] = [];
+    const high = new TestProvider("high", 900, "success", calls);
+    const preferred = new TestProvider("preferred", 100, "success", calls);
+    const preferenceSource = {
+      async get(platform: Platform) {
+        return platform === "youtube" ? { orderedProviderIds: ["preferred"], concurrencyCaps: [] } : null;
+      }
+    };
+    await new ProviderRouter([high, preferred], { preferenceSource }).resolve(input);
+    expect(calls).toEqual(["preferred"]);
   });
 
   it("isolates an open circuit to its exact provider, platform, and region", async () => {

@@ -29,6 +29,13 @@ const policy = AdmissionControlPolicySchema.parse({
 });
 
 describe("Redis admission failure boundary", () => {
+  it("allows an Admin route cap only to narrow the code-owned concurrency limit",async()=>{
+    let observedLimit="";const redis={async eval(_script:string,_keys:number,_key:string,limit:string){observedLimit=limit;return [1,0];}} as unknown as Redis;
+    const store=new RedisAdmissionStore(redis,policy);
+    const key={providerId:"dlpanda",platform:"tiktok",region:"global"};
+    const permit=await store.acquireProvider(key,2);expect(observedLimit).toBe("2");await permit?.release();
+    await expect(store.acquireProvider(key,5)).rejects.toThrow(/narrow/i);
+  });
   it("propagates Redis failure so callers can fail closed", async () => {
     const unavailableRedis = {
       async eval() {

@@ -1,0 +1,1 @@
+import{NextResponse}from"next/server";const startedAt=new Date().toISOString();export function GET(){return NextResponse.json({status:"ok",service:"admin",buildId:process.env.TIKDD_ADMIN_BUILD_ID??"development",startedAt},{headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow, noarchive"}});}

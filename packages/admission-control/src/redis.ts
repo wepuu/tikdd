@@ -187,9 +187,13 @@ export class RedisAdmissionStore {
     );
   }
 
-  async acquireProvider(keyInput: ProviderConcurrencyKey): Promise<ProviderPermit | null> {
+  async acquireProvider(keyInput: ProviderConcurrencyKey, maximumLimitOverride?: number): Promise<ProviderPermit | null> {
     const key = ProviderConcurrencyKeySchema.parse(keyInput);
-    const limit = resolveProviderConcurrencyLimit(this.policy, key);
+    const baselineLimit = resolveProviderConcurrencyLimit(this.policy, key);
+    if (maximumLimitOverride !== undefined && (!Number.isInteger(maximumLimitOverride) || maximumLimitOverride < 1 || maximumLimitOverride > baselineLimit)) {
+      throw new Error("Provider concurrency override must narrow the code-owned limit.");
+    }
+    const limit = Math.min(baselineLimit, maximumLimitOverride ?? baselineLimit);
     const owner = randomUUID();
     const storageKey = this.providerKey(key);
     const result = (await this.redis.eval(
