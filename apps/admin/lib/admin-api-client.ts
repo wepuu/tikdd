@@ -9,6 +9,7 @@ import {
   AdminContentManagementViewSchema,
   AdminContentPublicationViewSchema,
   AdminSeoTechnicalViewSchema,
+  AdminSettingsRecoveryViewSchema,
   AdminPlatformManagementViewSchema,
   AdminRoutePolicyViewSchema,
   AdminRuntimeSchema,
@@ -230,18 +231,17 @@ export async function loadAdminConsoleSnapshot(input: {
   const managedPlatform = input.managedPlatform ?? selected?.tuple.platform ?? (platforms.status === "ready" ? platforms.data.platforms[0]?.id : undefined);
   const platformRegion = runtime.status === "ready" ? runtime.data.region : selected?.tuple.region;
   const policyPlatform = input.policyPlatform ?? selected?.tuple.platform;
-  const controls = routes.status === "ready"
-    ? await Promise.all([
+  const controls = await Promise.all([
         read({ ...shared, schema: AdminCsrfTokenSchema, path: "/admin/v1/csrf" }),
         policyPlatform && platformRegion ? read({ ...shared, schema: AdminRoutePolicyViewSchema, path: `/admin/v1/route-policies/${encodeURIComponent(policyPlatform)}/${encodeURIComponent(platformRegion)}` }) : Promise.resolve({status:"ready" as const,data:null}),
         managedPlatform && platformRegion ? read({ ...shared, schema: AdminPlatformManagementViewSchema, path: `/admin/v1/platform-presentations/${encodeURIComponent(managedPlatform)}/${encodeURIComponent(platformRegion)}` }) : Promise.resolve({status:"ready" as const,data:null}),
         read({ ...shared, schema: AdminContentManagementViewSchema, path: "/admin/v1/content" }),
         read({ ...shared, schema: AdminContentPublicationViewSchema, path: "/admin/v1/content/publication" }),
-        read({ ...shared, schema: AdminSeoTechnicalViewSchema, path: "/admin/v1/content/seo" })
-      ]).then(([csrf,routePolicy,platformPresentation,contentManagement,contentPublication,seoTechnical])=>csrf.status==="ready"&&routePolicy.status==="ready"
-        ? {status:"ready" as const,data:{csrf:csrf.data,routePolicy:routePolicy.data,platformPresentation:platformPresentation.status==="ready"?platformPresentation.data:null,contentManagement:contentManagement.status==="ready"?contentManagement.data:null,contentPublication:contentPublication.status==="ready"?contentPublication.data:null,seoTechnical:seoTechnical.status==="ready"?seoTechnical.data:null}}
-        : unavailable())
-    : unavailable();
+        read({ ...shared, schema: AdminSeoTechnicalViewSchema, path: "/admin/v1/content/seo" }),
+        read({ ...shared, schema: AdminSettingsRecoveryViewSchema, path: "/admin/v1/settings" })
+      ]).then(([csrf,routePolicy,platformPresentation,contentManagement,contentPublication,seoTechnical,settingsRecovery])=>csrf.status==="ready"&&routePolicy.status==="ready"
+        ? {status:"ready" as const,data:{csrf:csrf.data,routePolicy:routePolicy.data,platformPresentation:platformPresentation.status==="ready"?platformPresentation.data:null,contentManagement:contentManagement.status==="ready"?contentManagement.data:null,contentPublication:contentPublication.status==="ready"?contentPublication.data:null,seoTechnical:seoTechnical.status==="ready"?seoTechnical.data:null,settingsRecovery:settingsRecovery.status==="ready"?settingsRecovery.data:null}}
+        : unavailable());
   const snapshot = AdminConsoleSnapshotSchema.parse({
     schemaVersion: "1",
     generatedAt: new Date().toISOString(),
@@ -294,4 +294,12 @@ export async function sendAdminContentCommand(input:{requestHeaders:HeaderReader
   if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
   const response=await transport({url:new URL(`/admin/v1/content/${input.path}`,configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
   if(!response.ok)throw new Error("Admin content command was rejected.");const receipt=AdminMutationReceiptSchema.parse(response.body);assertAdminSafeValue(receipt);return receipt;
+}
+
+export async function sendAdminRecoveryCommand(input:{requestHeaders:HeaderReader;path:"rebuild-snapshot"|"invalidate-content-cache";csrfToken:string;command:unknown;configuration?:AdminApiConnection;transport?:AdminTransport}){
+  const configuration=input.configuration??loadAdminApiConnection();const transport=input.transport??nodeTransport;const assertion=sessionToken(input.requestHeaders);const body=JSON.stringify(input.command);
+  const outgoing:Record<string,string>={accept:"application/json","content-type":"application/json","content-length":String(Buffer.byteLength(body)),host:new URL(configuration.adminOrigin).host,origin:configuration.adminOrigin,"sec-fetch-site":"same-origin","x-tikdd-csrf":input.csrfToken};
+  if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
+  const response=await transport({url:new URL(`/admin/v1/settings/recovery/${input.path}`,configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
+  if(!response.ok)throw new Error("Admin recovery command was rejected.");const receipt=AdminMutationReceiptSchema.parse(response.body);assertAdminSafeValue(receipt);return receipt;
 }

@@ -8,3 +8,4 @@ export * from "./privacy";
 export * from "./public-content";
 export * from "./routing";
 export * from "./seo-publication";
+export * from "./settings-recovery";

@@ -12,6 +12,7 @@
 - [ADR-0010: Owner control plane, route-policy overlay, and content publication](0010-owner-control-plane-routing-and-publication.md)
 - [ADR-0011: Password-authenticated owner console](0011-password-authenticated-owner-console.md)
 - [ADR-0012: Provider capability matrix and platform-aware production routing](0012-provider-capability-matrix-and-platform-aware-routing.md)
+- [ADR-0013: Bounded owner settings and known-snapshot recovery](0013-bounded-owner-settings-and-snapshot-recovery.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

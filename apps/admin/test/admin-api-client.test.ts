@@ -1,7 +1,7 @@
 import { ADMIN_OVERVIEW_FIXTURES } from "@tikdd/admin-contracts/fixtures";
 import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
-import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminRouteCommand, type AdminApiConnection, type AdminTransport } from "../lib/admin-api-client";
+import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminApiConnection, type AdminTransport } from "../lib/admin-api-client";
 import { platforms, providers, routeDetail, routeList, runtime, seo } from "./fixture";
 
 const csrf={schemaVersion:"1",csrfToken:`v1.${"a".repeat(40)}.${"b".repeat(43)}`,expiresInSeconds:300};
@@ -33,6 +33,7 @@ describe("Admin console API client", () => {
     await sendAdminRouteCommand({requestHeaders:new Headers({cookie:"tikdd_admin_session_dev=signed-owner"}),path:"draft",csrfToken:"csrf-value-with-enough-length",command:{platform:"x"},configuration:production,transport});
     const call=vi.mocked(transport).mock.calls[0]?.[0];expect(call?.url.pathname).toBe("/admin/v1/route-policies/draft");expect(call?.method).toBe("POST");expect(call?.headers.cookie).toBeUndefined();expect(call?.headers["x-tikdd-csrf"]).toBe("csrf-value-with-enough-length");
   });
+  it("forwards recovery only to the two fixed known-snapshot paths",async()=>{const transport=vi.fn(async()=>({ok:true,body:{schemaVersion:"1",commandId:`cmd_${"b".repeat(32)}`,aggregate:"snapshot",targetId:"tikdd",expectedRevision:4,acceptedRevision:4,currentRevision:4,propagatedRevision:4,state:"propagated",acceptedAt:"2026-08-13T00:00:00.000Z",completedAt:"2026-08-13T00:00:01.000Z"}})) as AdminTransport;await sendAdminRecoveryCommand({requestHeaders:new Headers({cookie:"tikdd_admin_session_dev=signed-owner"}),path:"invalidate-content-cache",csrfToken:"csrf-value-with-enough-length",command:{snapshotId:`snap_${"a".repeat(32)}`},configuration:production,transport});const call=vi.mocked(transport).mock.calls[0]?.[0];expect(call?.url.pathname).toBe("/admin/v1/settings/recovery/invalidate-content-cache");expect(call?.method).toBe("POST");});
   it("fails production configuration closed and restricts the internal origin to loopback", () => {
     expect(() => loadAdminApiConnection({ NODE_ENV: "production", ADMIN_ORIGIN: "https://admin.tikdd.example", ADMIN_API_INTERNAL_ORIGIN: "http://127.0.0.1:4100" })).toThrow(/ORIGIN_PROOF/);
     expect(() => loadAdminApiConnection({ NODE_ENV: "development", ADMIN_ORIGIN: "http://localhost:3001", ADMIN_API_INTERNAL_ORIGIN: "https://api.example" })).toThrow(/loopback/);
@@ -111,7 +112,7 @@ describe("Admin console API client", () => {
       });
       expect(snapshot.overview.status).toBe("ready");
       expect(snapshot.routes.status).toBe("ready");
-      expect(observedHosts.length).toBe(13);
+      expect(observedHosts.length).toBe(14);
       expect(new Set(observedHosts)).toEqual(new Set(["admin.tikdd.example"]));
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

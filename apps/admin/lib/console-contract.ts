@@ -10,6 +10,7 @@ import {
   AdminRoutePolicyViewSchema,
   AdminPlatformManagementViewSchema,
   AdminRuntimeSchema,
+  AdminSettingsRecoveryViewSchema,
   AdminSeoOverviewSchema
   ,AdminSeoTechnicalViewSchema
 } from "@tikdd/admin-contracts";
@@ -40,6 +41,7 @@ export const AdminConsoleSnapshotSchema = z.strictObject({
     ,contentManagement: AdminContentManagementViewSchema.nullable()
     ,contentPublication: AdminContentPublicationViewSchema.nullable()
     ,seoTechnical: AdminSeoTechnicalViewSchema.nullable()
+    ,settingsRecovery: AdminSettingsRecoveryViewSchema.nullable()
   }))
 });
 

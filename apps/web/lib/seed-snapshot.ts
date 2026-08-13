@@ -76,8 +76,8 @@ export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = Publish
     seo: seo(locale as "en" | "zh-CN")
   })),
   sharedContent: [
-    { locale: "en", navigationLabel: "Home", footerTagline: "Clear formats. Controlled delivery.", legalNoticeMarkdown: "Download only content you own or are authorized to use." },
-    { locale: "zh-CN", navigationLabel: "首页", footerTagline: "格式清晰，交付受控。", legalNoticeMarkdown: "仅下载你拥有或已获授权使用的内容。" }
+    { locale: "en", siteName:"TikDD", navigationLabel: "Home", footerTagline: "Clear formats. Controlled delivery.", legalNoticeMarkdown: "Download only content you own or are authorized to use.",defaultSocialTitle:"TikDD public video downloader",defaultSocialDescription:"Resolve supported public pages with TikDD.",defaultSocialImageAssetId:null },
+    { locale: "zh-CN", siteName:"TikDD", navigationLabel: "首页", footerTagline: "格式清晰，交付受控。", legalNoticeMarkdown: "仅下载你拥有或已获授权使用的内容。",defaultSocialTitle:"TikDD 公共视频下载工具",defaultSocialDescription:"使用 TikDD 解析支持的公开视频页面。",defaultSocialImageAssetId:null }
   ],
   generatedAt: "2026-08-12T00:00:00.000Z"
 });

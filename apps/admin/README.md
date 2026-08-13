@@ -61,3 +61,8 @@ Work item 12.8.1 adds one PostgreSQL-backed administrator account and Redis sess
 `pnpm admin:dev`, `pnpm admin:status`, and `pnpm admin:stop` for the controlled preview. Initialize
 the account after migrations with `.\admin-account.cmd init --username owner` on Windows. The
 `pnpm admin:account` form remains available in shells where pnpm is already on `PATH`.
+
+Work item 12.10 adds versioned site identity, default social metadata, Locale publication defaults,
+read-only infrastructure/secret-presence readiness, and recovery limited to exact known snapshots
+and their persisted affected paths. It does not provide logs, arbitrary cache purge, SQL, shell, or
+secret editing.

@@ -7,6 +7,9 @@ import {
   AdminCsrfTokenSchema,
   AdminContentManagementViewSchema,
   AdminContentPublicationViewSchema,
+  AdminContentRebuildSnapshotCommandSchema,
+  AdminContentInvalidateCacheCommandSchema,
+  AdminSettingsRecoveryViewSchema,
   AdminSeoTechnicalViewSchema,
   AdminMutationReceiptSchema,
   AdminPlatformManagementViewSchema,
@@ -58,7 +61,7 @@ export interface BuildAdminApiOptions {
   reads: AdminReadApi;
   routePolicies?: Pick<AdminRoutePolicyService, "getView" | "saveDraft" | "publish" | "discard" | "rollback" | "safety" | "probe">;
   platformManagement?: Pick<AdminPlatformManagementService, "getView" | "saveDraft" | "publish" | "discard" | "rollback">;
-  contentManagement?: Pick<AdminContentManagementService, "getView" | "saveLocale" | "discardLocale" | "savePage" | "discardPage" | "saveShared" | "getPublicationView" | "getSeoTechnicalView" | "publish" | "rollback" | "retryPropagation">;
+  contentManagement?: Pick<AdminContentManagementService, "getView" | "saveLocale" | "discardLocale" | "savePage" | "discardPage" | "saveShared" | "getPublicationView" | "getSeoTechnicalView" | "getSettingsRecoveryView" | "publish" | "rollback" | "retryPropagation" | "rebuildSnapshot" | "invalidateContentCache">;
   csrfProtector?: AdminCsrfProtector;
   logger?: boolean;
 }
@@ -164,6 +167,7 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
         ,"/admin/v1/content/pages/draft", "/admin/v1/content/pages/discard"
         ,"/admin/v1/content/shared/draft"
         ,"/admin/v1/content/publish", "/admin/v1/content/rollback", "/admin/v1/content/retry-propagation"
+        ,"/admin/v1/settings/recovery/rebuild-snapshot", "/admin/v1/settings/recovery/invalidate-content-cache"
       ]);
       if (request.method !== "POST" || !allowed.has(request.url.split("?")[0] ?? "")) {
         return error(reply, 405, "METHOD_NOT_ALLOWED", "This Admin API command is not available.");
@@ -289,6 +293,7 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
   app.get("/admin/v1/content",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Content controls are unavailable.");return safeSend(reply,AdminContentManagementViewSchema.parse(await options.contentManagement.getView()));});
   app.get("/admin/v1/content/publication",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Content publication is unavailable.");return safeSend(reply,AdminContentPublicationViewSchema.parse(await options.contentManagement.getPublicationView()));});
   app.get("/admin/v1/content/seo",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","SEO publication rules are unavailable.");return safeSend(reply,AdminSeoTechnicalViewSchema.parse(await options.contentManagement.getSeoTechnicalView()));});
+  app.get("/admin/v1/settings",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Settings and recovery readiness are unavailable.");return safeSend(reply,AdminSettingsRecoveryViewSchema.parse(await options.contentManagement.getSettingsRecoveryView()));});
   app.post("/admin/v1/content/locales/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.saveLocale(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/locales/discard",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.discardLocale(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/pages/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.savePage(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
@@ -297,6 +302,8 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
   app.post("/admin/v1/content/publish",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.publish(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/rollback",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.rollback(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/retry-propagation",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.retryPropagation(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
+  app.post("/admin/v1/settings/recovery/rebuild-snapshot",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();const command=AdminContentRebuildSnapshotCommandSchema.parse(request.body);return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.rebuildSnapshot(command,subject)));}catch(cause){return commandError(reply,cause);}});
+  app.post("/admin/v1/settings/recovery/invalidate-content-cache",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();const command=AdminContentInvalidateCacheCommandSchema.parse(request.body);return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.invalidateContentCache(command,subject)));}catch(cause){return commandError(reply,cause);}});
 
   app.get<{ Querystring: Record<string, unknown> }>("/admin/v1/locales", async (request, reply) => {
     const query = ChannelQuerySchema.safeParse(request.query);

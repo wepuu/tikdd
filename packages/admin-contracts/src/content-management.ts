@@ -88,9 +88,13 @@ export const AdminPageDiscardCommandSchema = z.strictObject({
 });
 
 export const AdminSharedContentSchema = z.strictObject({
+  siteName: z.string().trim().min(1).max(80).default("TikDD"),
   navigationLabel: z.string().trim().min(1).max(80),
   footerTagline: z.string().trim().min(1).max(240),
-  legalNoticeMarkdown: z.string().trim().min(1).max(2_000).refine((value) => !/[<>]/.test(value), "Raw HTML is not allowed.")
+  legalNoticeMarkdown: z.string().trim().min(1).max(2_000).refine((value) => !/[<>]/.test(value), "Raw HTML is not allowed."),
+  defaultSocialTitle: z.string().trim().min(1).max(100).nullable().default(null),
+  defaultSocialDescription: z.string().trim().min(1).max(240).nullable().default(null),
+  defaultSocialImageAssetId: z.string().min(7).max(100).regex(/^asset_[a-z0-9]+(?:[._-][a-z0-9]+)*$/).nullable().default(null)
 });
 
 export const AdminSharedContentRevisionSchema = z.strictObject({
@@ -203,6 +207,20 @@ export const AdminContentRetryPropagationCommandSchema = PublicationCommandBaseS
   if (command.confirmation !== command.deployment) context.addIssue({ code: "custom", message: "Retry confirmation must match the deployment.", path: ["confirmation"] });
 });
 
+export const AdminContentRebuildSnapshotCommandSchema = PublicationCommandBaseSchema.extend({
+  expectedRevision: AdminRevisionSchema,
+  sourceSnapshotId: z.string().regex(/^snap_[a-f0-9]{32}$/)
+}).superRefine((command, context) => {
+  if (command.confirmation !== command.deployment) context.addIssue({ code: "custom", message: "Rebuild confirmation must match the deployment.", path: ["confirmation"] });
+});
+
+export const AdminContentInvalidateCacheCommandSchema = PublicationCommandBaseSchema.extend({
+  expectedRevision: AdminRevisionSchema,
+  snapshotId: z.string().regex(/^snap_[a-f0-9]{32}$/)
+}).superRefine((command, context) => {
+  if (command.confirmation !== command.deployment) context.addIssue({ code: "custom", message: "Cache confirmation must match the deployment.", path: ["confirmation"] });
+});
+
 export type AdminPageDefinition = z.infer<typeof AdminPageDefinitionSchema>;
 export type AdminLocaleDraftCommand = z.infer<typeof AdminLocaleDraftCommandSchema>;
 export type AdminLocaleDiscardCommand = z.infer<typeof AdminLocaleDiscardCommandSchema>;
@@ -214,3 +232,5 @@ export type AdminContentPublicationView = z.infer<typeof AdminContentPublication
 export type AdminContentPublishCommand = z.infer<typeof AdminContentPublishCommandSchema>;
 export type AdminContentRollbackCommand = z.infer<typeof AdminContentRollbackCommandSchema>;
 export type AdminContentRetryPropagationCommand = z.infer<typeof AdminContentRetryPropagationCommandSchema>;
+export type AdminContentRebuildSnapshotCommand = z.infer<typeof AdminContentRebuildSnapshotCommandSchema>;
+export type AdminContentInvalidateCacheCommand = z.infer<typeof AdminContentInvalidateCacheCommandSchema>;

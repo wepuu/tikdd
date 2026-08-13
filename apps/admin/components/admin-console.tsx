@@ -11,12 +11,10 @@ import {
   CheckCircle,
   CirclesThreePlus,
   ClockCounterClockwise,
-  Database,
   DownloadSimple,
   Gauge,
   Gear,
   GlobeHemisphereWest,
-  HardDrives,
   HouseLine,
   MagnifyingGlass,
   PlugsConnected,
@@ -46,6 +44,7 @@ import { ContentManagement } from "./content-management";
 import { SeoWorkbench } from "./seo-workbench";
 import { AccountSecurity } from "./account-security";
 import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
+import { SettingsRecovery } from "./settings-recovery";
 
 type RefreshState = "idle" | "refreshing" | "failed";
 
@@ -300,10 +299,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
             </div>
           </section>
 
-          <section className="runtime-section" id="runtime">
-            <SectionHeading eyebrow="SYSTEM / FRESHNESS" title="运行依赖" detail="仅展示依赖是否健康及最近观测时间；凭据、主机细节和原始日志不会进入浏览器。" />
-            <div className="runtime-panel panel">{runtime ? runtime.dependencies.map((dependency) => <article key={dependency.id}><span className={`dependency-icon state-${dependency.state}`}>{dependency.id === "postgres" ? <Database size={20} /> : dependency.id === "redis" || dependency.id === "queue" ? <HardDrives size={20} /> : <Pulse size={20} />}</span><span><strong>{dependency.id.replace("_", " ")}</strong><small>{formatTime(dependency.observedAt)}</small></span><b className={`state-${dependency.state}`}><StatusDot state={dependency.state === "healthy" ? "ready" : dependency.state} />{dependency.state === "healthy" ? "健康" : dependency.state === "stale" ? "过期" : "不可用"}</b></article>) : <EmptyState icon={<WarningCircle size={28} />} title="依赖状态不可用" detail="Admin API 未返回可信的运行时投影。" />}</div>
-          </section>
+          <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} />
           <AccountSecurity />
           <footer className="console-build-footer" aria-label="后台构建信息">
             <span>TikDD Owner Console</span><code>{buildId}</code>

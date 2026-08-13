@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   AdminLocaleRevisionSchema,
   AdminContentPublishCommandSchema,
+  AdminContentRebuildSnapshotCommandSchema,
+  AdminContentInvalidateCacheCommandSchema,
+  AdminSettingsRecoveryViewSchema,
   AdminContentManagementViewSchema,
   AdminLocaleDraftCommandSchema,
   AdminPageDraftCommandSchema,
@@ -188,6 +191,16 @@ describe("Admin internal contracts", () => {
     const command={deployment:"tikdd",expectedRevision:null,reason:"Publish the complete reviewed snapshot.",confirmation:"tikdd",idempotencyKey:"abcdefghijklmnop"};
     expect(AdminContentPublishCommandSchema.parse(command)).toEqual(command);
     expect(()=>AdminContentPublishCommandSchema.parse({...command,confirmation:"production"})).toThrow(/confirmation/i);
+  });
+
+  it("keeps recovery scoped to one known snapshot and renders secret presence only",()=>{
+    const base={deployment:"tikdd",expectedRevision:4,reason:"Recover the reviewed active snapshot.",confirmation:"tikdd",idempotencyKey:"abcdefghijklmnop"};
+    expect(AdminContentRebuildSnapshotCommandSchema.parse({...base,sourceSnapshotId:`snap_${"a".repeat(32)}`})).toMatchObject({expectedRevision:4});
+    expect(AdminContentInvalidateCacheCommandSchema.parse({...base,snapshotId:`snap_${"b".repeat(32)}`})).toMatchObject({expectedRevision:4});
+    expect(()=>AdminContentInvalidateCacheCommandSchema.parse({...base,snapshotId:"all"})).toThrow();
+    const view=AdminSettingsRecoveryViewSchema.parse({schemaVersion:"1",generatedAt:"2026-08-13T00:00:00.000Z",siteIdentity:[],locales:[{locale:"en",revision:1,displayName:"English",direction:"ltr",fallbackLocale:null,enabled:true,isDefault:true,state:"published"}],publicationDefaults:{defaultLocale:"en",fallbackMaySatisfyPublication:false,requiredPagePolicy:"complete_code_owned_set"},infrastructure:{deployment:"tikdd",region:"nl",ownerAccess:{mode:"password",state:"configured"},edge:{cloudflare:"configured",nginx:"configured"},state:"ready",dependencies:[],scheduler:{state:"healthy",observedAt:null},snapshot:{state:"ready",activeSnapshotId:`snap_${"a".repeat(32)}`,activeRevision:4,latestRevision:4,propagationState:"propagated",affectedPathCount:2}},secretPresence:[{id:"origin_proof",state:"configured"},{id:"csrf_signing",state:"configured"},{id:"command_signing",state:"configured"},{id:"web_revalidation",state:"configured"}],recovery:{retryPublication:{available:false,snapshotId:null},rebuildSnapshot:{available:true,sourceSnapshotId:`snap_${"a".repeat(32)}`},invalidateContentCache:{available:true,snapshotId:`snap_${"a".repeat(32)}`,affectedPathCount:2},rollbackCandidates:[]}});
+    expect(view.secretPresence.every(item=>Object.keys(item).sort().join(",")==="id,state")).toBe(true);
+    expect(()=>assertAdminSafeValue({secretValue:"hidden"})).toThrow(/Forbidden Admin field/);
   });
 
   it("derives canonical, hreflang, sitemap, and code-owned structured data from one snapshot",()=>{

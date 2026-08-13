@@ -5,6 +5,9 @@ import {
   AdminContentPublishCommandSchema,
   AdminContentRollbackCommandSchema,
   AdminContentRetryPropagationCommandSchema,
+  AdminContentRebuildSnapshotCommandSchema,
+  AdminContentInvalidateCacheCommandSchema,
+  AdminSettingsRecoveryViewSchema,
   AdminSeoTechnicalViewSchema,
   deriveSeoTechnicalView,
   PublishedContentSnapshotSchema,
@@ -17,6 +20,7 @@ import {
   type AdminContentManagementView,
   type AdminLocaleRevision,
   type AdminPageDefinition
+  ,type AdminRuntime
 } from "@tikdd/admin-contracts";
 import { AdminContentManagementRepository, AdminContentPublicationRepository } from "@tikdd/persistence";
 import type { PlatformDefinition } from "@tikdd/platform";
@@ -30,6 +34,11 @@ export interface AdminContentManagementServiceOptions {
   revalidator?:(paths:readonly string[],snapshotId:string)=>Promise<boolean>;
   seoEligibility?:()=>Promise<readonly string[]>;
   now?:()=>Date;
+  runtime?:()=>Promise<AdminRuntime>;
+  settings?:{
+    edge:{cloudflareConfigured:boolean;nginxConfigured:boolean};
+    secretPresence:{originProof:boolean;csrfSigning:boolean;commandSigning:boolean;webRevalidation:boolean};
+  };
 }
 
 export class AdminContentBoundaryError extends Error { constructor(message:string){super(message);this.name="AdminContentBoundaryError";} }
@@ -68,6 +77,19 @@ export class AdminContentManagementService {
   }
   async rollback(raw:unknown,actor:string){const command=AdminContentRollbackCommandSchema.parse(raw);if(command.deployment!==this.options.deployment)throw new AdminContentBoundaryError("The publication deployment is outside this Admin instance.");const identity=this.identity(command.idempotencyKey,command,actor);const accepted=await this.options.publication.rollback(command,identity);const pending=await this.options.publication.getLatest(command.deployment);const paths=Array.isArray(pending?.affected_paths)?pending.affected_paths.filter((item):item is string=>typeof item==="string"):[];const success=pending?await(this.options.revalidator?.(paths,pending.snapshot_id)??Promise.resolve(false)):false;return pending?this.options.publication.completePropagation(pending.snapshot_id,accepted.commandId,success):accepted;}
   async retryPropagation(raw:unknown,actor:string){const command=AdminContentRetryPropagationCommandSchema.parse(raw);const identity=this.identity(command.idempotencyKey,command,actor);const pending=await this.options.publication.getLatest(command.deployment);if(!pending||pending.snapshot_id!==command.snapshotId||pending.propagation_state!=="propagation_failed")throw new AdminContentBoundaryError("Only the latest failed snapshot can be retried.");const paths=Array.isArray(pending.affected_paths)?pending.affected_paths.filter((item):item is string=>typeof item==="string"):[];const success=await(this.options.revalidator?.(paths,pending.snapshot_id)??Promise.resolve(false));return this.options.publication.markPropagation(command,success,identity);}
+  async rebuildSnapshot(raw:unknown,actor:string){const command=AdminContentRebuildSnapshotCommandSchema.parse(raw);if(command.deployment!==this.options.deployment)throw new AdminContentBoundaryError("The snapshot deployment is outside this Admin instance.");const identity=this.identity(command.idempotencyKey,command,actor);const pending=await this.options.publication.rebuild(command,identity);if(!pending.execute)return pending.receipt;const success=await(this.options.revalidator?.(pending.paths,pending.snapshotId)??Promise.resolve(false));return this.options.publication.completePropagation(pending.snapshotId,pending.receipt.commandId,success);}
+  async invalidateContentCache(raw:unknown,actor:string){const command=AdminContentInvalidateCacheCommandSchema.parse(raw);if(command.deployment!==this.options.deployment)throw new AdminContentBoundaryError("The cache scope is outside this Admin instance.");const identity=this.identity(command.idempotencyKey,command,actor);const pending=await this.options.publication.beginCacheInvalidation(command,identity);if(!pending.execute)return pending.receipt;const success=await(this.options.revalidator?.(pending.paths,command.snapshotId)??Promise.resolve(false));return this.options.publication.completeCacheInvalidation(command.snapshotId,pending.receipt.commandId,success);}
+  async getSettingsRecoveryView(){
+    if(!this.options.runtime||!this.options.settings)throw new AdminContentBoundaryError("Settings readiness is unavailable.");
+    const [content,publication,runtime,active]=await Promise.all([this.getView(),this.getPublicationView(),this.options.runtime(),this.options.publication.getActive(this.options.deployment)]);
+    const identityByLocale=new Map(content.sharedContent.map(item=>[item.locale,item]));
+    const siteIdentity=content.locales.map(({locale,effective})=>{const item=identityByLocale.get(locale);return{locale,revision:item?.revision??null,state:item?.state??"missing" as const,siteName:item?.content.siteName??"TikDD",navigationLabel:item?.content.navigationLabel??effective.displayName,footerTagline:item?.content.footerTagline??"TikDD",legalNoticeMarkdown:item?.content.legalNoticeMarkdown??"Publish only reviewed public content.",defaultSocial:{title:item?.content.defaultSocialTitle??null,description:item?.content.defaultSocialDescription??null,imageAssetId:item?.content.defaultSocialImageAssetId??null}};});
+    const defaultLocale=content.locales.find(({effective})=>effective.isDefault)?.locale;if(!defaultLocale)throw new AdminContentBoundaryError("The default locale is unavailable.");
+    const affectedPaths=active&&Array.isArray(active.affected_paths)?active.affected_paths.filter((item):item is string=>typeof item==="string"):[];
+    const snapshotState=runtime.state==="unavailable"||!active?"unavailable":publication.propagationState==="propagation_failed"||runtime.state==="degraded"?"degraded":"ready";
+    const present=this.options.settings.secretPresence;
+    return AdminSettingsRecoveryViewSchema.parse({schemaVersion:"1",generatedAt:this.now().toISOString(),siteIdentity,locales:content.locales.map(({effective})=>({locale:effective.locale,revision:effective.revision,displayName:effective.displayName,direction:effective.direction,fallbackLocale:effective.fallbackLocale,enabled:effective.enabled,isDefault:effective.isDefault,state:effective.state})),publicationDefaults:{defaultLocale,fallbackMaySatisfyPublication:false,requiredPagePolicy:"complete_code_owned_set"},infrastructure:{deployment:runtime.deployment,region:runtime.region,ownerAccess:{mode:"password",state:"configured"},edge:{cloudflare:this.options.settings.edge.cloudflareConfigured?"configured":"missing",nginx:this.options.settings.edge.nginxConfigured?"configured":"missing"},state:runtime.state,dependencies:runtime.dependencies,scheduler:runtime.scheduler,snapshot:{state:snapshotState,activeSnapshotId:active?.snapshot_id??null,activeRevision:active?Number(active.revision):null,latestRevision:publication.currentRevision,propagationState:publication.propagationState,affectedPathCount:affectedPaths.length}},secretPresence:[{id:"origin_proof",state:present.originProof?"configured":"missing"},{id:"csrf_signing",state:present.csrfSigning?"configured":"missing"},{id:"command_signing",state:present.commandSigning?"configured":"missing"},{id:"web_revalidation",state:present.webRevalidation?"configured":"missing"}],recovery:{retryPublication:{available:publication.propagationState==="propagation_failed"&&publication.pendingSnapshotId!==null,snapshotId:publication.pendingSnapshotId},rebuildSnapshot:{available:Boolean(active)&&publication.propagationState!=="propagating"&&affectedPaths.length<=100,sourceSnapshotId:active?.snapshot_id??null},invalidateContentCache:{available:Boolean(active)&&publication.propagationState==="propagated"&&affectedPaths.length>0&&affectedPaths.length<=100,snapshotId:active?.snapshot_id??null,affectedPathCount:affectedPaths.length},rollbackCandidates:publication.rollbackCandidates.filter(candidate=>candidate.snapshotId!==active?.snapshot_id)}});
+  }
 }
 
 function AdminLocaleRevisionSchemaCompat(command:ReturnType<typeof AdminLocaleDraftCommandSchema.parse>,actor:string,createdAt:string):AdminLocaleRevision{return{schemaVersion:"1",locale:command.locale,revision:command.expectedRevision===null?1:command.expectedRevision+1,displayName:command.displayName,direction:command.direction,fallbackLocale:command.fallbackLocale,enabled:command.enabled,isDefault:command.isDefault,state:command.state,reason:command.reason,actorSubject:actor,createdAt};}

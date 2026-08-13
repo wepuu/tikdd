@@ -363,6 +363,8 @@ Estimated effort: 2 days.
 
 ### Work item 12.10 — Settings and recovery tools
 
+Status: complete on 2026-08-13. See `docs/work-item-12-10-implementation.md` and ADR-0013.
+
 Complete the daily owner experience with tightly scoped settings.
 
 Implement:
@@ -398,6 +400,8 @@ and unsupported combinations. Desktop and 390-pixel Product Design evidence clos
 findings.
 
 ### Work item 12.11 — Integrated verification and baseline
+
+Status: complete on 2026-08-13. See `docs/work-item-12-11-implementation.md`.
 
 Create `pnpm verify:work-item-12` with no live Provider requests.
 
@@ -459,5 +463,5 @@ findings block the next milestone.
 
 ## Next executable step
 
-Implement work item 12.10: add bounded settings and recovery tools without exposing secrets, raw
-logs, arbitrary cache purge, shell, SQL, task URLs, or Provider capability editing.
+Review the verified work item 12 baseline and decide whether to commit and push it before beginning
+deployment work. Formal Cloudflare, Nginx, DNS, and production infrastructure remain deferred.

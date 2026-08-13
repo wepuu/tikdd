@@ -114,5 +114,6 @@ export const consoleSnapshot = AdminConsoleSnapshotSchema.parse({
     contentManagement: null,
     contentPublication: null,
     seoTechnical: null
+    ,settingsRecovery: null
   } }
 });

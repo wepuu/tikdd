@@ -38,6 +38,11 @@ Publication uses a bounded HMAC-authenticated acknowledgement to the public Web.
 only a named immutable snapshot and validated local paths. Web reads the candidate independently,
 and the durable active head advances only after a matching acknowledgement.
 
+Settings and recovery reuse the existing Locale/shared-content revisions and immutable snapshot
+pipeline. Recovery can only retry the latest failed acknowledgement, rebuild the current active
+snapshot, revalidate that snapshot's persisted affected paths, or roll back to a known propagated
+revision. Infrastructure is read-only and secrets render only as configured/missing.
+
 ## Local development
 
 Set `ADMIN_AUTH_MODE=password`, `ADMIN_ORIGIN=http://localhost:3001`, and keep

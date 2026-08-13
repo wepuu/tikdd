@@ -26,6 +26,8 @@ const development: AdminApiConfiguration = {
   guardMaximumStaleMs: 15_000,
   buildId: "test-development",
   startedAt: "2026-08-11T12:00:00.000Z",
+  webContent: { origin: null, revalidationSecret: null, timeoutMs: 4_000 },
+  edge: { cloudflareConfigured: false, nginxConfigured: false },
   auth: { mode: "password", originProof: null }
 };
 
@@ -181,6 +183,8 @@ describe("Admin API browser boundary", () => {
       await app.close();
     }
   });
+
+  it("keeps settings recovery authenticated, CSRF bound, and fixed-path only",async()=>{const csrfProtector=new AdminCsrfProtector(development.csrfSecret);const receipt={schemaVersion:"1" as const,commandId:`cmd_${"c".repeat(32)}`,aggregate:"snapshot" as const,targetId:"local",expectedRevision:1,acceptedRevision:2,currentRevision:2,propagatedRevision:2,state:"propagated" as const,acceptedAt:"2026-08-13T00:00:00.000Z",completedAt:"2026-08-13T00:00:01.000Z"};const content={getSettingsRecoveryView:async()=>{throw new Error("unused")},rebuildSnapshot:async()=>receipt,invalidateContentCache:async()=>receipt} as never;const app=buildAdminApi({configuration:development,identityVerifier:new DevelopmentAdminIdentityVerifier("development_owner"),reads:reads(),contentManagement:content,csrfProtector});try{const body={deployment:"local",expectedRevision:1,snapshotId:`snap_${"a".repeat(32)}`,reason:"Revalidate persisted affected paths.",confirmation:"local",idempotencyKey:"abcdefghijklmnop"};const base={host:"localhost:3001",origin:"http://localhost:3001","content-type":"application/json","sec-fetch-site":"same-origin"};expect((await app.inject({method:"POST",url:"/admin/v1/settings/recovery/invalidate-content-cache",headers:base,payload:body})).statusCode).toBe(403);const csrf=csrfProtector.issue("development_owner",development.adminOrigin);expect((await app.inject({method:"POST",url:"/admin/v1/settings/recovery/invalidate-content-cache",headers:{...base,"x-tikdd-csrf":csrf},payload:body})).statusCode).toBe(200);expect((await app.inject({method:"POST",url:"/admin/v1/settings/recovery/purge-all",headers:{...base,"x-tikdd-csrf":csrf},payload:body})).statusCode).toBe(405);}finally{await app.close();}});
 
   it("validates filters and refuses to leak an unsafe read payload", async () => {
     const safeReads = reads();

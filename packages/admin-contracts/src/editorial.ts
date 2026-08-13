@@ -211,9 +211,13 @@ export const PublishedPageSchema = z.strictObject({
 
 export const PublishedSharedContentSchema = z.strictObject({
   locale: LocaleTagSchema,
+  siteName: z.string().trim().min(1).max(80).default("TikDD"),
   navigationLabel: z.string().trim().min(1).max(80),
   footerTagline: z.string().trim().min(1).max(240),
-  legalNoticeMarkdown: SafeMarkdownSchema
+  legalNoticeMarkdown: SafeMarkdownSchema,
+  defaultSocialTitle: z.string().trim().min(1).max(100).nullable().default(null),
+  defaultSocialDescription: z.string().trim().min(1).max(240).nullable().default(null),
+  defaultSocialImageAssetId: ApprovedAssetIdSchema.nullable().default(null)
 });
 
 export const PublishedContentSnapshotSchema = z

@@ -127,6 +127,8 @@ const contentManagement = new AdminContentManagementService({
   publication: new AdminContentPublicationRepository(pool),
   seoEligibility: async()=>{const routes=await reads.listRoutes();return listPlatformDefinitions().filter(platform=>platform.status==="stable"&&routes.routes.some(route=>route.tuple.platform===platform.id&&route.tuple.region===configuration.region&&route.manifestEnabled&&route.allocationBps>0&&!["open","paused","unavailable","stale"].includes(route.state))).map(platform=>platform.id);},
   revalidator: (paths,snapshotId) => webContentRevalidator.revalidate(paths,snapshotId)
+  ,runtime:()=>reads.getRuntime()
+  ,settings:{edge:configuration.edge,secretPresence:{originProof:Boolean(configuration.auth.originProof),csrfSigning:configuration.csrfSecret.length>=32,commandSigning:configuration.commandSecret.length>=32,webRevalidation:Boolean(configuration.webContent.revalidationSecret&&configuration.webContent.revalidationSecret.length>=32)}}
 });
 
 const app = buildAdminApi({
