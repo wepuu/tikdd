@@ -8,10 +8,17 @@ function normalizePath(value) {
   return value.replaceAll("\\", "/").toLowerCase();
 }
 
+function normalizeWorkspaceRoot(value) {
+  const normalized = normalizePath(value).replace(/\/+$/, "");
+  return /^[a-z]:\//.test(normalized)
+    ? normalized
+    : normalizePath(resolve(value)).replace(/\/+$/, "");
+}
+
 export function isTikddAdminProcess(commandLine, root, id) {
   if (!commandLine) return false;
   const normalized = normalizePath(commandLine);
-  const workspace = `${normalizePath(resolve(root))}/`;
+  const workspace = `${normalizeWorkspaceRoot(root)}/`;
   if (!normalized.includes(workspace)) return false;
   return id === "admin-api"
     ? normalized.includes("apps/admin-api") && normalized.includes("server.ts")
@@ -22,7 +29,7 @@ export function isTikddAdminProcess(commandLine, root, id) {
 
 export function createAdminStopPlan({ root, state, healthById, portPids, commandLines }) {
   if (!state) return { targets: [], verifiedServices: [], buildMatches: [] };
-  if (resolve(state.root) !== resolve(root)) throw new Error("Refusing to stop an unowned Admin stack.");
+  if (normalizeWorkspaceRoot(state.root) !== normalizeWorkspaceRoot(root)) throw new Error("Refusing to stop an unowned Admin stack.");
 
   const targets = new Set();
   const verifiedServices = new Set();

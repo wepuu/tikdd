@@ -12,7 +12,7 @@ export interface PublicContentSource { loadActive(deployment: string): Promise<u
 type CacheEntry = { snapshot: PublishedContentSnapshot; source: PublicContentHealth["source"]; checkedAt: string };
 
 const state: { current: CacheEntry | null; pool: PoolType | null } = { current: null, pool: null };
-const deployment = () => process.env.PUBLIC_CONTENT_DEPLOYMENT_ID ?? process.env.TIKDD_DEPLOYMENT_ID ?? "tikdd";
+const deployment = () => process.env.PUBLIC_CONTENT_DEPLOYMENT_ID?.trim() || process.env.TIKDD_DEPLOYMENT_ID?.trim() || "tikdd";
 const staleAfterMs = () => {
   const value = Number.parseInt(process.env.PUBLIC_CONTENT_STALE_AFTER_MS ?? "900000", 10);
   return Number.isInteger(value) && value >= 60_000 ? value : 900_000;

@@ -37,10 +37,21 @@ describe("public published-content loader", () => {
 
   it("preflights a named candidate without making it active", async () => {
     resetPublishedContentStateForTest();
+    const previousPublicDeployment = process.env.PUBLIC_CONTENT_DEPLOYMENT_ID;
+    const previousDeployment = process.env.TIKDD_DEPLOYMENT_ID;
+    process.env.PUBLIC_CONTENT_DEPLOYMENT_ID = "  ";
+    process.env.TIKDD_DEPLOYMENT_ID = "";
     const candidate = { ...BUNDLED_PUBLIC_CONTENT_SNAPSHOT, snapshotId: `snap_${"1".repeat(32)}`, revision: 2 };
     const source: PublicContentSource = { loadActive: async () => BUNDLED_PUBLIC_CONTENT_SNAPSHOT, loadCandidate: async () => candidate };
     const loader = new PublishedContentLoader(source);
-    expect((await loader.acknowledge(candidate.snapshotId)).snapshotId).toBe(candidate.snapshotId);
-    expect((await loader.load()).snapshotId).toBe(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.snapshotId);
+    try {
+      expect((await loader.acknowledge(candidate.snapshotId)).snapshotId).toBe(candidate.snapshotId);
+      expect((await loader.load()).snapshotId).toBe(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.snapshotId);
+    } finally {
+      if (previousPublicDeployment === undefined) delete process.env.PUBLIC_CONTENT_DEPLOYMENT_ID;
+      else process.env.PUBLIC_CONTENT_DEPLOYMENT_ID = previousPublicDeployment;
+      if (previousDeployment === undefined) delete process.env.TIKDD_DEPLOYMENT_ID;
+      else process.env.TIKDD_DEPLOYMENT_ID = previousDeployment;
+    }
   });
 });
