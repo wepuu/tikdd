@@ -37,7 +37,12 @@ class TestProvider implements ResolverProvider {
       regions: ["*"],
       timeoutMs: 1_000,
       costWeight: 0,
-      platforms: [{ platform, priority, deliveryModes: [...deliveryModes] }]
+      platforms: [{
+        platform,
+        priority,
+        deliveryModes: [...deliveryModes],
+        verificationStatus: deliveryModes.length > 0 ? "delivery_verified" : "fixture_verified"
+      }]
     };
   }
 
@@ -49,20 +54,18 @@ class TestProvider implements ResolverProvider {
     if (this.outcome === "terminal") {
       throw new ProviderError("private", "content_private", false, false);
     }
-    const resolution = await new MockProvider([input.platform]).resolve(input);
     const mode = this.manifest.platforms[0]?.deliveryModes[0];
     return {
-      ...resolution,
       result: {
-        ...resolution.result,
-        provenance: {
-          ...resolution.result.provenance,
-          provider: this.manifest.id,
-          kind: this.manifest.kind
-        }
+        schemaVersion: "1.0",
+        source: { platform: input.platform, canonicalUrl: input.canonicalUrl },
+        media: { id: input.taskId, title: "Routing fixture", author: null, thumbnailUrl: null, durationSeconds: null, isLive: false },
+        formats: [{ id: "fixture", container: "mp4", mimeType: "video/mp4", quality: "Fixture", width: null, height: null, fps: null, bitrateKbps: null, estimatedBytes: null, videoCodec: null, audioCodec: null, hasVideo: true, hasAudio: true }],
+        provenance: { provider: this.manifest.id, kind: this.manifest.kind, cacheHit: false, resolvedAt: new Date().toISOString() },
+        warnings: []
       },
       candidates: mode ? [{
-        formatId: resolution.result.formats[0]!.id,
+        formatId: "fixture",
         mode,
         targetUrl: "https://media.example.test/video.mp4",
         hostPolicyId: "test-media-v1",
@@ -89,6 +92,31 @@ describe("ProviderRouter", () => {
       concurrencySource:{async acquire(_key,limit){limits.push(limit);return {async release(){}};}}
     });
     await router.resolve(input);expect(calls).toEqual(["preferred"]);expect(limits).toEqual([2]);
+  });
+  it("uses deterministic platform traffic shares for the first attempt and preserves sequential fallback",async()=>{
+    const seen=new Set<string>();
+    for(let index=0;index<200;index+=1){
+      const calls:string[]=[];
+      const router=new ProviderRouter([new TestProvider("primary",900,"success",calls),new TestProvider("secondary",800,"success",calls)],{
+        preferenceSource:{async get(){return {orderedProviderIds:["primary","secondary"],trafficShares:[{providerId:"primary",shareBps:6000},{providerId:"secondary",shareBps:4000}],concurrencyCaps:[]};}}
+      });
+      await router.resolve({...input,taskId:`tsk_${index.toString(16).padStart(32,"0")}`});seen.add(calls[0]!);
+    }
+    expect(seen).toEqual(new Set(["primary","secondary"]));
+    const calls:string[]=[];
+    const router=new ProviderRouter([new TestProvider("primary",900,"retryable",calls),new TestProvider("secondary",800,"success",calls)],{
+      preferenceSource:{async get(){return {orderedProviderIds:["primary","secondary"],trafficShares:[{providerId:"primary",shareBps:10_000}],concurrencyCaps:[]};}}
+    });
+    await router.resolve(input);expect(calls).toEqual(["primary","secondary"]);
+  });
+
+  it("renormalizes first-choice shares across currently eligible Providers",async()=>{
+    const calls:string[]=[];
+    const router=new ProviderRouter([new TestProvider("open",900,"success",calls),new TestProvider("available",800,"success",calls)],{
+      preferenceSource:{async get(){return {orderedProviderIds:["open","available"],trafficShares:[{providerId:"open",shareBps:9000},{providerId:"available",shareBps:1000}],concurrencyCaps:[]};}},
+      healthSource:{async get(key){return {state:key.providerId==="open"?"open":"closed",successRate:1,latencyP95Ms:0,insufficientData:false,openUntil:key.providerId==="open"?new Date(Date.now()+60_000).toISOString():null,calculatedAt:new Date().toISOString()};},async acquireProbe(){return false;}}
+    });
+    await router.resolve(input);expect(calls).toEqual(["available"]);
   });
   it("returns a normalized mock result", async () => {
     const router = new ProviderRouter([new MockProvider(["youtube"])]);
@@ -224,7 +252,7 @@ describe("ProviderRouter", () => {
     })).toThrow();
     expect(() => ProviderManifestSchema.parse({
       ...base,
-      platforms: [{ platform: "x", priority: 1, deliveryModes: ["redirect", "redirect"] }]
+      platforms: [{ platform: "x", priority: 1, deliveryModes: ["redirect", "redirect"], verificationStatus: "delivery_verified" }]
     })).toThrow("Duplicate delivery mode");
     expect(() => ProviderManifestSchema.parse({
       ...base,
@@ -233,10 +261,14 @@ describe("ProviderRouter", () => {
     expect(() => ProviderManifestSchema.parse({
       ...base,
       platforms: [
-        { platform: "x", priority: 1, deliveryModes: [] },
-        { platform: "x", priority: 2, deliveryModes: [] }
+        { platform: "x", priority: 1, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "x", priority: 2, deliveryModes: [], verificationStatus: "unverified" }
       ]
     })).toThrow("Duplicate platform capability");
+    expect(() => ProviderManifestSchema.parse({
+      ...base,
+      platforms: [{ platform: "x", priority: 1, deliveryModes: ["redirect"], verificationStatus: "canary_verified" }]
+    })).toThrow("must be delivery verified");
   });
 
   it("does not call resolution-only Providers for production requests", async () => {

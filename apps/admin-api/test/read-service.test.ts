@@ -19,7 +19,7 @@ const manifest: ProviderManifest = {
   regions: ["nl"],
   timeoutMs: 12_000,
   costWeight: 10,
-  platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"] }]
+  platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]
 };
 const platform: PlatformDefinition = {
   id: "x",
@@ -145,7 +145,7 @@ describe("Admin read composition", () => {
       ...manifest,
       id: "dlpanda",
       displayName: "DLPanda",
-      platforms: [{ platform: "x", priority: 700, deliveryModes: [] }]
+      platforms: [{ platform: "x", priority: 700, deliveryModes: [], verificationStatus: "canary_verified" }]
     };
     const service = new AdminReadService(options({ manifests: [manifest, resolutionOnly] }));
     const routes = await service.listRoutes();

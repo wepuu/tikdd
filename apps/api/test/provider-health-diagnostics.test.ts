@@ -17,7 +17,7 @@ const snapshot: CircuitSnapshot = {
 };
 const manifest: ProviderManifest = {
   id: "provider-a", displayName: "Provider A", kind: "api", enabled: true, regions: ["*"],
-  timeoutMs: 1000, costWeight: 1, platforms: [{ platform: "x", priority: 50, deliveryModes: ["redirect"] }]
+  timeoutMs: 1000, costWeight: 1, platforms: [{ platform: "x", priority: 50, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]
 };
 
 function appWith(configuredToken: string | null) {

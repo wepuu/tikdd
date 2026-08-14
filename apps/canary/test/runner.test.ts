@@ -45,4 +45,18 @@ describe("scheduled canary runner", () => {
     expect(measurements[0]).toMatchObject({ canaryId: "authorized-x", providerId: "provider-a", status: "succeeded", formatCount: 1, attemptCount: 1 });
     expect(JSON.stringify(measurements[0])).not.toMatch(/sourceUrl|canonicalUrl|targetUrl|title|thumbnail/i);
   });
+
+  it("keeps a canary pinned to its declared Provider", async () => {
+    const calls: string[] = [];
+    const providerRouter = { async resolve() { calls.push("provider-a"); throw new Error("fixture failure"); } } as unknown as ProviderRouter;
+    const result = await runCanaries({
+      definitions: [{ id: "authorized-x", provider: "provider-a", platform: "x", url: "https://x.com/example/status/1" }],
+      router: { async resolve() { calls.push("fallback-router"); } } as unknown as ProviderRouter,
+      routerForProvider: (providerId) => providerId === "provider-a" ? providerRouter : null,
+      repository: { recordCanaryMeasurement: async () => undefined } as never,
+      leaseSource: { acquire: async () => ({ release: async () => undefined }) }, configuration
+    });
+    expect(calls).toEqual(["provider-a"]);
+    expect(result.failed).toBe(1);
+  });
 });

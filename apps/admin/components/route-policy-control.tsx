@@ -13,6 +13,7 @@ export function RoutePolicyControl({snapshot,summary,onComplete}:{snapshot:Admin
   const policy=control?.routePolicy??null;
   const active=policy?.draft??policy?.published;
   const [order,setOrder]=useState<string[]>([]);const [allocations,setAllocations]=useState<Record<string,number>>({});
+  const [trafficShares,setTrafficShares]=useState<Record<string,number>>({});
   const [caps,setCaps]=useState<Record<string,string>>({});const [reason,setReason]=useState("");const [confirmation,setConfirmation]=useState("");
   const [safetyConfirmation,setSafetyConfirmation]=useState("");
   const [state,setState]=useState<CommandState>("idle");const [message,setMessage]=useState("");
@@ -23,12 +24,15 @@ export function RoutePolicyControl({snapshot,summary,onComplete}:{snapshot:Admin
       const observed=snapshot.routes.status==="ready"?snapshot.routes.data.routes.find(({tuple})=>tuple.providerId===id&&tuple.platform===policy.platform&&tuple.region===policy.region)?.allocationBps:undefined;
       return [id,staged??observed??0];
     })));
+    setTrafficShares(Object.fromEntries(policy.baselineProviderIds.map((id)=>[id,active?.trafficShares.find(({providerId})=>providerId===id)?.shareBps??0])));
     setCaps(Object.fromEntries(active?.concurrencyCaps.map(({providerId,limit})=>[providerId,String(limit)])??[]));setReason("");setConfirmation("");setSafetyConfirmation("");setState("idle");setMessage("");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[revisionKey]);
   const exactScope=policy?`${policy.platform}/${policy.region}`:"";
   const propagationLabel=policy?.draft?"草稿未发布":!policy?.published?"Manifest 基线":policy.propagation.state==="propagated"?"已传播":policy.propagation.state==="propagating"?"传播中":policy.propagation.state==="propagation_failed"?"传播失败":"待处理";
-  const canSubmit=Boolean(policy&&reason.trim()&&confirmation===exactScope&&state!=="submitting");
+  const trafficShareTotal=order.reduce((total,id)=>total+(trafficShares[id]??0),0);
+  const trafficSharesValid=trafficShareTotal===0||trafficShareTotal===10_000;
+  const canSubmit=Boolean(policy&&reason.trim()&&confirmation===exactScope&&trafficSharesValid&&state!=="submitting");
   const effective=useMemo(()=>policy?[...order,...policy.baselineProviderIds.filter((id)=>!order.includes(id))]:[],[order,policy]);
 
   function move(id:string,direction:-1|1){setOrder((current)=>{const next=[...current];const index=next.indexOf(id);const target=index+direction;if(index<0||target<0||target>=next.length)return current;[next[index],next[target]]=[next[target]!,next[index]!];return next;});}
@@ -37,6 +41,7 @@ export function RoutePolicyControl({snapshot,summary,onComplete}:{snapshot:Admin
     const base={platform:policy.platform,region:policy.region,expectedRevision:policy.headRevision,reason:reason.trim(),confirmation,idempotencyKey:idempotencyKey()};
     const payload=action==="draft"?{...base,orderedProviderIds:order,
       stagedAllocations:policy.baselineProviderIds.map((providerId)=>({providerId,allocationBps:allocations[providerId]??0})),
+      trafficShares:order.map((providerId)=>({providerId,shareBps:trafficShares[providerId]??0})).filter(({shareBps})=>shareBps>0),
       concurrencyCaps:Object.entries(caps).filter(([,value])=>value!=="").map(([providerId,value])=>({providerId,limit:Number(value)}))}
       :action==="publish"||action==="discard"?{...base,expectedRevision:policy.headRevision!,draftRevision:policy.draft!.revision}
       :{...base,expectedRevision:policy.headRevision!,targetRevision:policy.published!.previousRevision!};
@@ -62,9 +67,10 @@ export function RoutePolicyControl({snapshot,summary,onComplete}:{snapshot:Admin
     {policy.technicalProviderIds.length||policy.excludedProviders.length?<div className="technical-routes"><div><strong>技术验证路线</strong><span>仅解析 Provider 不参与生产顺序、分配或并发</span></div><ul>{policy.technicalProviderIds.map((id)=><li key={id}><b>{id}</b><span>可执行受控 Probe</span></li>)}</ul>{policy.excludedProviders.length?<details><summary>查看被排除路线与原因（{policy.excludedProviders.length}）</summary>{policy.excludedProviders.map((item)=><p key={item.providerId}><code>{item.providerId}</code><span>{item.reasons.map((reason)=>({disabled:"Manifest 未启用",mock:"开发 Mock",region_mismatch:"区域不匹配",resolution_only:"仅解析 / 未通过交付审计"})[reason]).join("；")}</span></p>)}</details>:null}</div>:null}
     <div className="policy-editor"><div className="policy-order"><div className="mini-heading"><strong>顺序与受控参数</strong><span>未列出的 Provider 仍按 Manifest 顺序回退</span></div>
       {order.map((id,index)=><article key={id}><span className="order-index">{index+1}</span><strong>{id}</strong><div className="order-buttons"><button type="button" onClick={()=>move(id,-1)} disabled={index===0}>上移</button><button type="button" onClick={()=>move(id,1)} disabled={index===order.length-1}>下移</button></div>
-        <label>分配 %<input type="number" min="0" max="100" step="1" value={(allocations[id]??0)/100} onChange={(event)=>setAllocations({...allocations,[id]:Math.round(Number(event.target.value)*100)})}/></label>
+        <label>准入 %<input type="number" min="0" max="100" step="1" value={(allocations[id]??0)/100} onChange={(event)=>setAllocations({...allocations,[id]:Math.round(Number(event.target.value)*100)})}/></label>
+        <label>首选流量 %<input type="number" min="0" max="100" step="1" value={(trafficShares[id]??0)/100} onChange={(event)=>setTrafficShares({...trafficShares,[id]:Math.round(Number(event.target.value)*100)})}/></label>
         <label>并发上限<input type="number" min="1" max="1000" placeholder="基线" value={caps[id]??""} onChange={(event)=>setCaps({...caps,[id]:event.target.value})}/></label></article>)}</div>
-      <div className="policy-command"><label>变更原因<textarea maxLength={500} value={reason} onChange={(event)=>setReason(event.target.value)} placeholder="说明为什么需要调整这条精确路线"/></label>
+      <div className="policy-command">{!trafficSharesValid?<div className="command-message failed">首选流量份额当前合计 {(trafficShareTotal/100).toFixed(0)}%，必须为 100% 或全部留空。</div>:null}<label>变更原因<textarea maxLength={500} value={reason} onChange={(event)=>setReason(event.target.value)} placeholder="说明为什么需要调整这条精确路线"/></label>
         <label>输入 <code>{exactScope}</code> 确认<input value={confirmation} onChange={(event)=>setConfirmation(event.target.value)} autoComplete="off"/></label>
         <p>草稿不会影响流量。发布时会重新校验 Manifest、精确范围、版本与并发上限；Redis 传播未验证前不会显示成功。</p>
         <div className="command-actions"><button type="button" className="secondary" disabled={!canSubmit} onClick={()=>void command("draft")}>保存草稿</button>{policy.draft?<><button type="button" className="primary" disabled={!canSubmit} onClick={()=>void command("publish")}>发布草稿</button><button type="button" className="quiet" disabled={!canSubmit} onClick={()=>void command("discard")}>丢弃草稿</button></>:null}{policy.published?.previousRevision?<button type="button" className="quiet" disabled={!canSubmit} onClick={()=>void command("rollback")}>回滚到 r{policy.published.previousRevision}</button>:null}</div>

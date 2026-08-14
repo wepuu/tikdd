@@ -103,6 +103,7 @@ export interface ProviderConcurrencySource {
 
 export interface ProviderPreferencePolicy {
   orderedProviderIds: readonly string[];
+  trafficShares?: readonly { providerId: string; shareBps: number }[];
   concurrencyCaps: readonly { providerId: string; limit: number }[];
 }
 
@@ -144,6 +145,37 @@ export interface ProviderRouterOptions {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+function trafficBucket(taskId: string, platform: Platform, region: RegionId): number {
+  const digest = createHash("sha256")
+    .update(`tikdd-provider-share-v1\0${taskId}\0${platform}\0${region}`)
+    .digest();
+  return digest.readUInt32BE(0) % 10_000;
+}
+
+function distributeFirstChoice(
+  ranked: RankedProvider[],
+  preference: ProviderPreferencePolicy | null,
+  taskId: string,
+  platform: Platform,
+  region: RegionId
+): RankedProvider[] {
+  if (!preference || !preference.trafficShares?.length || ranked.length < 2) return ranked;
+  const eligible = new Map(ranked.map((candidate) => [candidate.provider.manifest.id, candidate]));
+  const shares = preference.trafficShares.filter(({ providerId }) => eligible.has(providerId));
+  const total = shares.reduce((sum, item) => sum + item.shareBps, 0);
+  if (shares.length === 0 || total <= 0) return ranked;
+  const bucket = trafficBucket(taskId, platform, region) % total;
+  let boundary = 0;
+  const selected = shares.find((item) => {
+    boundary += item.shareBps;
+    return bucket < boundary;
+  });
+  if (!selected) return ranked;
+  const index = ranked.findIndex(({ provider }) => provider.manifest.id === selected.providerId);
+  if (index <= 0) return ranked;
+  return [ranked[index]!, ...ranked.slice(0, index), ...ranked.slice(index + 1)];
 }
 
 function normalizeProviderError(error: unknown): ProviderError {
@@ -273,11 +305,12 @@ export class ProviderRouter {
       ranked.push({ provider, capability, score, circuitKey, requiresProbe, concurrencyLimitOverride });
     }
 
-    return {
-      ranked: ranked.sort(
+    const ordered = ranked.sort(
         (left, right) =>
           right.score - left.score || left.provider.manifest.id.localeCompare(right.provider.manifest.id)
-      ),
+      );
+    return {
+      ranked: distributeFirstChoice(ordered, preference, taskId, platform, this.region),
       manifestEligibleCount,
       rolloutEligibleCount,
       rolloutControlUnavailable
@@ -442,7 +475,12 @@ export class MockProvider implements ResolverProvider {
       regions: ["*"],
       timeoutMs: 5_000,
       costWeight: 0,
-      platforms: platforms.map((platform) => ({ platform, priority: 10, deliveryModes: [] }))
+      platforms: platforms.map((platform) => ({
+        platform,
+        priority: 10,
+        deliveryModes: [],
+        verificationStatus: "fixture_verified"
+      }))
     };
   }
 

@@ -82,8 +82,8 @@ describe("production-shaped X routing contract", () => {
     const ss = ssProvider("success", []);
     expect(twitter.manifest.regions).toEqual(["global", "canary-global"]);
     expect(ss.manifest.regions).toEqual(["global", "canary-global"]);
-    expect(twitter.manifest.platforms).toEqual([{ platform: "x", priority: 900, deliveryModes: ["redirect"] }]);
-    expect(ss.manifest.platforms).toEqual([{ platform: "x", priority: 800, deliveryModes: ["redirect"] }]);
+    expect(twitter.manifest.platforms).toEqual([{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]);
+    expect(ss.manifest.platforms).toEqual([{ platform: "x", priority: 800, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]);
   });
 
   it("returns primary success without calling the secondary", async () => {

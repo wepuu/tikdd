@@ -117,6 +117,7 @@ async function main(): Promise<void> {
         platform: detected.platform,
         signal: AbortSignal.timeout(25_000)
       };
+      const selectedProvider = providers[canary.provider];
       const routed =
         mode === "routing"
           ? await new ProviderRouter(
@@ -124,12 +125,12 @@ async function main(): Promise<void> {
               { maxAttempts: 4 }
             ).resolve(input)
           : null;
-      const resolution = routed?.resolution ?? (await providers[canary.provider].resolve(input));
+      const resolution = routed?.resolution ?? (await selectedProvider.resolve(input));
       const result = resolution.result;
       const candidateHosts = process.env.CANARY_REPORT_HOSTS === "true"
         ? [...new Set([
             ...resolution.candidates.map((candidate) => new URL(candidate.targetUrl).hostname),
-            ...qualificationHosts(providers[canary.provider])
+            ...qualificationHosts(selectedProvider)
           ])]
             .sort()
         : null;

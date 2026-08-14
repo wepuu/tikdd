@@ -35,7 +35,7 @@ describe("provider operational contracts", () => {
         regions: ["*", "eu-west-1"],
         timeoutMs: 1_000,
         costWeight: 0,
-        platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"] }]
+        platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]
       }).regions
     ).toEqual(["*", "eu-west-1"]);
   });
@@ -45,5 +45,30 @@ describe("provider operational contracts", () => {
     expect(() => ProviderAttemptSchema.parse({ ...attempt, region: "*" })).toThrow();
     const { region: _region, ...withoutRegion } = attempt;
     expect(() => ProviderAttemptSchema.parse(withoutRegion)).toThrow();
+  });
+
+  it("records a failed canary only on a non-deliverable capability", () => {
+    const baseManifest = {
+      id: "test-provider",
+      displayName: "Test provider",
+      kind: "site-adapter" as const,
+      enabled: true,
+      regions: ["*"],
+      timeoutMs: 1_000,
+      costWeight: 0
+    };
+
+    expect(
+      ProviderManifestSchema.parse({
+        ...baseManifest,
+        platforms: [{ platform: "x", priority: 900, deliveryModes: [], verificationStatus: "canary_failed" }]
+      }).platforms[0]?.verificationStatus
+    ).toBe("canary_failed");
+    expect(() =>
+      ProviderManifestSchema.parse({
+        ...baseManifest,
+        platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "canary_failed" }]
+      })
+    ).toThrow(/delivery verified/i);
   });
 });

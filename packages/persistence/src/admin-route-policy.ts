@@ -19,7 +19,7 @@ interface PolicyRow extends QueryResultRow {
   policy_id: string; platform: string; region: string; revision: string;
   revision_kind: "draft" | "published" | "rollback"; previous_revision: string | null;
   ordered_provider_ids: unknown; rollout_rule_ids: unknown; staged_allocations: unknown;
-  concurrency_caps: unknown; reason: string; actor_subject: string; created_at: Date;
+  traffic_shares: unknown; concurrency_caps: unknown; reason: string; actor_subject: string; created_at: Date;
 }
 
 interface ReceiptRow extends QueryResultRow {
@@ -45,7 +45,8 @@ function mapPolicy(row: PolicyRow): AdminRoutePolicyRevision {
     revision: Number(row.revision), revisionKind: row.revision_kind,
     previousRevision: row.previous_revision === null ? null : Number(row.previous_revision),
     orderedProviderIds: row.ordered_provider_ids, rolloutRuleIds: row.rollout_rule_ids,
-    stagedAllocations: row.staged_allocations, concurrencyCaps: row.concurrency_caps,
+    stagedAllocations: row.staged_allocations, trafficShares: row.traffic_shares,
+    concurrencyCaps: row.concurrency_caps,
     reason: row.reason, actorSubject: row.actor_subject, createdAt: row.created_at.toISOString()
   });
 }
@@ -72,6 +73,7 @@ export interface RoutePolicyCommandIdentity {
 export interface RoutePolicyDraftValues {
   platform: string; region: string; expectedRevision: number | null;
   orderedProviderIds: string[]; stagedAllocations: Array<{ providerId: string; allocationBps: number }>;
+  trafficShares: Array<{ providerId: string; shareBps: number }>;
   concurrencyCaps: Array<{ providerId: string; limit: number }>;
   reason: string;
 }
@@ -136,11 +138,11 @@ export class AdminRoutePolicyRepository {
       await client.query(
         `INSERT INTO admin_route_policy_revisions
           (policy_id,platform,region,revision,revision_kind,previous_revision,ordered_provider_ids,
-           rollout_rule_ids,staged_allocations,concurrency_caps,reason,actor_subject)
-         VALUES ($1,$2,$3,$4,'draft',$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10,$11)`,
+           rollout_rule_ids,staged_allocations,traffic_shares,concurrency_caps,reason,actor_subject)
+         VALUES ($1,$2,$3,$4,'draft',$5,$6::jsonb,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12)`,
         [policyId,values.platform,values.region,next,head?.published_revision ?? null,
           JSON.stringify(values.orderedProviderIds),JSON.stringify(rolloutRuleIds),JSON.stringify(values.stagedAllocations),
-          JSON.stringify(values.concurrencyCaps),values.reason,identity.actorSubject]
+          JSON.stringify(values.trafficShares),JSON.stringify(values.concurrencyCaps),values.reason,identity.actorSubject]
       );
       await client.query(
         `INSERT INTO admin_route_policy_heads (policy_id,platform,region,head_revision,draft_revision,published_revision)
@@ -186,11 +188,11 @@ export class AdminRoutePolicyRepository {
       await client.query(
         `INSERT INTO admin_route_policy_revisions
           (policy_id,platform,region,revision,revision_kind,previous_revision,ordered_provider_ids,
-           rollout_rule_ids,staged_allocations,concurrency_caps,reason,actor_subject)
-         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11,$12)`,
+           rollout_rule_ids,staged_allocations,traffic_shares,concurrency_caps,reason,actor_subject)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13)`,
         [head.policy_id,input.platform,input.region,next,input.kind,previousPublished,
           JSON.stringify(policy.orderedProviderIds),JSON.stringify(policy.rolloutRuleIds),JSON.stringify(policy.stagedAllocations),
-          JSON.stringify(policy.concurrencyCaps),input.reason,identity.actorSubject]
+          JSON.stringify(policy.trafficShares),JSON.stringify(policy.concurrencyCaps),input.reason,identity.actorSubject]
       );
       await this.applyStagedAllocations(client,{...policy,revision:next,reason:input.reason,actorSubject:identity.actorSubject});
       await client.query(`UPDATE admin_route_policy_heads SET head_revision=$3,draft_revision=NULL,published_revision=$3,updated_at=NOW() WHERE platform=$1 AND region=$2`,[input.platform,input.region,next]);
@@ -246,8 +248,8 @@ export class AdminRoutePolicyRepository {
       this.pool.query<{durable_revision:string;database_now:Date}>(`SELECT durable_revision::text,NOW() AS database_now FROM admin_route_policy_projection_heads WHERE deployment=$1 AND region=$2`,[deployment,region]),
       this.pool.query<PolicyRow>(`SELECT r.* FROM admin_route_policy_heads h JOIN admin_route_policy_revisions r ON r.policy_id=h.policy_id AND r.revision=h.published_revision WHERE h.region=$1 ORDER BY h.platform`,[region])
     ]);
-    return RoutePolicySnapshotSchema.parse({schemaVersion:"1",revision:Number(projection.rows[0]?.durable_revision??0),
-      generatedAt:(projection.rows[0]?.database_now??new Date()).toISOString(),policies:policies.rows.map((row)=>{const policy=mapPolicy(row);return{platform:policy.platform,region:policy.region,policyRevision:policy.revision,orderedProviderIds:policy.orderedProviderIds,concurrencyCaps:policy.concurrencyCaps};})});
+    return RoutePolicySnapshotSchema.parse({schemaVersion:"2",revision:Number(projection.rows[0]?.durable_revision??0),
+      generatedAt:(projection.rows[0]?.database_now??new Date()).toISOString(),policies:policies.rows.map((row)=>{const policy=mapPolicy(row);return{platform:policy.platform,region:policy.region,policyRevision:policy.revision,orderedProviderIds:policy.orderedProviderIds,trafficShares:policy.trafficShares,concurrencyCaps:policy.concurrencyCaps};})});
   }
 
   async finishPropagation(input:{deployment:string;region:string;commandId:string;projectionRevision:number;success:boolean}):Promise<AdminMutationReceipt>{

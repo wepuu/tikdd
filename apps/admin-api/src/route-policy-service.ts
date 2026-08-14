@@ -91,13 +91,13 @@ export class AdminRoutePolicyService {
       expiresAt:new Date(acceptedAt.getTime()+24*60*60_000)};
   }
 
-  private validatePolicy(input:{platform:string;region:string;orderedProviderIds:string[];stagedAllocations:Array<{providerId:string;allocationBps:number}>;concurrencyCaps:Array<{providerId:string;limit:number}>}){
+  private validatePolicy(input:{platform:string;region:string;orderedProviderIds:string[];stagedAllocations:Array<{providerId:string;allocationBps:number}>;trafficShares:Array<{providerId:string;shareBps:number}>;concurrencyCaps:Array<{providerId:string;limit:number}>}){
     if(input.region!==this.options.region)throw new Error("The route-policy region is outside this Admin instance.");
     return validateRoutePolicyEligibility({schemaVersion:"1",policyId:`rtp_${input.platform}_${input.region}`,
       platform:input.platform,region:input.region,revision:1,revisionKind:"draft",previousRevision:null,
       orderedProviderIds:input.orderedProviderIds,
       rolloutRuleIds:input.stagedAllocations.map(({providerId})=>`admin-${providerId}-${input.platform}-${input.region}`),
-      stagedAllocations:input.stagedAllocations,concurrencyCaps:input.concurrencyCaps,
+      stagedAllocations:input.stagedAllocations,trafficShares:input.trafficShares??[],concurrencyCaps:input.concurrencyCaps,
       reason:"Validate an Admin route policy command.",actorSubject:"validation_actor",createdAt:this.now().toISOString()},
       {catalogPlatforms:this.options.catalogPlatforms,manifests:this.options.manifests,
         maximumConcurrencyByProvider:this.options.maximumConcurrencyByProvider,

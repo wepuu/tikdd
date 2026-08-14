@@ -257,6 +257,7 @@ export class AdminReadService {
         const attempt = attempts.get(routeKey);
         const policy = policies.get(platformRegionKey(capability.platform, this.options.region));
         const preferenceIndex = policy?.orderedProviderIds.indexOf(manifest.id) ?? -1;
+        const trafficShareBps = policy?.trafficShares.find(({ providerId }) => providerId === manifest.id)?.shareBps ?? 0;
         const productionEligible = manifest.enabled && manifest.kind !== "mock" && capability.deliveryModes.length > 0;
         const operatorAllocationBps = productionEligible
           ? allocationFor(rolloutResult.value, manifest.id, capability.platform, this.options.region, now)
@@ -279,9 +280,11 @@ export class AdminReadService {
           manifestEnabled: manifest.enabled,
           basePriority: capability.priority,
           deliveryModes: capability.deliveryModes,
+          verificationStatus: capability.verificationStatus,
           productionEligible,
           preferencePosition: preferenceIndex < 0 ? null : preferenceIndex + 1,
           allocationBps: guarded.allocationBps,
+          trafficShareBps,
           state: stateFor({
             manifestEnabled: manifest.enabled,
             allocationBps: guarded.allocationBps,
@@ -380,11 +383,12 @@ export class AdminReadService {
         regions: manifest.regions,
         timeoutMs: manifest.timeoutMs,
         costWeight: manifest.costWeight,
-        capabilities: manifest.platforms.map(({ platform, priority, deliveryModes }) => ({
+        capabilities: manifest.platforms.map(({ platform, priority, deliveryModes, verificationStatus }) => ({
           platform,
           basePriority: priority,
           deliveryModes,
-          productionEligible: manifest.enabled && manifest.kind !== "mock" && deliveryModes.length > 0
+          verificationStatus,
+          productionEligible: manifest.enabled && manifest.kind !== "mock" && deliveryModes.length > 0 && verificationStatus === "delivery_verified"
         }))
       }))
     });

@@ -4,7 +4,7 @@ import { AdminPlatformManagementService, type PlatformManagementServiceOptions }
 const now="2026-08-12T12:00:00.000Z";
 const platform={id:"x",displayName:"X",status:"experimental" as const,source:"yt-dlp" as const,
   hosts:[{hostname:"x.com",allowSubdomains:true}],extractorKeys:["twitter"]};
-const manifest={id:"twittersaver",displayName:"TwitterSaver",kind:"site-adapter" as const,enabled:true,regions:["nl"],timeoutMs:12_000,costWeight:10,platforms:[{platform:"x",priority:900,deliveryModes:["redirect" as const]}]};
+const manifest={id:"twittersaver",displayName:"TwitterSaver",kind:"site-adapter" as const,enabled:true,regions:["nl"],timeoutMs:12_000,costWeight:10,platforms:[{platform:"x",priority:900,deliveryModes:["redirect" as const],verificationStatus:"delivery_verified" as const}]};
 const receipt={schemaVersion:"1" as const,commandId:`cmd_${"a".repeat(32)}`,aggregate:"platform_presentation" as const,targetId:"x/nl",expectedRevision:null,acceptedRevision:1,currentRevision:1,propagatedRevision:1,state:"propagated" as const,acceptedAt:now,completedAt:now};
 const draft={schemaVersion:"1" as const,platform:"x",region:"nl",revision:1,revisionKind:"draft" as const,previousRevision:null,
   publicDisplayName:"X",supportLabel:"Preview",publicAvailability:"preview" as const,pageId:null,reason:"Prepare preview.",actorSubject:"owner_tikdd",createdAt:now};

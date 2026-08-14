@@ -200,7 +200,29 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
     source: "curated",
     hosts: [host("oasis.weibo.cn")],
     extractorKeys: []
-  }
+  },
+  { id: "9gag", displayName: "9GAG", status: "planned", source: "yt-dlp", hosts: [host("9gag.com")], extractorKeys: ["NineGag"] },
+  { id: "bandcamp", displayName: "Bandcamp", status: "planned", source: "yt-dlp", hosts: [host("bandcamp.com")], extractorKeys: ["Bandcamp"] },
+  { id: "bitchute", displayName: "BitChute", status: "planned", source: "yt-dlp", hosts: [host("bitchute.com")], extractorKeys: ["BitChute"] },
+  { id: "blogger", displayName: "Blogger", status: "planned", source: "yt-dlp", hosts: [host("blogspot.com")], extractorKeys: ["Blogger"] },
+  { id: "buzzfeed", displayName: "BuzzFeed", status: "planned", source: "yt-dlp", hosts: [host("buzzfeed.com")], extractorKeys: ["BuzzFeed"] },
+  { id: "espn", displayName: "ESPN", status: "planned", source: "yt-dlp", hosts: [host("espn.com"), host("espn.com.br"), host("espn.com.pe"), host("espn.in")], extractorKeys: ["ESPN"] },
+  { id: "flickr", displayName: "Flickr", status: "planned", source: "yt-dlp", hosts: [host("flickr.com"), host("flic.kr", false)], extractorKeys: ["Flickr"] },
+  { id: "imdb", displayName: "IMDb", status: "planned", source: "yt-dlp", hosts: [host("imdb.com")], extractorKeys: ["Imdb"] },
+  { id: "imgur", displayName: "Imgur", status: "planned", source: "yt-dlp", hosts: [host("imgur.com")], extractorKeys: ["Imgur"] },
+  { id: "kickstarter", displayName: "Kickstarter", status: "planned", source: "yt-dlp", hosts: [host("kickstarter.com")], extractorKeys: ["Kickstarter"] },
+  { id: "likee", displayName: "Likee", status: "planned", source: "yt-dlp", hosts: [host("likee.com"), host("likee.video"), host("like.video")], extractorKeys: ["Likee"] },
+  { id: "linkedin", displayName: "LinkedIn", status: "planned", source: "yt-dlp", hosts: [host("linkedin.com")], extractorKeys: ["LinkedIn", "LinkedInLearning"] },
+  { id: "loom", displayName: "Loom", status: "planned", source: "yt-dlp", hosts: [host("loom.com")], extractorKeys: ["Loom"] },
+  { id: "medal", displayName: "Medal", status: "planned", source: "yt-dlp", hosts: [host("medal.tv")], extractorKeys: ["MedalTV"] },
+  { id: "mixcloud", displayName: "Mixcloud", status: "planned", source: "yt-dlp", hosts: [host("mixcloud.com")], extractorKeys: ["Mixcloud"] },
+  { id: "odnoklassniki", displayName: "Odnoklassniki", status: "planned", source: "yt-dlp", hosts: [host("ok.ru")], extractorKeys: ["Odnoklassniki"] },
+  { id: "periscope", displayName: "Periscope", status: "planned", source: "yt-dlp", hosts: [host("periscope.tv"), host("pscp.tv")], extractorKeys: ["Periscope"] },
+  { id: "puhutv", displayName: "PuhuTV", status: "planned", source: "yt-dlp", hosts: [host("puhutv.com")], extractorKeys: ["PuhuTV"] },
+  { id: "rumble", displayName: "Rumble", status: "planned", source: "yt-dlp", hosts: [host("rumble.com")], extractorKeys: ["Rumble"] },
+  { id: "substack", displayName: "Substack", status: "planned", source: "yt-dlp", hosts: [host("substack.com")], extractorKeys: ["Substack"] },
+  { id: "ted", displayName: "TED", status: "planned", source: "yt-dlp", hosts: [host("ted.com")], extractorKeys: ["TedTalk", "TedSeries", "TedPlaylist", "TedEmbed"] },
+  { id: "telegram", displayName: "Telegram", status: "planned", source: "yt-dlp", hosts: [host("t.me", false)], extractorKeys: ["TelegramEmbed"] }
 ];
 
 const TRACKING_PARAMETERS = new Set([

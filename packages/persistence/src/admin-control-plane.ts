@@ -24,6 +24,7 @@ interface RoutePolicyRevisionRow extends QueryResultRow {
   ordered_provider_ids: unknown;
   rollout_rule_ids: unknown;
   staged_allocations: unknown;
+  traffic_shares: unknown;
   concurrency_caps: unknown;
   reason: string;
   actor_subject: string;
@@ -113,6 +114,7 @@ function mapRoutePolicy(row: RoutePolicyRevisionRow): AdminRoutePolicyRevision {
     orderedProviderIds: row.ordered_provider_ids,
     rolloutRuleIds: row.rollout_rule_ids,
     stagedAllocations: row.staged_allocations,
+    trafficShares: row.traffic_shares,
     concurrencyCaps: row.concurrency_caps,
     reason: row.reason,
     actorSubject: row.actor_subject,
