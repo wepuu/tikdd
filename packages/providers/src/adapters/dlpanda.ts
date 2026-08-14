@@ -107,18 +107,18 @@ export class DLPandaProvider implements ResolverProvider {
       timeoutMs: 18_000,
       costWeight: 20,
       platforms: [
-        { platform: "tiktok", priority: 820, deliveryModes: [] },
-        { platform: "douyin", priority: 800, deliveryModes: [] },
-        { platform: "xiaohongshu", priority: 780, deliveryModes: [] },
-        { platform: "x", priority: 700, deliveryModes: [] },
-        { platform: "bilibili", priority: 650, deliveryModes: [] },
-        { platform: "weibo", priority: 620, deliveryModes: [] },
-        { platform: "vimeo", priority: 580, deliveryModes: [] },
-        { platform: "facebook", priority: 560, deliveryModes: [] },
-        { platform: "snapchat", priority: 540, deliveryModes: [] },
-        { platform: "pinterest", priority: 520, deliveryModes: [] },
-        { platform: "xigua", priority: 500, deliveryModes: [] },
-        { platform: "oasis", priority: 480, deliveryModes: [] }
+        { platform: "tiktok", priority: 820, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "douyin", priority: 800, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "xiaohongshu", priority: 780, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "x", priority: 700, deliveryModes: [], verificationStatus: "canary_verified" },
+        { platform: "bilibili", priority: 650, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "weibo", priority: 620, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "vimeo", priority: 580, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "facebook", priority: 560, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "snapchat", priority: 540, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "pinterest", priority: 520, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "xigua", priority: 500, deliveryModes: [], verificationStatus: "unverified" },
+        { platform: "oasis", priority: 480, deliveryModes: [], verificationStatus: "unverified" }
       ]
     };
   }

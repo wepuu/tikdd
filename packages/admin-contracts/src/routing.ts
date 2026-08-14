@@ -36,6 +36,11 @@ export const AdminRouteAllocationSchema = z.strictObject({
   allocationBps: RateBpsSchema
 });
 
+export const AdminRouteTrafficShareSchema = z.strictObject({
+  providerId: AdminProviderIdSchema,
+  shareBps: z.number().int().positive().max(10_000)
+});
+
 export const AdminRouteConcurrencyCapSchema = z.strictObject({
   providerId: AdminProviderIdSchema,
   limit: z.number().int().positive().max(1_000)
@@ -53,6 +58,7 @@ export const AdminRoutePolicyRevisionSchema = z
     orderedProviderIds: z.array(AdminProviderIdSchema).max(16),
     rolloutRuleIds: z.array(RolloutRuleIdSchema).max(32),
     stagedAllocations: z.array(AdminRouteAllocationSchema).max(16).default([]),
+    trafficShares: z.array(AdminRouteTrafficShareSchema).max(16).default([]),
     concurrencyCaps: z.array(AdminRouteConcurrencyCapSchema).max(16),
     reason: AdminReasonSchema,
     actorSubject: AdminActorSubjectSchema,
@@ -67,6 +73,12 @@ export const AdminRoutePolicyRevisionSchema = z
     }
     if (!uniqueStrings(policy.stagedAllocations.map(({ providerId }) => providerId))) {
       context.addIssue({ code: "custom", message: "Staged allocations must be unique per Provider.", path: ["stagedAllocations"] });
+    }
+    if (!uniqueStrings(policy.trafficShares.map(({ providerId }) => providerId))) {
+      context.addIssue({ code: "custom", message: "Traffic shares must be unique per Provider.", path: ["trafficShares"] });
+    }
+    if (policy.trafficShares.length > 0 && policy.trafficShares.reduce((sum, item) => sum + item.shareBps, 0) !== 10_000) {
+      context.addIssue({ code: "custom", message: "Traffic shares must total exactly 10,000 basis points.", path: ["trafficShares"] });
     }
     if (!uniqueStrings(policy.concurrencyCaps.map(({ providerId }) => providerId))) {
       context.addIssue({ code: "custom", message: "Concurrency caps must be unique per Provider.", path: ["concurrencyCaps"] });
@@ -96,6 +108,7 @@ const RouteCommandBaseSchema = z.strictObject({
 export const AdminRoutePolicyDraftCommandSchema = RouteCommandBaseSchema.extend({
   orderedProviderIds: z.array(AdminProviderIdSchema).max(16),
   stagedAllocations: z.array(AdminRouteAllocationSchema).max(16),
+  trafficShares: z.array(AdminRouteTrafficShareSchema).max(16).default([]),
   concurrencyCaps: z.array(AdminRouteConcurrencyCapSchema).max(16)
 }).superRefine((command, context) => {
   if (command.confirmation !== routeConfirmation(command.platform, command.region)) {
@@ -104,9 +117,13 @@ export const AdminRoutePolicyDraftCommandSchema = RouteCommandBaseSchema.extend(
   for (const [path, values] of [
     ["orderedProviderIds", command.orderedProviderIds],
     ["stagedAllocations", command.stagedAllocations.map(({ providerId }) => providerId)],
+    ["trafficShares", command.trafficShares.map(({ providerId }) => providerId)],
     ["concurrencyCaps", command.concurrencyCaps.map(({ providerId }) => providerId)]
   ] as const) {
     if (!uniqueStrings(values)) context.addIssue({ code: "custom", message: "Provider entries must be unique.", path: [path] });
+  }
+  if (command.trafficShares.length > 0 && command.trafficShares.reduce((sum, item) => sum + item.shareBps, 0) !== 10_000) {
+    context.addIssue({ code: "custom", message: "Traffic shares must total exactly 10,000 basis points.", path: ["trafficShares"] });
   }
 });
 
@@ -236,6 +253,7 @@ export function validateRoutePolicyEligibility(
   const referenced = new Set([
     ...policy.orderedProviderIds,
     ...policy.stagedAllocations.map(({ providerId }) => providerId),
+    ...policy.trafficShares.map(({ providerId }) => providerId),
     ...policy.concurrencyCaps.map(({ providerId }) => providerId)
   ]);
 
@@ -256,6 +274,12 @@ export function validateRoutePolicyEligibility(
     const capability = manifest.platforms.find(({ platform }) => platform === policy.platform);
     if (!capability || capability.deliveryModes.length === 0) {
       throw new Error(`Provider is resolution-only for platform ${policy.platform}: ${providerId}`);
+    }
+  }
+
+  for (const share of policy.trafficShares ?? []) {
+    if (!policy.orderedProviderIds.includes(share.providerId)) {
+      throw new Error(`Traffic-share Provider is missing from the manual order: ${share.providerId}`);
     }
   }
 

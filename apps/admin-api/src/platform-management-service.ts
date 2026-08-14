@@ -106,8 +106,10 @@ export class AdminPlatformManagementService {
         providerId: manifest.id, displayName: manifest.displayName, enabled: manifest.enabled, regions: manifest.regions,
         basePriority: manifest.platforms.find((item) => item.platform === platform)?.priority ?? 0,
         deliveryModes: manifest.platforms.find((item) => item.platform === platform)?.deliveryModes ?? [],
+        verificationStatus: manifest.platforms.find((item) => item.platform === platform)?.verificationStatus ?? "unverified",
         productionEligible: manifest.enabled && manifest.kind !== "mock" &&
-          (manifest.platforms.find((item) => item.platform === platform)?.deliveryModes.length ?? 0) > 0
+          (manifest.platforms.find((item) => item.platform === platform)?.deliveryModes.length ?? 0) > 0 &&
+          manifest.platforms.find((item) => item.platform === platform)?.verificationStatus === "delivery_verified"
       })),
       readiness: { monitoredEligibleRouteCount: monitoredEligible.length, healthyRouteCount,
         publishedLocaleCount: locales.length, publishedPageLocaleCount: associated.length,

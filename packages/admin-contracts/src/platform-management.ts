@@ -1,4 +1,4 @@
-import { PlatformIdSchema, ProviderDeliveryModeSchema, RegionIdSchema } from "@tikdd/contracts";
+import { PlatformIdSchema, ProviderCapabilityVerificationStatusSchema, ProviderDeliveryModeSchema, RegionIdSchema } from "@tikdd/contracts";
 import { z } from "zod";
 import {
   AdminActorSubjectSchema,
@@ -98,6 +98,7 @@ export const AdminPlatformManagementViewSchema = z.strictObject({
     regions: z.array(z.union([RegionIdSchema, z.literal("*")])).min(1).max(32),
     basePriority: z.number().int().min(0).max(1_000),
     deliveryModes: z.array(ProviderDeliveryModeSchema).max(3),
+    verificationStatus: ProviderCapabilityVerificationStatusSchema,
     productionEligible: z.boolean()
   })).max(64),
   readiness: z.strictObject({

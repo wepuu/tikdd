@@ -52,7 +52,8 @@ export class FailureInjectionProvider implements ResolverProvider {
       platforms: [{
         platform: options.platform,
         priority: options.priority,
-        deliveryModes: [...(options.deliveryModes ?? [])]
+        deliveryModes: [...(options.deliveryModes ?? [])],
+        verificationStatus: options.deliveryModes?.length ? "delivery_verified" : "fixture_verified"
       }]
     };
   }

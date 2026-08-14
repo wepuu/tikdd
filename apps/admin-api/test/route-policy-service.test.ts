@@ -2,7 +2,7 @@ import { ADMIN_ROUTE_POLICY_FIXTURE } from "@tikdd/admin-contracts/fixtures";
 import { describe,expect,it,vi } from "vitest";
 import { AdminRoutePolicyService, type RoutePolicyServiceOptions } from "../src/route-policy-service";
 
-const manifest={id:"twittersaver",displayName:"TwitterSaver",kind:"site-adapter" as const,enabled:true,regions:["nl"],timeoutMs:12_000,costWeight:10,platforms:[{platform:"x",priority:900,deliveryModes:["redirect" as const]}]};
+const manifest={id:"twittersaver",displayName:"TwitterSaver",kind:"site-adapter" as const,enabled:true,regions:["nl"],timeoutMs:12_000,costWeight:10,platforms:[{platform:"x",priority:900,deliveryModes:["redirect" as const],verificationStatus:"delivery_verified" as const}]};
 const receipt=(state:"propagating"|"propagated"|"propagation_failed"="propagating")=>({schemaVersion:"1" as const,commandId:`cmd_${"a".repeat(32)}`,aggregate:"route_policy" as const,targetId:"x/nl",expectedRevision:2,acceptedRevision:3,currentRevision:3,propagatedRevision:state==="propagated"?7:null,state,acceptedAt:"2026-08-12T00:00:00.000Z",completedAt:state==="propagating"?null:"2026-08-12T00:00:01.000Z"});
 
 function service(overrides:Partial<RoutePolicyServiceOptions>={}){
@@ -37,7 +37,7 @@ describe("Admin route-policy commands",()=>{
     expect(result.state).toBe("propagation_failed");
   });
   it("keeps resolution-only routes out of production policy while allowing a technical probe",async()=>{
-    const resolutionOnly={...manifest,id:"dlpanda",displayName:"DLPanda",platforms:[{platform:"x",priority:700,deliveryModes:[]}]};
+    const resolutionOnly={...manifest,id:"dlpanda",displayName:"DLPanda",platforms:[{platform:"x",priority:700,deliveryModes:[],verificationStatus:"canary_verified" as const}]};
     const probeRunner={run:vi.fn(async()=>true)};
     const {instance,writes}=service({manifests:[manifest,resolutionOnly],probeRunner} as never);
     const view=await instance.getView("x","nl");

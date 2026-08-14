@@ -35,10 +35,14 @@ status and the count of active production providers once the registry snapshot i
 
 ## Seed platform families
 
-The initial catalog covers 22 families: TikTok, YouTube, X, Instagram, Facebook, Vimeo, Dailymotion,
+The initial catalog began with 22 families: TikTok, YouTube, X, Instagram, Facebook, Vimeo, Dailymotion,
 Reddit, Twitch, SoundCloud, Bilibili, Douyin, Kuaishou, Pinterest, VK, Streamable, Tumblr, Weibo,
 Xiaohongshu/RedNote, Snapchat, Xigua, and Oasis. This is a starting set for adapter research, not a
 production support claim.
+
+Work item 13 adds a reviewed subset of families that have an independent entry in the current
+yt-dlp supported-sites catalog. Catalog presence remains recognition-only: it does not enable a
+Provider, prove that a current URL works, approve delivery, or create an indexable localized page.
 
 ## Adding a platform
 

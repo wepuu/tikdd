@@ -41,7 +41,7 @@ const manifests = [
     regions: ["nl"],
     timeoutMs: 12_000,
     costWeight: 10,
-    platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect" as const] }]
+    platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect" as const], verificationStatus: "delivery_verified" as const }]
   },
   {
     id: "ssstwitter",
@@ -51,7 +51,7 @@ const manifests = [
     regions: ["*" as const],
     timeoutMs: 12_000,
     costWeight: 15,
-    platforms: [{ platform: "x", priority: 800, deliveryModes: ["redirect" as const] }]
+    platforms: [{ platform: "x", priority: 800, deliveryModes: ["redirect" as const], verificationStatus: "delivery_verified" as const }]
   }
 ];
 
@@ -134,7 +134,7 @@ describe("Admin internal contracts", () => {
     })).toThrow("exceeds");
     expect(() => validateRoutePolicyEligibility(ADMIN_ROUTE_POLICY_FIXTURE, {
       catalogPlatforms: ["x"],
-      manifests: [{ ...manifests[0]!, platforms: [{ platform: "x", priority: 900, deliveryModes: [] }] }, manifests[1]!],
+      manifests: [{ ...manifests[0]!, platforms: [{ platform: "x", priority: 900, deliveryModes: [], verificationStatus: "unverified" }] }, manifests[1]!],
       maximumConcurrencyByProvider: { twittersaver: 8 }
     })).toThrow("resolution-only");
   });
@@ -157,7 +157,7 @@ describe("Admin internal contracts", () => {
     const command={platform:"x",region:"nl",expectedRevision:2,reason:"Adjust the reviewed sequential preference.",
       confirmation:"x/nl",idempotencyKey:"abcdefghijklmnop",orderedProviderIds:["twittersaver","ssstwitter"],
       stagedAllocations:[{providerId:"twittersaver",allocationBps:10000}],concurrencyCaps:[]};
-    expect(AdminRoutePolicyDraftCommandSchema.parse(command)).toEqual(command);
+    expect(AdminRoutePolicyDraftCommandSchema.parse(command)).toEqual({...command,trafficShares:[]});
     expect(()=>AdminRoutePolicyDraftCommandSchema.parse({...command,confirmation:"x/global"})).toThrow(/confirmation/i);
     expect(()=>AdminRoutePolicyDraftCommandSchema.parse({...command,stagedAllocations:[command.stagedAllocations[0],command.stagedAllocations[0]]})).toThrow(/unique/i);
     expect(()=>validateRoutePolicyEligibility({...ADMIN_ROUTE_POLICY_FIXTURE,stagedAllocations:[{providerId:"unknown-provider",allocationBps:0}]},{catalogPlatforms:["x"],manifests})).toThrow("Unknown Provider");

@@ -4,32 +4,21 @@ import { CircuitPolicySchema } from "@tikdd/routing-health";
 import { OperationalDiagnosticsRepository, RolloutRuleRepository, createDatabasePool } from "@tikdd/persistence";
 import {
   DLPandaProvider,
+  ProviderCanaryConfigSchema,
   ProviderRouter,
   SSSTwitterProvider,
-  TwitterSaverProvider
+  TwitterSaverProvider,
+  type ProviderCircuitKey,
+  type ResolverProvider
 } from "@tikdd/providers";
 import { RedisRolloutStore, RuntimeProviderRolloutSource } from "@tikdd/rollout-control";
 import { RedisCircuitStore, RedisProviderRoutingHealthSource } from "@tikdd/routing-health";
 import Redis from "ioredis";
-import { z } from "zod";
 import { loadCanarySchedulerConfiguration } from "./configuration";
 import { RedisCanaryLease } from "./lease";
 import { runCanaries } from "./runner";
 
-export const CanaryFileSchema = z.object({
-  version: z.literal(2),
-  authorization: z.object({
-    assertedBy: z.string().min(1),
-    assertedAt: z.iso.date(),
-    scope: z.string().min(1)
-  }),
-  canaries: z.array(z.object({
-    id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    provider: z.enum(["twittersaver", "dlpanda", "ssstwitter"]),
-    platform: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    url: z.string().url()
-  })).min(1)
-});
+export const CanaryFileSchema = ProviderCanaryConfigSchema;
 
 export async function executeCanaryRun() {
   const configuration = loadCanarySchedulerConfiguration();
@@ -54,24 +43,28 @@ export async function executeCanaryRun() {
   );
   const circuits = new RedisCircuitStore(redis);
   const admissionStore = new RedisAdmissionStore(redis, admission.policy);
-  const router = new ProviderRouter(
-    [
-      new TwitterSaverProvider({ enabled: true }),
-      new SSSTwitterProvider({ enabled: true }),
-      new DLPandaProvider({ enabled: true })
-    ],
-    {
+  const providers: ResolverProvider[] = [
+    new TwitterSaverProvider({ enabled: true }),
+    new SSSTwitterProvider({ enabled: true }),
+    new DLPandaProvider({ enabled: true })
+  ];
+  const routerOptions = {
       region: configuration.region,
       maxAttempts: 4,
-      production: true,
+      production: false,
       rolloutSource: rollout,
       healthSource: new RedisProviderRoutingHealthSource(circuits, healthPolicy),
-      concurrencySource: { acquire: (key) => admissionStore.acquireProvider(key) }
-    }
-  );
+      concurrencySource: { acquire: (key: ProviderCircuitKey) => admissionStore.acquireProvider(key) }
+    } as const;
+  const router = new ProviderRouter(providers, routerOptions);
+  const providerRouters = new Map(providers.map((provider) => [
+    provider.manifest.id,
+    new ProviderRouter([provider], { ...routerOptions, maxAttempts: 1 })
+  ]));
   const summary = await runCanaries({
     definitions: config.canaries,
     router,
+    routerForProvider: (providerId) => providerRouters.get(providerId) ?? null,
     repository: new OperationalDiagnosticsRepository(pool),
     leaseSource: new RedisCanaryLease(redis, configuration.deployment),
     configuration

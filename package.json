@@ -78,6 +78,9 @@
     "verify:work-item-12:residue": "node scripts/verify-work-item-12-residue.mjs",
     "verify:work-item-12": "node scripts/verify-work-item-12.mjs",
     "test:provider-capability-routing": "vitest run packages/contracts/test/provider-operational-contracts.test.ts packages/platform/test/detect-platform.test.ts packages/providers/test/provider-router.test.ts packages/providers/test/x-routing-contract.test.ts packages/providers/test/site-adapters.test.ts apps/worker/test/platform-consistency.test.ts packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/read-service.test.ts apps/admin-api/test/route-policy-service.test.ts apps/admin/test/admin-api-client.test.ts apps/admin/test/console-model.test.ts",
+    "test:work-item-13": "vitest run packages/contracts/test/provider-operational-contracts.test.ts packages/platform/test/detect-platform.test.ts packages/providers/test/provider-router.test.ts packages/route-policy/test/route-policy.test.ts packages/admin-contracts/test/admin-contracts.test.ts packages/persistence/test/owner-control-plane-migration.test.ts apps/admin-api/test/route-policy-service.test.ts apps/admin-api/test/read-service.test.ts apps/admin/test/console-model.test.ts",
+    "test:work-item-13-canary": "vitest run packages/providers/test/canary-config.test.ts apps/canary/test/runner.test.ts",
+    "verify:work-item-13": "node scripts/verify-work-item-13.mjs",
     "verify:work-item-11-5": "node scripts/verify-work-item-11-5.mjs",
     "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs"
   },

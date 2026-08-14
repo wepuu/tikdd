@@ -119,7 +119,7 @@ function RouteNode({ route, selected, onSelect }: { route: AdminRouteSummary; se
       <span className="route-order">{route.preferencePosition ?? "·"}</span>
       <span className="route-name"><strong>{route.providerDisplayName}</strong><small>{route.providerKind}</small></span>
       <span className="route-state"><StatusDot state={route.state} />{stateLabels[route.state]}</span>
-      <span className="route-metrics"><span>分配<b>{formatRate(route.allocationBps)}</b></span><span>成功率<b>{formatRate(route.successRateBps)}</b></span><span>P95<b>{formatLatency(route.p95LatencyMs)}</b></span></span>
+      <span className="route-metrics"><span>首选分流<b>{formatRate(route.trafficShareBps)}</b></span><span>准入<b>{formatRate(route.allocationBps)}</b></span><span>P95<b>{formatLatency(route.p95LatencyMs)}</b></span></span>
     </button>
   );
 }
@@ -133,7 +133,7 @@ function RouteInspector({ snapshot, summary }: { snapshot: AdminConsoleSnapshot;
     <aside className="route-inspector" aria-label="精确路线详情">
       <header><div><p className="eyebrow">EXACT ROUTE</p><h3>{summary.providerDisplayName}</h3><span>{summary.tuple.platform.toUpperCase()} · {summary.tuple.region} · {summary.tuple.providerId}</span></div><span className={`state-pill state-${summary.state}`}><StatusDot state={summary.state} />{stateLabels[summary.state]}</span></header>
       <div className="inspector-metrics">
-        <article><small>有效分配</small><strong>{formatRate(summary.allocationBps)}</strong><span>rollout r{summary.rolloutRevision ?? "—"}</span></article>
+        <article><small>有效分配</small><strong>{formatRate(summary.allocationBps)}</strong><span>{summary.verificationStatus.replaceAll("_", " ")} · rollout r{summary.rolloutRevision ?? "—"}</span></article>
         <article><small>成功率</small><strong>{formatRate(summary.successRateBps)}</strong><span>{formatCount(summary.sampleCount)} 个样本</span></article>
         <article><small>P95 延迟</small><strong>{formatLatency(summary.p95LatencyMs)}</strong><span>最近聚合窗口</span></article>
         <article><small>熔断</small><strong>{summary.circuitState === "half_open" ? "半开" : summary.circuitState === "closed" ? "闭合" : summary.circuitState === "open" ? "开启" : "未知"}</strong><span>{formatTime(summary.observedAt)}</span></article>
@@ -261,7 +261,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
                   </div>
                   <div className="route-table-wrap">
                     <div className="mini-heading"><strong>所有精确路线</strong><span>{visibleRoutes.length} 条匹配</span></div>
-                    <div className="table-scroller"><table><thead><tr><th>Provider</th><th>平台 / 区域</th><th>状态</th><th>分配</th><th>成功率</th><th>P95</th><th>样本</th></tr></thead><tbody>{visibleRoutes.map((route) => <tr className={routeKey(route) === routeKey(selectedSummary ?? route) ? "selected-row" : ""} key={routeKey(route)} onClick={() => selectRoute(route)}><td><button type="button" onClick={() => selectRoute(route)}>{route.providerDisplayName}</button></td><td>{route.tuple.platform.toUpperCase()} / {route.tuple.region}</td><td><span className={`table-state state-${route.state}`}><StatusDot state={route.state} />{stateLabels[route.state]}</span></td><td>{formatRate(route.allocationBps)}</td><td>{formatRate(route.successRateBps)}</td><td>{formatLatency(route.p95LatencyMs)}</td><td>{formatCount(route.sampleCount)}</td></tr>)}</tbody></table></div>
+                    <div className="table-scroller"><table><thead><tr><th>Provider</th><th>平台 / 区域</th><th>状态</th><th>首选分流</th><th>准入</th><th>成功率</th><th>P95</th><th>样本</th></tr></thead><tbody>{visibleRoutes.map((route) => <tr className={routeKey(route) === routeKey(selectedSummary ?? route) ? "selected-row" : ""} key={routeKey(route)} onClick={() => selectRoute(route)}><td><button type="button" onClick={() => selectRoute(route)}>{route.providerDisplayName}</button></td><td>{route.tuple.platform.toUpperCase()} / {route.tuple.region}</td><td><span className={`table-state state-${route.state}`}><StatusDot state={route.state} />{stateLabels[route.state]}</span></td><td>{formatRate(route.trafficShareBps)}</td><td>{formatRate(route.allocationBps)}</td><td>{formatRate(route.successRateBps)}</td><td>{formatLatency(route.p95LatencyMs)}</td><td>{formatCount(route.sampleCount)}</td></tr>)}</tbody></table></div>
                   </div>
                 </div>
                 <RouteInspector snapshot={snapshot} summary={selectedSummary} />

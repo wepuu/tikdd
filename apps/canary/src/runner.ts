@@ -25,6 +25,7 @@ export interface CanaryRunSummary {
 export async function runCanaries(input: {
   definitions: readonly CanaryDefinition[];
   router: ProviderRouter;
+  routerForProvider?: (providerId: string) => ProviderRouter | null;
   repository: OperationalDiagnosticsRepository;
   leaseSource: { acquire(ttlMs: number): Promise<{ release(): Promise<void> } | null> };
   configuration: CanarySchedulerConfiguration;
@@ -58,9 +59,11 @@ export async function runCanaries(input: {
       let attemptCount = 0;
       let status: "succeeded" | "failed" = "failed";
       try {
+        const router = input.routerForProvider?.(definition.provider) ?? input.router;
+        if (!router) throw new Error("The requested canary Provider is unavailable.");
         const detected = detectPlatform(definition.url);
         if (detected.platform !== definition.platform) throw new Error("Canary platform mismatch.");
-        const routed = await input.router.resolve({
+        const routed = await router.resolve({
           taskId: `tsk_${randomUUID().replaceAll("-", "")}`,
           sourceUrl: definition.url,
           canonicalUrl: detected.canonicalUrl,

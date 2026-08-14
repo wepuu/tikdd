@@ -13,6 +13,7 @@
 - [ADR-0011: Password-authenticated owner console](0011-password-authenticated-owner-console.md)
 - [ADR-0012: Provider capability matrix and platform-aware production routing](0012-provider-capability-matrix-and-platform-aware-routing.md)
 - [ADR-0013: Bounded owner settings and known-snapshot recovery](0013-bounded-owner-settings-and-snapshot-recovery.md)
+- [ADR-0014: Provider capability evidence and deterministic traffic distribution](0014-provider-capability-evidence-and-deterministic-traffic-distribution.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

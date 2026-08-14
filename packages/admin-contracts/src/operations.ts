@@ -1,4 +1,4 @@
-import { PlatformIdSchema, ProviderDeliveryModeSchema, ProviderKindSchema, RegionIdSchema } from "@tikdd/contracts";
+import { PlatformIdSchema, ProviderCapabilityVerificationStatusSchema, ProviderDeliveryModeSchema, ProviderKindSchema, RegionIdSchema } from "@tikdd/contracts";
 import { z } from "zod";
 import {
   AdminDeploymentIdSchema,
@@ -70,9 +70,11 @@ export const AdminRouteSummarySchema = z.strictObject({
   manifestEnabled: z.boolean(),
   basePriority: z.number().int().min(0).max(1_000),
   deliveryModes: z.array(ProviderDeliveryModeSchema).max(3),
+  verificationStatus: ProviderCapabilityVerificationStatusSchema,
   productionEligible: z.boolean(),
   preferencePosition: z.number().int().positive().max(64).nullable(),
   allocationBps: RateBpsSchema,
+  trafficShareBps: RateBpsSchema,
   state: AdminOperationalStateSchema,
   rolloutRevision: AdminRevisionSchema.nullable(),
   policyRevision: AdminRevisionSchema.nullable(),
@@ -136,6 +138,7 @@ export const AdminProviderProjectionSchema = z.strictObject({
         platform: PlatformIdSchema,
         basePriority: z.number().int().min(0).max(1_000),
         deliveryModes: z.array(ProviderDeliveryModeSchema).max(3),
+        verificationStatus: ProviderCapabilityVerificationStatusSchema,
         productionEligible: z.boolean()
       })
     )

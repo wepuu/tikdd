@@ -43,7 +43,7 @@ export const providers: AdminProviderList = {
     regions: ["nl"],
     timeoutMs: 12_000,
     costWeight: 10,
-    capabilities: [{ platform: "x", basePriority: 900, deliveryModes: ["redirect"], productionEligible: true }]
+    capabilities: [{ platform: "x", basePriority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified", productionEligible: true }]
   }]
 };
 

@@ -42,6 +42,13 @@ describe("owner control-plane migration", () => {
     expect(migration).not.toMatch(/source_url|canonical_url|target_url|download_url|task_id|candidate_id|format_id|ticket_id|cookie|headers|provider_payload|raw_payload/);
   });
 
+  it("adds bounded first-choice traffic shares without storing request data",async()=>{
+    const migration=await readFile(new URL("../../../infra/migrations/0018_provider_traffic_shares.sql",import.meta.url),"utf8");
+    expect(migration).toContain("traffic_shares JSONB NOT NULL");
+    expect(migration).toContain("jsonb_array_length(traffic_shares) <= 16");
+    expect(migration).not.toMatch(/source_url|canonical_url|target_url|download_url|task_id|cookie|headers/);
+  });
+
   it("adds versioned platform presentation fields without making host rules mutable",async()=>{
     const migration=await readFile(new URL("../../../infra/migrations/0013_platform_presentation_controls.sql",import.meta.url),"utf8");
     expect(migration).toContain("public_display_name TEXT");

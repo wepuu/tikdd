@@ -9,14 +9,31 @@ export const RuntimeRoutePolicySchema = z.strictObject({
   region: RegionIdSchema,
   policyRevision: z.number().int().positive(),
   orderedProviderIds: z.array(ProviderIdSchema).max(16),
+  trafficShares: z.array(z.strictObject({
+    providerId: ProviderIdSchema,
+    shareBps: z.number().int().positive().max(10_000)
+  })).max(16).default([]),
   concurrencyCaps: z.array(z.strictObject({
     providerId: ProviderIdSchema,
     limit: z.number().int().positive().max(1_000)
   })).max(16)
+}).superRefine((policy, context) => {
+  const ids = policy.trafficShares.map(({ providerId }) => providerId);
+  if (new Set(ids).size !== ids.length) {
+    context.addIssue({ code: "custom", message: "Traffic-share Provider IDs must be unique.", path: ["trafficShares"] });
+  }
+  if (policy.trafficShares.length > 0 && policy.trafficShares.reduce((sum, item) => sum + item.shareBps, 0) !== 10_000) {
+    context.addIssue({ code: "custom", message: "Traffic shares must total exactly 10,000 basis points.", path: ["trafficShares"] });
+  }
+  for (const id of ids) {
+    if (!policy.orderedProviderIds.includes(id)) {
+      context.addIssue({ code: "custom", message: "Traffic-share Providers must be present in the manual order.", path: ["trafficShares"] });
+    }
+  }
 });
 
 export const RoutePolicySnapshotSchema = z.strictObject({
-  schemaVersion: z.literal("1"),
+  schemaVersion: z.literal("2"),
   revision: z.number().int().nonnegative(),
   generatedAt: z.iso.datetime({ offset: true }),
   policies: z.array(RuntimeRoutePolicySchema).max(2_000)
@@ -29,8 +46,8 @@ export interface ProviderPreferenceSource {
   get(platform: string, region: string): Promise<RuntimeRoutePolicy | null>;
 }
 
-const snapshotKey = "tikdd:route-policy:v1:snapshot";
-const changeChannel = "tikdd:route-policy:v1:changed";
+const snapshotKey = "tikdd:route-policy:v2:snapshot";
+const changeChannel = "tikdd:route-policy:v2:changed";
 const putScript = `
 -- tikdd:put-route-policy-snapshot
 local current = redis.call("GET", KEYS[1])

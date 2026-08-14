@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { detectPlatform, isSupportedPlatformUrl } from "../src/index";
+import { detectPlatform, isSupportedPlatformUrl, listPlatformDefinitions } from "../src/index";
+
+const retainedYtDlpPlatforms = [
+  ["https://9gag.com/gag/example", "9gag", "9gag.com"],
+  ["https://artist.bandcamp.com/track/example", "bandcamp", "bandcamp.com"],
+  ["https://www.bitchute.com/video/example", "bitchute", "bitchute.com"],
+  ["https://example.blogspot.com/2026/08/video.html", "blogger", "blogspot.com"],
+  ["https://www.buzzfeed.com/example/video", "buzzfeed", "buzzfeed.com"],
+  ["https://www.espn.com/video/clip?id=1", "espn", "espn.com"],
+  ["https://www.flickr.com/photos/example/1", "flickr", "flickr.com"],
+  ["https://www.imdb.com/video/vi1", "imdb", "imdb.com"],
+  ["https://imgur.com/example", "imgur", "imgur.com"],
+  ["https://www.kickstarter.com/projects/example/project", "kickstarter", "kickstarter.com"],
+  ["https://likee.video/example", "likee", "likee.video"],
+  ["https://www.linkedin.com/posts/example", "linkedin", "linkedin.com"],
+  ["https://www.loom.com/share/example", "loom", "loom.com"],
+  ["https://medal.tv/games/example/clips/example", "medal", "medal.tv"],
+  ["https://www.mixcloud.com/example/show", "mixcloud", "mixcloud.com"],
+  ["https://ok.ru/video/1", "odnoklassniki", "ok.ru"],
+  ["https://www.periscope.tv/example/1", "periscope", "periscope.tv"],
+  ["https://puhutv.com/example", "puhutv", "puhutv.com"],
+  ["https://rumble.com/example.html", "rumble", "rumble.com"],
+  ["https://example.substack.com/p/video", "substack", "substack.com"],
+  ["https://www.ted.com/talks/example", "ted", "ted.com"],
+  ["https://t.me/example/1", "telegram", "t.me"]
+] as const;
 
 describe("detectPlatform", () => {
   it.each([
@@ -24,6 +49,21 @@ describe("detectPlatform", () => {
   it("rejects host suffix spoofing", () => {
     expect(isSupportedPlatformUrl("https://youtube.com.attacker.example/watch?v=1")).toBe(false);
     expect(isSupportedPlatformUrl("https://x.com.attacker.example/user/status/1")).toBe(false);
+  });
+
+  it.each(retainedYtDlpPlatforms)("recognizes retained yt-dlp catalog URL %s as %s", (url, platform) => {
+    expect(detectPlatform(url).platform).toBe(platform);
+  });
+
+  it.each(retainedYtDlpPlatforms)("rejects spoofed retained yt-dlp host for %s", (_url, _platform, hostname) => {
+    expect(isSupportedPlatformUrl(`https://${hostname}.attacker.example/video/1`)).toBe(false);
+  });
+
+  it("keeps every retained yt-dlp addition planned and non-promotional", () => {
+    const catalog = new Map(listPlatformDefinitions().map((platform) => [platform.id, platform]));
+    for (const [, platform] of retainedYtDlpPlatforms) {
+      expect(catalog.get(platform)).toMatchObject({ status: "planned", source: "yt-dlp" });
+    }
   });
 
   it("rejects non-http schemes", () => {

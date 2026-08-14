@@ -42,11 +42,23 @@ export type ProviderKind = z.infer<typeof ProviderKindSchema>;
 export const ProviderDeliveryModeSchema = z.enum(["redirect", "proxy", "temporary-object"]);
 export type ProviderDeliveryMode = z.infer<typeof ProviderDeliveryModeSchema>;
 
+export const ProviderCapabilityVerificationStatusSchema = z.enum([
+  "unverified",
+  "fixture_verified",
+  "canary_failed",
+  "canary_verified",
+  "delivery_verified"
+]);
+export type ProviderCapabilityVerificationStatus = z.infer<
+  typeof ProviderCapabilityVerificationStatusSchema
+>;
+
 export const ProviderPlatformCapabilitySchema = z
   .strictObject({
     platform: PlatformIdSchema,
     priority: z.number().int().min(0).max(1000),
-    deliveryModes: z.array(ProviderDeliveryModeSchema).max(3)
+    deliveryModes: z.array(ProviderDeliveryModeSchema).max(3),
+    verificationStatus: ProviderCapabilityVerificationStatusSchema
   })
   .superRefine((capability, context) => {
     if (new Set(capability.deliveryModes).size !== capability.deliveryModes.length) {
@@ -54,6 +66,13 @@ export const ProviderPlatformCapabilitySchema = z
         code: "custom",
         message: `Duplicate delivery mode for ${capability.platform}.`,
         path: ["deliveryModes"]
+      });
+    }
+    if (capability.deliveryModes.length > 0 && capability.verificationStatus !== "delivery_verified") {
+      context.addIssue({
+        code: "custom",
+        message: `Deliverable capability ${capability.platform} must be delivery verified.`,
+        path: ["verificationStatus"]
       });
     }
   });

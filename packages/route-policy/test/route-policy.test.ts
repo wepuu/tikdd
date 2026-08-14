@@ -2,8 +2,8 @@ import type Redis from "ioredis";
 import { describe,expect,it } from "vitest";
 import { RedisRoutePolicyStore,RuntimeRoutePolicySource,RoutePolicySnapshotSchema } from "../src/index";
 
-const snapshot=(revision:number,generatedAt="2026-08-12T00:00:00.000Z")=>RoutePolicySnapshotSchema.parse({schemaVersion:"1",revision,generatedAt,
-  policies:[{platform:"x",region:"nl",policyRevision:2,orderedProviderIds:["ssstwitter","twittersaver"],concurrencyCaps:[{providerId:"ssstwitter",limit:2}]}]});
+const snapshot=(revision:number,generatedAt="2026-08-12T00:00:00.000Z")=>RoutePolicySnapshotSchema.parse({schemaVersion:"2",revision,generatedAt,
+  policies:[{platform:"x",region:"nl",policyRevision:2,orderedProviderIds:["ssstwitter","twittersaver"],trafficShares:[{providerId:"ssstwitter",shareBps:4000},{providerId:"twittersaver",shareBps:6000}],concurrencyCaps:[{providerId:"ssstwitter",limit:2}]}]});
 
 describe("route-policy runtime projection",()=>{
   it("publishes monotonically and does not let an older compiler replace a newer snapshot",async()=>{
@@ -20,5 +20,8 @@ describe("route-policy runtime projection",()=>{
     await expect(fresh.get("x","nl")).resolves.toMatchObject({orderedProviderIds:["ssstwitter","twittersaver"]});
     const stale=new RuntimeRoutePolicySource(new RedisRoutePolicyStore(empty),async()=>snapshot(4,"2026-08-11T00:00:00.000Z"),60_000,()=>new Date("2026-08-12T00:00:20.000Z"));
     await expect(stale.get("x","nl")).resolves.toBeNull();
+  });
+  it("rejects malformed traffic shares",()=>{
+    expect(()=>RoutePolicySnapshotSchema.parse({schemaVersion:"2",revision:1,generatedAt:"2026-08-12T00:00:00.000Z",policies:[{platform:"x",region:"nl",policyRevision:1,orderedProviderIds:["a","b"],trafficShares:[{providerId:"a",shareBps:5000}],concurrencyCaps:[]}]})).toThrow(/10,000/);
   });
 });
