@@ -3,11 +3,14 @@
 Private, same-origin browser API for the personal owner console defined by
 [ADR-0010](../../docs/architecture/adr/0010-owner-control-plane-routing-and-publication.md).
 
-## Current scope (through work item 12.9)
+## Current scope (through work item 12.10)
 
 - Loopback-only listener behind the reviewed Cloudflare Tunnel and Nginx boundary.
-- Cloudflare Access JWT verification by issuer, audience, signature, lifetime, and owner subject.
-- Independent Nginx origin-proof verification before trusting the Access assertion.
+- One PostgreSQL-backed administrator account with scrypt password verification.
+- Opaque Redis-backed sessions, bounded login throttling, credential-version revocation, and
+  fail-closed authentication when PostgreSQL or Redis is unavailable.
+- Independent origin-proof verification before accepting Admin BFF authentication or control-plane
+  requests; the proof never reaches the browser.
 - Exact Host/Origin and fetch-site checks, future mutation CSRF primitives, strict security headers,
   no-store, and noindex.
 - Sanitized overview, route, Provider, platform, runtime, locale, page, and SEO endpoints.
@@ -53,11 +56,15 @@ session digests and login throttling. Either store being unavailable fails close
 pnpm dev:admin-api
 ```
 
-Local direct requests must preserve the configured Admin Host. Work item 12.3 will connect the
-Admin frontend through its same-origin server boundary.
+Local direct requests must preserve the configured Admin Host. The Admin frontend connects through
+its same-origin server boundary and forwards the opaque session only from its server-side BFF.
 
 ## Verification
 
 Run `pnpm test:work-item-12-2`. The suite uses local keys and in-process requests only; it sends no
 Provider request and does not require Cloudflare. Production startup remains impossible unless the
 origin proof, HTTPS origin, and CSRF/command secrets are configured explicitly.
+
+For production deployment design, Admin API must remain loopback-only. Separate ordinary Docker
+containers do not share loopback; see `docs/work-item-16-deployment-design.md` for the proposed
+shared-network-namespace pattern. That proposal is not implemented until Phase B is approved.
