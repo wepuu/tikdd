@@ -146,6 +146,7 @@ services:
       - public_content_revalidation_secret
     networks:
       - data
+      - host-ingress
     depends_on:
       postgres:
         condition: service_healthy
@@ -183,6 +184,7 @@ services:
       - pilot_evidence_diagnostics_token
     networks:
       - data
+      - host-ingress
     depends_on:
       postgres:
         condition: service_healthy
@@ -516,6 +518,15 @@ networks:
       config:
         - subnet: ${TIKDD_DATA_SUBNET:-172.30.40.0/24}
           gateway: ${TIKDD_DATA_GATEWAY:-172.30.40.1}
+  host-ingress:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    ipam:
+      config:
+        - subnet: ${TIKDD_HOST_INGRESS_SUBNET:-172.30.42.0/24}
+          gateway: ${TIKDD_HOST_INGRESS_GATEWAY:-172.30.42.1}
   provider-egress:
     ipam:
       config:

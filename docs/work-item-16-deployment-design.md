@@ -88,9 +88,11 @@ validation must reject `0.0.0.0`, omitted host IPs and implicit public binds. Ng
 route the existing PHP site to its existing PHP-FPM target; TikDD neither containerizes PHP nor
 changes PHP-FPM ownership.
 
-Only two TikDD Docker networks are required:
+Three TikDD Docker networks are required after the native Docker 29 Gate B finding:
 
 - `data` (`internal: true`): PostgreSQL, Redis and their explicit consumers;
+- `host-ingress`: Web and API loopback publications. It defaults binds to `127.0.0.1` and disables
+  IP masquerading, so joining it does not grant general outbound internet access;
 - `provider-egress`: Worker, Canary, Delivery DNS validation and Admin API where its bounded Probe
   or Web-revalidation behavior needs normal host outbound access.
 
@@ -101,21 +103,21 @@ be decorative rather than a trust control.
 
 Exact Compose network membership is frozen as follows:
 
-| Service | `data` | `provider-egress` | Host publication |
-| --- | --- | --- | --- |
-| Web | yes | no | loopback Web port |
-| API | yes | no | loopback API port |
-| Worker | yes | yes | none |
-| Delivery | yes | yes, for public DNS validation | loopback Delivery port |
-| Admin API namespace | yes | yes, for fixed Web acknowledgement and explicitly authorized Probe | loopback Admin UI port only |
-| Admin | inherited from `admin-api` through `network_mode` | inherited | cannot declare its own publication |
-| Canary one-shot | yes | yes | none |
-| Evidence one-shot | yes | no | none |
-| Cleanup one-shot | yes | no | none |
-| Migration runner | yes | no | none |
-| Internal preflight | no | no | none |
-| PostgreSQL | yes | no | none |
-| Redis | yes | no | none |
+| Service | `data` | `host-ingress` | `provider-egress` | Host publication |
+| --- | --- | --- | --- | --- |
+| Web | yes | yes | no | loopback Web port |
+| API | yes | yes | no | loopback API port |
+| Worker | yes | no | yes | none |
+| Delivery | yes | no | yes, for public DNS validation | loopback Delivery port |
+| Admin API namespace | yes | no | yes, for fixed Web acknowledgement and explicitly authorized Probe | loopback Admin UI port only |
+| Admin | inherited from `admin-api` | inherited | inherited | cannot declare its own publication |
+| Canary one-shot | yes | no | yes | none |
+| Evidence one-shot | yes | no | no | none |
+| Cleanup one-shot | yes | no | no | none |
+| Migration runner | yes | no | no | none |
+| Internal preflight | no | no | no | none |
+| PostgreSQL | yes | no | no | none |
+| Redis | yes | no | no | none |
 
 Admin and Admin API remain separate containers/processes. Admin uses
 `network_mode: service:admin-api`; therefore the `admin-api` Compose service owns the shared network
@@ -510,10 +512,12 @@ authorization.
 
 ## ADR conclusion
 
-Selecting shared host cloudflared/Nginx, loopback-only Docker publications, two private Docker
-networks and immutable images does not change persistence authority, Provider selection, Delivery
-networking, Admin exposure or service ownership, so no new topology ADR is required. The approved
-shared Admin network namespace preserves ADR-0011's loopback invariant.
+Selecting shared host cloudflared/Nginx, loopback-only Docker publications, three purpose-specific
+Docker networks and immutable images does not change persistence authority, Provider selection,
+Delivery networking, Admin exposure or service ownership, so no new topology ADR is required. The
+`host-ingress` network is an implementation correction discovered on native Docker 29: it enables
+Web/API host publications without opening data or Provider egress. The approved shared Admin
+network namespace preserves ADR-0011's loopback invariant.
 
 Phase A.1 narrowly clarifies ADR-0011 to match the reviewed implementation: Nginx routes only to the
 Admin UI/BFF; the BFF sends `ADMIN_ORIGIN_PROOF` to the loopback Admin API. The proof is never a
