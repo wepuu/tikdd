@@ -5,11 +5,18 @@ This runbook implements Work Item 16 Phase B for the reviewed shared Ubuntu Serv
 or scheduler. The architecture contract remains
 [the Work Item 16 deployment design](work-item-16-deployment-design.md).
 
+> **Current C2 owner state (2026-08-30):** the old TikDD deployment described by the historical C1
+> audit has already been shut down and its runtime resources released. It must not be restored or
+> treated as a rollback target. The host still has shared PHP workloads; Nginx, PHP-FPM, MySQL and
+> host Redis remain protected. Original C1 measurements remain historical evidence; the newer C2
+> measurements in `work-item-16-production-staging.md` control deployment.
+
 ## 1. Ownership and prerequisites
 
-The audited NL VPS is the approved production target. It is shared with three existing PHP sites,
-including the legacy TikDD site. Host Nginx, PHP-FPM, MySQL, host Redis and required hosting-panel
-services are permanent shared infrastructure. TikDD Compose owns none of them and must not stop,
+The audited NL VPS is the approved production target. The owner reported one remaining PHP site;
+C2 host inspection found three active Nginx PHP site configurations, so all three are protected
+until the owner retires them explicitly. Host Nginx, PHP-FPM, MySQL, host Redis and required
+hosting-panel services are permanent shared infrastructure. TikDD Compose owns none of them and must not stop,
 restart, reconfigure, remove, prune or count their memory as reclaimable. Host systemd will own the
 shared `cloudflared` service after its separately approved Phase C2 installation.
 
@@ -190,6 +197,10 @@ filesystem. `/run/tikdd-redis` is a private `0700` tmpfs owned by that identity;
 only durable writable bind mount. Revalidate the image UID/GID before changing the pinned Redis
 digest.
 
+Docker Compose may implement local `configs` as bind mounts and ignore the requested executable
+mode. The Redis entrypoint and health-check configs are invoked explicitly through `/bin/sh`, so
+release archive extraction does not need to preserve executable bits for these mounted files.
+
 TikDD Redis coexists with host Redis. It has no host publication and must not share the host Redis
 configuration, credentials, persistence or lifecycle.
 
@@ -334,7 +345,7 @@ in generic cleanup, and never automatically delete the rollback release.
 
 `scripts/production-release.sh deploy` validates Compose, obtains `flock`, requires the stage gate,
 applies the backup-or-fresh-empty database gate, pulls immutable minimum-set images, starts each
-service in the reviewed order and runs internal preflight. It never starts Admin, stops legacy
+service in the reviewed order and runs internal preflight. It never starts Admin, stops shared PHP
 components, manages host MySQL/Redis/PHP/Nginx/cloudflared, creates rollout rules or grants Provider
 traffic. Nginx/Tunnel work remains a separate reviewed host action after coexistence is proven.
 
@@ -344,11 +355,10 @@ route-policy/audit history and evidence. It never runs reverse migrations. If th
 application is incompatible with the current schema, stop and use a forward fix or a coordinated
 database restoration under the owner-approved restore procedure.
 
-The legacy TikDD application remains the rollback path through initial staging and public ingress
-verification. After the new stack is proven, inventory legacy components and classify them. Only a
-component proven `legacy-TikDD-exclusive` may first be stopped, measured and regression-tested.
-Do not delete its source, data, configuration or service definition during the confidence period.
-MySQL, host Redis, shared PHP-FPM/Nginx/panel and unrelated sites are never eligible.
+The old TikDD application is not a rollback path: the owner shut it down and released its runtime
+before C2. Gate A/B rollback stops and removes only newly staged TikDD containers while preserving
+the new PostgreSQL and Redis data directories for investigation. MySQL, host Redis, shared
+PHP-FPM/Nginx/panel and unrelated sites are never eligible for rollback or reclamation.
 
 ## 11. Offline verification and troubleshooting
 
@@ -392,14 +402,13 @@ insufficient.
 ### Gate C — public ingress cutover
 
 Require systemd cloudflared, reviewed Tunnel/Nginx integration, regression success for every PHP
-site and TikDD route, and the intact legacy TikDD rollback path. Public 80/443 may remain open. Do
-not grant Provider allocation at this gate.
+site and TikDD route, plus a reviewed forward-fix/data-preserving rollback plan for the new stack.
+Public 80/443 may remain open. Do not grant Provider allocation at this gate.
 
 ### Gate D — legacy TikDD application retirement
 
-Require verified new TikDD and ingress, a recorded rollback state and component-by-component legacy
-classification. Stop only `legacy-TikDD-exclusive` resources, then re-measure RAM, swap, load, disk,
-all PHP sites, MySQL, host Redis and TikDD. Delete nothing during the initial confidence period.
+This historical C1 gate is superseded. The owner completed legacy TikDD retirement before C2, so
+there is no Gate D action and no authority to recreate the old deployment.
 
 Hold any gate on OOM, rapidly growing swap, sustained severe pressure, material PHP degradation,
 MySQL/host-Redis/PostgreSQL instability, repeated restarts or unacceptable load. Public 80/443 close
