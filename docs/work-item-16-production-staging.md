@@ -6,6 +6,10 @@ This record covers Phase C2 Gate A and the attempted Gate B on the approved Neth
 `magic` (`linux/amd64`) on 2026-08-30. It stops at Gate B. No Cloudflare/DNS/Nginx public cutover,
 firewall closure, Provider traffic, recurring job or Work Item 17 action was performed.
 
+The first two Gate B attempts and their data-preserving HOLD actions are retained below. The final
+reviewed retry at SHA `04fd7969d696571b2e90522a1127b33b01daa7fb` passed Gate B; see
+“Final reviewed retry” for the authoritative deployed state.
+
 The owner confirmed that the old TikDD deployment had already been shut down and its resources
 released. It was not restored or recreated. Although the owner expected one remaining PHP site,
 inspection found three active Nginx PHP site configurations, so all three were protected.
@@ -128,3 +132,83 @@ Before Gate C:
 
 Only after Gate B passes may a separate approval configure Cloudflare/Tunnel/public Nginx routes.
 Public DNS, ports 80/443, Provider traffic and Work Item 17 remain unchanged.
+
+## Final reviewed retry
+
+### Release and corrections
+
+PR #7 fixed native-Linux Redis config mounts by invoking the entrypoint and health-check scripts
+through `/bin/sh`. PR #8 added a dedicated host-ingress bridge after Docker 29 recorded, but did
+not activate, loopback publications for containers attached only to the internal data network.
+A bounded temporary probe proved that the new bridge publishes to loopback while
+`enable_ip_masquerade=false` prevents it from becoming general outbound egress. Probe resources
+were removed before deployment.
+
+- Final Git SHA: `04fd7969d696571b2e90522a1127b33b01daa7fb`.
+- Configuration revision: `c2-retry3-04fd7969-20260830`.
+- Release archive SHA-256: `adf204cf0925dd98d0ae84f91df4ea6a4db9e2505aa49a0d8f500b652cc14690`.
+- Deployed Compose SHA-256: `d4c4650cb77ff5b4d411e716ddb3a7fa586884c486efbd59784b9bacf28d0d80`.
+- Web: `ghcr.io/wepuu/tikdd-web@sha256:252dfb2e433bdd1d013f5a8c9251b3268e1112ce193a89788a2c395bd0d9b6ed`.
+- Service: `ghcr.io/wepuu/tikdd-service@sha256:95fda2f9effc23045666e2cd3967d1545736c181c4aa8cb2153dfad6f5954fca`.
+- Admin: `ghcr.io/wepuu/tikdd-admin@sha256:695dfdb963c01bd16f74e9efdbea257082f73b73c8c70e65a1aaa0c317387962`.
+
+The API initially failed closed because the generated host environment omitted the non-secret
+`PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID` while its independent token was present. The corrected
+production configuration uses `owner.tikdd`; the repository example already contained this key.
+
+### Final Gate A
+
+Gate A passed before and after pulling the final digests. The post-pull snapshot reported
+MemAvailable 1,758,628 KiB, swap used 448,252 KiB, one-minute load 1.36 and root disk available
+39,830,088 KiB. All protected PHP routes, Nginx, PHP-FPM, MySQL and host Redis remained healthy.
+Ports 3300/3301/3400/3402 were free before startup. The final networks are:
+
+- `data`: `172.30.40.0/24`, internal, PostgreSQL/Redis and explicit consumers only;
+- `provider-egress`: `172.30.41.0/24`, Worker/Delivery and approved operational consumers;
+- `host-ingress`: `172.30.42.0/24`, Web/API, loopback default binding, masquerading disabled.
+
+Secret-reader GID remains 1999. The migration-before-retry backup is
+`/var/backups/tikdd/pre-migration-75f76b20.dump`, SHA-256
+`26e5aecc1c7c362792c2c5d5643f4ded7d1e146b292b0c0d5237333ba26d42b7`; both checksum and
+`pg_restore --list` verification passed. No secret value was logged.
+
+### Final Gate B stages
+
+| Stage | Result | MemAvailable | Swap used | Load (1m) | Relevant observation |
+| --- | --- | ---: | ---: | ---: | --- |
+| B1 PostgreSQL | PASS | 1,755,600 KiB | 448,252 KiB | 0.95 | healthy, private 5432, backup verified |
+| B2 TikDD Redis | PASS | 1,761,316 KiB | 448,252 KiB | 0.88 | authenticated PONG, private 6379, 128 MiB maxmemory |
+| B3 migration | PASS | 1,762,360 KiB | 448,252 KiB | 1.05 | migrations 0001–0018 idempotent; six runtime roles verified |
+| B4 API | PASS | 1,507,856 KiB | 448,252 KiB | 0.76 | healthy; `127.0.0.1:3400` |
+| B5 Delivery | PASS | 1,458,824 KiB | 448,276 KiB | 0.60 | healthy; `127.0.0.1:3402`; no media request |
+| B6 Worker | PASS | 1,306,536 KiB | 468,572 KiB | 0.61 | healthy; all Provider/rollout/Canary gates disabled |
+| B7 Web | PASS | 1,182,256 KiB | 478,548 KiB | 0.69 | healthy seed content; `127.0.0.1:3300` |
+
+The final bounded stabilization samples all passed. The third gate reported MemAvailable
+1,212,064 KiB, swap used 439,068 KiB, one-minute load 0.43 and disk available 40,264,536 KiB.
+All six containers had zero restarts and remained healthy. No OOM event was recorded after the C2
+baseline. The three protected PHP-site baselines, MySQL, host Redis, PHP-FPM and Nginx passed after
+every material stage.
+
+PostgreSQL and TikDD Redis have no host publication. Web, API and Delivery are bound only to
+`127.0.0.1`. Admin and Admin API remain stopped; neither 3301 nor 4100 listens. The observed API
+socket peer through loopback forwarding was exactly `172.30.42.1`, validating the narrow
+`TRUSTED_PROXY_CIDRS=172.30.42.1/32` value.
+
+### Internal preflight and traffic boundary
+
+The first preflight invocation rejected an incomplete `{}` operational-signal object at schema
+validation. It was rerun with truthful complete signals. The resulting fail-closed report passed
+9 checks and blocked 8: deployment scope/Provider manifests/runtime rollout were disabled,
+Provider reachability was intentionally not probed, Cleanup/Evidence freshness was absent, and
+emergency-deny propagation was not measured. It issued no attestation.
+
+This blocked X production-evidence decision is expected and does not invalidate application
+coexistence. It prevents Provider traffic. The production task count remained zero; no Provider,
+media or Canary request occurred.
+
+**Final Gate B: PASS — initial shared-host coexistence verified.**
+
+No public Cloudflare Tunnel, DNS, Nginx route, firewall 80/443 change, Provider allocation,
+scheduler or Work Item 17 action was performed. The old TikDD deployment was not recreated.
+Gate C remains a separate owner-approved phase.
