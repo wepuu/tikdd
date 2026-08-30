@@ -97,6 +97,8 @@ export function verifyWorkItem16Static() {
   assert(/TIKDD_REQUIRED_SECRET_ENV_VARS/.test(secretEntrypoint) && !/echo.*value/i.test(secretEntrypoint), "The fail-closed secret bootstrap is missing or unsafe.");
   assert(/group_add:\r?\n    - \$\{TIKDD_SECRETS_GID:-1999\}/.test(compose), "Application containers need the reviewed supplemental secret GID.");
   assert(/user: "999:1000"/.test(blocks.redis), "TikDD Redis must run as the pinned non-root image identity.");
+  assert(/entrypoint: \["\/bin\/sh", "\/usr\/local\/bin\/tikdd-redis-entrypoint"\]/.test(blocks.redis), "TikDD Redis must not depend on ignored Compose config executable modes.");
+  assert(/test: \["CMD", "\/bin\/sh", "\/usr\/local\/bin\/tikdd-redis-healthcheck"\]/.test(blocks.redis), "TikDD Redis health checks must not depend on ignored Compose config executable modes.");
   assert(/read_only: true/.test(blocks.redis), "TikDD Redis needs a read-only root filesystem.");
   assert(/group_add:\r?\n      - \$\{TIKDD_SECRETS_GID:-1999\}/.test(blocks.redis), "TikDD Redis needs the supplemental secret-reader GID.");
   assert(/\/run\/tikdd-redis:rw,noexec,nosuid,size=16m,uid=999,gid=1000,mode=0700/.test(blocks.redis), "TikDD Redis needs a private writable runtime tmpfs.");

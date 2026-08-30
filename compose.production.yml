@@ -84,9 +84,10 @@ services:
     environment:
       REDIS_PASSWORD_FILE: /run/secrets/redis_password
       TIKDD_REDIS_MAXMEMORY: ${TIKDD_REDIS_MAXMEMORY:-128mb}
-    entrypoint: ["/usr/local/bin/tikdd-redis-entrypoint"]
+    # Local configs may be bind-mounted without the requested executable mode.
+    entrypoint: ["/bin/sh", "/usr/local/bin/tikdd-redis-entrypoint"]
     healthcheck:
-      test: ["CMD", "/usr/local/bin/tikdd-redis-healthcheck"]
+      test: ["CMD", "/bin/sh", "/usr/local/bin/tikdd-redis-healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 10
