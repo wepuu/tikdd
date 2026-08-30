@@ -5,6 +5,8 @@ x-application-base: &application-base
     - ${TIKDD_PRODUCTION_ENV_FILE:-deploy/production.env.example}
   init: true
   read_only: true
+  group_add:
+    - ${TIKDD_SECRETS_GID:-1999}
   security_opt:
     - no-new-privileges:true
   cap_drop:
@@ -499,7 +501,15 @@ services:
 networks:
   data:
     internal: true
-  provider-egress: {}
+    ipam:
+      config:
+        - subnet: ${TIKDD_DATA_SUBNET:-172.30.40.0/24}
+          gateway: ${TIKDD_DATA_GATEWAY:-172.30.40.1}
+  provider-egress:
+    ipam:
+      config:
+        - subnet: ${TIKDD_PROVIDER_EGRESS_SUBNET:-172.30.41.0/24}
+          gateway: ${TIKDD_PROVIDER_EGRESS_GATEWAY:-172.30.41.1}
 
 configs:
   redis_entrypoint:

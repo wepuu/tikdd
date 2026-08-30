@@ -168,6 +168,25 @@ jobs, Nginx templates, immutable release/rollback tooling and an offline topolog
 host, Cloudflare, firewall, Provider, rollout or production migration action was performed. Work
 Item 17 scheduling and the X Production Evidence Gate remain pending.
 
+Phase C1 status (2026-08-30): a read-only audit of the actual NL host returned the historical
+classification `NOT READY FOR DEPLOYMENT`. Phase C1.1 fixes the remediation model without rewriting
+that result. The existing NL VPS is the approved target. Phase C2 uses staged coexistence and
+observed host-resource gates while preserving permanent shared MySQL, host Redis, shared
+Nginx/PHP-FPM/panel services and all existing websites. Another VPS, an 8 GB prerequisite, stopping
+MySQL or stopping host Redis are not Work Item 16 readiness requirements.
+
+Private TikDD PostgreSQL and TikDD Redis intentionally coexist with the permanent host datastores.
+Admin remains on demand and operational jobs remain one-shot. Only resources proven
+`legacy-TikDD-exclusive` may be stopped after new-stack and ingress verification; nothing is deleted
+during the initial rollback-confidence period. The first proven-empty PostgreSQL database may be
+initialized without existing off-host backup, after which encrypted off-host backup and restore
+testing are P0 production hardening.
+
+Phase C2 is gated separately: Gate A prepares containers, Gate B proves shared-host coexistence,
+Gate C performs Tunnel/Nginx ingress cutover while retaining the legacy TikDD rollback path, and
+Gate D stops only proven legacy-TikDD-exclusive resources. None of these gates grants Provider
+traffic or starts Work Item 17.
+
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
 

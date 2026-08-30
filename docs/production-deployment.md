@@ -7,19 +7,22 @@ or scheduler. The architecture contract remains
 
 ## 1. Ownership and prerequisites
 
-The host is shared with an existing PHP website. Host systemd owns `cloudflared`; host Nginx owns
-virtual-host routing and the existing PHP-FPM path. TikDD Compose owns neither process and must not
-replace `/etc/nginx/nginx.conf`, unrelated site files, PHP-FPM configuration, host firewall policy,
-or Cloudflare credentials.
+The audited NL VPS is the approved production target. It is shared with three existing PHP sites,
+including the legacy TikDD site. Host Nginx, PHP-FPM, MySQL, host Redis and required hosting-panel
+services are permanent shared infrastructure. TikDD Compose owns none of them and must not stop,
+restart, reconfigure, remove, prune or count their memory as reclaimable. Host systemd will own the
+shared `cloudflared` service after its separately approved Phase C2 installation.
 
 Required host software:
 
 - Ubuntu Server 24.04 LTS x86_64;
 - Docker Engine and the Compose v2 plugin;
 - `flock`, Git and an operator shell;
-- host Nginx and the infrastructure-owner-managed cloudflared service;
+- host Nginx; cloudflared is a Phase C2 host preparation prerequisite before ingress cutover;
 - access to immutable GHCR images, or a trusted `linux/amd64` build host;
-- an approved encrypted off-host PostgreSQL backup and restore procedure before migration.
+- a reviewed stage-verification command that checks host resources and every existing site;
+- either a verified backup hook for an existing TikDD PostgreSQL data directory or an explicit
+  one-time confirmation that the initial PostgreSQL directory is empty.
 
 Recommended host layout:
 
@@ -81,11 +84,18 @@ The template contains only non-secret values: region, deployment ID, public orig
 ports, image identities, datastore identifiers, bounded log/resource defaults and existing runtime
 flags. Public Web/API/Delivery origins are also build inputs and must match the built image receipt.
 
-Create `/etc/tikdd/secrets` with approximately mode `0700`. Secret files should be root-owned and
-approximately `0400`, while remaining readable by Docker's secret mount mechanism. Compose mounts
+Create a dedicated host group with the reviewed numeric GID `TIKDD_SECRETS_GID` (initial NL plan:
+`1999`). Use a root-owned, group-traversable `/etc/tikdd/secrets` directory, normally `0750`, and
+root-owned secret files readable only by that group, normally `0440`. Application containers receive
+the numeric GID only as a supplemental group and remain the unprivileged `node` user. Compose mounts
 only each service's required files under `/run/secrets`. `docker/secret-entrypoint.sh` accepts only a
 fixed allowlist, rejects missing/empty required files, exports the value immediately before `exec`,
 and never prints it.
+
+Phase C2 must prove native-Linux readability from each image before Gate A. Do not assume the Docker
+Desktop result proves host behavior, do not use world-readable files, and do not proceed if a
+container can read a secret it did not declare. PostgreSQL/Redis image UID ownership and datastore
+directory ownership require a separate one-shot permission check.
 
 Required files are listed by the `secrets` section of `compose.production.yml`. Important sharing:
 
@@ -131,10 +141,29 @@ normal Docker network address.
 
 The only Docker networks are `data` and `provider-egress`. `data` is internal and contains explicit
 PostgreSQL/Redis consumers. Only Worker, Delivery, Admin API and Canary join `provider-egress`.
+The audited NL plan reserves `172.30.40.0/24` (gateway `172.30.40.1`) for `data` and
+`172.30.41.0/24` (gateway `172.30.41.1`) for `provider-egress`. Recheck host routes immediately
+before creation. After API startup, confirm its actual socket peer before setting
+`TRUSTED_PROXY_CIDRS=172.30.40.1/32`; never trust a broad private range.
 Initial Provider qualification uses the normal deterministic NL IPv4 path; no proxy rotation,
 residential proxy, account cookie, alternate-region tunnel or challenge bypass is included.
 
 ## 5. PostgreSQL and Redis
+
+The shared host and TikDD datastore roles intentionally coexist.
+
+### Host MySQL
+
+Permanent shared infrastructure used by existing PHP sites. It remains running throughout every
+TikDD stage and is not a TikDD lifecycle or memory-reclamation target. TikDD does not reuse it.
+
+### Host Redis
+
+Permanent shared infrastructure used by existing websites/services. Its port, credentials,
+persistence, eviction policy and lifecycle remain unrelated to TikDD. It remains running and is
+not a reclamation target.
+
+### TikDD PostgreSQL
 
 PostgreSQL persists at `/var/lib/tikdd/postgres` by default and has no host port. Initial low-volume
 defaults are 30 maximum server connections, 128 MB shared buffers, 2 MB work memory and 32 MB
@@ -143,6 +172,11 @@ maintenance memory. Application pools default to four connections through
 starting values, not universal tuning recommendations. Measure connection use and memory before
 raising them.
 
+TikDD PostgreSQL coexists with host MySQL. An application-level legacy-data migration is a separate
+decision and must not be inferred merely because both databases exist.
+
+### TikDD Redis
+
 Redis persists AOF data at `/var/lib/tikdd/redis`, requires authentication, has no host port and
 starts with a 128 MB `maxmemory` ceiling plus `noeviction`. TikDD stores BullMQ jobs, sessions,
 leases, rate counters, circuits and policy projections in Redis. Silent eviction could violate
@@ -150,18 +184,27 @@ coordination and fail-closed behavior, so reaching the ceiling must fail writes 
 discard keys. PostgreSQL remains durable business authority, but Redis loss can strand queued work
 and must be operationally handled rather than treated as healthy data loss.
 
+TikDD Redis coexists with host Redis. It has no host publication and must not share the host Redis
+configuration, credentials, persistence or lifecycle.
+
 ## 6. Explicit migration and backup gate
 
 Applications never auto-migrate. A release must:
 
 1. acquire `/run/lock/tikdd-deploy.lock` with `flock`;
-2. verify the infrastructure-owner backup prerequisite through `TIKDD_BACKUP_VERIFY_COMMAND`;
-3. run `docker compose --profile ops run --rm migration` exactly once;
-4. stop the release on any nonzero result.
+2. run the shared-host baseline stage gate;
+3. use `TIKDD_BACKUP_VERIFY_COMMAND` for every non-empty PostgreSQL data directory; or, only for the
+   first empty database, require `TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true` and prove the target
+   directory contains no entry;
+4. run `docker compose --profile ops run --rm migration` exactly once;
+5. stop the release on any nonzero result.
 
-No off-host destination is selected by this repository. Real rollout remains blocked until the
-owner defines encrypted destination, retention, restore procedure and periodic restore-test policy.
-There is no automatic down migration and no claim of schema downgrade safety.
+Missing off-host backup does not block creation and migration of the first empty TikDD database.
+The confirmation is single-use: change it back to `false` immediately after initialization. Once
+production traffic can create data, off-host encrypted PostgreSQL backup is P0 hardening. The owner
+must then define destination, retention, schedule, restore procedure and periodic restore testing;
+the existing MySQL/site backup timer is unrelated evidence. There is no automatic down migration
+and no claim of schema downgrade safety.
 
 ## 7. Health, startup and manual operations
 
@@ -171,13 +214,34 @@ existing readiness endpoints. Worker uses `probe:production`, which performs bou
 private readiness endpoint; Admin checks both BFF and loopback API liveness. No health check calls a
 Provider.
 
-Start the fail-closed public foundation:
+`TIKDD_STAGE_VERIFY_COMMAND` is mandatory for `scripts/production-release.sh deploy`. It receives
+the current step through `TIKDD_STAGE` and must be a reviewed read-only executable. It checks
+available RAM, swap level and growth, load/CPU pressure, OOM events, container restarts, disk,
+PostgreSQL/TikDD Redis and the existing PHP/MySQL/host-Redis regression boundary. A nonzero result
+holds deployment with already-started TikDD services available for bounded diagnosis; it never
+stops a shared host service automatically.
+
+Start the fail-closed public foundation through the staged release command:
 
 ```sh
-docker compose --env-file /etc/tikdd/production.env -f compose.production.yml up -d postgres redis
-docker compose --env-file /etc/tikdd/production.env -f compose.production.yml --profile ops run --rm migration
-docker compose --env-file /etc/tikdd/production.env -f compose.production.yml up -d web api worker delivery
-docker compose --env-file /etc/tikdd/production.env -f compose.production.yml --profile admin up -d admin-api admin
+export TIKDD_STAGE_VERIFY_COMMAND=/usr/local/sbin/tikdd-stage-gate
+# Only for the first proven-empty PostgreSQL directory; otherwise export the reviewed backup hook.
+export TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh deploy
+```
+
+These release-control variables belong to the root operator environment, not the Compose
+`production.env` injected into application containers. Subsequent releases leave the empty-database
+confirmation unset/false and export `TIKDD_BACKUP_VERIFY_COMMAND` instead.
+
+The enforced order is baseline, image preparation, PostgreSQL, TikDD Redis, migration, API,
+Delivery, Worker, Web and preflight, with the stage gate after every significant step. Host MySQL,
+host Redis, shared PHP-FPM, Nginx and all existing sites remain online. Admin is excluded from the
+continuous deploy path and is started only when needed:
+
+```sh
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-start
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-stop
 ```
 
 Initialize or recover the single owner account interactively:
@@ -216,13 +280,20 @@ Install safely:
 4. reload Nginx only after validation;
 5. regression-test every existing PHP and non-TikDD site.
 
-Host cloudflared routes approved public hostnames to the shared loopback Nginx origin while
+Phase C2 installs and configures host-level, systemd-managed cloudflared; it is not part of TikDD
+Compose and its current absence does not reject the approved VPS. Host cloudflared routes approved
+public hostnames to the shared loopback Nginx origin while
 preserving the Host header for `server_name` routing. The cloudflared systemd lifecycle and Tunnel
 credential remain infrastructure-owned. During migration, existing public 80/443 behavior may stay
 available. Only after every shared website passes Tunnel verification may the infrastructure owner
 close public inbound 80/443. TikDD scripts make no firewall change.
 
 ## 9. Shared-host resources, logs and disk
+
+The audited host has 3.8 GiB RAM, approximately 1.5 GiB available and active swap use while shared
+MySQL, host Redis, about 30 PHP-FPM workers, Nginx, hosting-panel services and three PHP websites are
+running. The VPS remains the approved target and no 8 GB or RAM-upgrade prerequisite applies.
+Those permanent services remain in every capacity measurement.
 
 The example limits permit approximately 2.06 GiB for continuously resident TikDD containers at
 their hard ceilings: Web 384 MiB, API 320 MiB, Worker 384 MiB, Delivery 320 MiB, PostgreSQL 512 MiB
@@ -237,6 +308,12 @@ without Admin. The on-demand Admin BFF and Admin API added approximately 143 MiB
 bringing the complete smoke topology to about 1.03 GiB. These Windows/Docker Desktop observations
 support the initial ceilings but do not replace measurement on the shared NL host under traffic.
 
+Reclamation may be credited only after a component is proven `legacy-TikDD-exclusive`. Shared
+MySQL, host Redis, shared PHP-FPM, Nginx, the panel and unrelated sites never count as reclaimable.
+If pressure appears, keep Admin stopped, keep operational jobs one-shot, hold the stage and review
+TikDD-specific concurrency, connection pools and memory behavior. Do not tune or stop shared
+services to make TikDD fit.
+
 Docker's bounded local logging defaults to 20 MB × 5 files. Six continuous containers therefore
 have a theoretical rotated-log ceiling of about 600 MB; the on-demand Admin pair can add about
 200 MB while running. One-shot jobs should be removed after execution. Nginx, system, PHP,
@@ -249,17 +326,23 @@ in generic cleanup, and never automatically delete the rollback release.
 
 ## 10. Release and rollback
 
-`scripts/production-release.sh deploy` validates Compose and static boundaries, obtains `flock`,
-requires the owner-supplied backup verification hook, pulls immutable images, starts datastores,
-runs the migration once, starts applications and runs the internal preflight. A successful release
-does not create rollout rules or Provider traffic. Nginx installation/reload remains a separate
-reviewed host action after application health is proven.
+`scripts/production-release.sh deploy` validates Compose, obtains `flock`, requires the stage gate,
+applies the backup-or-fresh-empty database gate, pulls immutable minimum-set images, starts each
+service in the reviewed order and runs internal preflight. It never starts Admin, stops legacy
+components, manages host MySQL/Redis/PHP/Nginx/cloudflared, creates rollout rules or grants Provider
+traffic. Nginx/Tunnel work remains a separate reviewed host action after coexistence is proven.
 
 Rollback requires `TIKDD_ROLLBACK_ENV` pointing to the previous approved immutable image/config
 bundle and an explicit `TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED=true`. It preserves PostgreSQL data,
 route-policy/audit history and evidence. It never runs reverse migrations. If the previous
 application is incompatible with the current schema, stop and use a forward fix or a coordinated
 database restoration under the owner-approved restore procedure.
+
+The legacy TikDD application remains the rollback path through initial staging and public ingress
+verification. After the new stack is proven, inventory legacy components and classify them. Only a
+component proven `legacy-TikDD-exclusive` may first be stopped, measured and regression-tested.
+Do not delete its source, data, configuration or service definition during the confidence period.
+MySQL, host Redis, shared PHP-FPM/Nginx/panel and unrelated sites are never eligible.
 
 ## 11. Offline verification and troubleshooting
 
@@ -285,7 +368,38 @@ Troubleshooting order:
 6. rendered TikDD site diff and `nginx -t`;
 7. host cloudflared status, handled outside Compose.
 
-## 12. Work Item 17 boundary
+## 12. Phase C2 controlled cutover gates
+
+### Gate A — container staging
+
+Require the reviewed Phase B/C1.1 revision, a fresh host/PHP/MySQL/host-Redis baseline, healthy
+Docker, free loopback ports and subnets, proven Secret GID access, immutable images/digests and
+complete configuration. Shared MySQL and host Redis remain online.
+
+### Gate B — new-stack coexistence verification
+
+Require healthy TikDD PostgreSQL, TikDD Redis, API, Delivery, Worker and Web; healthy host MySQL,
+host Redis and every existing PHP site; no OOM or restart storm; acceptable measured pressure; and
+the trusted-proxy `/32` confirmed from actual API socket behavior. Green container health alone is
+insufficient.
+
+### Gate C — public ingress cutover
+
+Require systemd cloudflared, reviewed Tunnel/Nginx integration, regression success for every PHP
+site and TikDD route, and the intact legacy TikDD rollback path. Public 80/443 may remain open. Do
+not grant Provider allocation at this gate.
+
+### Gate D — legacy TikDD application retirement
+
+Require verified new TikDD and ingress, a recorded rollback state and component-by-component legacy
+classification. Stop only `legacy-TikDD-exclusive` resources, then re-measure RAM, swap, load, disk,
+all PHP sites, MySQL, host Redis and TikDD. Delete nothing during the initial confidence period.
+
+Hold any gate on OOM, rapidly growing swap, sustained severe pressure, material PHP degradation,
+MySQL/host-Redis/PostgreSQL instability, repeated restarts or unacceptable load. Public 80/443 close
+only in a later owner-approved firewall cutover after all hosted sites no longer need direct origin.
+
+## 13. Work Item 17 boundary
 
 Work Item 17 alone owns cron/timers, recurring execution, last/next-run state, freshness,
 missed-run detection, scheduling alerts and supervision. This foundation supplies only manually

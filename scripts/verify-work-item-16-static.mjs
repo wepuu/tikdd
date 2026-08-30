@@ -35,7 +35,14 @@ export function verifyWorkItem16Static() {
   const blocks = Object.fromEntries(allServices.map((name) => [name, serviceBlock(compose, name)]));
 
   assert(!/^  (?:nginx|cloudflared|scheduler|cron):/m.test(compose), "Host ingress or a scheduler leaked into TikDD Compose.");
-  assert(/^networks:\r?\n  data:\r?\n    internal: true\r?\n  provider-egress: \{\}/m.test(compose), "Only the reviewed data and provider-egress networks may exist.");
+  assert(/^networks:\r?\n  data:\r?\n    internal: true\r?\n    ipam:/m.test(compose), "The internal data network must declare stable IPAM.");
+  assert(/^  provider-egress:\r?\n    ipam:/m.test(compose), "The provider-egress network must declare stable IPAM.");
+  for (const binding of ["TIKDD_DATA_SUBNET", "TIKDD_DATA_GATEWAY", "TIKDD_PROVIDER_EGRESS_SUBNET", "TIKDD_PROVIDER_EGRESS_GATEWAY"]) {
+    assert(new RegExp(`^${binding}=`, "m").test(productionEnvironment), `${binding} is missing from production configuration.`);
+  }
+  assert(/^TIKDD_DATA_SUBNET=172\.30\.40\.0\/24$/m.test(productionEnvironment), "The reviewed NL data subnet changed unexpectedly.");
+  assert(/^TIKDD_PROVIDER_EGRESS_SUBNET=172\.30\.41\.0\/24$/m.test(productionEnvironment), "The reviewed NL egress subnet changed unexpectedly.");
+  assert(/^TRUSTED_PROXY_CIDRS=172\.30\.40\.1\/32$/m.test(productionEnvironment), "The candidate trusted proxy must be the exact reviewed data gateway.");
 
   const published = ["web", "api", "delivery", "admin-api"];
   for (const name of published) {
@@ -88,11 +95,28 @@ export function verifyWorkItem16Static() {
   assert(/pnpm install --prod --frozen-lockfile/.test(dockerfile), "Production dependencies must exclude the development toolchain.");
   assert(/USER node/g.test(dockerfile), "Application images must run as a non-root user.");
   assert(/TIKDD_REQUIRED_SECRET_ENV_VARS/.test(secretEntrypoint) && !/echo.*value/i.test(secretEntrypoint), "The fail-closed secret bootstrap is missing or unsafe.");
+  assert(/group_add:\r?\n    - \$\{TIKDD_SECRETS_GID:-1999\}/.test(compose), "Application containers need the reviewed supplemental secret GID.");
+  assert(/^TIKDD_SECRETS_GID=1999$/m.test(productionEnvironment), "The host secret GID contract is missing.");
 
   for (const name of ["web", "api", "worker", "delivery", "admin-api", "admin", "migration", "preflight", "canary", "evidence", "cleanup", "cleanup-dry-run"]) {
     assert(/^    secrets:/m.test(blocks[name]), `${name} is missing its explicit secret mount list.`);
   }
   assert(!/docker\s+system\s+prune|-a\s+--volumes/.test(releaseScript), "The release script contains destructive generic Docker cleanup.");
+  assert(/TIKDD_STAGE_VERIFY_COMMAND/.test(releaseScript), "Shared-host stage verification is not mandatory.");
+  assert(/TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED/.test(releaseScript), "The explicit fresh-empty database gate is missing.");
+  assert(/Fresh-empty confirmation cannot be used for a non-empty PostgreSQL data directory/.test(releaseScript), "Fresh initialization does not fail closed for existing data.");
+  const deployOrder = ["stage_service postgres", "stage_service redis", "stage_service api", "stage_service delivery", "stage_service worker", "stage_service web"];
+  let previous = -1;
+  for (const marker of deployOrder) {
+    const current = releaseScript.indexOf(marker);
+    assert(current > previous, `Incremental startup order is missing or invalid at ${marker}.`);
+    previous = current;
+  }
+  const deployCase = releaseScript.match(/  deploy\)\n([\s\S]*?)\n    ;;/)?.[1] ?? "";
+  assert(!/admin-api|admin-start|stage_service admin/.test(deployCase), "Admin must not start as part of the continuous deployment set.");
+  assert(!/systemctl/.test(releaseScript), "Release automation must not manage host systemd services.");
+  assert(!/^\s*service\s+(?:mysql|redis)(?:-server)?\b/m.test(releaseScript), "Release automation must not manage shared host datastores.");
+  assert(!/docker\s+(?:stop|rm)\b/.test(releaseScript), "Release automation must not use raw Docker lifecycle commands.");
 
   return { serviceCount: allServices.length, networkCount: 2, publishedServiceCount: 4 };
 }
