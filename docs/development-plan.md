@@ -1,17 +1,411 @@
 # TikDD development roadmap
 
-The current execution sequence continues in
-[the work item 11 implementation plan](work-item-11-implementation-plan.md): the verified X baseline
-and reproducible local Pilot launcher, real-journey audit, evidence ADR, and restrictive evidence
-evaluator, internal-preflight enforcement, and the consolidated CI baseline are complete. The
-Netherlands deployment scope and Provider use are confirmed; live runtime signals and real elapsed
-calibration remain before any staged traffic or broader platform expansion.
+- Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
+- Repository checkpoint: `main@416c0f1`
+- Roadmap revision date: 2026-08-30
 
-The roadmap grows platform coverage through measured provider capabilities rather than promising
-everything listed by an extractor project. A platform becomes indexable and advertised only after a
-production provider meets its reliability and policy threshold.
+This roadmap starts from the audited repository state, not from historical completion labels. TikDD
+already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
+SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-## Milestone 0 — Extensible foundation (current)
+The immediate production objective remains closure of the X production baseline. The repository has
+no `stable` platform catalog entries today. A recognized or planned catalog entry is therefore not
+a claim that TikDD can currently download from that platform.
+
+## Baseline classification
+
+### Completed engineering baseline
+
+- Decoupled Web, API, Worker, Delivery, Canary, evaluator, cleanup, Admin API, and Admin services.
+- Dynamic platform slugs with explicit Host recognition and spoofed-Host rejection.
+- Runtime-validated Provider manifests with per-platform priority, delivery modes, evidence state,
+  and region eligibility.
+- Sequential bounded fallback, typed error decisions, sanitized attempts, health aggregation,
+  circuits, restrictive guards, rollout controls, and deterministic first-choice traffic shares.
+- Two delivery-verified X adapters and redirect Delivery policies.
+- Password-authenticated owner Admin with route management, platform presentation, structured
+  content, locales, immutable publication snapshots, and technical SEO eligibility.
+- Work Item 13 generic capability-evidence and traffic-distribution baseline merged at `416c0f1`.
+
+### Unresolved production debt
+
+- The reviewed NL deployment region is inconsistent with the TwitterSaver and SSSTwitter Manifest
+  regions (`global` and `canary-global`).
+- The scheduled Canary configuration has no exact SSSTwitter/X tuple.
+- Production application deployment and recurring Canary/evaluator/cleanup supervision are not
+  represented in the repository.
+- Real deployment preflight, three-day calibration, policy review/lock, staged pilot, seven healthy
+  daily reviews, and final browser delivery verification remain incomplete.
+- `config/x-pilot-evidence.json` remains `pending`; deterministic CI cannot close this evidence.
+
+## Coordinated future lanes
+
+The lanes may progress concurrently only where their gates permit. Lane B can productize existing
+operations while Lane A gathers evidence. Lane C can prepare non-indexable content and feasibility
+research, but production activation and indexing remain downstream of Lane A and platform-specific
+qualification.
+
+### Lane A — Production Foundation
+
+Primary objective: close the existing X production-baseline debt without weakening Manifest,
+Delivery, rollout, or evidence boundaries.
+
+This lane owns:
+
+- Provider/deployment region consistency;
+- exact SSSTwitter/X scheduled Canary coverage;
+- reproducible application deployment;
+- recurring Canary, evaluator, and cleanup supervision;
+- real deployment preflight;
+- three-day internal calibration and policy review/lock;
+- staged X pilot and seven consecutive healthy reviews;
+- real owner/browser delivery-journey verification;
+- final evidence-backed production checkpoint.
+
+No additional platform may receive production traffic or `stable` promotion before this lane's X
+Production Evidence Gate closes.
+
+### Lane B — Platform Operations
+
+Primary objective: make existing qualification and operational truth understandable and usable by
+the single site owner.
+
+This lane owns:
+
+- graphical Provider/platform/region qualification journeys;
+- calibration proposal visibility and reviewed policy-lock workflow;
+- evidence sufficiency and freshness visibility;
+- deployment-region versus Manifest eligibility diagnostics;
+- scheduled-Canary coverage, last-run, freshness, and failure diagnostics;
+- platform support-truth presentation;
+- an operational readiness dashboard.
+
+Provider capabilities, Host and media policies, region eligibility, delivery modes, and platform
+Host rules remain code-reviewed boundaries. Admin may order, allocate, cap, pause, or deny within an
+existing capability. It must not become a second capability authority or qualification engine.
+
+### Lane C — Growth
+
+Primary objective: prepare high-quality localized acquisition content without publishing unsupported
+availability claims.
+
+This lane owns:
+
+- editorial preparation for platform landing pages;
+- explicit noindex pre-production page state;
+- fixed code-owned JSON-LD templates derived from validated published fields;
+- a controlled GEO/answer-oriented content model;
+- locale and interface-copy completeness;
+- content quality, review, and publication flow.
+
+The existing SEO eligibility system remains authoritative. Indexing continues to require all of:
+
+1. `stable` platform catalog state;
+2. qualified and monitored production routing for the deployment region;
+3. safe verified Delivery coverage;
+4. locale/content readiness;
+5. successful immutable publication eligibility.
+
+No second SEO eligibility system or arbitrary JSON-LD editor will be introduced.
+
+## Revised future Work Items
+
+### Work Item 14 — Project rebaseline
+
+Scope: documentation and roadmap alignment only.
+
+Deliverables:
+
+- establish `main@416c0f1` as the audited engineering checkpoint;
+- preserve the audit's distinction between completed code and missing operational evidence;
+- replace obsolete future-roadmap assumptions with the three coordinated lanes;
+- retain historical Work Item and Milestone context below;
+- record the stale Cloudflare Access wording in `apps/admin-api/README.md` as a documentation
+  cleanup item; ADR-0011 and password-authenticated runtime behavior remain authoritative.
+
+Exit: this roadmap and the current-state audit pass repository documentation checks and are reviewed
+as one documentation-only rebaseline. No runtime or production state changes are part of Work Item
+14.
+
+### Work Item 15 — X production configuration consistency
+
+Lane: A.
+
+Resolve the reviewed deployment-region versus Provider Manifest contradiction and configure an
+exact authorized SSSTwitter/X scheduled Canary tuple.
+
+Required outcomes:
+
+- select one consistent, reviewed concrete production-region model;
+- update only the code-owned Manifest/deployment boundary appropriate to that decision;
+- prove the Router sees both intended deliverable X Providers in the selected region;
+- add the exact authorized SSSTwitter/X Canary pairing and deterministic configuration tests;
+- make preflight validation detect future deployment/Manifest region contradictions.
+
+Admin must not expand a Provider capability or region. No traffic is enabled by this Work Item.
+
+### Work Item 16 — Production deployment foundation
+
+Lane: A.
+
+Add reproducible deployment for the current service architecture in the selected production
+environment. It must deploy the required application services rather than PostgreSQL and Redis only.
+
+The deployment design must preserve process/network separation, loopback/private Admin boundaries,
+Nginx/Cloudflare origin protection, secret isolation, production mock refusal, health/readiness
+checks, and rollback. Exact hosting substrate and process topology require an implementation-time
+decision based on the selected NL environment.
+
+Exit: a clean environment can reproducibly provision and start the reviewed public and private
+application processes without enabling public Provider allocation.
+
+### Work Item 17 — Scheduled operational services
+
+Lane: A, with read-model dependencies consumed by Lane B.
+
+Establish recurring production supervision for:
+
+- Canary;
+- evidence evaluator;
+- cleanup.
+
+Each service must expose sanitized last-run, next/expected-run, freshness, lease/singleton state,
+and bounded failure state. Missing or stale execution must fail readiness safely and must never be
+interpreted as healthy. Scheduling must reuse the existing application entry points and persistence
+models.
+
+Exit: restart-safe recurring execution and observable freshness are proven in the deployment
+environment without contacting any Provider outside exact authorized Canary tuples.
+
+### Work Item 18 — Qualification Admin productization
+
+Lane: B.
+
+Expose the existing qualification, calibration, policy, and evidence primitives as one coherent
+owner workflow.
+
+Required views/actions:
+
+- exact Provider/platform/region qualification state and prerequisites;
+- calibration window/sample completeness;
+- proposed policy values and evidence provenance;
+- explicit owner review and policy lock;
+- promotion/hold/deny eligibility and restrictive guard effects;
+- optimistic revision, idempotency, bounded reasons, and authoritative receipts.
+
+This Work Item must call the existing backend model. It must not create a second qualification
+engine, bypass approval/Manifest/Delivery gates, or allow automatic traffic grants.
+
+### Work Item 19 — Operational truth dashboard
+
+Lane: B.
+
+Present a single, explainable support ladder that distinguishes:
+
+- catalog recognition;
+- Provider resolution capability;
+- delivery verification;
+- scheduled-Canary status and freshness;
+- current runtime production availability;
+- platform lifecycle;
+- SEO/index eligibility.
+
+The dashboard must expose exclusion reasons such as region mismatch, no delivery mode, failed/stale
+Canary, missing rollout grant, restrictive guard, open circuit, and incomplete content. It must not
+show planned catalog breadth as downloadable support.
+
+Exit: the owner can answer “why is this platform unavailable or non-indexable?” from sanitized,
+authoritative projections without source-code inspection or direct database queries.
+
+## X Production Evidence Gate
+
+This is a real operational checkpoint, not an ordinary code-completion Work Item. It begins only
+after Work Items 15-17 provide a consistent deployed environment and current signals.
+
+Required evidence:
+
+1. at least three complete consecutive internal calibration days for each reviewed X
+   Provider/platform/region tuple;
+2. an evidence-backed proposal reviewed and locked as the active pilot policy;
+3. a bounded staged pilot under existing rollout and restrictive-guard controls;
+4. seven consecutive healthy daily evidence reviews with sufficient fresh samples;
+5. one real end-to-end owner/browser delivery verification under the intended production route;
+6. a final review reconciling deployment, approval, health, Delivery, policy, and product evidence.
+
+Deterministic CI, fixtures, a closed circuit, a successful isolated Canary, or a checked-in `ready`
+boolean cannot complete this gate. Missing/stale evidence holds or reduces traffic. Only the owner
+rollout action may grant or increase allocation.
+
+Exit: the evidence index can truthfully move from `pending` to complete for the exact reviewed X
+scope, and the production checkpoint is recorded without exposing private URLs or Provider data.
+
+### Work Item 20 — Instagram Provider feasibility
+
+Lane: B with Lane C preparation. May run during the X evidence window, but cannot enable Instagram
+production traffic, stable promotion, or indexing.
+
+Evaluate authorized Provider candidates using exact reviewed test tuples. Cover adapter feasibility,
+normalized errors, region behavior, delivery feasibility, challenge behavior, request bounds, and
+commercial/technical constraints. Reuse the existing platform catalog entry and Provider research
+boundary. Do not add a generic extractor or treat yt-dlp catalog presence as current availability.
+
+Exit: an evidence-backed go/no-go and selected Provider/delivery approach, or a documented decision
+that no safe candidate currently exists.
+
+### Work Item 21 — Instagram Provider adapter
+
+Lane: B.
+
+Implement the selected capability through the existing Provider architecture:
+
+- runtime-validated Manifest capability and per-platform priority;
+- explicit page Host and redirect/network bounds;
+- sanitized deterministic success/failure fixtures;
+- normalized result and typed error decisions;
+- candidate-mode and delivery-host policy tests when delivery is approved;
+- production-disabled activation and exact region scope.
+
+Reuse the current contracts, Router, attempt ledger, health, rollout, Delivery, and evidence systems.
+Do not introduce an Instagram-specific task API or downloader architecture.
+
+### Work Item 22 — Instagram qualification
+
+Lane: B, gated by Work Item 21 and by the X Production Evidence Gate for any production allocation.
+
+Qualify exact Provider/Instagram/region tuples through the existing Canary, calibration, rollout,
+Delivery-outcome, circuit, and evidence system. Resolution-only proof may advance technical
+feasibility but cannot qualify production download delivery.
+
+Exit: the route has current reviewed delivery evidence and an operator-approved bounded rollout;
+catalog promotion remains a separate product decision after the required observation window.
+
+### Work Item 23 — Instagram landing page
+
+Lane: C. Target public route: `/instagram-downloader/`.
+
+Create the page through the existing platform-page schema, locale registry, structured editor,
+preview, immutable publication snapshot, and SEO passport. Editorial work may precede production
+qualification, but the page remains explicitly non-indexable and absent from sitemap/hreflang until
+the existing eligibility gate passes.
+
+Exit: reviewed localized content is publication-ready, and indexability is still derived rather than
+manually asserted.
+
+### Work Item 24 — Structured data foundation
+
+Lane: C.
+
+Implement fixed code-owned JSON-LD templates derived only from validated fields in the active
+published snapshot. Initial schema candidates are:
+
+- `SoftwareApplication`;
+- `FAQPage`;
+- `HowTo`;
+- `BreadcrumbList`.
+
+Templates must match visible content, page type, locale, canonical path, and eligibility. Admin may
+edit the validated source fields but cannot submit arbitrary JSON-LD, scripts, remote entities, or
+executable markup. This changes the public structured-data boundary and requires an ADR before
+implementation.
+
+### Work Item 25 — GEO content model
+
+Lane: C.
+
+Introduce a controlled answer-oriented platform-page model containing concise direct answers,
+limitations, review metadata, and a product-approved source/citation model. Extend the existing
+structured CMS and publication workflow rather than introducing a separate content store.
+
+The model must prevent mass-generated thin pages, unsupported availability claims, hidden fallback
+translations, and structured data that does not match visible content. The citation, review, and
+content-freshness semantics are a new product domain and require an ADR before persistence or public
+rendering changes.
+
+## Reusable platform launch pipeline
+
+Every platform after Instagram follows the same evidence path:
+
+```text
+Provider research
+  -> adapter
+  -> deterministic fixtures
+  -> exact scheduled Canary
+  -> tuple qualification
+  -> delivery verification
+  -> bounded rollout
+  -> stable platform promotion
+  -> localized landing page
+  -> indexing eligibility
+```
+
+The ordering is a gate sequence, not a promise that every researched platform will launch. A failed
+or challenged Provider may remain documented as technical evidence without receiving delivery,
+traffic, stable status, or an indexable page. Facebook, Pinterest, Reddit, Threads, and other future
+candidates reuse this process and the same normalized architecture.
+
+## Explicit duplication guard
+
+Future work must not recreate these existing systems:
+
+- Provider registry and capability model;
+- sequential bounded fallback engine;
+- deterministic first-choice traffic distribution;
+- health aggregation and circuit breakers;
+- rollout, restrictive guard, and emergency kill switch;
+- password-authenticated Admin application and Admin API;
+- graphical routing controls;
+- structured CMS, revisions, immutable publication, and recovery;
+- locale registry;
+- canonical, hreflang, robots, and sitemap generation;
+- stable-before-indexing gate;
+- public direct-link API;
+- generic media proxy.
+
+The last two are existing prohibited boundaries, not missing features. Future entries may extend or
+productize the other systems, but replacement requires explicit architecture review and an ADR.
+
+## Architectural invariants for future work
+
+1. Provider-specific payloads remain inside `packages/providers` and normalize through public
+   contracts.
+2. Platform IDs remain explicit catalog slugs with reviewed Host rules and spoofed-Host tests.
+3. Provider capabilities, priorities, network boundaries, region eligibility, delivery modes, and
+   platform Host rules remain code-owned.
+4. Fallback remains sequential, bounded, deadline-aware, and terminal-aware.
+5. Admin may narrow runtime policy but cannot invent Provider capability or network access.
+6. Automated controls may hold, reduce, or deny; they cannot grant or raise traffic.
+7. Delivery never becomes a generic proxy and every delivery target uses a reviewed Host policy.
+8. Public results never expose upstream URLs, credentials, cookies, headers, candidates, or
+   Provider-native payloads.
+9. Public Web consumes complete immutable published snapshots and never exposes drafts.
+10. Task, result, Admin, API, Delivery, and other private/dynamic pages remain non-indexable.
+11. Only stable, deliverable, monitored, localized, publication-eligible platform pages may be
+    indexed.
+12. Qualification, rollout, health, Delivery, platform lifecycle, and SEO eligibility remain
+    independent fail-closed gates.
+13. Mock and failure-injection Providers remain development-only and refuse production startup.
+
+## Roadmap decisions still requiring implementation evidence
+
+- The exact production hosting substrate and process topology for the selected NL environment are
+  not defined by the repository.
+- The production scheduler/supervisor technology for recurring services is not selected.
+- Work Item 15 must decide whether reviewed concrete deployment regions are added to Provider
+  Manifests or deployment naming is reconciled another way; Admin cannot decide this at runtime.
+- The exact authorized SSSTwitter/X scheduled-Canary input must be confirmed within the existing
+  provider/input authorization boundary.
+- The start date and sufficient sample thresholds for the real X evidence window cannot be inferred
+  from source control.
+- GEO citation/source requirements and content-review ownership need product decisions before Work
+  Item 25 persistence or UI design.
+
+## Historical roadmap context (preserved)
+
+The Milestone 0-6 text below records the architecture's original direction and is retained for
+traceability. It is not the authoritative current-state report. Completion and production-readiness
+claims must be interpreted through the rebaseline audit and the revised Work Items above.
+
+## Milestone 0 — Extensible foundation (historical)
 
 - Executable pnpm TypeScript monorepo with Web, API, worker, and delivery boundaries.
 - Dynamic platform slug contract and curated platform catalog seeded from common yt-dlp families.
