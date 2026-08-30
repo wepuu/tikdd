@@ -36,13 +36,17 @@ export function verifyWorkItem16Static() {
 
   assert(!/^  (?:nginx|cloudflared|scheduler|cron):/m.test(compose), "Host ingress or a scheduler leaked into TikDD Compose.");
   assert(/^networks:\r?\n  data:\r?\n    internal: true\r?\n    ipam:/m.test(compose), "The internal data network must declare stable IPAM.");
+  assert(/^  host-ingress:\r?\n    driver: bridge\r?\n    driver_opts:/m.test(compose), "The host-ingress network must be an explicit bridge.");
+  assert(/com\.docker\.network\.bridge\.host_binding_ipv4: "127\.0\.0\.1"/.test(compose), "Host ingress must default published ports to loopback.");
+  assert(/com\.docker\.network\.bridge\.enable_ip_masquerade: "false"/.test(compose), "Host ingress must not grant general outbound masquerading.");
   assert(/^  provider-egress:\r?\n    ipam:/m.test(compose), "The provider-egress network must declare stable IPAM.");
-  for (const binding of ["TIKDD_DATA_SUBNET", "TIKDD_DATA_GATEWAY", "TIKDD_PROVIDER_EGRESS_SUBNET", "TIKDD_PROVIDER_EGRESS_GATEWAY"]) {
+  for (const binding of ["TIKDD_DATA_SUBNET", "TIKDD_DATA_GATEWAY", "TIKDD_HOST_INGRESS_SUBNET", "TIKDD_HOST_INGRESS_GATEWAY", "TIKDD_PROVIDER_EGRESS_SUBNET", "TIKDD_PROVIDER_EGRESS_GATEWAY"]) {
     assert(new RegExp(`^${binding}=`, "m").test(productionEnvironment), `${binding} is missing from production configuration.`);
   }
   assert(/^TIKDD_DATA_SUBNET=172\.30\.40\.0\/24$/m.test(productionEnvironment), "The reviewed NL data subnet changed unexpectedly.");
+  assert(/^TIKDD_HOST_INGRESS_SUBNET=172\.30\.42\.0\/24$/m.test(productionEnvironment), "The reviewed NL host-ingress subnet changed unexpectedly.");
   assert(/^TIKDD_PROVIDER_EGRESS_SUBNET=172\.30\.41\.0\/24$/m.test(productionEnvironment), "The reviewed NL egress subnet changed unexpectedly.");
-  assert(/^TRUSTED_PROXY_CIDRS=172\.30\.40\.1\/32$/m.test(productionEnvironment), "The candidate trusted proxy must be the exact reviewed data gateway.");
+  assert(/^TRUSTED_PROXY_CIDRS=172\.30\.42\.1\/32$/m.test(productionEnvironment), "The candidate trusted proxy must be the exact reviewed host-ingress gateway.");
 
   const published = ["web", "api", "delivery", "admin-api"];
   for (const name of published) {
@@ -59,7 +63,7 @@ export function verifyWorkItem16Static() {
   assert(/^ADMIN_API_HOST=127\.0\.0\.1$/m.test(productionEnvironment), "Admin API must bind loopback in production configuration.");
 
   const expectedNetworks = {
-    postgres: ["data"], redis: ["data"], web: ["data"], api: ["data"],
+    postgres: ["data"], redis: ["data"], web: ["data", "host-ingress"], api: ["data", "host-ingress"],
     worker: ["data", "provider-egress"], delivery: ["data", "provider-egress"],
     "admin-api": ["data", "provider-egress"], migration: ["data"],
     canary: ["data", "provider-egress"], evidence: ["data"], cleanup: ["data"],
@@ -127,7 +131,7 @@ export function verifyWorkItem16Static() {
   assert(!/^\s*service\s+(?:mysql|redis)(?:-server)?\b/m.test(releaseScript), "Release automation must not manage shared host datastores.");
   assert(!/docker\s+(?:stop|rm)\b/.test(releaseScript), "Release automation must not use raw Docker lifecycle commands.");
 
-  return { serviceCount: allServices.length, networkCount: 2, publishedServiceCount: 4 };
+  return { serviceCount: allServices.length, networkCount: 3, publishedServiceCount: 4 };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

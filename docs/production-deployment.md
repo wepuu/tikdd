@@ -146,12 +146,15 @@ publication and the shared `data`/`provider-egress` namespace. Admin API binds
 `127.0.0.1:4100` inside that namespace. Port 4100 has no publication and is inaccessible through a
 normal Docker network address.
 
-The only Docker networks are `data` and `provider-egress`. `data` is internal and contains explicit
-PostgreSQL/Redis consumers. Only Worker, Delivery, Admin API and Canary join `provider-egress`.
+The Docker networks are `data`, `host-ingress` and `provider-egress`. `data` is internal and
+contains explicit PostgreSQL/Redis consumers. `host-ingress` is limited to Web and API, defaults
+published ports to loopback, and disables IP masquerading so it cannot become general egress.
+Only Worker, Delivery, Admin API and Canary join `provider-egress`.
 The audited NL plan reserves `172.30.40.0/24` (gateway `172.30.40.1`) for `data` and
-`172.30.41.0/24` (gateway `172.30.41.1`) for `provider-egress`. Recheck host routes immediately
-before creation. After API startup, confirm its actual socket peer before setting
-`TRUSTED_PROXY_CIDRS=172.30.40.1/32`; never trust a broad private range.
+`172.30.41.0/24` (gateway `172.30.41.1`) for `provider-egress`, plus `172.30.42.0/24` (gateway
+`172.30.42.1`) for `host-ingress`. Recheck host routes immediately before creation. After API
+startup, confirm its actual socket peer before accepting `TRUSTED_PROXY_CIDRS=172.30.42.1/32`;
+never trust a broad private range.
 Initial Provider qualification uses the normal deterministic NL IPv4 path; no proxy rotation,
 residential proxy, account cookie, alternate-region tunnel or challenge bypass is included.
 
