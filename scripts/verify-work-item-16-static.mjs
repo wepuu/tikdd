@@ -96,7 +96,14 @@ export function verifyWorkItem16Static() {
   assert(/USER node/g.test(dockerfile), "Application images must run as a non-root user.");
   assert(/TIKDD_REQUIRED_SECRET_ENV_VARS/.test(secretEntrypoint) && !/echo.*value/i.test(secretEntrypoint), "The fail-closed secret bootstrap is missing or unsafe.");
   assert(/group_add:\r?\n    - \$\{TIKDD_SECRETS_GID:-1999\}/.test(compose), "Application containers need the reviewed supplemental secret GID.");
+  assert(/user: "999:1000"/.test(blocks.redis), "TikDD Redis must run as the pinned non-root image identity.");
+  assert(/read_only: true/.test(blocks.redis), "TikDD Redis needs a read-only root filesystem.");
+  assert(/group_add:\r?\n      - \$\{TIKDD_SECRETS_GID:-1999\}/.test(blocks.redis), "TikDD Redis needs the supplemental secret-reader GID.");
+  assert(/\/run\/tikdd-redis:rw,noexec,nosuid,size=16m,uid=999,gid=1000,mode=0700/.test(blocks.redis), "TikDD Redis needs a private writable runtime tmpfs.");
+  assert(/cap_drop:\r?\n      - ALL/.test(blocks.redis), "TikDD Redis must drop Linux capabilities.");
   assert(/^TIKDD_SECRETS_GID=1999$/m.test(productionEnvironment), "The host secret GID contract is missing.");
+  assert(!/github\.com\/example\/tikdd/.test(dockerfile), "OCI source metadata must identify the reviewed repository.");
+  assert((dockerfile.match(/org\.opencontainers\.image\.source="https:\/\/github\.com\/wepuu\/tikdd"/g) ?? []).length === 3, "Every application image target needs the reviewed OCI source.");
 
   for (const name of ["web", "api", "worker", "delivery", "admin-api", "admin", "migration", "preflight", "canary", "evidence", "cleanup", "cleanup-dry-run"]) {
     assert(/^    secrets:/m.test(blocks[name]), `${name} is missing its explicit secret mount list.`);

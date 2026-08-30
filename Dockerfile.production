@@ -39,7 +39,7 @@ RUN mkdir -p /home/node/.cache/node \
 
 FROM production-dependencies AS service
 ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
-LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
 LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-service"
 USER node
@@ -48,7 +48,7 @@ CMD ["pnpm", "--filter", "@tikdd/api", "start"]
 
 FROM production-dependencies AS web
 ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
-LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
 LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-web"
 COPY --from=web-build --chown=node:node /workspace/apps/web/.next-web-production /workspace/apps/web/.next-web-production
@@ -58,7 +58,7 @@ CMD ["pnpm", "--filter", "@tikdd/web", "start"]
 
 FROM production-dependencies AS admin
 ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
-LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
 LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-admin"
 COPY --from=admin-build --chown=node:node /workspace/apps/admin/.next /workspace/apps/admin/.next
