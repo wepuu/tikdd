@@ -166,7 +166,7 @@ export class SSSTwitterProvider implements ResolverProvider {
       displayName: "SSSTwitter",
       kind: "site-adapter",
       enabled: options.enabled ?? false,
-      regions: ["global", "canary-global"],
+      regions: ["nl", "global", "canary-global"],
       timeoutMs: 18_000,
       costWeight: 15,
       platforms: [{ platform: "x", priority: 800, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]

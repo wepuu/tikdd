@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ProviderRolloutSource } from "@tikdd/rollout-control";
 import {
   ProviderRouter,
   ProviderRoutingError,
@@ -27,6 +28,17 @@ const ssResult = `
     <h2>Authorized fallback fixture</h2>
     <a href="https://ssscdn.io/fixture/routing-720.mp4">Download MP4 720p</a>
   </section>`;
+const allowAllRollout: ProviderRolloutSource = {
+  async decide() {
+    return {
+      allowed: true,
+      reason: "allowed",
+      ruleId: "work-item-15-fixture",
+      snapshotRevision: 1,
+      bucket: 0
+    };
+  }
+};
 
 function response(body: string, url: string, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
@@ -77,11 +89,11 @@ function ssProvider(outcome: "success" | "retryable", calls: string[]): SSSTwitt
 }
 
 describe("production-shaped X routing contract", () => {
-  it("locks deterministic priority and reviewed global region", () => {
+  it("locks deterministic priority and reviewed concrete production/canary regions", () => {
     const twitter = twitterProvider("success", []);
     const ss = ssProvider("success", []);
-    expect(twitter.manifest.regions).toEqual(["global", "canary-global"]);
-    expect(ss.manifest.regions).toEqual(["global", "canary-global"]);
+    expect(twitter.manifest.regions).toEqual(["nl", "global", "canary-global"]);
+    expect(ss.manifest.regions).toEqual(["nl", "global", "canary-global"]);
     expect(twitter.manifest.platforms).toEqual([{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]);
     expect(ss.manifest.platforms).toEqual([{ platform: "x", priority: 800, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]);
   });
@@ -102,10 +114,10 @@ describe("production-shaped X routing contract", () => {
 
   it("falls back sequentially after a retryable primary failure", async () => {
     const calls: string[] = [];
-    const routed = await new ProviderRouter([
-      ssProvider("success", calls),
-      twitterProvider("retryable", calls)
-    ]).resolve(input);
+    const routed = await new ProviderRouter(
+      [ssProvider("success", calls), twitterProvider("retryable", calls)],
+      { region: "nl", production: true, rolloutSource: allowAllRollout }
+    ).resolve(input);
 
     expect(routed.resolution.result.provenance.provider).toBe("ssstwitter");
     expect(calls).toEqual([
@@ -117,6 +129,20 @@ describe("production-shaped X routing contract", () => {
       ["twittersaver", "provider_unavailable"],
       ["ssstwitter", null]
     ]);
+    expect(routed.attempts.every(({ region }) => region === "nl")).toBe(true);
+  });
+
+  it("does not turn nl Manifest eligibility into a production traffic grant", async () => {
+    const calls: string[] = [];
+    const router = new ProviderRouter(
+      [ssProvider("success", calls), twitterProvider("success", calls)],
+      { region: "nl", production: true }
+    );
+
+    await expect(router.resolve(input)).rejects.toMatchObject({
+      failureCode: "provider_unavailable"
+    });
+    expect(calls).toEqual([]);
   });
 
   it("stops on a terminal primary result without consulting the secondary", async () => {

@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { ProviderManifestSchema, type ProviderManifest } from "@tikdd/contracts";
 import { z } from "zod";
 
 const SlugSchema = z.string().min(1).max(100).regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/);
@@ -101,9 +102,52 @@ function equalSets(left: readonly string[], right: readonly string[]): boolean {
   return [...left].sort().join("\0") === [...right].sort().join("\0");
 }
 
-export function evaluateInternalPreflight(input: { plan: unknown; runtime: unknown; signals: unknown; now?: Date }): InternalPreflightReport {
+function providerCapabilityReason(
+  providerId: string,
+  platform: string,
+  region: string,
+  manifests: readonly ProviderManifest[]
+): { pass: boolean; reason: string } {
+  const matches = manifests.filter((manifest) => manifest.id === providerId);
+  if (matches.length !== 1) {
+    return {
+      pass: false,
+      reason: matches.length === 0
+        ? `provider_manifest_missing:${providerId}`
+        : `provider_manifest_duplicate:${providerId}`
+    };
+  }
+
+  const manifest = matches[0]!;
+  if (!manifest.enabled) {
+    return { pass: false, reason: `provider_manifest_disabled:${providerId}` };
+  }
+  const capability = manifest.platforms.find((item) => item.platform === platform);
+  if (!capability) {
+    return { pass: false, reason: `provider_capability_missing:${providerId}:${platform}` };
+  }
+  if (!manifest.regions.includes("*") && !manifest.regions.includes(region)) {
+    return {
+      pass: false,
+      reason: `deployment_region_not_admitted:${providerId}:${platform}:${region}`
+    };
+  }
+  if (
+    capability.verificationStatus !== "delivery_verified" ||
+    capability.deliveryModes.length === 0
+  ) {
+    return {
+      pass: false,
+      reason: `provider_delivery_not_eligible:${providerId}:${platform}`
+    };
+  }
+  return { pass: true, reason: `delivery_capability_admits_region:${providerId}:${platform}:${region}` };
+}
+
+export function evaluateInternalPreflight(input: { plan: unknown; runtime: unknown; signals: unknown; manifests: unknown; now?: Date }): InternalPreflightReport {
   const plan = InternalPreflightPlanSchema.parse(input.plan); const runtime = InternalRuntimeSchema.parse(input.runtime);
   const signals = OperationalSignalsSchema.parse(input.signals); const now = input.now ?? new Date();
+  const manifests = z.array(ProviderManifestSchema).parse(input.manifests);
   const checks: z.infer<typeof CheckSchema>[] = [];
   const add = (id: string, pass: boolean, reason: string) =>
     checks.push(CheckSchema.parse({ id, status: pass ? "pass" : "block", reason }));
@@ -113,6 +157,19 @@ export function evaluateInternalPreflight(input: { plan: unknown; runtime: unkno
   for (const provider of plan.providerUse) {
     const pass = provider.termsConfirmed && provider.productionUseConfirmed;
     add(`provider_use:${provider.providerId}`, pass, pass ? "confirmed" : "not_confirmed");
+  }
+  if (plan.scope.region !== null) {
+    for (const providerId of plan.scope.providers) {
+      const capability = providerCapabilityReason(
+        providerId,
+        plan.scope.platform,
+        plan.scope.region,
+        manifests
+      );
+      add(`provider_capability:${providerId}`, capability.pass, capability.reason);
+    }
+  } else {
+    add("provider_capabilities", false, "deployment_region_missing");
   }
   const runtimeSafe = runtime.nodeEnv === "production" && !runtime.mockEnabled && runtime.providerApprovalsPresent && runtime.rolloutEnabled && !runtime.developmentBypass && runtime.admissionEnabled && runtime.deliverySecretPresent && runtime.rolloutSecretPresent && runtime.admissionSecretPresent && runtime.diagnosticsCredentialPresent && runtime.evidenceDiagnosticsCredentialPresent;
   add("runtime_boundaries", runtimeSafe, runtimeSafe ? "fail_closed_controls_enabled" : "runtime_boundary_missing");

@@ -5,6 +5,7 @@ import {
   InternalPreflightPlanSchema, OperationalSignalsSchema, evaluateInternalPreflight,
   issueInternalPreflightAttestation, loadInternalRuntime
 } from "@tikdd/deployment-preflight";
+import { loadPreflightProviderManifests } from "./provider-manifests";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const planPath = resolve(repositoryRoot, process.env.TIKDD_INTERNAL_PREFLIGHT_PLAN_PATH ?? "config/x-internal-preflight.json");
@@ -14,7 +15,8 @@ try { rawSignals = JSON.parse(process.env.TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON 
 catch { throw new Error("TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON must contain valid JSON."); }
 const signals = OperationalSignalsSchema.parse(rawSignals);
 const runtime = loadInternalRuntime();
-const report = evaluateInternalPreflight({ plan, runtime, signals });
+const manifests = loadPreflightProviderManifests(runtime.enabledProviders);
+const report = evaluateInternalPreflight({ plan, runtime, signals, manifests });
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 if (report.decision !== "ready") process.exitCode = 2;
 else {

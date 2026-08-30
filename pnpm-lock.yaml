@@ -213,6 +213,9 @@ importers:
       '@tikdd/deployment-preflight':
         specifier: workspace:*
         version: link:../../packages/deployment-preflight
+      '@tikdd/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
 
   apps/web:
     dependencies:
@@ -337,6 +340,9 @@ importers:
 
   packages/deployment-preflight:
     dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       zod:
         specifier: ^4.0.0
         version: 4.4.3

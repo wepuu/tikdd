@@ -1,5 +1,11 @@
 # TikDD next implementation plan
 
+> Historical record: this plan captured the pre-rebaseline execution sequence through Work Items
+> 11 and 12. It is preserved for traceability and must not be used as the current delivery order.
+> The authoritative future sequence begins with Work Item 14 in the
+> [rebaselined development roadmap](development-plan.md), based on
+> [the current-state audit](project/current-state-audit.md).
+
 > Owner control-plane continuation: work items 12.7 through 12.9.1 are complete. The next implementation
 > slice is work item 12.10 (bounded settings and recovery tools), followed by the integrated work
 > item 12 gate in 12.11. See

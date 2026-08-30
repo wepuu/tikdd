@@ -5,11 +5,12 @@ page URL, the control plane creates an asynchronous task, and a worker routes th
 providers in priority order until one returns valid normalized metadata and formats. A separate
 delivery service turns reviewed internal candidates into controlled browser delivery.
 
-The current scaffold uses a development-only mock provider. TwitterSaver and DLPanda adapters have
-fixture coverage and bounded live canaries but remain disabled behind enablement and approval flags.
-TwitterSaver has a redirect-only pilot: candidate URLs remain encrypted server-side and an opaque,
-one-use ticket redirects only to its reviewed exact media host. Proxying, temporary files, and media
-downloads by TikDD remain disabled.
+The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
+delivery-verified X redirect capabilities; DLPanda has multi-platform resolution-only capabilities.
+All real adapters remain behind deployment enablement, approval, rollout, region, health, and
+delivery gates. Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only
+to reviewed exact media hosts. Proxying, temporary files, and media downloads by TikDD remain
+disabled.
 
 ## Architecture
 
@@ -23,18 +24,18 @@ Selected format -> delivery service -> redirect / controlled proxy / temporary o
 
 Start with [the architecture guide](docs/architecture/README.md),
 [platform catalog](docs/platform-catalog.md), [routing policy](docs/routing-policy.md), and
-[development roadmap](docs/development-plan.md). The immediate delivery order is in the
-[next implementation plan](docs/next-implementation-plan.md). Read the
+[rebaselined development roadmap](docs/development-plan.md). Earlier execution plans are retained as
+historical records. Read the
 [ADR index](docs/architecture/adr/README.md) before changing service boundaries.
 
-The owner control plane currently includes route policy, platform presentation, locale/content
-modeling, and the work item 12.7 publication proofing desk. Snapshot promotion is fail-closed: a
-candidate becomes active only after Web acknowledgement. See the
-[12.7 implementation record](docs/work-item-12-7-implementation.md).
+The password-authenticated owner control plane includes Provider routing, platform presentation,
+locale/content modeling, immutable publication, SEO eligibility, bounded settings, and snapshot
+recovery. Snapshot promotion is fail-closed: a candidate becomes active only after Web
+acknowledgement. See the [work item 12 baseline](docs/work-item-12-11-implementation.md).
 
 ## Platform and provider model
 
-The initial catalog recognizes 22 platform families, including TikTok, YouTube, X, Instagram,
+The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,
 Facebook, Vimeo, Dailymotion, Reddit, Twitch, SoundCloud, Bilibili, Douyin, Kuaishou, Pinterest, VK,
 Streamable, Tumblr, Weibo, Xiaohongshu/RedNote, Snapchat, Xigua, and Oasis. Recognition is not a production support promise: a platform is
 advertised as stable only when at least one reviewed, monitored provider meets its launch gate.

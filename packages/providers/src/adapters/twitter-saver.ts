@@ -74,7 +74,7 @@ export class TwitterSaverProvider implements ResolverProvider {
       displayName: "TwitterSaver",
       kind: "site-adapter",
       enabled: options.enabled ?? false,
-      regions: ["global", "canary-global"],
+      regions: ["nl", "global", "canary-global"],
       timeoutMs: 15_000,
       costWeight: 10,
       platforms: [{ platform: "x", priority: 900, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" }]

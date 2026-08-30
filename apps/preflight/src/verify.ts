@@ -3,15 +3,17 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { InternalPreflightPlanSchema, evaluateInternalPreflight, loadInternalRuntime } from "@tikdd/deployment-preflight";
+import { loadPreflightProviderManifests } from "./provider-manifests";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const plan = InternalPreflightPlanSchema.parse(JSON.parse(readFileSync(resolve(repositoryRoot, "config/x-internal-preflight.json"), "utf8")));
 const runtime = loadInternalRuntime({});
+const manifests = loadPreflightProviderManifests(runtime.enabledProviders);
 const report = evaluateInternalPreflight({ plan, runtime, signals: {
   postgresReady: false, redisReady: false, providerEgressReady: false, cleanupLastSucceededAt: null,
   evidenceLastSucceededAt: null, emergencyDenyPropagationMs: null, workerRestartFailClosed: false,
   deliveryExpiryFailClosed: false, manualRecoveryRequired: false
-}});
+}, manifests });
 assert.equal(report.decision, "blocked");
 assert.ok(report.verified.some((check) => check.id === "plan_status"));
 assert.ok(report.verified.some((check) => check.id === "provider_use:twittersaver"));

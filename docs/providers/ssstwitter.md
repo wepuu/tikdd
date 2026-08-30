@@ -6,14 +6,18 @@
 - Declared platform: `x`
 - Default state: disabled
 - Technical review: 2026-08-10
-- Test authorization: two exact `ssstwitter-x-authorized-001` runs asserted and consumed on
-  2026-08-10; future live runs require a new assertion
-- Production approval: not established; production enablement remains blocked
+- Test authorization: two exact `ssstwitter-x-authorized-001` runs were asserted and consumed on
+  2026-08-10; `ssstwitter-x-recurring-001` was authorized on 2026-08-30 for recurring bounded
+  scheduled Canary checks until explicit revocation or configuration removal
+- Production-use confirmation: recorded for the concrete `nl` deployment in
+  `config/x-internal-preflight.json`; production traffic remains blocked by independent runtime and
+  evidence gates
 
 ## Qualification state
 
 - Qualification tuple: `ssstwitter` / `x` / `global`
-- Reviewed routing regions: `global`, `canary-global`
+- Reviewed routing regions: `nl` (production), `global` (local/historical), `canary-global`
+  (isolated technical Canary)
 - X routing priority: 800 (secondary)
 - Lifecycle stage: `canary-ready`
 - Qualification owner: `project-owner`
@@ -34,7 +38,8 @@
 - Rate and concurrency: one bounded qualification request at a time; no production rate approved
 - Kill switch: adapter manifest and `ENABLE_SSSTWITTER_PROVIDER` default to false. Registration also
   requires `SSSTWITTER_TERMS_APPROVED=true` and
-  `SSSTWITTER_DELIVERY_AUDIT_APPROVED=true`; neither approval is currently established
+  `SSSTWITTER_DELIVERY_AUDIT_APPROVED=true`; the checked-in owner confirmation does not set these
+  deployment flags or grant rollout traffic
 
 ## Public workflow observed
 
@@ -50,9 +55,11 @@ private content, access challenges, or rate limits.
 
 ## Approval boundary
 
-The public site exposes privacy and about pages but no reviewed terms that grant automated
-production or commercial integration. Project-owner authorization permits only the configured
-technical canary. Production remains blocked until a separate approval is recorded.
+The public site exposes privacy and about pages but no external legal evidence is stored in this
+repository. The project owner has separately recorded terms and production-use confirmation for the
+concrete `nl` deployment in `config/x-internal-preflight.json`. That record admits the reviewed
+Manifest region only; production remains blocked until deployment flags, qualification, rollout,
+health, and evidence gates all allow the exact tuple.
 
 The adapter now has a code-level worker registration path, but it is fail-closed behind three
 explicit settings. It emits a public normalized result plus server-only delivery candidates; only
