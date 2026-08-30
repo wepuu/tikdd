@@ -7,6 +7,7 @@
     "dev": "tsx watch src/worker.ts",
     "start": "tsx src/worker.ts",
     "probe:readiness": "tsx src/probe-readiness.ts",
+    "probe:production": "tsx src/production-health.ts",
     "rollout:apply": "tsx src/apply-rollout-rule.ts",
     "verify:rollout-control": "tsx src/verify-rollout-control.ts",
     "verify:pilot-control": "tsx src/verify-pilot-control.ts",

@@ -28,6 +28,9 @@ Start with [the architecture guide](docs/architecture/README.md),
 historical records. Read the
 [ADR index](docs/architecture/adr/README.md) before changing service boundaries.
 
+The reproducible production foundation and shared-host operating boundary are documented in the
+[production deployment runbook](docs/production-deployment.md).
+
 The password-authenticated owner control plane includes Provider routing, platform presentation,
 locale/content modeling, immutable publication, SEO eligibility, bounded settings, and snapshot
 recovery. Snapshot promotion is fail-closed: a candidate becomes active only after Web

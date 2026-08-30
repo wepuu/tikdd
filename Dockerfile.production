@@ -1,0 +1,67 @@
+ARG NODE_IMAGE=node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8
+
+FROM ${NODE_IMAGE} AS node-base
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}:${PATH}
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+WORKDIR /workspace
+
+FROM node-base AS dependencies
+ENV NODE_ENV=development
+COPY . .
+RUN pnpm install --frozen-lockfile
+
+FROM dependencies AS web-build
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+ARG NEXT_PUBLIC_API_BASE_URL=https://api.example.invalid
+ARG NEXT_PUBLIC_DELIVERY_BASE_URL=https://delivery.example.invalid
+ARG SITE_URL=https://www.example.invalid
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV NEXT_PUBLIC_DELIVERY_BASE_URL=${NEXT_PUBLIC_DELIVERY_BASE_URL}
+ENV SITE_URL=${SITE_URL}
+RUN pnpm --filter @tikdd/web build
+
+FROM dependencies AS admin-build
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+ENV NODE_ENV=production
+ENV TIKDD_ADMIN_BUILD_ID=${TIKDD_GIT_SHA}
+RUN pnpm --filter @tikdd/admin build
+
+FROM node-base AS production-dependencies
+ENV NODE_ENV=production
+COPY . .
+RUN pnpm install --prod --frozen-lockfile && pnpm store prune
+RUN mkdir -p /home/node/.cache/node \
+    && cp -a /root/.cache/node/corepack /home/node/.cache/node/ \
+    && chown -R node:node /home/node/.cache \
+    && chmod 0555 /workspace/docker/secret-entrypoint.sh
+
+FROM production-dependencies AS service
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
+LABEL org.opencontainers.image.title="tikdd-service"
+USER node
+ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
+CMD ["pnpm", "--filter", "@tikdd/api", "start"]
+
+FROM production-dependencies AS web
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
+LABEL org.opencontainers.image.title="tikdd-web"
+COPY --from=web-build --chown=node:node /workspace/apps/web/.next-web-production /workspace/apps/web/.next-web-production
+USER node
+ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
+CMD ["pnpm", "--filter", "@tikdd/web", "start"]
+
+FROM production-dependencies AS admin
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+LABEL org.opencontainers.image.source="https://github.com/example/tikdd"
+LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
+LABEL org.opencontainers.image.title="tikdd-admin"
+COPY --from=admin-build --chown=node:node /workspace/apps/admin/.next /workspace/apps/admin/.next
+USER node
+ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
+CMD ["pnpm", "--filter", "@tikdd/admin", "start"]
