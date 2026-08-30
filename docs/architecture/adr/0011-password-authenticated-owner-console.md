@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-12
+- Trust-path clarification: 2026-08-30 (Work Item 16 Phase A.1)
 - Scope: work item 12.8.1
 - Supersedes: ADR-0010 section 2 identity-provider choice
 
@@ -26,8 +27,11 @@ variables.
 The local password boundary accepts 8-128 characters. Blank values, the normalized username, and
 maintained common weak passwords remain invalid.
 
-Cloudflare and Nginx remain transport and origin protections, not identity providers. Production
-requires an origin proof shared only by Nginx and Admin API. Admin API remains loopback-only.
+Cloudflare Tunnel and host Nginx remain transport and origin protections, not identity providers.
+Nginx routes the owner hostname only to the Admin UI/BFF. The server-side Admin BFF sends the
+production `ADMIN_ORIGIN_PROOF` on its fixed loopback requests to Admin API; Nginx does not generate
+or inject that proof, and the browser never receives it. Admin API remains loopback-only and has no
+host or public port publication.
 
 ## Consequences
 
