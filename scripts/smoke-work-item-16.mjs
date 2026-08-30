@@ -74,12 +74,17 @@ for (const name of ["provider_diagnostics_token", "pilot_evidence_diagnostics_to
 let succeeded = false;
 try {
   run("compose-config", ["--profile", "admin", "--profile", "ops", "--profile", "admin-ops", "config", "--quiet"]);
+  const topology = run("compose-rendered-topology", ["--profile", "admin", "--profile", "ops", "--profile", "admin-ops", "config"], { capture: true });
+  for (const expected of ["172.30.40.0/24", "172.30.40.1", "172.30.41.0/24", "172.30.41.1"]) {
+    if (!(topology.stdout ?? "").includes(expected)) throw new Error(`Rendered Compose topology is missing ${expected}.`);
+  }
   if (process.env.TIKDD_SMOKE_SKIP_BUILD !== "true") {
     run("image-build", ["--profile", "admin", "build", "web", "api", "admin"]);
   }
   run("datastores", ["up", "-d", "postgres", "redis"]);
   run("migration", ["--profile", "ops", "run", "--rm", "migration"]);
   run("public-services", ["up", "-d", "web", "api", "worker", "delivery"]);
+  run("secret-gid", ["exec", "-T", "web", "sh", "-c", "id -G | tr ' ' '\\n' | grep -qx 1999"]);
   run("admin-services", ["--profile", "admin", "up", "-d", "admin-api", "admin"]);
   run("health-wait", ["--profile", "admin", "up", "-d", "--wait", "web", "api", "worker", "delivery", "admin-api", "admin"]);
   run("cleanup-dry-run", ["--profile", "ops", "run", "--rm", "cleanup-dry-run"]);
