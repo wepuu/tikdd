@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "deploymentId": "tikdd",
+  "region": "nl",
+  "gitSha": "0000000000000000000000000000000000000000",
+  "configurationRevision": "example-not-approved",
+  "images": {
+    "web": "ghcr.io/example/tikdd-web@sha256:replace-with-published-digest",
+    "admin": "ghcr.io/example/tikdd-admin@sha256:replace-with-published-digest",
+    "service": "ghcr.io/example/tikdd-service@sha256:replace-with-published-digest",
+    "postgres": "postgres@sha256:replace-with-reviewed-digest",
+    "redis": "redis@sha256:replace-with-reviewed-digest"
+  },
+  "configurationSha256": "replace-with-sha256",
+  "nginxTemplateSha256": "replace-with-sha256",
+  "previousRelease": "replace-with-previous-release-manifest-path",
+  "backupReference": "infrastructure-owner-supplied",
+  "migration": {
+    "command": "docker compose --profile ops run --rm migration",
+    "status": "not-run"
+  }
+}

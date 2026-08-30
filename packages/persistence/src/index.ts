@@ -351,8 +351,13 @@ export function createDatabasePool(databaseUrl = process.env.DATABASE_URL): Pool
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required.");
   }
+  const configuredMaximum = process.env.TIKDD_DATABASE_POOL_MAX ?? "10";
+  const maximum = Number.parseInt(configuredMaximum, 10);
+  if (!/^\d+$/.test(configuredMaximum) || !Number.isInteger(maximum) || maximum < 1 || maximum > 20) {
+    throw new Error("TIKDD_DATABASE_POOL_MAX must be an integer between 1 and 20.");
+  }
 
-  return new Pool({ connectionString: databaseUrl, max: 10 });
+  return new Pool({ connectionString: databaseUrl, max: maximum });
 }
 
 export class TaskRepository {

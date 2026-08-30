@@ -1,0 +1,550 @@
+name: ${TIKDD_COMPOSE_PROJECT:-tikdd}
+
+x-application-base: &application-base
+  env_file:
+    - ${TIKDD_PRODUCTION_ENV_FILE:-deploy/production.env.example}
+  init: true
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  logging: &bounded-logging
+    driver: local
+    options:
+      max-size: ${TIKDD_LOG_MAX_SIZE:-20m}
+      max-file: ${TIKDD_LOG_MAX_FILES:-5}
+
+x-service-build: &service-build
+  context: .
+  dockerfile: Dockerfile.production
+  target: service
+  args:
+    NODE_IMAGE: ${TIKDD_NODE_IMAGE:-node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8}
+    TIKDD_GIT_SHA: ${TIKDD_GIT_SHA:-0000000000000000000000000000000000000000}
+    HTTP_PROXY: ${TIKDD_BUILD_HTTP_PROXY:-}
+    HTTPS_PROXY: ${TIKDD_BUILD_HTTPS_PROXY:-}
+    NO_PROXY: ${TIKDD_BUILD_NO_PROXY:-localhost,127.0.0.1,::1}
+
+services:
+  postgres:
+    image: ${TIKDD_POSTGRES_IMAGE:-postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_DB: ${TIKDD_POSTGRES_DB:-tikdd}
+      POSTGRES_USER: ${TIKDD_POSTGRES_USER:-tikdd}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    command:
+      - postgres
+      - -c
+      - max_connections=${TIKDD_POSTGRES_MAX_CONNECTIONS:-30}
+      - -c
+      - shared_buffers=${TIKDD_POSTGRES_SHARED_BUFFERS:-128MB}
+      - -c
+      - work_mem=${TIKDD_POSTGRES_WORK_MEM:-2MB}
+      - -c
+      - maintenance_work_mem=${TIKDD_POSTGRES_MAINTENANCE_WORK_MEM:-32MB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - type: bind
+        source: ${TIKDD_POSTGRES_DATA_DIR:-/var/lib/tikdd/postgres}
+        target: /var/lib/postgresql/data
+    secrets:
+      - postgres_password
+    networks:
+      - data
+    mem_limit: ${TIKDD_POSTGRES_MEMORY_LIMIT:-512m}
+    pids_limit: 128
+    logging: *bounded-logging
+
+  redis:
+    image: ${TIKDD_REDIS_IMAGE:-redis:7.4.5-alpine@sha256:bb186d083732f669da90be8b0f975a37812b15e913465bb14d845db72a4e3e08}
+    restart: unless-stopped
+    stop_grace_period: 20s
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      TIKDD_REDIS_MAXMEMORY: ${TIKDD_REDIS_MAXMEMORY:-128mb}
+    entrypoint: ["/usr/local/bin/tikdd-redis-entrypoint"]
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/tikdd-redis-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - type: bind
+        source: ${TIKDD_REDIS_DATA_DIR:-/var/lib/tikdd/redis}
+        target: /data
+    configs:
+      - source: redis_entrypoint
+        target: /usr/local/bin/tikdd-redis-entrypoint
+        mode: 0555
+      - source: redis_healthcheck
+        target: /usr/local/bin/tikdd-redis-healthcheck
+        mode: 0555
+    secrets:
+      - redis_password
+    networks:
+      - data
+    mem_limit: ${TIKDD_REDIS_MEMORY_LIMIT:-192m}
+    pids_limit: 64
+    logging: *bounded-logging
+
+  web:
+    <<: *application-base
+    image: ${TIKDD_WEB_IMAGE:-ghcr.io/example/tikdd-web:git-0000000000000000000000000000000000000000}
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: web
+      args:
+        NODE_IMAGE: ${TIKDD_NODE_IMAGE:-node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8}
+        TIKDD_GIT_SHA: ${TIKDD_GIT_SHA:-0000000000000000000000000000000000000000}
+        NEXT_PUBLIC_API_BASE_URL: ${TIKDD_API_PUBLIC_ORIGIN:-https://api.example.invalid}
+        NEXT_PUBLIC_DELIVERY_BASE_URL: ${TIKDD_DELIVERY_PUBLIC_ORIGIN:-https://delivery.example.invalid}
+        SITE_URL: ${TIKDD_WEB_PUBLIC_ORIGIN:-https://www.example.invalid}
+        HTTP_PROXY: ${TIKDD_BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${TIKDD_BUILD_HTTPS_PROXY:-}
+        NO_PROXY: ${TIKDD_BUILD_NO_PROXY:-localhost,127.0.0.1,::1}
+    restart: unless-stopped
+    stop_grace_period: 20s
+    environment:
+      PUBLIC_CONTENT_DATABASE_URL_FILE: /run/secrets/public_content_database_url
+      PUBLIC_CONTENT_REVALIDATION_SECRET_FILE: /run/secrets/public_content_revalidation_secret
+      TIKDD_REQUIRED_SECRET_ENV_VARS: PUBLIC_CONTENT_DATABASE_URL PUBLIC_CONTENT_REVALIDATION_SECRET
+    ports:
+      - 127.0.0.1:${TIKDD_WEB_HOST_PORT:-3300}:3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/internal/content/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    secrets:
+      - public_content_database_url
+      - public_content_revalidation_secret
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: ${TIKDD_WEB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  api:
+    <<: *application-base
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/api", "start"]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TASK_ADMISSION_HMAC_KEY_BASE64URL_FILE: /run/secrets/task_admission_hmac_key
+      PROVIDER_DIAGNOSTICS_TOKEN_FILE: /run/secrets/provider_diagnostics_token
+      PILOT_EVIDENCE_DIAGNOSTICS_TOKEN_FILE: /run/secrets/pilot_evidence_diagnostics_token
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL TASK_ADMISSION_HMAC_KEY_BASE64URL PROVIDER_DIAGNOSTICS_TOKEN PILOT_EVIDENCE_DIAGNOSTICS_TOKEN
+    ports:
+      - 127.0.0.1:${TIKDD_API_HOST_PORT:-3400}:4000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    secrets:
+      - source: api_database_url
+        target: database_url
+      - redis_url
+      - task_admission_hmac_key
+      - provider_diagnostics_token
+      - pilot_evidence_diagnostics_token
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_API_MEMORY_LIMIT:-320m}
+    pids_limit: 128
+
+  worker:
+    <<: *application-base
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/worker", "start"]
+    restart: unless-stopped
+    stop_grace_period: 45s
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      DELIVERY_ENCRYPTION_KEY_BASE64URL_FILE: /run/secrets/delivery_encryption_key
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
+      TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/preflight.attestation
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL DELIVERY_ENCRYPTION_KEY_BASE64URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+      TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
+    healthcheck:
+      test: ["CMD", "/workspace/docker/secret-entrypoint.sh", "pnpm", "--filter", "@tikdd/worker", "probe:production"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    secrets:
+      - source: worker_database_url
+        target: database_url
+      - redis_url
+      - delivery_encryption_key
+      - provider_rollout_cohort_key
+      - internal_preflight_hmac_key
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_WORKER_MEMORY_LIMIT:-384m}
+    pids_limit: 192
+
+  delivery:
+    <<: *application-base
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/delivery", "start"]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      DELIVERY_ENCRYPTION_KEY_BASE64URL_FILE: /run/secrets/delivery_encryption_key
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL DELIVERY_ENCRYPTION_KEY_BASE64URL
+    ports:
+      - 127.0.0.1:${TIKDD_DELIVERY_HOST_PORT:-3402}:4002
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4002/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    secrets:
+      - source: delivery_database_url
+        target: database_url
+      - delivery_encryption_key
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: ${TIKDD_DELIVERY_MEMORY_LIMIT:-320m}
+    pids_limit: 128
+
+  admin-api:
+    <<: *application-base
+    profiles: ["admin"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/admin-api", "start"]
+    restart: unless-stopped
+    stop_grace_period: 20s
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      ADMIN_CSRF_SECRET_FILE: /run/secrets/admin_csrf_secret
+      ADMIN_COMMAND_SECRET_FILE: /run/secrets/admin_command_secret
+      ADMIN_ORIGIN_PROOF_FILE: /run/secrets/admin_origin_proof
+      PUBLIC_CONTENT_REVALIDATION_SECRET_FILE: /run/secrets/public_content_revalidation_secret
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL ADMIN_CSRF_SECRET ADMIN_COMMAND_SECRET ADMIN_ORIGIN_PROOF PUBLIC_CONTENT_REVALIDATION_SECRET
+    ports:
+      - 127.0.0.1:${TIKDD_ADMIN_HOST_PORT:-3301}:3001
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4100/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    secrets:
+      - source: admin_database_url
+        target: database_url
+      - redis_url
+      - admin_csrf_secret
+      - admin_command_secret
+      - admin_origin_proof
+      - public_content_revalidation_secret
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_ADMIN_API_MEMORY_LIMIT:-384m}
+    pids_limit: 160
+
+  admin:
+    <<: *application-base
+    profiles: ["admin"]
+    image: ${TIKDD_ADMIN_IMAGE:-ghcr.io/example/tikdd-admin:git-0000000000000000000000000000000000000000}
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: admin
+      args:
+        NODE_IMAGE: ${TIKDD_NODE_IMAGE:-node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8}
+        TIKDD_GIT_SHA: ${TIKDD_GIT_SHA:-0000000000000000000000000000000000000000}
+        HTTP_PROXY: ${TIKDD_BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${TIKDD_BUILD_HTTPS_PROXY:-}
+        NO_PROXY: ${TIKDD_BUILD_NO_PROXY:-localhost,127.0.0.1,::1}
+    environment:
+      ADMIN_ORIGIN_PROOF_FILE: /run/secrets/admin_origin_proof
+      TIKDD_REQUIRED_SECRET_ENV_VARS: ADMIN_ORIGIN_PROOF
+    network_mode: service:admin-api
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "Promise.all([fetch('http://127.0.0.1:3001/api/admin/health'),fetch('http://127.0.0.1:4100/health/live')]).then(rs=>{if(rs.some(r=>!r.ok))process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    secrets:
+      - admin_origin_proof
+    mem_limit: ${TIKDD_ADMIN_MEMORY_LIMIT:-384m}
+    pids_limit: 160
+
+  migration:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "db:migrate"]
+    restart: "no"
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL
+    secrets:
+      - source: migration_database_url
+        target: database_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  preflight:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "preflight:internal"]
+    restart: "no"
+    network_mode: none
+    environment:
+      TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
+      TIKDD_REQUIRED_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_OUTPUT: /run/tikdd/preflight.attestation
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+    secrets:
+      - internal_preflight_hmac_key
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  canary:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "canary:run"]
+    restart: "no"
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL
+    secrets:
+      - source: ops_database_url
+        target: database_url
+      - redis_url
+      - provider_rollout_cohort_key
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  evidence:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "evidence:run"]
+    restart: "no"
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL
+    secrets:
+      - source: ops_database_url
+        target: database_url
+      - redis_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  cleanup:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "cleanup:run"]
+    restart: "no"
+    environment: &cleanup-environment
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL
+    secrets: &cleanup-secrets
+      - source: ops_database_url
+        target: database_url
+      - redis_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  cleanup-dry-run:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "cleanup:dry-run"]
+    restart: "no"
+    environment: *cleanup-environment
+    secrets: *cleanup-secrets
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  admin-account:
+    <<: *application-base
+    profiles: ["admin-ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "admin:account", "--help"]
+    restart: "no"
+    stdin_open: true
+    tty: true
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL
+    secrets:
+      - source: admin_database_url
+        target: database_url
+      - redis_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+networks:
+  data:
+    internal: true
+  provider-egress: {}
+
+configs:
+  redis_entrypoint:
+    file: ./docker/redis-entrypoint.sh
+  redis_healthcheck:
+    file: ./docker/redis-healthcheck.sh
+
+secrets:
+  postgres_password:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/postgres_password
+  redis_password:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/redis_password
+  redis_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/redis_url
+  public_content_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/public_content_database_url
+  api_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/api_database_url
+  worker_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/worker_database_url
+  delivery_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/delivery_database_url
+  admin_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_database_url
+  ops_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/ops_database_url
+  migration_database_url:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/migration_database_url
+  delivery_encryption_key:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/delivery_encryption_key
+  task_admission_hmac_key:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/task_admission_hmac_key
+  provider_rollout_cohort_key:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/provider_rollout_cohort_key
+  internal_preflight_hmac_key:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/internal_preflight_hmac_key
+  provider_diagnostics_token:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/provider_diagnostics_token
+  pilot_evidence_diagnostics_token:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/pilot_evidence_diagnostics_token
+  admin_csrf_secret:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_csrf_secret
+  admin_command_secret:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_command_secret
+  admin_origin_proof:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_origin_proof
+  public_content_revalidation_secret:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/public_content_revalidation_secret

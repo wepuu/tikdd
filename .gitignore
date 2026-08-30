@@ -12,6 +12,8 @@ coverage/
 .turbo/
 .env
 .env.local
+deploy/production.env
+deploy/releases/
 *.log
 *.tsbuildinfo
 .DS_Store

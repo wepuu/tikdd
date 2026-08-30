@@ -153,15 +153,20 @@ Admin must not expand a Provider capability or region. No traffic is enabled by 
 
 Lane: A.
 
-Phase A status (2026-08-30): deployment design freeze drafted on
-`codex/work-item-16-deployment-design` for owner review. No production deployment files, resources,
-schedules, Provider traffic, or rollout allocation were created. Phase B remains unauthorized.
+Phase A status (2026-08-30): the reviewed deployment design freeze is merged into `main`.
 
 Phase A.1 alignment selects the shared Ubuntu 24.04 `nl` host model: host systemd owns shared
 cloudflared, host Nginx serves the existing PHP site and loopback-published TikDD request services,
 and TikDD Compose owns neither ingress service. Final public 80/443 closure occurs only after every
 shared site passes Tunnel verification. Admin BFF/Admin API retain the approved shared-network-
-namespace and loopback-only API boundary. Phase B remains pending explicit authorization.
+namespace and loopback-only API boundary.
+
+Phase B status (2026-08-30): the reproducible production foundation is implemented on
+`codex/work-item-16-deployment-implementation`. It adds three production image targets, dedicated
+Compose, external secret bootstrap, private datastores, explicit migration/preflight/operational
+jobs, Nginx templates, immutable release/rollback tooling and an offline topology gate. No real
+host, Cloudflare, firewall, Provider, rollout or production migration action was performed. Work
+Item 17 scheduling and the X Production Evidence Gate remain pending.
 
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.

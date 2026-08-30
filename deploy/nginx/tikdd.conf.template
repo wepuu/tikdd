@@ -1,0 +1,99 @@
+# TikDD site-only template. Render placeholders into a new site file; never replace nginx.conf or
+# unrelated PHP/site configuration. The Cloudflare Tunnel origin must be loopback-only.
+
+log_format tikdd_no_query '$remote_addr - $host [$time_local] "$request_method $uri $server_protocol" '
+                          '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+
+server {
+    listen 127.0.0.1:__TIKDD_NGINX_ORIGIN_PORT__;
+    server_name __TIKDD_WEB_HOST__;
+    access_log /var/log/nginx/tikdd-web.access.log tikdd_no_query;
+
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive off;
+
+    location / {
+        proxy_pass http://127.0.0.1:__TIKDD_WEB_HOST_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+}
+
+server {
+    listen 127.0.0.1:__TIKDD_NGINX_ORIGIN_PORT__;
+    server_name __TIKDD_API_HOST__;
+    access_log /var/log/nginx/tikdd-api.access.log tikdd_no_query;
+
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive off;
+
+    location ^~ /v1/ {
+        proxy_pass http://127.0.0.1:__TIKDD_API_HOST_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    location / { return 404; }
+}
+
+server {
+    listen 127.0.0.1:__TIKDD_NGINX_ORIGIN_PORT__;
+    server_name __TIKDD_DELIVERY_HOST__;
+    access_log /var/log/nginx/tikdd-delivery.access.log tikdd_no_query;
+
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive off;
+
+    location = /v1/deliveries {
+        proxy_pass http://127.0.0.1:__TIKDD_DELIVERY_HOST_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    location ^~ /d/ {
+        proxy_pass http://127.0.0.1:__TIKDD_DELIVERY_HOST_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    location / { return 404; }
+}
+
+server {
+    listen 127.0.0.1:__TIKDD_NGINX_ORIGIN_PORT__;
+    server_name __TIKDD_ADMIN_HOST__;
+    access_log /var/log/nginx/tikdd-admin.access.log tikdd_no_query;
+
+    set_real_ip_from 127.0.0.1;
+    real_ip_header CF-Connecting-IP;
+    real_ip_recursive off;
+
+    location / {
+        proxy_pass http://127.0.0.1:__TIKDD_ADMIN_HOST_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+}
