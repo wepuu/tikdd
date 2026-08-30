@@ -184,6 +184,12 @@ coordination and fail-closed behavior, so reaching the ceiling must fail writes 
 discard keys. PostgreSQL remains durable business authority, but Redis loss can strand queued work
 and must be operationally handled rather than treated as healthy data loss.
 
+The production Redis container is pinned to the image's observed `999:1000` identity, receives only
+the supplemental secret-reader GID, drops every Linux capability and uses a read-only root
+filesystem. `/run/tikdd-redis` is a private `0700` tmpfs owned by that identity; `/data` remains the
+only durable writable bind mount. Revalidate the image UID/GID before changing the pinned Redis
+digest.
+
 TikDD Redis coexists with host Redis. It has no host publication and must not share the host Redis
 configuration, credentials, persistence or lifecycle.
 

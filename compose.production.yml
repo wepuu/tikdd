@@ -69,6 +69,16 @@ services:
 
   redis:
     image: ${TIKDD_REDIS_IMAGE:-redis:7.4.5-alpine@sha256:bb186d083732f669da90be8b0f975a37812b15e913465bb14d845db72a4e3e08}
+    user: "999:1000"
+    read_only: true
+    group_add:
+      - ${TIKDD_SECRETS_GID:-1999}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /run/tikdd-redis:rw,noexec,nosuid,size=16m,uid=999,gid=1000,mode=0700
     restart: unless-stopped
     stop_grace_period: 20s
     environment:
