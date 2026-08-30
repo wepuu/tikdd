@@ -7,8 +7,11 @@
 - Default state: disabled
 - Technical review: 2026-08-04
 - Test authorization: project owner asserted on 2026-08-04
-- Production approval: not established; production enablement remains blocked
-- Reviewed routing regions: `global`, `canary-global`
+- Production-use confirmation: recorded for the concrete `nl` deployment in
+  `config/x-internal-preflight.json`; traffic remains blocked by independent runtime and evidence
+  gates
+- Reviewed routing regions: `nl` (production), `global` (local/historical), `canary-global`
+  (isolated technical Canary)
 - X routing priority: 900 (primary)
 
 ## Public workflow observed
@@ -40,12 +43,12 @@ transitory viewing and prohibit commercial use of site materials. That is incomp
 permission for a production or commercial server integration. `ENABLE_TWITTERSAVER_PROVIDER=true`
 therefore also requires the separately audited `TWITTERSAVER_TERMS_APPROVED=true` flag.
 
-The project owner has asserted that the provider integration and the committed X canary URL are
-authorized for technical testing. External legal evidence is not stored in this repository. This
-permits the bounded live canary but does not establish production or commercial-use approval.
-
-Production remains blocked until its separate approval is recorded. The adapter remains disabled by
-default and requires both runtime flags.
+The project owner has asserted technical-test authorization and has separately recorded terms and
+production-use confirmation for the concrete `nl` deployment in the checked-in preflight plan.
+External legal evidence is not stored in this repository. This confirmation admits the code-owned
+region capability but does not create a rollout grant, qualification evidence, or public traffic.
+The adapter remains disabled by default and requires both runtime flags plus every independent
+rollout, health, Delivery, and evidence gate.
 
 ## Test and operations notes
 

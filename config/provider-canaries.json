@@ -2,7 +2,7 @@
   "version": 2,
   "authorization": {
     "assertedBy": "project-owner",
-    "assertedAt": "2026-08-04",
+    "assertedAt": "2026-08-30",
     "scope": "Only the exact provider, platform, and URL tuples enumerated below are authorized for bounded TikDD technical testing."
   },
   "canaries": [
@@ -17,6 +17,12 @@
       "provider": "dlpanda",
       "platform": "tiktok",
       "url": "https://www.tiktok.com/@realdonaldtrump/video/7641592261792255262?is_from_webapp=1&sender_device=pc"
+    },
+    {
+      "id": "ssstwitter-x-recurring-001",
+      "provider": "ssstwitter",
+      "platform": "x",
+      "url": "https://x.com/SpaceX/status/2093477720638341395?s=20"
     }
   ]
 }

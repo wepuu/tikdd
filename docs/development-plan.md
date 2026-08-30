@@ -131,6 +131,11 @@ as one documentation-only rebaseline. No runtime or production state changes are
 
 Lane: A.
 
+Implementation status (2026-08-30): complete on the Work Item 15 branch. Region consistency and
+fail-closed preflight hardening are implemented, and the new owner-authorized exact SSSTwitter/X
+tuple is configured for recurring bounded scheduled Canary checks. No Canary was executed and no
+production traffic or rollout grant was created.
+
 Resolve the reviewed deployment-region versus Provider Manifest contradiction and configure an
 exact authorized SSSTwitter/X scheduled Canary tuple.
 
@@ -390,10 +395,10 @@ productize the other systems, but replacement requires explicit architecture rev
 - The exact production hosting substrate and process topology for the selected NL environment are
   not defined by the repository.
 - The production scheduler/supervisor technology for recurring services is not selected.
-- Work Item 15 must decide whether reviewed concrete deployment regions are added to Provider
-  Manifests or deployment naming is reconciled another way; Admin cannot decide this at runtime.
-- The exact authorized SSSTwitter/X scheduled-Canary input must be confirmed within the existing
-  provider/input authorization boundary.
+- Work Item 15 selected explicit reviewed concrete deployment regions in Provider Manifests; Admin
+  cannot broaden that code-owned region admission at runtime.
+- The exact authorized SSSTwitter/X scheduled-Canary input is recorded in
+  `config/provider-canaries.json`; removing it or explicit owner revocation ends that authorization.
 - The start date and sufficient sample thresholds for the real X evidence window cannot be inferred
   from source control.
 - GEO citation/source requirements and content-review ownership need product decisions before Work

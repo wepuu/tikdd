@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   ProviderCanaryConfigSchema,
   selectProviderCanaries
@@ -40,6 +41,21 @@ const config = ProviderCanaryConfigSchema.parse({
 });
 
 describe("provider canary configuration", () => {
+  it("contains the exact recurring authorized SSSTwitter/X tuple", () => {
+    const checkedIn = ProviderCanaryConfigSchema.parse(JSON.parse(readFileSync(
+      new URL("../../../config/provider-canaries.json", import.meta.url),
+      "utf8"
+    )));
+    expect(selectProviderCanaries(checkedIn, {
+      id: "ssstwitter-x-recurring-001",
+      provider: "ssstwitter"
+    })).toEqual([expect.objectContaining({
+      provider: "ssstwitter",
+      platform: "x",
+      url: "https://x.com/SpaceX/status/2093477720638341395?s=20"
+    })]);
+  });
+
   it("selects one exact authorized tuple by canary ID", () => {
     expect(
       selectProviderCanaries(config, { id: "dlpanda-x-authorized-001" })
@@ -71,5 +87,29 @@ describe("provider canary configuration", () => {
         canaries: [...config.canaries, { ...config.canaries[1], id: "dlpanda-x-authorized-002" }]
       })
     ).toThrow(/tuples must be unique/);
+  });
+
+  it("rejects malformed IDs and unsupported Providers", () => {
+    expect(() =>
+      ProviderCanaryConfigSchema.parse({
+        ...config,
+        canaries: [{ ...config.canaries[0], id: "SSSTwitter X" }]
+      })
+    ).toThrow();
+    expect(() =>
+      ProviderCanaryConfigSchema.parse({
+        ...config,
+        canaries: [{ ...config.canaries[0], provider: "unreviewed-provider" }]
+      })
+    ).toThrow();
+  });
+
+  it("refuses an unconfigured Provider/input selection", () => {
+    expect(() =>
+      selectProviderCanaries(config, {
+        id: "ssstwitter-x-authorized-999",
+        provider: "ssstwitter"
+      })
+    ).toThrow(/No canaries matched/);
   });
 });

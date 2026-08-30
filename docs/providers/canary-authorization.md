@@ -1,6 +1,6 @@
 # Live provider canary authorization
 
-- Current configuration assertion date: 2026-08-04
+- Current configuration assertion date: 2026-08-30
 - Asserted by: TikDD project owner
 - Scope: only the exact provider/platform/URL tuples enumerated in
   `config/provider-canaries.json` are authorized for bounded technical testing
@@ -10,6 +10,22 @@
 
 This record authorizes a bounded technical canary. It is not a blanket authorization to download
 other content, bypass access controls, supply user cookies, or enable either provider in production.
+
+## Recurring SSSTwitter/X scheduled-Canary authorization
+
+On 2026-08-30 the project owner authorized the exact executable tuple
+`ssstwitter-x-recurring-001` / `ssstwitter` / `x` /
+`https://x.com/SpaceX/status/2093477720638341395?s=20` for recurring scheduled technical Canary
+health and qualification checks. The authorization remains valid until the owner explicitly revokes
+it or the tuple is removed from `config/provider-canaries.json`.
+
+The runner may submit only that exact public URL to SSSTwitter and record only the existing
+sanitized Canary measurements. It must not download media bodies, use account cookies or an
+authenticated X session, access private or restricted content, bypass challenges, access controls,
+rate limits, or anti-bot protections, or probe media URLs beyond the behavior already approved for
+the scheduled-Canary architecture. Existing timeout, concurrency, routing, network, and Provider
+safety controls remain mandatory. This authorization neither enables SSSTwitter for production user
+traffic nor grants or increases rollout allocation.
 
 Run all canaries from PowerShell:
 
@@ -47,8 +63,9 @@ production traffic.
 
 The first run exposed a page-scope parser defect and was excluded from qualification evidence. The
 corrected repeat succeeded with two normalized formats, one parsed hostname (`ssscdn.io`), and a
-4,931 ms duration. The exact tuple was then removed from executable configuration so no third run is
-authorized implicitly. Future live canaries require a new explicit assertion.
+4,931 ms duration. The exact tuple was then removed from executable configuration so no third run was
+authorized by that one-time assertion. The separate 2026-08-30 recurring authorization above
+applies only to its new exact Provider/platform/URL tuple.
 
 ### Consumed SSSTwitter delivery-audit authorization
 
