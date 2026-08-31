@@ -77,3 +77,8 @@ Before the Nginx-only production release:
 
 The final production verification and Git identifiers will be appended after deployment. X must
 not be marked stable, and Work Item 17 must remain untouched.
+
+The first production candidate was rejected safely by `nginx -t` because the host's default
+`map_hash_bucket_size 64` could not hold the longest explicit legacy slug. The guarded install
+restored the previous configuration before any reload. The template now declares
+`map_hash_bucket_size 128`; the replacement candidate must pass the same full validation sequence.

@@ -52,6 +52,7 @@ describe("P0 legacy TikDD redirects", () => {
   });
 
   it("uses a clean one-hop 301 only on canonical Web and apex server blocks", () => {
+    expect(template).toContain("map_hash_bucket_size 128;");
     const legacyReturn = "if ($tikdd_legacy_home_redirect) { return 301 https://__TIKDD_WEB_HOST__/; }";
     expect(template.split(legacyReturn)).toHaveLength(3);
     expect(template).toMatch(
