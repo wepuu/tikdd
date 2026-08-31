@@ -141,10 +141,10 @@ disabled unless later explicitly reviewed.
 | Service | Cloudflare route | Nginx upstream | Publicly allowed | Internal consumers |
 | --- | --- | --- | --- | --- |
 | Existing PHP site | existing owner-managed hostname | existing PHP-FPM target | yes, unchanged | existing application |
-| Web | proposed `https://tikdd.cc` and canonical `www` policy | configurable `127.0.0.1:<web-host-port>` | yes, content routes only | browser; Admin API revalidation through a fixed reviewed path |
-| API | proposed `https://api.tikdd.cc` | configurable `127.0.0.1:<api-host-port>` | yes, public API routes; protected diagnostics must not be exposed by the public location | browser Web |
-| Delivery | proposed `https://dl.tikdd.cc` | configurable `127.0.0.1:<delivery-host-port>` | yes, fixed delivery creation and `/d/{token}` routes | browser Web |
-| Admin | proposed `https://admin.tikdd.cc` | configurable `127.0.0.1:<admin-host-port>` owned by `admin-api` | owner-facing HTTPS only; password authentication remains application-owned | owner browser |
+| Web | approved `https://www.tikdd.cc`; apex permanently redirects to `www` | configurable `127.0.0.1:<web-host-port>` | yes, content routes only | browser; Admin API revalidation through a fixed reviewed path |
+| API | approved `https://api.tikdd.cc` | configurable `127.0.0.1:<api-host-port>` | yes, public API routes; protected diagnostics must not be exposed by the public location | browser Web |
+| Delivery | approved `https://dl.tikdd.cc` | configurable `127.0.0.1:<delivery-host-port>` | yes, fixed delivery creation and `/d/{token}` routes | browser Web |
+| Admin | no Gate C hostname; service remains stopped | none during Gate C | no | owner may start it locally on demand; a later public route requires separate approval |
 | Admin API | none | none | never | Admin BFF through shared loopback only |
 | Worker | none | none | never | Redis queue, PostgreSQL, reviewed Provider egress |
 | Canary/evidence/cleanup/preflight/migration | none | none | never | their explicit datastore/egress dependencies only |
@@ -497,7 +497,7 @@ authorization.
 | Durable PostgreSQL/Redis mount paths, filesystem, free-space warning/stop threshold | infrastructure-owner input required | choose paths and budgets after measuring existing shared-disk use |
 | Backup destination, encryption, retention, recovery-point objective and restore test | infrastructure-owner input required | provide an external backup location and owner-approved restore procedure |
 | Container registry and pull credentials | infrastructure-owner input required | confirm GHCR or another registry and immutable-digest access |
-| Exact public origins (`tikdd.cc`, API, Delivery, Admin), DNS and canonical `www` policy | infrastructure-owner input required | approve hostnames before Next build inputs and Nginx routes are frozen |
+| Exact public origins and canonical policy | approved for Gate C | Web `https://www.tikdd.cc`, apex 301 to `www`, API `https://api.tikdd.cc`, Delivery `https://dl.tikdd.cc`; Admin remains without a public route |
 | Existing Cloudflare zone/Tunnel hostname routes, connector credential location and host systemd ownership | infrastructure-owner input required | configure outside TikDD Compose; no Cloudflare token enters application secrets |
 | Host listener inventory, PHP website Tunnel regression and final firewall cutover window | infrastructure-owner input required | prove every shared site through Tunnel before closing public 80/443 |
 | Exact Docker bridge address observed by API and trusted-proxy CIDR | infrastructure-owner input required | measure after Compose network creation and configure only the narrow peer CIDR |
