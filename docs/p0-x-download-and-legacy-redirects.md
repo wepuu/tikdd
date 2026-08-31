@@ -7,8 +7,13 @@ recurring operational jobs, broad Provider traffic, or closure of the X Producti
 
 ## X failure classification
 
-The primary failure category is **no eligible route**. The failure occurs in production Provider
-selection before any Provider request is sent.
+The initial primary failure category was **no eligible route**. After the owner authorized a bounded
+maintenance diagnostic and the route was enabled behind a public-submit maintenance block, the
+first loopback submission exposed a second independent blocker: **task-admission database
+permission failure**. The production `tikdd_api` role lacked `DELETE` on the two digest-only
+admission tables even though `TaskAdmissionRepository` deletes expired rows before admission.
+The request returned `ADMISSION_UNAVAILABLE` before task creation; the task table remained empty and
+no Provider was called.
 
 Read-only production inspection found:
 
@@ -21,6 +26,11 @@ Read-only production inspection found:
 The existing build passed deterministic X adapter, routing, candidate encryption/storage and
 Delivery tests. There is no current evidence of a parser, normalized-result, candidate or Delivery
 regression. No adapter, router or Delivery code was changed.
+
+Migration `0019_task_admission_api_delete_grants.sql` grants `tikdd_api` only the two missing
+`DELETE` permissions. It does not grant deletion of resolve tasks or any insert, update, truncate,
+role-management or schema privilege. The migration is repeatable and a no-op in environments where
+the separately provisioned production role does not exist.
 
 The only currently valid live tuple is SSSTwitter / X /
 `https://x.com/SpaceX/status/2093477720638341395?s=20`. Its checked-in authorization is explicitly
