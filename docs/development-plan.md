@@ -195,6 +195,12 @@ unrelated PHP sites retain public 80/443. Work Item 16's deployment-foundation i
 complete. Encrypted off-host PostgreSQL backup plus a proved restore remains P0 production
 hardening and must be closed before production traffic is treated as fully recoverable.
 
+P0 stabilization status (2026-08-31): the X production failure was classified as no eligible route
+while the intentional Provider and rollout gates remain closed; no adapter defect is evidenced and
+no broad traffic is authorized. A bounded Nginx migration for the historical `/i` family and an
+explicit evidence-derived legacy-slug allowlist is under release validation. This work neither
+closes the X Production Evidence Gate nor starts Work Item 17.
+
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
 
