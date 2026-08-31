@@ -5,6 +5,9 @@
 log_format tikdd_no_query '$remote_addr - $host [$time_local] "$request_method $uri $server_protocol" '
                           '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
 
+# Long, exact legacy slugs require a larger hash bucket on the production Nginx build.
+map_hash_bucket_size 128;
+
 # Exact root-level slugs exported from the retired WordPress site's published English pages/posts.
 # The only pattern is the retired opaque-result family. Queries are intentionally not propagated.
 # Current localized routes use /<locale>/... and therefore cannot collide with these root keys.
