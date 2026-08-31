@@ -25,6 +25,7 @@ export function verifyWorkItem16Static() {
   const compose = read("compose.production.yml");
   const dockerfile = read("Dockerfile.production");
   const productionEnvironment = read("deploy/production.env.example");
+  const nginxTemplate = read("deploy/nginx/tikdd.conf.template");
   const secretEntrypoint = read("docker/secret-entrypoint.sh");
   const releaseScript = read("scripts/production-release.sh");
 
@@ -47,6 +48,18 @@ export function verifyWorkItem16Static() {
   assert(/^TIKDD_HOST_INGRESS_SUBNET=172\.30\.42\.0\/24$/m.test(productionEnvironment), "The reviewed NL host-ingress subnet changed unexpectedly.");
   assert(/^TIKDD_PROVIDER_EGRESS_SUBNET=172\.30\.41\.0\/24$/m.test(productionEnvironment), "The reviewed NL egress subnet changed unexpectedly.");
   assert(/^TRUSTED_PROXY_CIDRS=172\.30\.42\.1\/32$/m.test(productionEnvironment), "The candidate trusted proxy must be the exact reviewed host-ingress gateway.");
+
+  assert(/listen 127\.0\.0\.1:__TIKDD_NGINX_ORIGIN_PORT__/g.test(nginxTemplate), "The Tunnel origin must bind to loopback.");
+  assert(!/listen (?:0\.0\.0\.0|\[::\]|80|443)/.test(nginxTemplate), "The TikDD Tunnel origin must not create a public listener.");
+  assert(/server_name __TIKDD_WEB_HOST__;/.test(nginxTemplate), "The canonical Web host is missing from the Tunnel origin.");
+  assert(/server_name __TIKDD_WEB_APEX_HOST__;[\s\S]*return 301 https:\/\/__TIKDD_WEB_HOST__\$request_uri;/.test(nginxTemplate), "The apex-to-www canonical redirect is missing.");
+  assert(/server_name __TIKDD_GATE_C_HOST__;[\s\S]*X-Robots-Tag "noindex, nofollow, noarchive" always;/.test(nginxTemplate), "The temporary Gate C host must be non-indexable.");
+  assert(/default_server;[\s\S]*server_name _;[\s\S]*return 404;/.test(nginxTemplate), "Unknown Tunnel hostnames must fail closed.");
+  assert(!/__TIKDD_ADMIN_HOST__|__TIKDD_ADMIN_HOST_PORT__|tikdd-admin/.test(nginxTemplate), "Admin must not be present in the Gate C public origin template.");
+  assert(!/proxy_pass[^\n]*(?:4100|5432|6379)/.test(nginxTemplate), "A private service leaked into the Tunnel origin template.");
+  assert(!/location[^\n]*(?:health|internal|diagnostic|canary|preflight|evidence|cleanup)/i.test(nginxTemplate), "An internal route leaked into the Tunnel origin template.");
+  assert(/server_name __TIKDD_API_HOST__;[\s\S]*location \^~ \/v1\/[\s\S]*location \/ \{ return 404; \}/.test(nginxTemplate), "The API origin must expose only /v1/.");
+  assert(/server_name __TIKDD_DELIVERY_HOST__;[\s\S]*location = \/v1\/deliveries[\s\S]*location \^~ \/d\/[\s\S]*location \/ \{ return 404; \}/.test(nginxTemplate), "The Delivery origin route allowlist changed unexpectedly.");
 
   const published = ["web", "api", "delivery", "admin-api"];
   for (const name of published) {

@@ -287,10 +287,13 @@ any command or interpret an unscheduled job as stale.
 
 ## 8. Host Nginx and Cloudflare Tunnel
 
-Render `deploy/nginx/tikdd.conf.template` into a new TikDD-specific site file by replacing the four
-hostnames, the configurable Nginx origin port and the four application host ports. The template
-listens only on `127.0.0.1:<origin-port>`, removes query strings from TikDD access-log request lines,
-exposes only public API/Delivery routes, and never proxies Admin API or Provider diagnostics.
+Render `deploy/nginx/tikdd.conf.template` into a new TikDD-specific site file by replacing the
+canonical Web, apex, temporary Gate C, API and Delivery hostnames plus the configurable Nginx origin
+port and three public application host ports. The template listens only on
+`127.0.0.1:<origin-port>`, redirects the apex to the canonical Web host, makes the temporary Gate C
+host non-indexable, removes query strings from TikDD access-log request lines, and exposes only the
+public API/Delivery routes. Admin, health, diagnostics and internal services are absent, and unknown
+Tunnel hostnames fail closed with 404.
 
 Install safely:
 
@@ -305,8 +308,10 @@ Compose and its current absence does not reject the approved VPS. Host cloudflar
 public hostnames to the shared loopback Nginx origin while
 preserving the Host header for `server_name` routing. The cloudflared systemd lifecycle and Tunnel
 credential remain infrastructure-owned. During migration, existing public 80/443 behavior may stay
-available. Only after every shared website passes Tunnel verification may the infrastructure owner
-close public inbound 80/443. TikDD scripts make no firewall change.
+available. On the reviewed shared NL host, the Tunnel cutover is TikDD-only: unrelated PHP sites
+continue to require public 80/443, so host-wide firewall closure is explicitly outside this phase.
+The public TikDD vhost must not proxy the new application after cutover; the new application is
+reachable only through the loopback Tunnel origin. TikDD scripts make no firewall change.
 
 ## 9. Shared-host resources, logs and disk
 
