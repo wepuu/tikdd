@@ -32,6 +32,18 @@ Migration `0019_task_admission_api_delete_grants.sql` grants `tikdd_api` only th
 role-management or schema privilege. The migration is repeatable and a no-op in environments where
 the separately provisioned production role does not exist.
 
+The first admitted production task then exposed the corresponding Worker terminal-transition
+permission gap: `tikdd_worker` could update a task but could not delete its task-bound
+`active_source_admissions` row, so an exhausted job remained `resolving`. The same migration grants
+the Worker DELETE only on that active-source table; it does not grant Worker deletion of
+idempotency rows or resolve tasks.
+
+That task's sanitized ledger recorded two SSSTwitter attempts in `nl`, both rejected as
+`provider_schema_changed` after 1,207 ms and 976 ms. No normalized formats or delivery candidates
+were created, so no Delivery ticket or browser download was possible. This is current evidence of
+an SSSTwitter response-shape regression, but the authorized task did not retain an upstream payload
+and no further Provider submission is authorized by this run.
+
 The only currently valid live tuple is SSSTwitter / X /
 `https://x.com/SpaceX/status/2093477720638341395?s=20`. Its checked-in authorization is explicitly
 limited to recurring scheduled technical Canary use and does not authorize a production browser
