@@ -8,12 +8,12 @@ const template = readFileSync(resolve(root, "deploy/nginx/tikdd.conf.template"),
 const mapBody = template.match(/map \$uri \$tikdd_legacy_home_redirect \{([\s\S]*?)\n\}/)?.[1];
 if (!mapBody) throw new Error("The legacy redirect map is missing.");
 
-const exactPaths = new Set(
-  [...mapBody.matchAll(/^\s+(\/[a-z0-9-]+\/?) 1;$/gm)].map((match) => match[1])
+const legacySlugs = new Set(
+  [...mapBody.matchAll(/^\s+~\^\/([a-z0-9-]+)\/\?\$ 1;$/gm)].map((match) => match[1])
 );
 const shouldRedirect = (value) => {
   const pathname = new URL(value, "https://www.tikdd.cc").pathname;
-  return /^\/i(?:\/[^/]+)?\/?$/.test(pathname) || exactPaths.has(pathname);
+  return /^\/i(?:\/[^/]+)?\/?$/.test(pathname) || legacySlugs.has(pathname.replace(/^\//, "").replace(/\/$/, ""));
 };
 
 describe("P0 legacy TikDD redirects", () => {
@@ -28,7 +28,7 @@ describe("P0 legacy TikDD redirects", () => {
       "/how-to-use-tikdd-to-download-videos?utm_source=legacy"
     ]) expect(shouldRedirect(path), path).toBe(true);
 
-    expect(exactPaths.size).toBeGreaterThanOrEqual(200);
+    expect(legacySlugs.size).toBe(108);
   });
 
   it("does not catch current, private, asset, arbitrary, or future localized routes", () => {
@@ -52,7 +52,7 @@ describe("P0 legacy TikDD redirects", () => {
   });
 
   it("uses a clean one-hop 301 only on canonical Web and apex server blocks", () => {
-    expect(template).toContain("map_hash_bucket_size 128;");
+    expect(template).not.toContain("map_hash_bucket_size");
     const legacyReturn = "if ($tikdd_legacy_home_redirect) { return 301 https://__TIKDD_WEB_HOST__/; }";
     expect(template.split(legacyReturn)).toHaveLength(3);
     expect(template).toMatch(
