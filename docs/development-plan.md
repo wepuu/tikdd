@@ -187,6 +187,14 @@ Gate C performs Tunnel/Nginx ingress cutover while retaining the legacy TikDD ro
 Gate D stops only proven legacy-TikDD-exclusive resources. None of these gates grants Provider
 traffic or starts Work Item 17.
 
+Phase C2 status (2026-08-31): Gates A, B and C passed on the approved NL host. TikDD Web, API and
+Delivery are live through the dedicated `tikdd-nl` Cloudflare Tunnel and loopback-only Nginx origin.
+`https://www.tikdd.cc` is canonical; the apex permanently redirects while preserving path/query.
+Admin remains stopped and unpublished, all Provider/rollout/Canary gates remain disabled, and the
+unrelated PHP sites retain public 80/443. Work Item 16's deployment-foundation implementation is
+complete. Encrypted off-host PostgreSQL backup plus a proved restore remains P0 production
+hardening and must be closed before production traffic is treated as fully recoverable.
+
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
 

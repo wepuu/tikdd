@@ -237,9 +237,11 @@ Provider.
 `TIKDD_STAGE_VERIFY_COMMAND` is mandatory for `scripts/production-release.sh deploy`. It receives
 the current step through `TIKDD_STAGE` and must be a reviewed read-only executable. It checks
 available RAM, swap level and growth, load/CPU pressure, OOM events, container restarts, disk,
-PostgreSQL/TikDD Redis and the existing PHP/MySQL/host-Redis regression boundary. A nonzero result
-holds deployment with already-started TikDD services available for bounded diagnosis; it never
-stops a shared host service automatically.
+PostgreSQL/TikDD Redis and the existing PHP/MySQL/host-Redis regression boundary. After Gate C it
+also checks loopback-only TikDD Web/API/Delivery/staging/Admin host behavior and requires a healthy,
+zero-restart cloudflared connector with at least two HA connections. It must not use the retired
+TikDD WordPress paths as success signals. A nonzero result holds deployment with already-started
+TikDD services available for bounded diagnosis; it never stops a shared host service automatically.
 
 Start the fail-closed public foundation through the staged release command:
 
@@ -312,6 +314,13 @@ available. On the reviewed shared NL host, the Tunnel cutover is TikDD-only: unr
 continue to require public 80/443, so host-wide firewall closure is explicitly outside this phase.
 The public TikDD vhost must not proxy the new application after cutover; the new application is
 reachable only through the loopback Tunnel origin. TikDD scripts make no firewall change.
+
+The completed NL Gate C uses Tunnel `tikdd-nl` and publishes only `gate-c.tikdd.cc`,
+`api.tikdd.cc`, `dl.tikdd.cc`, `www.tikdd.cc` and the apex `tikdd.cc` to
+`http://127.0.0.1:8080`, with an explicit per-route Host header and a final 404 rule. The canonical
+origin is `https://www.tikdd.cc`; the apex redirects permanently while preserving path and query.
+The staging hostname is always non-indexable. Admin, wildcard and private-network routes are
+forbidden unless a later reviewed work item explicitly changes that boundary.
 
 ## 9. Shared-host resources, logs and disk
 

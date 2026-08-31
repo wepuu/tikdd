@@ -2,9 +2,12 @@
 
 ## Scope and decision
 
-This record covers Phase C2 Gate A and the attempted Gate B on the approved Netherlands host
-`magic` (`linux/amd64`) on 2026-08-30. It stops at Gate B. No Cloudflare/DNS/Nginx public cutover,
-firewall closure, Provider traffic, recurring job or Work Item 17 action was performed.
+This record covers Phase C2 Gates A, B and C on the approved Netherlands host `magic`
+(`linux/amd64`) on 2026-08-30 and 2026-08-31. Gate B first stopped safely at Redis, then passed on
+the reviewed retry. Gate C subsequently moved TikDD's public Web, API and Delivery entry points to
+a dedicated Cloudflare Tunnel and loopback-only Nginx origin. No Provider traffic, recurring job,
+Admin publication or Work Item 17 action was performed. Public host ports 80/443 remain available
+for the unrelated PHP sites on this shared host.
 
 The first two Gate B attempts and their data-preserving HOLD actions are retained below. The final
 reviewed retry at SHA `04fd7969d696571b2e90522a1127b33b01daa7fb` passed Gate B; see
@@ -209,6 +212,95 @@ media or Canary request occurred.
 
 **Final Gate B: PASS — initial shared-host coexistence verified.**
 
-No public Cloudflare Tunnel, DNS, Nginx route, firewall 80/443 change, Provider allocation,
-scheduler or Work Item 17 action was performed. The old TikDD deployment was not recreated.
-Gate C remains a separate owner-approved phase.
+At the Gate B boundary no public Cloudflare Tunnel, DNS, Nginx route, firewall 80/443 change,
+Provider allocation, scheduler or Work Item 17 action had been performed. The old TikDD deployment
+was not recreated. The separately approved Gate C execution is recorded below.
+
+## Phase C2-C public ingress cutover
+
+### Reviewed release and origin
+
+PR #10 merged the Tunnel-only ingress configuration before production installation. Gate C uses:
+
+- Git SHA: `df3d45f53527344dcbc0cbd931171df76383f213`;
+- configuration revision: `gate-c-df3d45f-20260831`;
+- release archive SHA-256: `9b1d94e47d6d4a9ab9ec625804886903c371dd8252f4345d047d05d31b72b889`;
+- Nginx origin configuration SHA-256:
+  `24e64acaba134b04c7c74c9571f3cdeb55991412ba143a9a724ac3f89afc1e0c`;
+- Web image:
+  `ghcr.io/wepuu/tikdd-web@sha256:f99584a98e55eb0d790007763c3c642522ae8445b18d747747ba4fc30162349f`;
+- Service image:
+  `ghcr.io/wepuu/tikdd-service@sha256:142721fb3153d2a5675376b839408d6edd415437e67fa25a91bc3ce172de8cab`;
+- Admin image, published but not started:
+  `ghcr.io/wepuu/tikdd-admin@sha256:1084640d940d95edebead23429773e619bd097ee1a1caa5d3fa3d0b0c14027ff`.
+
+The rendered TikDD Nginx site listens only on `127.0.0.1:8080`. The existing public-port TikDD
+vhost remains a static stop page and does not proxy the new application. Direct public 80/443
+therefore cannot reach the new TikDD stack, while the two unrelated PHP sites retain their existing
+public-port dependency. Nginx validation and reload passed, and unknown or Admin hostnames return
+404 on the Tunnel origin.
+
+### Cloudflare Tunnel
+
+The official Cloudflare package repository installed `cloudflared 2026.8.3`. Host systemd owns a
+hardened `cloudflared` service running as the unprivileged `cloudflared` user. Its token file is
+`root:cloudflared` mode `0440`; no token value entered logs, the repository or this record. Metrics
+listen only on `127.0.0.1:20241`.
+
+- Tunnel name: `tikdd-nl`;
+- Tunnel ID: `0aaffd36-8684-4298-baee-a67d572795a4`;
+- origin service for every published hostname: `http://127.0.0.1:8080`;
+- published hostnames: `gate-c.tikdd.cc`, `api.tikdd.cc`, `dl.tikdd.cc`, `www.tikdd.cc` and
+  `tikdd.cc`;
+- no Admin hostname, wildcard route or private-network route exists;
+- final remote-managed ingress version: 5, followed by a terminal `http_status:404` rule.
+
+The rollout was deliberately ordered: staging, API/Delivery, canonical Web, then apex. Each step
+passed before the next DNS route was changed. The connector registered four QUIC connections at
+Amsterdam Cloudflare locations and retained `NRestarts=0` through stabilization. ICMP proxy remains
+disabled and is not required for the HTTP Tunnel; no broader capability or kernel permission was
+granted.
+
+### Public verification
+
+- `https://www.tikdd.cc/en` and `/zh-CN` return 200 with reviewed localized content.
+- Canonical, reciprocal `en`/`zh-CN` hreflang and `x-default` all use
+  `https://www.tikdd.cc`.
+- `robots.txt` points to the canonical sitemap and keeps task, result, delivery, internal and Admin
+  paths disallowed. The sitemap contains only the two stable localized homepages.
+- A versioned Next.js CSS asset returned 200 with immutable caching.
+- `https://tikdd.cc/zh-CN?source=cutover&check=1` returned 301 to
+  `https://www.tikdd.cc/zh-CN?source=cutover&check=1`, preserving path and query.
+- `https://api.tikdd.cc/v1/platforms` returned 200 and allowed only the canonical Web origin.
+- Delivery CORS preflight returned 204. A deliberately invalid ticket returned 410 with
+  `no-store` and `noindex`; no ticket or media request was created.
+- `gate-c.tikdd.cc/en` remains available with `noindex, nofollow, noarchive`.
+
+### Host gate and stabilization
+
+The host stage gate had been rebaselined after stable observation to a swap baseline of
+1,238,460 KiB while retaining the 262,144 KiB maximum-growth bound and 716,800 KiB available-memory
+floor. After cutover its obsolete TikDD WordPress checks were replaced with local checks for the
+canonical Web, apex redirect, API, Delivery failure boundary, staging noindex and Admin 404. It now
+also requires an active zero-restart `cloudflared` service with at least two HA connections. The
+two unrelated PHP sites, shared MySQL, host Redis, Nginx/PHP-FPM and all six TikDD containers remain
+in the same fail-closed gate. The installed script SHA-256 is
+`7a2ae7f07cf27164d3fb97a2b5dff5cdf5913dfc082b2cbd23e9da49b1ffd65a`; the pre-cutover script is
+preserved at `/usr/local/sbin/tikdd-stage-gate.pre-cutover-df3d45f`.
+
+| Sample | Result | MemAvailable | Swap used | Load (1m) | Tunnel HA |
+| --- | --- | ---: | ---: | ---: | ---: |
+| stabilization-1 | PASS | 999,120 KiB | 705,224 KiB | 0.49 | 4 |
+| stabilization-2 | PASS | 1,032,308 KiB | 704,968 KiB | 0.54 | 4 |
+| stabilization-3 | PASS | 1,091,516 KiB | 704,712 KiB | 0.79 | 4 |
+
+All six containers were healthy with zero restarts in every sample. Swap decreased throughout the
+window, no new OOM event appeared after the C2 boundary, and the root disk retained approximately
+37.7 GiB available.
+
+**Gate C: PASS — TikDD public ingress is live through the dedicated Tunnel.**
+
+Provider, rollout, scheduled Canary and production-evidence gates remain disabled and fail closed.
+Admin remains stopped and unpublished. UFW and public host 80/443 policy were not changed. The
+remaining P0 production-hardening debt is an encrypted off-host PostgreSQL backup with a proved
+restore; Gate C does not waive that requirement or authorize Work Item 17.
