@@ -42,8 +42,8 @@ application state. It is intentionally not duplicated in the Next.js Web applica
 The exact recognized route families are:
 
 - `^/i(?:/[^/]+)?/?$` for the historical opaque result route, including `/i` and `/i/`;
-- 108 evidence-derived, published, first-level WordPress slugs, each represented with and without
-  a trailing slash in the explicit Nginx map (216 exact paths).
+- 108 evidence-derived, published, first-level WordPress slugs, each expressed as an individually
+  anchored regex with an optional trailing slash in the explicit Nginx map.
 
 The allowlist came from the retained old TikDD WordPress database and historical access-log shapes.
 It is stored in `deploy/nginx/tikdd.conf.template`. A universal first-level wildcard is forbidden.
@@ -78,7 +78,10 @@ Before the Nginx-only production release:
 The final production verification and Git identifiers will be appended after deployment. X must
 not be marked stable, and Work Item 17 must remain untouched.
 
-The first production candidate was rejected safely by `nginx -t` because the host's default
-`map_hash_bucket_size 64` could not hold the longest explicit legacy slug. The guarded install
-restored the previous configuration before any reload. The template now declares
-`map_hash_bucket_size 128`; the replacement candidate must pass the same full validation sequence.
+The first production candidate was rejected safely by `nginx -t` because the host's map hash could
+not hold the longest explicit legacy slug. A second candidate that attempted to override the hash
+bucket in the TikDD include was also rejected as a duplicate directive. Both guarded installs
+restored the previous configuration before any reload. To avoid changing shared Nginx global
+settings, the allowlist now uses one anchored regex per reviewed slug; it remains explicit and does
+not introduce a wildcard catch-all. The replacement candidate must pass the same full validation
+sequence.

@@ -52,7 +52,8 @@ export function verifyWorkItem16Static() {
   assert(/listen 127\.0\.0\.1:__TIKDD_NGINX_ORIGIN_PORT__/g.test(nginxTemplate), "The Tunnel origin must bind to loopback.");
   assert(!/listen (?:0\.0\.0\.0|\[::\]|80|443)/.test(nginxTemplate), "The TikDD Tunnel origin must not create a public listener.");
   assert(/server_name __TIKDD_WEB_HOST__;/.test(nginxTemplate), "The canonical Web host is missing from the Tunnel origin.");
-  assert(/map_hash_bucket_size 128;/.test(nginxTemplate), "The legacy redirect map must support long exact slugs on production Nginx.");
+  assert((nginxTemplate.match(/^\s+~\^\/[a-z0-9-]+\/\?\$ 1;$/gm) ?? []).length === 108, "The evidence-derived legacy slug allowlist must remain exact and complete.");
+  assert(!/map_hash_bucket_size/.test(nginxTemplate), "The TikDD include must not override shared Nginx hash settings.");
   assert(/map \$uri \$tikdd_legacy_home_redirect \{[\s\S]*~\^\/i\(\?:\/\[\^\/\]\+\)\?\/\?\$ 1;/.test(nginxTemplate), "The bounded legacy result redirect is missing.");
   assert((nginxTemplate.match(/if \(\$tikdd_legacy_home_redirect\) \{ return 301 https:\/\/__TIKDD_WEB_HOST__\/; \}/g) ?? []).length === 2, "Legacy redirects must be one-hop and limited to canonical Web plus apex.");
   assert(!/if \(\$tikdd_legacy_home_redirect\)[^\n]*\$request_uri/.test(nginxTemplate), "Legacy redirects must drop obsolete query data.");
