@@ -16,4 +16,21 @@ describe("task admission migration", () => {
     expect(migration).toContain("REFERENCES resolve_tasks(id) ON DELETE CASCADE");
     expect(migration).not.toMatch(/source_url|idempotency_key\s+TEXT/i);
   });
+
+  it("grants the production API only the deletes required by admission cleanup", async () => {
+    const migration = await readFile(
+      new URL("../../../infra/migrations/0019_task_admission_api_delete_grants.sql", import.meta.url),
+      "utf8"
+    );
+
+    expect(migration).toContain("rolname = 'tikdd_api'");
+    expect(migration).toContain(
+      "GRANT DELETE ON TABLE resolve_task_idempotency TO tikdd_api"
+    );
+    expect(migration).toContain(
+      "GRANT DELETE ON TABLE active_source_admissions TO tikdd_api"
+    );
+    expect(migration).not.toMatch(/GRANT\s+(?:ALL|DELETE)\s+ON\s+TABLE\s+resolve_tasks/i);
+    expect(migration).not.toMatch(/GRANT\s+(?:INSERT|UPDATE|TRUNCATE)\b/i);
+  });
 });
