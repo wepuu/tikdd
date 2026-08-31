@@ -1,6 +1,6 @@
 # P0 production stabilization: X download and legacy redirects
 
-Status: in progress (2026-08-31)
+Status: Part B deployed; Part A awaiting explicit owner authorization (2026-08-31)
 
 This record covers P0-FUNC-01 and P0-MIG-01. It does not authorize Work Item 17,
 recurring operational jobs, broad Provider traffic, or closure of the X Production Evidence Gate.
@@ -75,8 +75,7 @@ Before the Nginx-only production release:
    PHP-FPM, MySQL and host Redis;
 8. retain the backed-up site configuration as the immediate redirect rollback.
 
-The final production verification and Git identifiers will be appended after deployment. X must
-not be marked stable, and Work Item 17 must remain untouched.
+X must not be marked stable, and Work Item 17 must remain untouched.
 
 The first production candidate was rejected safely by `nginx -t` because the host's map hash could
 not hold the longest explicit legacy slug. A second candidate that attempted to override the hash
@@ -85,3 +84,39 @@ restored the previous configuration before any reload. To avoid changing shared 
 settings, the allowlist now uses one anchored regex per reviewed slug; it remains explicit and does
 not introduce a wildcard catch-all. The replacement candidate must pass the same full validation
 sequence.
+
+## Production redirect release
+
+- merged Git SHA: `565b6a9ba4af0e4fbaf75ceab6b3a2ae885a5411`;
+- rendered Nginx configuration SHA-256:
+  `151874488389e5a2e8e426c247420b10947c8459bc757b30516bf83680045139`;
+- previous configuration backup:
+  `/root/tikdd-origin.conf.pre-p0-565b6a9-20260831`, SHA-256
+  `24e64acaba134b04c7c74c9571f3cdeb55991412ba143a9a724ac3f89afc1e0c`;
+- `nginx -t`: passed before reload; Nginx remained active after reload;
+- existing host stage gate: passed with all six TikDD containers healthy and at zero restarts;
+- GreatPPT homepage and `wp-login.php`: 200; PHP-FPM, MySQL and host Redis processes remained
+  running;
+- the owner confirmed that Longyan is an already unavailable site and excluded it from this release
+  gate. Its loopback Nginx vhost retained the previously expected homepage 200 and login-path 404.
+
+Public redirect verification:
+
+| Request | Result |
+| --- | --- |
+| `www /i/legacy-value?utm_source=legacy` | 301 to `https://www.tikdd.cc/` |
+| `www /i/` | 301 to `https://www.tikdd.cc/` |
+| `www /ok-ru-video-downloader/` | 301 to `https://www.tikdd.cc/` |
+| `apex /how-to-use-tikdd-to-download-videos?utm_source=legacy` | one-hop 301 to `https://www.tikdd.cc/` |
+| `www /en`, `www /zh-CN` | 200, no legacy redirect |
+| `www /en/youtube` | existing 404, no legacy redirect |
+| `www /arbitrary-new-page-p0` | 404, no catch-all redirect |
+| `www /robots.txt`, `www /sitemap.xml` | 200 with canonical `www` URLs and existing index boundaries |
+| `api /v1/platforms` | 200 |
+| invalid Delivery path | safe 404; no ticket or media request created |
+
+The production Provider flags, terms gates, rollout, Pilot Guard requirement and Canary
+authorization remain false. No X request, Provider request, candidate, Delivery ticket, media
+request or broad allocation was created by this release. The controlled X browser diagnostic is
+still pending the explicit owner action described above, so P0-FUNC-01 is not complete and the X
+Production Evidence Gate remains open.
