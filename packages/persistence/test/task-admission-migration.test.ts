@@ -30,6 +30,13 @@ describe("task admission migration", () => {
     expect(migration).toContain(
       "GRANT DELETE ON TABLE active_source_admissions TO tikdd_api"
     );
+    expect(migration).toContain("rolname = 'tikdd_worker'");
+    expect(migration).toContain(
+      "GRANT DELETE ON TABLE active_source_admissions TO tikdd_worker"
+    );
+    expect(migration).not.toMatch(
+      /GRANT\s+DELETE\s+ON\s+TABLE\s+resolve_task_idempotency\s+TO\s+tikdd_worker/i
+    );
     expect(migration).not.toMatch(/GRANT\s+(?:ALL|DELETE)\s+ON\s+TABLE\s+resolve_tasks/i);
     expect(migration).not.toMatch(/GRANT\s+(?:INSERT|UPDATE|TRUNCATE)\b/i);
   });
