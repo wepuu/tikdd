@@ -191,6 +191,25 @@ production allocation remains zero, X remains non-stable and the Production Evid
 open. Full sanitized lifecycle evidence is recorded in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-WORKER-CONTEXT-01 isolation result
+
+Two effective, authorized calls ran as separate short-lived processes inside the unchanged running
+production Worker container. Direct `SSSTwitterProvider.resolve()` with Worker-equivalent 30-second
+route and 18-second Provider signals succeeded in 1,325 ms with eight formats and eight
+`ssscdn.io` candidates. The real core `ProviderRouter`, configured with one local allow decision,
+closed health, one concurrency permit, no preference override, `production=true` and
+`maxAttempts=1`, then succeeded in 1,225 ms with one successful Provider attempt, eight formats and
+eight candidates on the same host.
+
+This establishes Boundary C: the actual Worker container namespace, Provider egress, Docker DNS,
+safe environment, signal composition, core Router validation, current SSSTwitter HTTP behavior,
+parser and canonical URL all work together. The unexplained production task failure is now bounded
+to the long-running Worker process or its production runtime integrations. No task, rollout,
+Delivery ticket, CDN request, media transfer or runtime change occurred. P0-X-HTTP-01 remains open,
+production allocation remains zero, X remains non-stable and the Production Evidence Gate remains
+open. Full Phase A differences and lifecycle evidence are in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
