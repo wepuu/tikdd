@@ -419,3 +419,76 @@ task request returning 400. Nginx retained checksum
 `151874488389e5a2e8e426c247420b10947c8459bc757b30516bf83680045139`; all six containers were healthy
 with zero restarts; and the shared-host stage gate passed. P0-X-HTTP-01 remains open, X remains
 non-stable, the Production Evidence Gate remains open, and Work Item 17 was not started.
+
+### P0-X-WORKER-TRACE-01 task-scoped long-running Worker trace
+
+The trace investigation started from merged main
+`7545026fb35e8697458a5913f06eff966a1a4ca0`. Before any Provider request, Phase A established that
+the then-current Worker was not the process that handled the earlier failed task. The historical
+task finished at `2026-09-01T06:51:08.635179Z`; the inspected Worker PID 1 started at
+`2026-09-01T06:51:13.970000Z` (host PID `422051`) and had no matching retained log entry. Its safe
+activation, rollout and runtime settings matched the Docker configuration and host environment
+exactly. A repository-wide inspection also found no repository-owned global fetch/dispatcher
+mutation. The earlier conclusion that a single long-running process failed the task and later
+succeeded in short-lived controls is therefore corrected: those observations came from different
+processes.
+
+PR #24 added a default-off, task-scoped diagnostic trace and merged as
+`84c2f95e74aca8c26c4917fa66f030c114dcd6d3`. It activates only for the exact
+SSSTwitter/X/NL tuple whose canonical URL SHA-256 and authorization ID match configuration, and it
+hard-caps output at two Provider invocations. The observer records only structured stage, process,
+signal, request-shape, response-shape, body-digest and marker metadata. It does not record source or
+candidate URLs, cookie or form-token values, HTML, response bodies or secrets, and does not change
+fetch, request headers, redirects, body handling, timeouts, retries, parsing or candidates. Tests
+prove that enabled and disabled fixture resolutions are identical and that the existing redirect
+code neither consumes nor cancels an intermediate manual-redirect response body.
+
+The merged Worker image
+`ghcr.io/wepuu/tikdd-service@sha256:edb4cf52bcb4ac931f14b250520f126afa4eed054524a3c790544d62a1a781ca`
+was deployed only to the Worker. Its traced process started at
+`2026-09-01T09:02:29.666437287Z` (host PID `523483`; Node namespace PID `52`). Public task creation
+was blocked before SSSTwitter and a short-lived exact rollout rule were enabled. Exactly one
+authorized API task, `tsk_cca48401dd5a4c10ad7b5193e18991d6`, ran from
+`2026-09-01T09:05:05.261605Z` to `2026-09-01T09:05:12.055843Z` and ended `failed` with
+`PROVIDER_UNAVAILABLE`.
+
+The first traced invocation completed the full Provider sequence:
+`resolve_start`, landing request/response, form parse, POST request, result response/parse,
+resolution creation and `resolve_success`. It ran from `09:05:05.324Z` to `09:05:06.647Z`, with
+an un-aborted signal, one active Provider invocation, process uptime 154–155 seconds and RSS
+109–126 MiB. Its HTTP sequence was `GET /` 200, `POST /` 301 and same-origin
+`GET /result_normal` 200. The landing body was 87,726 bytes with SHA-256
+`c808e38c2a39a535a2b9bf2c494b0c683dbba1ca999ce108247025ee624d5f5c`; the final result body was
+71,653 bytes with SHA-256
+`222da9a98adee858df04df40d851b01e653dd760770442ddc3693ee10414d710`. Expected form/result and
+`ssscdn.io` markers were present, while challenge/block markers were absent. The adapter produced
+eight formats and eight candidates, all on `ssscdn.io`.
+
+That successful Provider resolution was followed by an error outside the traced Provider boundary,
+before the successful result and attempt ledger could be committed. BullMQ retried normally. The
+second traced invocation reached `result_parse_start` and failed at `09:05:09.055Z` with
+`provider_schema_changed`: `SSSTwitter did not return its result container.` Its HTTP sequence was
+`GET /` 200 then `POST /` 200; the POST response body was zero bytes (the empty-body SHA-256), with
+no result, CDN, challenge or block marker. Its signal was not aborted, concurrency remained one,
+process uptime was 157–158 seconds and RSS was 127 MiB. A third normal Provider invocation ran after
+the trace hard cap and failed the same way. The sanitized persisted ledger contains the two failed
+attempts: 1,310 ms and 877 ms, both retryable and fallback-eligible. The trace itself contains
+exactly two invocations and 35 events.
+
+This is mixed evidence. A fresh normal Worker invocation disproves a deterministic failure in the
+Worker process, its current network namespace, current SSSTwitter request sequence or parser. The
+later direct HTTP 200 with an empty body demonstrates a transient upstream response shape that the
+typed `provider_schema_changed` path handled correctly. Separately, the first Provider success was
+lost at an untraced post-Router/candidate/persistence boundary. This evidence does not identify that
+downstream error and does not authorize a repair. P0-X-HTTP-01, X stability and the Production
+Evidence Gate remain open; a separately scoped investigation must trace the post-Router completion
+boundary before changing behavior.
+
+The sanitized evidence file is retained as
+`/var/backups/tikdd/p0-x-worker-trace-01.sanitized.jsonl` (35 lines, 21,854 bytes, mode 0600,
+SHA-256 `7e8ab5579f8a393e8ebe99c8db668c68eb2c89cb12843d5e440212f20aed2551`). No Delivery ticket,
+candidate/CDN request or media transfer occurred. Restoration disabled the exact rule at revision
+10 with allocation 0, disabled all Providers, rollout, health, Canary and diagnostic trace flags,
+cleared the trace hash and authorization ID, and restored the original Nginx checksum. Public
+invalid task creation returned 400, all six containers were healthy with zero restarts, and the
+final shared-host stage gate passed.
