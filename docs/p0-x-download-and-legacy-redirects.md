@@ -187,3 +187,23 @@ Final state:
 - the original production environment and Nginx checksums were restored;
 - all six TikDD containers are healthy with zero restarts and the host stage gate passes;
 - X is not stable, the X Production Evidence Gate remains open, and Work Item 17 was not started.
+
+### P0-X-HTTP-01 corrected root cause
+
+The historical TikDD production observation above is unchanged: the bounded NL task selected
+SSSTwitter but produced no candidate. The subsequent inference that NL region, CDN locality or the
+numeric age of the Provider-issued `ts` value caused that outcome is superseded by controlled
+owner-operated HTTP A/B evidence.
+
+From the same NL host, the public workflow without a browser-compatible User-Agent returned HTTP 200
+and a zero-byte resolve body. Adding only a browser-compatible User-Agent produced a non-empty
+`/result_normal?en` response with `#result` and candidate host `ssscdn.io`. A second NL test removed
+`Accept-Language` while retaining the User-Agent and still succeeded. `ts` remains an opaque form
+value; TikDD does not infer freshness or CDN health from its numeric representation.
+
+The owner separately proved cross-network direct CDN handoff with a one-byte Range request that
+returned HTTP 206 and a valid Content-Range. No signed candidate URL is recorded here and that test
+must not be repeated by this hotfix. The corrected architecture conclusion is that no US egress,
+proxy or TikDD media relay is required. The repair is limited to a fixed browser-compatible
+User-Agent on the SSSTwitter landing GET and resolve POST; public rollout remains disabled, X stays
+non-stable, the Production Evidence Gate remains open and Work Item 17 is not started.

@@ -123,6 +123,30 @@ still requires the separate terms/approval gate.
   normal route budgets.
 - Normal resolution never follows or downloads a parsed media link. The separate delivery-audit
   mode is opt-in and must have exact authorization for each run.
+
+## P0-X-HTTP-01 request-compatibility correction
+
+The earlier bounded TikDD production diagnostic remains historically valid: SSSTwitter/X/NL was
+selected, the Provider request ran, and both bounded attempts ended as `provider_schema_changed`
+without a normalized format, candidate or Delivery ticket.
+
+The later hypothesis that NL egress, CDN locality or an apparently old numeric `ts` value caused
+that failure is superseded. Owner-operated HTTP A/B diagnostics reproduced the public workflow from
+both NL and US hosts. Without a browser-compatible User-Agent the resolve POST returned HTTP 200
+with a zero-byte body. From the same NL host, adding only a browser-compatible User-Agent produced a
+non-empty `/result_normal?en` response containing `#result` and the reviewed `ssscdn.io` candidate
+host. Removing `Accept-Language` while retaining the User-Agent still succeeded. The numeric `ts`
+field is therefore treated only as an opaque Provider-issued form value and not as token-age or CDN
+health evidence.
+
+An independent owner-operated cross-network handoff check requested exactly one byte from the
+resolved CDN candidate and received HTTP 206 with a valid Content-Range. The signed candidate URL
+was not retained. This demonstrates that the tested redirect candidate was not bound to the NL
+resolver IP and preserves TikDD's direct browser/CDN handoff: no US gateway, Provider proxy or media
+relay is required. P0-X-HTTP-01 adds one fixed browser-compatible User-Agent to the SSSTwitter
+landing GET and resolve POST only; it does not change the parser, global fetch behavior, other
+Providers, delivery policy or public rollout state.
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
