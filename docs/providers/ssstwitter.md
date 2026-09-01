@@ -175,6 +175,22 @@ time. X remains non-stable, production allocation remains zero, and the Producti
 remains open. Full sanitized request/response evidence and lifecycle controls are recorded in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-E2E-VERIFY-01 Worker revalidation
+
+One bounded NL production Worker task on 2026-09-01 selected only SSSTwitter but ended
+`PROVIDER_UNAVAILABLE`. Its two sanitized attempts were fallback-eligible
+`provider_schema_changed` failures at 1,010 ms and 1,026 ms. The task produced zero formats, zero
+candidates and no Delivery ticket; the public task representation exposed no candidate material.
+
+The single effective conditional isolated control used the same immutable Service image, Node
+runtime, host, Provider egress and canonical URL. The actual adapter succeeded with eight formats
+and eight `ssscdn.io` candidates. This is Worker-versus-isolated Case B evidence: it correlates the
+failure with Worker/Router execution context but does not yet isolate the deterministic variable.
+No Provider, request, parser, routing or Delivery code was changed. P0-X-HTTP-01 remains open,
+production allocation remains zero, X remains non-stable and the Production Evidence Gate remains
+open. Full sanitized lifecycle evidence is recorded in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
