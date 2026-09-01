@@ -358,3 +358,64 @@ task creation again returned 400, and SSSTwitter, TwitterSaver, DLPanda, rollout
 were false. All six TikDD containers were healthy with zero restarts, no diagnostic container
 remained, and the final shared-host stage gate passed. X remains non-stable, the X Production
 Evidence Gate remains open, and Work Item 17 was not started.
+
+### P0-X-WORKER-CONTEXT-01 Worker/Router context isolation
+
+Starting from merged main `3b3418f6257db496d8b1cfdd1c6fe9d855a106eb`, a zero-task context
+isolation ran on 2026-09-01 against the unchanged production application
+`251b02b39c66cc949a299f9f24c7c9533bb85d73` and immutable Service image
+`ghcr.io/wepuu/tikdd-service@sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`.
+It did not create a public or loopback API task, connect a diagnostic Router to production control
+sources, enable a Provider, publish allocation, restart the Worker or change runtime code.
+
+Phase A compared the running Worker with the prior disposable-control model. The Worker container
+was created at `2026-09-01T06:51:14.282972815Z` and started at
+`2026-09-01T06:51:14.647261341Z`. Both environments used image ID
+`sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`, Node
+`v24.14.0`, configured user `node`, runtime UID/GID `1000/1000`, working directory `/workspace`,
+the `tikdd_provider-egress` network, gateway `172.30.41.1`, a default route through that gateway,
+and Docker DNS `127.0.0.11` with search `.` and options `edns0 trust-ad ndots:0`. Both had
+`NODE_ENV=production`; `NODE_OPTIONS`, `NODE_USE_ENV_PROXY`, all HTTP proxy variables,
+`NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `SSL_CERT_DIR`, `NODE_TLS_REJECT_UNAUTHORIZED` and
+`UV_THREADPOOL_SIZE` were unset.
+
+The observed differences were that the running Worker was also attached to the internal
+`tikdd_data` network at `172.30.40.6`, used Provider-egress address `172.30.41.2`, and had container
+hostname `3cb8987322de`; the disposable control had only Provider egress, used `172.30.41.4`, and had
+hostname `676fe08c3e7f`. These values are context differences, not causal findings. The Provider
+egress gateway, default route, DNS, image, user and safe network environment were equivalent.
+
+Test 1 started a separate short-lived Node process inside the existing Worker container and called
+the real `SSSTwitterProvider.resolve()` directly. It used the reviewed source and canonical URLs,
+a synthetic task ID, a 30-second route signal, an 18-second Provider signal, and
+`AbortSignal.any([routeSignal, providerSignal])`. The one effective Provider invocation succeeded
+in 1,325 ms with eight formats, eight candidates and only candidate hostname `ssscdn.io`; the
+combined, route and Provider signals were all not aborted. Two bootstrap attempts failed during
+module loading before constructing or invoking the Provider, so they made no Provider or network
+request and did not increase the effective invocation count.
+
+Because Test 1 succeeded, Test 2 ran one additional effective Provider invocation through the real
+core `ProviderRouter` inside the same Worker container. The diagnostic used exactly one enabled
+SSSTwitter Provider, region `nl`, `production=true`, `maxAttempts=1`, the same 30-second outer route
+signal, an in-memory allow decision, a closed healthy state, one local concurrency permit, and no
+preference override. It did not use production rollout, Redis health, admission concurrency,
+route-policy or persistence sources. The Router succeeded in 1,225 ms; its single SSSTwitter attempt
+succeeded in 1,217 ms, the permit was acquired and released once, and the result again contained
+eight formats, eight candidates and only `ssscdn.io`. No error occurred and the outer signal was not
+aborted.
+
+This establishes Boundary C. The Worker Docker network namespace, DNS, safe container environment,
+Worker-equivalent AbortSignal composition, core ProviderRouter timeout and result-validation path,
+SSSTwitter requests, redirects, cookies, parser and canonical URL are currently disproved as the
+deterministic cause. The remaining differential is confined to the long-running Worker process or
+its production runtime integrations: BullMQ job execution, production rollout source, route-policy
+source, health source, concurrency source, or process-global runtime state. This task did not attach
+to the Worker main PID or investigate those integrations further.
+
+The two effective Provider calls made no candidate/CDN request, no media transfer and no Delivery
+ticket. Final safety verification found no active resolution task, rollout rule revision 8 still
+disabled with allocation 0 and expired, all Provider and Canary flags false, and the public invalid
+task request returning 400. Nginx retained checksum
+`151874488389e5a2e8e426c247420b10947c8459bc757b30516bf83680045139`; all six containers were healthy
+with zero restarts; and the shared-host stage gate passed. P0-X-HTTP-01 remains open, X remains
+non-stable, the Production Evidence Gate remains open, and Work Item 17 was not started.
