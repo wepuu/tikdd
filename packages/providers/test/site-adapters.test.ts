@@ -240,12 +240,24 @@ describe("SSSTwitterProvider", () => {
       Date.now() + 4 * 60 * 1000
     );
     expect(calls).toHaveLength(2);
+    const expectedUserAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
+    expect(calls[0]?.init?.headers).toMatchObject({
+      accept: "text/html,application/xhtml+xml",
+      "user-agent": expectedUserAgent
+    });
     expect(calls[1]?.init?.headers).toMatchObject({
       cookie: "qualification_session=fixture",
-      "hx-request": "true"
+      "hx-current-url": "https://ssstwitter.com/",
+      "hx-request": "true",
+      "hx-target": "target",
+      origin: "https://ssstwitter.com",
+      referer: "https://ssstwitter.com/",
+      "user-agent": expectedUserAgent
     });
-    expect(calls[1]?.init?.body?.toString()).toContain("tt=fixture-token");
-    expect(calls[1]?.init?.body?.toString()).toContain("source=form");
+    expect(calls[1]?.init?.body?.toString()).toBe(
+      "id=https%3A%2F%2Fx.com%2Fauthorized%2Fstatus%2F123456&locale=en&tt=fixture-token&ts=1785771900&source=form"
+    );
     expect(provider.consumeQualificationEvidence()).toEqual({
       candidateHosts: ["ssscdn.io"]
     });
@@ -356,7 +368,13 @@ describe("SSSTwitterProvider", () => {
     });
   });
 
-  it("rejects a full page without the selected result container", async () => {
+  it.each([
+    ["an empty body", ""],
+    [
+      "a full page without the selected result container",
+      '<footer><a href="https://reelsvideo.io/">Instagram Downloader</a></footer>'
+    ]
+  ])("rejects %s without fabricating candidates", async (_caseName, resultHtml) => {
     const landingHtml = await fixture("ssstwitter-landing.html");
     let calls = 0;
     const provider = new SSSTwitterProvider({
@@ -364,9 +382,7 @@ describe("SSSTwitterProvider", () => {
       fetchImpl: async (input) => {
         calls += 1;
         return htmlResponse(
-          calls === 1
-            ? landingHtml
-            : '<footer><a href="https://reelsvideo.io/">Instagram Downloader</a></footer>',
+          calls === 1 ? landingHtml : resultHtml,
           input.toString()
         );
       }
@@ -377,6 +393,7 @@ describe("SSSTwitterProvider", () => {
       retryable: true,
       fallbackAllowed: true
     });
+    expect(calls).toBe(2);
   });
 
   it("stops on private content without attempting policy bypass", async () => {

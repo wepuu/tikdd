@@ -13,6 +13,8 @@ const ORIGIN = "https://ssstwitter.com";
 const ALLOWED_HOSTS = new Set(["ssstwitter.com", "www.ssstwitter.com"]);
 const MEDIA_HOST_POLICY_ID = "ssstwitter-media-v1";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
+const SSSTWITTER_BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
 
 export interface SSSTwitterQualificationEvidence {
   candidateHosts: readonly string[];
@@ -193,7 +195,10 @@ export class SSSTwitterProvider implements ResolverProvider {
         method: "GET",
         redirect: "follow",
         ...(input.signal ? { signal: input.signal } : {}),
-        headers: { accept: "text/html,application/xhtml+xml" }
+        headers: {
+          accept: "text/html,application/xhtml+xml",
+          "user-agent": SSSTWITTER_BROWSER_USER_AGENT
+        }
       },
       ALLOWED_HOSTS,
       { expectedContentTypes: ["text/html", "application/xhtml+xml"] }
@@ -216,6 +221,7 @@ export class SSSTwitterProvider implements ResolverProvider {
         headers: {
           accept: "text/html,application/xhtml+xml",
           "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+          "user-agent": SSSTWITTER_BROWSER_USER_AGENT,
           "hx-current-url": landingUrl.toString(),
           "hx-request": "true",
           "hx-target": "target",
