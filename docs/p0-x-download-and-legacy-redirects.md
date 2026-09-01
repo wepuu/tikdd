@@ -492,3 +492,94 @@ candidate/CDN request or media transfer occurred. Restoration disabled the exact
 cleared the trace hash and authorization ID, and restored the original Nginx checksum. Public
 invalid task creation returned 400, all six containers were healthy with zero restarts, and the
 final shared-host stage gate passed.
+
+### P0-X-COMPLETION-EVIDENCE-01 completion failure isolation
+
+Starting from execution-time main `a47707f4c4b3367bae1fdd195a4eb2c4c194df9d`, this investigation
+used only retained logs, BullMQ metadata, PostgreSQL catalog reads, safe environment-presence checks
+and sanitized local fixtures. It made zero Provider, CDN, Delivery or resolve-task requests and did
+not change runtime code, a production image, database privileges or production data.
+
+The retained BullMQ job for `tsk_cca48401dd5a4c10ad7b5193e18991d6` still existed in `failed`
+state. It recorded `attemptsMade=3`, configured attempts `3`, timestamp
+`2026-09-01T09:05:05.276Z`, final-attempt `processedOn=2026-09-01T09:05:11.160Z` and
+`finishedOn=2026-09-01T09:05:12.053Z`. Its final `failedReason` was
+`All eligible providers failed for x.`, but its three retained stack traces preserve the real
+sequence:
+
+1. Attempt 1 failed with `error: permission denied for table delivery_candidates` in
+   `TaskRepository.completeWithResolution()` at `packages/persistence/src/index.ts:435`.
+2. Attempts 2 and 3 failed in `ProviderRouter.resolve()` with
+   `ProviderRoutingError: All eligible providers failed for x.`
+
+Line 435 is the first write in the completion transaction:
+`DELETE FROM delivery_candidates WHERE task_id = $1`. The preceding `BEGIN` and
+`SELECT resolve_tasks ... FOR UPDATE` succeeded. PostgreSQL rejected the DELETE before any candidate
+INSERT, provider-attempt INSERT, task-success UPDATE or admission DELETE could commit, and the catch
+path rolled the transaction back. The retained BullMQ string does not preserve the structured
+PostgreSQL `code` property; the canonical SQLSTATE for `insufficient_privilege` is `42501`. The
+identified table is `delivery_candidates`; no constraint was evaluated or implicated.
+
+Production catalog inspection used the Worker's own `tikdd_worker` database credential in a
+read-only transaction. `current_user` and `session_user` were both `tikdd_worker`, and
+`has_schema_privilege(..., 'public', 'USAGE')` was true. Relevant table privileges were:
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+| --- | --- | --- | --- | --- |
+| `resolve_tasks` | yes | yes | yes | no |
+| `delivery_candidates` | yes | yes | yes | **no** |
+| `provider_attempts` | yes | yes | yes | no |
+| `active_source_admissions` | yes | yes | yes | yes |
+
+The no values on `resolve_tasks` and `provider_attempts` DELETE are not used by this success path.
+The missing `delivery_candidates.DELETE` privilege is required unconditionally, even when the task
+has no previous candidate rows. Column-grant inspection found SELECT/INSERT/UPDATE grants for every
+candidate column but no independent DELETE capability. Candidate IDs are application-generated and
+no sequence privilege is required.
+
+The live `delivery_candidates` schema contains all fields written by the current transaction:
+`id`, task/format/provider identifiers, platform, region, observation class, mode, host policy,
+encryption algorithm/key/IV/payload/tag and expiry. Their types, nullability, ID/format/provider/
+region checks, AES-GCM byte-length checks, task foreign key and task/format uniqueness match the
+current code. Schema drift or a constraint failure is therefore not the observed cause.
+
+The Worker had both `DELIVERY_ENCRYPTION_KEY_ID` and secret key material present through the
+reviewed secret entrypoint, and the actual `createCandidateCipherFromEnvironment()` constructed an
+`AesGcmCandidateCipher` successfully without exposing either value. A local deterministic call to
+the real `prepareEncryptedCandidates()` used eight sanitized SSSTwitter-style redirect candidates
+and a static fixture cipher. It returned eight encrypted candidates, all IDs matched
+`dvc_[a-f0-9]{32}`, all format IDs matched, AES-256-GCM was used and the plaintext fixture target
+hostname was absent from serialized output. Candidate preparation was therefore ready and is not
+the isolated failure.
+
+The final task row is `failed`, public observation class, with generic
+`PROVIDER_UNAVAILABLE`, no result, zero delivery candidates, zero successful provider-attempt rows
+and zero active-source admission rows. Only the later two failed `provider_schema_changed` attempts
+(1,310 ms and 877 ms) committed. Absence of attempt-1 artifacts is explained by the transaction
+rollback; it does not mean the first SSSTwitter invocation failed.
+
+Repository migrations create the candidate table, but do not provision the production
+`tikdd_worker` role or its base table grants. Migration `0019_task_admission_api_delete_grants.sql`
+adds the separately discovered `active_source_admissions.DELETE` permission when that external role
+exists. No equivalent migration or versioned production-role provisioning grants
+`delivery_candidates.DELETE`; the remaining production role baseline is therefore external to the
+repository and drifted from the completion contract.
+
+The exact incident classification is now:
+
+> The first traced SSSTwitter Provider invocation succeeded. Candidate preparation was available.
+> `completeWithResolution()` began, then PostgreSQL rejected its candidate-replacement DELETE
+> because `tikdd_worker` lacked `delivery_candidates.DELETE`. BullMQ retried the complete job, later
+> Provider responses failed, and the final handler masked the original local failure as generic
+> `PROVIDER_UNAVAILABLE`.
+
+The evidence task stops here without repair. Recommended independent scopes are:
+
+- `P0-X-COMPLETION-01`: version and verify the exact Worker production grants required by the
+  atomic completion transaction, beginning with `delivery_candidates.DELETE`.
+- `P0-X-RETRY-MASKING-01`: prevent a post-Provider local failure from re-running external resolution
+  and preserve truthful terminal error semantics and the successful attempt ledger.
+
+P0-X-HTTP-01 remains open, X remains non-stable, the Production Evidence Gate remains open and Work
+Item 17 was not started. Production remains fail-closed with all Providers, rollout, health, Canary
+and diagnostic trace disabled and allocation zero.
