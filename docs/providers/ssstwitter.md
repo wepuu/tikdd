@@ -158,6 +158,23 @@ so the adapter parser and remaining request shape must not be changed without ne
 sanitized evidence and separate authorization. Production rollout remains disabled and allocation
 remains zero.
 
+## P0-X-EVIDENCE-01 differential capture
+
+A single authorized isolated invocation on 2026-09-01 used the unchanged production Service image
+`sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`, Node `v24.14.0`, the NL
+production host and its Provider-only egress. The real adapter received the canonical SpaceX URL,
+completed the normal landing GET, form POST, 301-to-GET transition and Provider-cookie forwarding,
+then parsed eight formats and eight `ssscdn.io` candidates. No media/CDN request or Delivery ticket
+was made, and the conditional source-URL control was not executed because the primary invocation
+succeeded.
+
+This evidence shows that the current request and parser path succeeds in isolation; it does not
+explain the earlier Worker task's two `provider_schema_changed` attempts. The remaining differential
+is either outside the isolated Provider invocation or was transient upstream behavior at the earlier
+time. X remains non-stable, production allocation remains zero, and the Production Evidence Gate
+remains open. Full sanitized request/response evidence and lifecycle controls are recorded in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
