@@ -248,3 +248,61 @@ normal validation and returned 400 for an invalid request. All six production co
 healthy with zero restarts, and the final host stage gate passed. X remains non-stable, the X
 Production Evidence Gate remains open, no US egress/proxy/media relay was introduced, and Work Item
 17 was not started.
+
+### P0-X-EVIDENCE-01 isolated production-image capture
+
+On 2026-09-01, a bounded differential capture ran from repository baseline
+`41a4c147f87365a712e2900cbe6cf87bbf040d5f` against the unchanged production application SHA
+`251b02b39c66cc949a299f9f24c7c9533bb85d73`. It used the immutable Service image
+`ghcr.io/wepuu/tikdd-service@sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`
+and its Node `v24.14.0` runtime on the NL production host. Read-only inspection of the current
+Worker, retained Docker logs and journal found no surviving Provider error message, stack or stage
+for task `tsk_216ff5607b3243c2aabb72c04ae8d024`.
+
+The diagnostic therefore used one disposable, read-only container attached only to
+`tikdd_provider-egress`. It instantiated the real `SSSTwitterProvider` and exercised its normal
+`requestText()` path through a pass-through fetch observer. It had no API, queue, database, Redis,
+Delivery or data-network connection. The observer accepted only the reviewed SSSTwitter page hosts,
+recorded sanitized request/response metadata, and did not request a media or CDN URL. No runtime
+source, parser, request field, redirect rule or canonicalization behavior was changed.
+
+The submitted source was
+`https://x.com/SpaceX/status/2093477720638341395?s=20`; normal platform detection produced
+`https://x.com/SpaceX/status/2093477720638341395`. The URLs differ only by removal of the `s` query
+parameter. The Provider received the canonical URL and succeeded on the first and only resolve
+invocation, producing eight normalized formats and eight candidates, all classified to the reviewed
+`ssscdn.io` host. Because the primary invocation succeeded, the conditional source-URL control was
+not permitted or executed.
+
+The sanitized page-request sequence was:
+
+| Step | Request | Request characteristics | Response evidence |
+| ---: | --- | --- | --- |
+| 1 | `GET https://ssstwitter.com/` | Chrome 152 User-Agent; `Accept: text/html,application/xhtml+xml`; no request cookie or body | 200; `text/html; charset=UTF-8`; 87,726 bytes; SHA-256 `c808e38c2a39a535a2b9bf2c494b0c683dbba1ca999ce108247025ee624d5f5c`; one form, include-values marker, no `#result`, no challenge marker, 32 anchors; no response cookie |
+| 2 | `POST https://ssstwitter.com/` | Same User-Agent and Accept; URL-encoded form; HTMX target headers; same-origin Origin and Referer; no request cookie; fields `id`, `locale`, `source`, `ts`, `tt`; `id` matched the canonical URL; token values were not retained | 301; HTML; 89,205 bytes; SHA-256 `da0900ab5ae71ebe1672cee6563addfb2090aaec04fa41a028c83d54f9373657`; `#result` and `ssscdn.io` markers present; no challenge marker; response set one `__cflb` cookie |
+| 3 | `GET https://ssstwitter.com/result_normal?en` | POST body and Content-Type removed by the normal 301 transition; HTMX, Origin and Referer retained; one `__cflb` cookie forwarded (name and 50-byte header length only; no value retained) | 200; HTML; 71,653 bytes; SHA-256 `4d880dc026a98e424321c5d68ad8ca1e0c18253ff436d96e5ade0fa555bdfcb7`; complete `#result`, result-normal and `ssscdn.io` markers; no form or challenge marker; 44 anchors |
+
+The observer did not record the POST response's relative `Location` value because its sanitizer
+required an absolute URL. No rerun was authorized or necessary: the immediately following request
+made by the unmodified redirect implementation proves that the header resolved same-origin to
+`/result_normal?en`. This instrumentation limitation is confined to the evidence record and did not
+alter redirect handling.
+
+There was no `ProviderError` and no failure stage in this isolated invocation. Canonicalization,
+the reviewed browser-compatible request headers, normal POST-to-GET redirect, Provider-issued cookie
+forwarding, result markup and the current parser all succeeded in the controlled production-image
+path. This narrows the prior task result to either context outside the isolated Provider invocation
+or a transient upstream response during the earlier task; the evidence does not distinguish those
+possibilities and does not justify choosing either one.
+
+After capture, the disposable container was absent, the Nginx checksum remained
+`151874488389e5a2e8e426c247420b10947c8459bc757b30516bf83680045139`, all six TikDD containers were
+healthy with zero restarts, and the shared-host stage gate passed. TwitterSaver, DLPanda and
+SSSTwitter remained disabled; rollout and Canary remained disabled; allocation remained zero; and
+the public task endpoint returned normal application validation. No Delivery ticket was created and
+no media body was requested or transferred.
+
+P0-X-EVIDENCE-01 therefore closes only the isolated differential capture. X remains non-stable, the
+X Production Evidence Gate remains open, and Work Item 17 was not started. The next separately
+scoped investigation should retain sanitized Provider error stage and request-transition metadata
+inside one exact authorized Worker/Router task attempt without changing Provider behavior.
