@@ -1,5 +1,9 @@
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
+import type {
+  SSSTwitterDiagnosticStage,
+  SSSTwitterDiagnosticTrace
+} from "../ssstwitter-diagnostic";
 import {
   createRedirectResolution,
   readAttributes,
@@ -23,6 +27,8 @@ export interface SSSTwitterQualificationEvidence {
 export interface SSSTwitterProviderOptions {
   enabled?: boolean;
   fetchImpl?: ProviderFetch;
+  diagnosticTrace?: SSSTwitterDiagnosticTrace;
+  region?: string;
 }
 
 function formValue(source: string, name: string): string | null {
@@ -159,10 +165,15 @@ function parseResult(html: string): {
 export class SSSTwitterProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly fetchImpl: ProviderFetch;
+  private readonly diagnosticTrace: SSSTwitterDiagnosticTrace | null;
+  private readonly region: string;
+  private activeResolveCount = 0;
   private qualificationEvidence: SSSTwitterQualificationEvidence | null = null;
 
   constructor(options: SSSTwitterProviderOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.diagnosticTrace = options.diagnosticTrace ?? null;
+    this.region = options.region ?? "global";
     this.manifest = {
       id: "ssstwitter",
       displayName: "SSSTwitter",
@@ -182,85 +193,134 @@ export class SSSTwitterProvider implements ResolverProvider {
   }
 
   async resolve(input: ResolveInput) {
+    this.activeResolveCount += 1;
+    const trace = this.diagnosticTrace?.tryStart({
+      providerId: this.manifest.id,
+      region: this.region,
+      resolveInput: input,
+      activeProviderConcurrency: this.activeResolveCount
+    }) ?? null;
+    let stage: SSSTwitterDiagnosticStage = "resolve_start";
+    trace?.stage(stage);
     this.qualificationEvidence = null;
-    if (input.platform !== "x") {
-      throw new ProviderError("SSSTwitter only accepts X URLs.", "unsupported_url", false, true);
-    }
-
-    const landingUrl = new URL("/", ORIGIN);
-    const landing = await requestText(
-      this.fetchImpl,
-      landingUrl,
-      {
-        method: "GET",
-        redirect: "follow",
-        ...(input.signal ? { signal: input.signal } : {}),
-        headers: {
-          accept: "text/html,application/xhtml+xml",
-          "user-agent": SSSTWITTER_BROWSER_USER_AGENT
-        }
-      },
-      ALLOWED_HOSTS,
-      { expectedContentTypes: ["text/html", "application/xhtml+xml"] }
-    );
-    const form = parseForm(landing.body);
-    const requestBody = new URLSearchParams({
-      id: input.canonicalUrl,
-      locale: "en",
-      tt: form.tt,
-      ts: form.ts,
-      source: form.source
-    });
-    const result = await requestText(
-      this.fetchImpl,
-      landingUrl,
-      {
-        method: "POST",
-        redirect: "follow",
-        ...(input.signal ? { signal: input.signal } : {}),
-        headers: {
-          accept: "text/html,application/xhtml+xml",
-          "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-          "user-agent": SSSTWITTER_BROWSER_USER_AGENT,
-          "hx-current-url": landingUrl.toString(),
-          "hx-request": "true",
-          "hx-target": "target",
-          origin: ORIGIN,
-          referer: landingUrl.toString(),
-          ...(landing.cookie ? { cookie: landing.cookie } : {})
-        },
-        body: requestBody
-      },
-      ALLOWED_HOSTS,
-      { expectedContentTypes: ["text/html", "application/xhtml+xml"] }
-    );
-    const parsed = parseResult(result.body);
-    this.qualificationEvidence = { candidateHosts: parsed.candidateHosts };
     try {
-      return createRedirectResolution(
-        this.manifest.id,
-        this.manifest.kind,
-        input,
+      if (input.platform !== "x") {
+        throw new ProviderError("SSSTwitter only accepts X URLs.", "unsupported_url", false, true);
+      }
+
+      const landingUrl = new URL("/", ORIGIN);
+      stage = "landing_request_start";
+      trace?.stage(stage);
+      const landing = await requestText(
+        this.fetchImpl,
+        landingUrl,
         {
-          title: parsed.title,
-          formats: parsed.formats,
-          warnings: ["SSSTwitter production rollout is not approved."]
+          method: "GET",
+          redirect: "follow",
+          ...(input.signal ? { signal: input.signal } : {}),
+          headers: {
+            accept: "text/html,application/xhtml+xml",
+            "user-agent": SSSTWITTER_BROWSER_USER_AGENT
+          }
         },
+        ALLOWED_HOSTS,
         {
-          hostPolicyId: MEDIA_HOST_POLICY_ID,
-          maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS
+          expectedContentTypes: ["text/html", "application/xhtml+xml"],
+          ...(trace ? { observer: trace.httpObserver } : {})
         }
       );
-    } catch (error) {
-      if (error instanceof ProviderError) {
-        throw error;
-      }
-      throw new ProviderError(
-        "SSSTwitter returned a delivery target outside its reviewed policy.",
-        "invalid_result",
-        true,
-        true
+      stage = "landing_response_complete";
+      trace?.stage(stage);
+      stage = "form_parse_start";
+      trace?.stage(stage);
+      const form = parseForm(landing.body);
+      stage = "form_parse_success";
+      trace?.stage(stage);
+      const requestBody = new URLSearchParams({
+        id: input.canonicalUrl,
+        locale: "en",
+        tt: form.tt,
+        ts: form.ts,
+        source: form.source
+      });
+      stage = "post_request_start";
+      trace?.stage(stage);
+      const result = await requestText(
+        this.fetchImpl,
+        landingUrl,
+        {
+          method: "POST",
+          redirect: "follow",
+          ...(input.signal ? { signal: input.signal } : {}),
+          headers: {
+            accept: "text/html,application/xhtml+xml",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "user-agent": SSSTWITTER_BROWSER_USER_AGENT,
+            "hx-current-url": landingUrl.toString(),
+            "hx-request": "true",
+            "hx-target": "target",
+            origin: ORIGIN,
+            referer: landingUrl.toString(),
+            ...(landing.cookie ? { cookie: landing.cookie } : {})
+          },
+          body: requestBody
+        },
+        ALLOWED_HOSTS,
+        {
+          expectedContentTypes: ["text/html", "application/xhtml+xml"],
+          ...(trace ? { observer: trace.httpObserver } : {})
+        }
       );
+      stage = "result_response_complete";
+      trace?.stage(stage);
+      stage = "result_parse_start";
+      trace?.stage(stage);
+      const parsed = parseResult(result.body);
+      stage = "result_parse_success";
+      trace?.stage(stage);
+      this.qualificationEvidence = { candidateHosts: parsed.candidateHosts };
+      stage = "resolution_create_start";
+      trace?.stage(stage);
+      let resolution;
+      try {
+        resolution = createRedirectResolution(
+          this.manifest.id,
+          this.manifest.kind,
+          input,
+          {
+            title: parsed.title,
+            formats: parsed.formats,
+            warnings: ["SSSTwitter production rollout is not approved."]
+          },
+          {
+            hostPolicyId: MEDIA_HOST_POLICY_ID,
+            maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS
+          }
+        );
+      } catch (error) {
+        if (error instanceof ProviderError) throw error;
+        throw new ProviderError(
+          "SSSTwitter returned a delivery target outside its reviewed policy.",
+          "invalid_result",
+          true,
+          true
+        );
+      }
+      stage = "resolution_create_success";
+      trace?.stage(stage);
+      stage = "resolve_success";
+      trace?.stage(stage, {
+        formatCount: resolution.result.formats.length,
+        candidateCount: resolution.candidates.length,
+        candidateHostnames: parsed.candidateHosts
+      });
+      return resolution;
+    } catch (error) {
+      trace?.failure(stage, error);
+      throw error;
+    } finally {
+      trace?.finish();
+      this.activeResolveCount -= 1;
     }
   }
 }

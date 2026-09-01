@@ -10,6 +10,30 @@ import type { ResolveInput } from "../index";
 
 export type ProviderFetch = typeof fetch;
 
+export interface ProviderHttpRequestObservation {
+  url: string;
+  method: string;
+  headers: Headers;
+  body: string | URLSearchParams | null;
+}
+
+export interface ProviderHttpResponseObservation {
+  requestUrl: string;
+  responseUrl: string | null;
+  status: number;
+  headers: Headers;
+}
+
+export interface ProviderHttpBodyObservation {
+  body: string;
+}
+
+export interface ProviderHttpObserver {
+  onRequest?(observation: ProviderHttpRequestObservation): void;
+  onResponse?(observation: ProviderHttpResponseObservation): void;
+  onBody?(observation: ProviderHttpBodyObservation): void;
+}
+
 export interface ParsedFormat {
   url: string;
   label: string;
@@ -145,6 +169,7 @@ export async function requestText(
     maximumBytes?: number;
     expectedContentTypes?: readonly string[];
     maximumRedirects?: number;
+    observer?: ProviderHttpObserver;
   } = {}
 ): Promise<{ body: string; cookie: string; response: Response }> {
   const maximumBytes = options.maximumBytes ?? 2_000_000;
@@ -155,6 +180,22 @@ export async function requestText(
   let cookie = "";
 
   for (let redirectCount = 0; redirectCount <= maximumRedirects; redirectCount += 1) {
+    try {
+      const observedBody =
+        typeof currentInit.body === "string"
+          ? currentInit.body
+          : currentInit.body instanceof URLSearchParams
+            ? new URLSearchParams(currentInit.body)
+            : null;
+      options.observer?.onRequest?.({
+        url: currentUrl.toString(),
+        method: (currentInit.method ?? "GET").toUpperCase(),
+        headers: new Headers(currentInit.headers),
+        body: observedBody
+      });
+    } catch {
+      // Observation must not change Provider request behavior.
+    }
     try {
       response = await fetchImpl(currentUrl, currentInit);
     } catch (error) {
@@ -167,6 +208,17 @@ export async function requestText(
         true,
         true
       );
+    }
+
+    try {
+      options.observer?.onResponse?.({
+        requestUrl: currentUrl.toString(),
+        responseUrl: response.url || null,
+        status: response.status,
+        headers: new Headers(response.headers)
+      });
+    } catch {
+      // Observation must not change Provider response handling.
     }
 
     const responseCookie = cookiesFrom(response);
@@ -236,6 +288,11 @@ export async function requestText(
   }
 
   const body = await readBodyWithLimit(response, maximumBytes);
+  try {
+    options.observer?.onBody?.({ body });
+  } catch {
+    // Observation must not change Provider body handling.
+  }
   if (response.status === 429) {
     throw new ProviderError("The provider rate limit was reached.", "provider_rate_limited", true, true);
   }

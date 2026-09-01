@@ -10,6 +10,7 @@ const safeEnvironment = {
   ENABLE_TWITTERSAVER_PROVIDER: "false",
   ENABLE_DLPANDA_PROVIDER: "false",
   ENABLE_SSSTWITTER_PROVIDER: "false",
+  SSSTWITTER_DIAGNOSTIC_TRACE_ENABLED: "false",
   PROVIDER_ROLLOUT_ENABLED: "false",
   HTTP_PROXY: "", HTTPS_PROXY: "", ALL_PROXY: "", http_proxy: "", https_proxy: "", all_proxy: ""
 };
