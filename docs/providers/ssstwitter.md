@@ -147,6 +147,17 @@ relay is required. P0-X-HTTP-01 adds one fixed browser-compatible User-Agent to 
 landing GET and resolve POST only; it does not change the parser, global fetch behavior, other
 Providers, delivery policy or public rollout state.
 
+The merged User-Agent repair was deployed on 2026-09-01 as application SHA
+`251b02b39c66cc949a299f9f24c7c9533bb85d73` and Service image digest
+`sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`.
+The one authorized production verification still produced two fallback-eligible
+`provider_schema_changed` attempts (1,265 ms and 972 ms), zero formats, zero candidates and zero
+tickets. This does not invalidate the controlled HTTP A/B evidence; it shows that the fixed
+User-Agent alone was not sufficient in TikDD's deployed request path. No upstream body was retained,
+so the adapter parser and remaining request shape must not be changed without new deterministic,
+sanitized evidence and separate authorization. Production rollout remains disabled and allocation
+remains zero.
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
