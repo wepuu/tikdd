@@ -241,6 +241,37 @@ allocation and all Provider/Canary/trace flags were restored to zero/off. P0-X-H
 Production Evidence Gate remain open. Full process, HTTP, lifecycle and restoration evidence is in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-COMPLETION-EVIDENCE-01 root cause
+
+The retained BullMQ job proves that the first traced SSSTwitter invocation did not fail. It
+successfully returned eight formats and eight candidates, and the actual candidate cipher was
+configured. BullMQ attempt 1 then entered `TaskRepository.completeWithResolution()` and PostgreSQL
+rejected its first write, `DELETE FROM delivery_candidates WHERE task_id = $1`, with
+`permission denied for table delivery_candidates`.
+
+Read-only production catalog inspection under the exact `tikdd_worker` identity confirmed
+`delivery_candidates` SELECT/INSERT/UPDATE privileges but no DELETE privilege. Public schema usage,
+`resolve_tasks` SELECT/UPDATE, `provider_attempts` INSERT and `active_source_admissions` DELETE were
+present. The live candidate columns and constraints match the current write model. The Worker had
+both delivery encryption settings and constructed its cipher successfully; a local sanitized
+eight-candidate call to the real preparation function produced eight valid encrypted
+`dvc_<32 hex>` candidates. Neither SSSTwitter parsing, candidate preparation, encryption nor schema
+compatibility caused the completion failure.
+
+The transaction rolled back before any candidate, successful attempt or successful result
+committed. BullMQ then reran the whole callback twice. Those later SSSTwitter responses failed as
+`provider_schema_changed`, and the final failed handler replaced the original local database error
+with generic `PROVIDER_UNAVAILABLE`. This is the separately tracked `P0-X-RETRY-MASKING` defect; the
+later Provider failures do not change the attempt-1 conclusion.
+
+No Provider, CDN, Delivery or new resolve request was made during this isolation, and no runtime,
+image, privilege or production-data change was made. The required repair is deliberately deferred:
+one scope must version and verify the Worker's exact completion-path grants, while another must
+review retry and truthful terminal-error semantics. P0-X-HTTP-01 remains open, X is non-stable,
+production allocation remains zero and the Production Evidence Gate remains open. Full evidence is
+recorded in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
