@@ -108,6 +108,9 @@ export function verifyWorkItem16Static() {
 
   assert(/ENABLE_MOCK_PROVIDER=false/.test(productionEnvironment), "Mock Provider must be disabled in production.");
   assert(/PROVIDER_ROLLOUT_ENABLED=false/.test(productionEnvironment), "The foundation configuration must not grant rollout traffic.");
+  assert(/^SSSTWITTER_DIAGNOSTIC_TRACE_ENABLED=false$/m.test(productionEnvironment), "SSSTwitter diagnostic tracing must default off.");
+  assert(/^SSSTWITTER_DIAGNOSTIC_CANONICAL_SHA256=$/m.test(productionEnvironment), "The diagnostic canonical hash must be empty by default.");
+  assert(!/SSSTWITTER_DIAGNOSTIC_CANONICAL_(?:URL|URI)=/m.test(productionEnvironment), "A raw diagnostic URL must never be configured.");
   assert(!/:latest(?:\s|$)/m.test(compose + productionEnvironment), "Mutable-only latest image identity is forbidden.");
   assert(/git-0000000000000000000000000000000000000000/.test(productionEnvironment), "The example must demonstrate full-SHA application image tags.");
 

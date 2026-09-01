@@ -44,6 +44,16 @@ export {
   type SSSTwitterQualificationEvidence
 } from "./adapters/ssstwitter";
 export {
+  SSSTWITTER_DIAGNOSTIC_TRACE_EVENT,
+  SSSTwitterDiagnosticTrace,
+  createSSSTwitterDiagnosticTraceFromEnvironment,
+  loadSSSTwitterDiagnosticTraceConfiguration,
+  type SSSTwitterDiagnosticStage,
+  type SSSTwitterDiagnosticTraceConfiguration,
+  type SSSTwitterDiagnosticTraceEvent,
+  type SSSTwitterDiagnosticTraceSink
+} from "./ssstwitter-diagnostic";
+export {
   TwitterSaverProvider,
   type TwitterSaverProviderOptions
 } from "./adapters/twitter-saver";

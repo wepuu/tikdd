@@ -24,6 +24,7 @@ import {
   ProviderRoutingError,
   SSSTwitterProvider,
   TwitterSaverProvider,
+  createSSSTwitterDiagnosticTraceFromEnvironment,
   type ResolverProvider
 } from "@tikdd/providers";
 import {
@@ -68,6 +69,11 @@ const providerHealth = loadProviderHealthConfiguration();
 const rolloutConfiguration = loadRolloutConfiguration();
 const admissionConfiguration = loadAdmissionControlConfiguration();
 const production = process.env.NODE_ENV === "production";
+const ssstwitterDiagnosticTrace = createSSSTwitterDiagnosticTraceFromEnvironment({
+  production,
+  region: workerRegion,
+  sink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+});
 const deploymentId = process.env.TIKDD_DEPLOYMENT_ID ?? (production ? "" : "tikdd");
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deploymentId)) throw new Error("TIKDD_DEPLOYMENT_ID is invalid.");
 const routePolicyMaximumStaleMs = Number.parseInt(process.env.ADMIN_ROUTE_POLICY_TTL_MS ?? "60000",10);
@@ -130,7 +136,11 @@ if (enableDLPandaProvider) {
   providers.push(new DLPandaProvider({ enabled: true }));
 }
 if (ssstwitterActivation.enabled) {
-  providers.push(new SSSTwitterProvider({ enabled: true }));
+  providers.push(new SSSTwitterProvider({
+    enabled: true,
+    diagnosticTrace: ssstwitterDiagnosticTrace,
+    region: workerRegion
+  }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));
