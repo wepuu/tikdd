@@ -207,3 +207,44 @@ must not be repeated by this hotfix. The corrected architecture conclusion is th
 proxy or TikDD media relay is required. The repair is limited to a fixed browser-compatible
 User-Agent on the SSSTwitter landing GET and resolve POST; public rollout remains disabled, X stays
 non-stable, the Production Evidence Gate remains open and Work Item 17 is not started.
+
+### P0-X-HTTP-01 v2 production result
+
+The narrow User-Agent change was implemented in commit `d448fdc`, merged as
+`251b02b39c66cc949a299f9f24c7c9533bb85d73`, and published in the immutable Service image
+`ghcr.io/wepuu/tikdd-service@sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`.
+Only API, Worker and Delivery were replaced. The owner explicitly approved this minimum replacement
+after the internal-observation preflight correctly rejected the ordinary production/public,
+Provider-disabled state; the host stage gate, health checks, immutable release identity, verified
+PostgreSQL backup and automatic rollback boundary remained active. Nginx, Cloudflare, Web and
+datastore topology were unchanged.
+
+One effective post-deploy maintenance task used only the authorized SSSTwitter/X/NL/SpaceX tuple.
+Its sanitized task ID was `tsk_216ff5607b3243c2aabb72c04ae8d024`. Public task creation was blocked
+at Nginx during the Provider window, while the owner task entered through loopback. The deployed
+adapter contained the reviewed Chrome 152 User-Agent on both SSSTwitter requests, but the production
+result did **not** reproduce the standalone HTTP A/B success:
+
+| Provider | Platform | Region | Result | Duration |
+| --- | --- | --- | --- | ---: |
+| SSSTwitter | X | NL | `provider_schema_changed` | 1,265 ms |
+| SSSTwitter | X | NL | `provider_schema_changed` | 972 ms |
+
+The task ended `PROVIDER_UNAVAILABLE` with zero normalized formats, zero delivery candidates and zero
+Delivery tickets. Consequently no Delivery redemption or 302 occurred, no redirect was followed,
+and TikDD transferred no media body. The public result exposed no signed candidate URL. No upstream
+body was retained, so this run does not justify a parser redesign or a new request-shape hypothesis.
+The owner authorization was consumed by this task; no additional Provider request was made.
+
+The standalone A/B evidence still proves that omission of a browser-compatible User-Agent is a real
+SSSTwitter request-compatibility defect. This production result proves that adding that header was
+not sufficient to repair the current TikDD production path. P0-X-HTTP-01 therefore remains open and
+must return to deterministic, sanitized evidence collection under a separately authorized task
+before any further adapter change.
+
+Restoration completed with rollout rule revision 6 disabled, allocation 0 and expired. SSSTwitter,
+TwitterSaver, DLPanda, rollout and Canary flags are false; the public task endpoint again reaches
+normal validation and returned 400 for an invalid request. All six production containers are
+healthy with zero restarts, and the final host stage gate passed. X remains non-stable, the X
+Production Evidence Gate remains open, no US egress/proxy/media relay was introduced, and Work Item
+17 was not started.
