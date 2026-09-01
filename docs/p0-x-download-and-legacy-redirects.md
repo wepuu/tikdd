@@ -306,3 +306,55 @@ P0-X-EVIDENCE-01 therefore closes only the isolated differential capture. X rema
 X Production Evidence Gate remains open, and Work Item 17 was not started. The next separately
 scoped investigation should retain sanitized Provider error stage and request-transition metadata
 inside one exact authorized Worker/Router task attempt without changing Provider behavior.
+
+### P0-X-E2E-VERIFY-01 production Worker revalidation
+
+The documentation-only P0-X-EVIDENCE-01 record merged through PR #21 at
+`855151599b2cbd38bf94bb29259d3b54a7a9da44`. That merge became the starting main SHA for one
+owner-authorized production Worker revalidation on 2026-09-01. The deployed application remained
+`251b02b39c66cc949a299f9f24c7c9533bb85d73`, using unchanged Service image
+`ghcr.io/wepuu/tikdd-service@sha256:6f8d237ee1af9b64f0a2e14bb7593562b43d335e3807aa221c90bc2e35f6da72`.
+No runtime source or image was changed.
+
+The maintenance window blocked public task creation at Nginx before any Provider gate opened. It
+enabled only SSSTwitter, admitted only `ssstwitter` / `x` / `nl` through a 15-minute exact rule, and
+kept TwitterSaver, DLPanda and Canary disabled. One loopback API request submitted the reviewed
+source URL `https://x.com/SpaceX/status/2093477720638341395?s=20`; Worker platform detection supplied
+the canonical URL `https://x.com/SpaceX/status/2093477720638341395`. Task
+`tsk_71b987d310db49e68cde899b806c6b64` used the real API, persistence, BullMQ, Worker,
+ProviderRouter and SSSTwitter path, then reached terminal `failed` with `PROVIDER_UNAVAILABLE`.
+
+Its sanitized attempt ledger was:
+
+| Provider | Platform | Region | Status | Failure | Retryable | Fallback allowed | Duration |
+| --- | --- | --- | --- | --- | --- | --- | ---: |
+| SSSTwitter | X | NL | failed | `provider_schema_changed` | yes | yes | 1,010 ms |
+| SSSTwitter | X | NL | failed | `provider_schema_changed` | yes | yes | 1,026 ms |
+
+The task produced zero normalized formats and zero encrypted candidates. Its public representation
+contained no `ssscdn.io` URL, candidate field, host-policy field, secret header or encrypted
+payload. Because resolution failed, no Delivery ticket was created, no `/d/:token` redemption or
+302 occurred, and TikDD transferred no media bytes.
+
+The authorized conditional control then used one effective disposable invocation of the actual
+`SSSTwitterProvider.resolve()` with the same image, Node runtime, NL host, Provider-only egress and
+canonical URL. It succeeded with eight formats and eight candidates, whose only sanitized hostname
+was `ssscdn.io`. Two temporary-control bootstrap attempts had stopped before loading or invoking the
+Provider—first on host file permissions and then on module-format transformation—so they made zero
+Provider or network requests and did not increase the one effective control invocation.
+
+This is failure-matrix Case B: the failure correlates with the Worker/Router execution context rather
+than the isolated SSSTwitter HTTP implementation. It does not identify the narrower deterministic
+cause inside that context and does not justify changing headers, redirects, cookies,
+canonicalization, parser, timeout, retries or egress. P0-X-HTTP-01 therefore remains open. A future
+separately reviewed work item should observe only the delta between direct
+`SSSTwitterProvider.resolve()` and the Worker-to-ProviderRouter invocation, retaining sanitized
+failure-stage metadata without submitting additional tasks under this authorization.
+
+Restoration closed the exact rule as revision 8, disabled with allocation 0 and expired. The
+original Nginx checksum
+`151874488389e5a2e8e426c247420b10947c8459bc757b30516bf83680045139` was restored, public invalid
+task creation again returned 400, and SSSTwitter, TwitterSaver, DLPanda, rollout and Canary flags
+were false. All six TikDD containers were healthy with zero restarts, no diagnostic container
+remained, and the final shared-host stage gate passed. X remains non-stable, the X Production
+Evidence Gate remains open, and Work Item 17 was not started.
