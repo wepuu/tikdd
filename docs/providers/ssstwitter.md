@@ -210,6 +210,37 @@ production allocation remains zero, X remains non-stable and the Production Evid
 open. Full Phase A differences and lifecycle evidence are in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-WORKER-TRACE-01 result
+
+Phase A corrected the premise behind the prior boundary: the inspected production Worker started
+about 5.3 seconds after the historical failed task had already finished, so it could not have
+processed that task. PID 1, Docker and host safe environments matched, and no repository-owned
+global fetch/dispatcher mutation was found.
+
+A default-off exact-tuple trace was then deployed only to a fresh Worker. It is restricted to
+SSSTwitter/X/NL, an authorized canonical-URL SHA-256, and at most two invocations. Its observer is
+sanitized and behavior-preserving; tests prove it emits nothing by default or for a hash mismatch,
+does not expose URL/token/cookie/HTML/candidate secrets, and returns the same normalized fixture
+result with tracing enabled or disabled.
+
+One authorized production task caused three normal Provider invocations, of which the first two
+were traced. Invocation one completed `GET /` 200, `POST /` 301 and `GET /result_normal` 200, then
+resolved eight formats and eight `ssscdn.io` candidates. A later untraced downstream error caused
+the job to retry before that success was committed. Invocation two received `GET /` 200 followed by
+a direct `POST /` 200 with a zero-byte body and failed at result parsing as
+`provider_schema_changed`; invocation three ran beyond the trace cap and produced the same typed
+failure. Signals were not aborted, active Provider concurrency was one, and there was no challenge
+or block marker.
+
+The result is therefore mixed rather than proof of process-lifetime corruption. The current Worker
+Provider path can succeed, while SSSTwitter can also return a transient empty success response. A
+separate error remains between successful Provider resolution and persisted task completion. This
+work item intentionally did not change redirect-body handling, parser, retries, routing,
+persistence or Delivery behavior. No ticket, CDN request or media body occurred; production
+allocation and all Provider/Canary/trace flags were restored to zero/off. P0-X-HTTP-01 and the X
+Production Evidence Gate remain open. Full process, HTTP, lifecycle and restoration evidence is in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
