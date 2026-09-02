@@ -294,6 +294,21 @@ X remains non-stable, allocation remains zero and the Production Evidence Gate r
 deployment and lifecycle evidence is recorded in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-RETRY-MASKING-01 completion semantics
+
+Provider success does not imply task success. After SSSTwitter returns a validated resolution, the
+Worker will not contact it again because candidate encryption or local transactional completion
+fails. Instead, TikDD preserves SSSTwitter's successful attempt as `succeeded`, marks the task with
+the generic non-Provider `TASK_COMPLETION_FAILED` terminal error and makes the BullMQ attempt
+unrecoverable. This keeps Provider health evidence attributable to the actual Provider outcome.
+
+The final queue-failure listener also preserves every existing failed, succeeded or expired task;
+`PROVIDER_UNAVAILABLE` is reserved for exhaustion without a successful Provider resolution. This
+repair changes no SSSTwitter request, parser, candidate, delivery-host or rollout behavior and does
+not resolve P0-X-HTTP-01. Validation is deterministic and generates zero Provider, Delivery or CDN
+traffic. Full lifecycle evidence is recorded in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
