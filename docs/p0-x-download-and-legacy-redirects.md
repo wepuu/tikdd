@@ -583,3 +583,56 @@ The evidence task stops here without repair. Recommended independent scopes are:
 P0-X-HTTP-01 remains open, X remains non-stable, the Production Evidence Gate remains open and Work
 Item 17 was not started. Production remains fail-closed with all Providers, rollout, health, Canary
 and diagnostic trace disabled and allocation zero.
+
+### P0-X-COMPLETION-01 permission repair
+
+Repository main `2d60ae48e5cddf112f67ecdf8287b78c5334225a` now owns the production
+Worker completion permission contract. Idempotent migration
+`0020_worker_delivery_candidate_delete_grant.sql` conditionally grants only
+`DELETE ON TABLE delivery_candidates` to an existing `tikdd_worker` role. It does not revoke,
+transfer ownership, grant all privileges or change another role. A repository verifier connects
+with the identity under test and checks the exact role, public schema usage and the seven
+privileges used by the completion transaction. Focused tests cover the migration scope, all-pass,
+missing candidate DELETE, wrong database identity and missing schema usage. A disposable
+PostgreSQL instance executed the migration twice successfully and confirmed candidate DELETE after
+both applications.
+
+The minimum production artifact was the immutable Service image
+`ghcr.io/wepuu/tikdd-service@sha256:e913b8ea73aab4fcbcdbee83d92d3c030a38d0e9de65444322b8d7fc52371580`,
+whose OCI revision is the merged main SHA above and whose runtime platform is Linux/amd64. Before
+migration, production had the expected `tikdd_worker` role, candidate DELETE was false, no active
+resolve task existed, all Provider gates were off and the shared-host stage gate passed. A
+custom-format PostgreSQL backup was written to
+`/var/backups/tikdd/pre-p0-x-completion-01-2d60ae48.dump` (167,161 bytes; SHA-256
+`081f9ba380128fc80c24c114158ab9f46b7efd39c33932b25bf16c7abe489d43`) and its
+`pg_restore -l` catalog check passed.
+
+The repository-approved one-shot Compose migration service used that exact image digest, replayed
+the ordered repeatable migration set and reported `Applied migration
+0020_worker_delivery_candidate_delete_grant.sql`. No ad-hoc manual GRANT was used. The repository
+verifier then ran in a one-shot container with the production Worker secret binding and reported:
+
+| Check | Production result |
+| --- | --- |
+| Database identity is `tikdd_worker` | PASS |
+| `public.USAGE` | PASS |
+| `resolve_tasks.SELECT` | PASS |
+| `resolve_tasks.UPDATE` | PASS |
+| `delivery_candidates.INSERT` | PASS |
+| `delivery_candidates.DELETE` | PASS |
+| `provider_attempts.INSERT` | PASS |
+| `active_source_admissions.DELETE` | PASS |
+| Complete Worker contract | PASS |
+
+The GRANT became effective without replacing or restarting the long-running Worker. Its image
+remained `sha256:edb4cf52bcb4ac931f14b250520f126afa4eed054524a3c790544d62a1a781ca`,
+start time remained `2026-09-01T09:05:16.587009581Z`, health remained healthy and restart count
+remained zero. API, Delivery, Web, PostgreSQL and TikDD Redis were also healthy with zero restarts;
+the final shared-host stage gate passed and no one-shot migration/verifier container remained.
+
+P0-X-COMPLETION-01 made zero SSSTwitter, TwitterSaver, DLPanda, CDN or Delivery requests and created
+no resolve task or ticket. All Providers, rollout, health, Canary and diagnostic trace remained
+disabled; the SSSTwitter/X/NL rule remained revision 10, disabled, with allocation zero. This closes
+only the confirmed persistence-permission repair. P0-X-RETRY-MASKING-01 and P0-X-HTTP-01 remain
+open, X remains experimental/non-stable, the Production Evidence Gate remains open and Work Item 17
+was not started.
