@@ -272,6 +272,28 @@ production allocation remains zero and the Production Evidence Gate remains open
 recorded in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+## P0-X-COMPLETION-01 permission repair
+
+Migration `0020_worker_delivery_candidate_delete_grant.sql` now conditionally grants the single
+missing `delivery_candidates.DELETE` permission to `tikdd_worker`. The migration is repeatable,
+does not grant broad privileges or alter ownership, and is enforced by a repository verifier that
+must run with the Worker identity itself.
+
+Production applied the migration through the existing one-shot Compose migration service using
+immutable Service digest
+`sha256:e913b8ea73aab4fcbcdbee83d92d3c030a38d0e9de65444322b8d7fc52371580`.
+The actual production `tikdd_worker` identity then passed public schema usage,
+`resolve_tasks` SELECT/UPDATE, `delivery_candidates` INSERT/DELETE, `provider_attempts` INSERT and
+`active_source_admissions` DELETE checks. The long-running Worker was not replaced or restarted,
+and all six continuous containers remained healthy with zero restarts.
+
+No SSSTwitter or other Provider request, CDN request, Delivery ticket or resolve task was created
+for this permission repair. It proves only that the confirmed local persistence blocker is removed;
+it does not establish an end-to-end X download. P0-X-RETRY-MASKING-01 and P0-X-HTTP-01 remain open,
+X remains non-stable, allocation remains zero and the Production Evidence Gate remains open. Full
+deployment and lifecycle evidence is recorded in
+[`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
