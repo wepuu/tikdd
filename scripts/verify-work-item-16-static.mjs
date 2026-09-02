@@ -28,6 +28,9 @@ export function verifyWorkItem16Static() {
   const nginxTemplate = read("deploy/nginx/tikdd.conf.template");
   const secretEntrypoint = read("docker/secret-entrypoint.sh");
   const releaseScript = read("scripts/production-release.sh");
+  const workerCompletionGrant = read("infra/migrations/0020_worker_delivery_candidate_delete_grant.sql");
+  const rootPackage = JSON.parse(read("package.json"));
+  const persistencePackage = JSON.parse(read("packages/persistence/package.json"));
 
   const allServices = [
     "postgres", "redis", "web", "api", "worker", "delivery", "admin-api", "admin",
@@ -100,6 +103,10 @@ export function verifyWorkItem16Static() {
     assert(!/db:migrate/.test(blocks[name]), `${name} must not run migrations during startup.`);
   }
   assert(/command: \["pnpm", "db:migrate"\]/.test(blocks.migration), "The explicit migration runner is missing.");
+  assert(/GRANT DELETE ON TABLE delivery_candidates TO tikdd_worker/.test(workerCompletionGrant), "The Worker completion candidate replacement grant is missing.");
+  assert(!/GRANT\s+ALL|ALL\s+PRIVILEGES|OWNER\s+TO|SUPERUSER/i.test(workerCompletionGrant), "The Worker completion grant is broader than the reviewed contract.");
+  assert(rootPackage.scripts?.["db:verify-worker-completion-privileges"] === "pnpm --filter @tikdd/persistence db:verify-worker-completion-privileges", "The root Worker completion privilege verifier command is missing.");
+  assert(persistencePackage.scripts?.["db:verify-worker-completion-privileges"] === "tsx src/verify-worker-completion-privileges.ts", "The persistence Worker completion privilege verifier is missing.");
   assert(/command: \["pnpm", "preflight:internal"\]/.test(blocks.preflight), "The explicit preflight runner is missing.");
   assert(/command: \["pnpm", "canary:run"\]/.test(blocks.canary), "The one-shot Canary command is missing.");
   assert(/command: \["pnpm", "evidence:run"\]/.test(blocks.evidence), "The one-shot evidence command is missing.");

@@ -38,6 +38,7 @@
     "infra:status": "node scripts/docker.mjs compose ps",
     "infra:down": "node scripts/docker.mjs compose down",
     "db:migrate": "pnpm --filter @tikdd/persistence db:migrate",
+    "db:verify-worker-completion-privileges": "pnpm --filter @tikdd/persistence db:verify-worker-completion-privileges",
     "db:verify-delivery-transaction": "pnpm --filter @tikdd/persistence db:verify-delivery-transaction",
     "db:verify-provider-attempt-region": "pnpm --filter @tikdd/persistence db:verify-provider-attempt-region",
     "db:verify-task-admission": "pnpm --filter @tikdd/persistence db:verify-task-admission",
