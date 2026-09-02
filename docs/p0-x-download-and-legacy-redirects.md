@@ -636,3 +636,25 @@ disabled; the SSSTwitter/X/NL rule remained revision 10, disabled, with allocati
 only the confirmed persistence-permission repair. P0-X-RETRY-MASKING-01 and P0-X-HTTP-01 remain
 open, X remains experimental/non-stable, the Production Evidence Gate remains open and Work Item 17
 was not started.
+
+### P0-X-RETRY-MASKING-01 post-Provider completion boundary
+
+Provider success is not the same as task success. `P0-X-COMPLETION-01` repaired the missing
+production `delivery_candidates.DELETE` privilege; this separate repair prevents any later local
+candidate-preparation or completion-persistence failure from causing BullMQ to rerun external
+resolution.
+
+The Worker now treats a validated Router return as an explicit Provider-success boundary. Genuine
+retryable failures before that boundary retain the three-attempt BullMQ budget. Failures after the
+boundary atomically preserve the returned Provider attempt ledger and terminalize the task as
+non-retryable `TASK_COMPLETION_FAILED`, then throw BullMQ `UnrecoverableError`. Admission release is
+best effort and cannot reopen the retry path. The exhausted-job listener reads persisted task state
+and uses a conditional write, so it never replaces failed, succeeded or expired state with generic
+`PROVIDER_UNAVAILABLE`; that generic error remains only for genuine Provider exhaustion.
+
+Deterministic tests include candidate preparation, transaction failure, sanitized SQLSTATE `42501`,
+successful-attempt persistence, no second Provider call and a third/final-attempt Provider success
+followed by local failure. No database migration, queue split, Provider/HTTP/Delivery change or
+public result change was introduced. This work item sends no Provider, Delivery or CDN request.
+P0-X-HTTP-01 remains open, X remains experimental/non-stable, the Production Evidence Gate remains
+open and Work Item 17 has not started.

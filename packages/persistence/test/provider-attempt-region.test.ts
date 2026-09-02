@@ -43,7 +43,73 @@ const attempt: ProviderAttempt = {
   durationMs: 1_000
 };
 
+const completionFailure = {
+  code: "TASK_COMPLETION_FAILED",
+  message: "The resolved task could not be completed.",
+  retryable: false
+};
+
 describe("provider attempt region persistence", () => {
+  it("atomically preserves a successful Provider attempt while terminalizing local completion", async () => {
+    const client = new RecordingClient();
+    client.query = async (text: string, values?: readonly unknown[]) => {
+      client.queries.push(values ? { text, values } : { text });
+      if (text.includes("SELECT status")) return { rows: [{ status: "resolving" }], rowCount: 1 };
+      return { rows: [], rowCount: 1 };
+    };
+    const successfulAttempt = {
+      ...attempt,
+      status: "succeeded" as const,
+      failureCode: null,
+      retryable: null,
+      fallbackAllowed: null
+    };
+
+    await expect(
+      repositoryWith(client).failAfterProviderResolution(
+        "tsk_0123456789abcdef0123456789abcdef",
+        [successfulAttempt],
+        completionFailure
+      )
+    ).resolves.toBe("failed");
+
+    const statements = client.queries.map(({ text }) => text);
+    expect(statements).toEqual([
+      "BEGIN",
+      expect.stringContaining("SELECT status"),
+      expect.stringContaining("INSERT INTO provider_attempts"),
+      expect.stringContaining("SET status = 'failed'"),
+      expect.stringContaining("DELETE FROM active_source_admissions"),
+      "COMMIT"
+    ]);
+    const providerInsert = client.queries.find(({ text }) => text.includes("INSERT INTO provider_attempts"));
+    expect(providerInsert?.values?.[7]).toBe("succeeded");
+    const taskUpdate = client.queries.find(({ text }) => text.includes("SET status = 'failed'"));
+    expect(taskUpdate?.values?.[1]).toBe(JSON.stringify(completionFailure));
+  });
+
+  it("does not overwrite a task that completed despite an ambiguous persistence error", async () => {
+    const client = new RecordingClient();
+    client.query = async (text: string, values?: readonly unknown[]) => {
+      client.queries.push(values ? { text, values } : { text });
+      if (text.includes("SELECT status")) return { rows: [{ status: "succeeded" }], rowCount: 1 };
+      return { rows: [], rowCount: 1 };
+    };
+
+    await expect(
+      repositoryWith(client).failAfterProviderResolution(
+        "tsk_0123456789abcdef0123456789abcdef",
+        [{ ...attempt, status: "succeeded", failureCode: null, retryable: null, fallbackAllowed: null }],
+        completionFailure
+      )
+    ).resolves.toBe("terminal_unchanged");
+    expect(client.queries.map(({ text }) => text)).toEqual([
+      "BEGIN",
+      expect.stringContaining("SELECT status"),
+      "COMMIT"
+    ]);
+  });
+
   it("writes the validated region into the sanitized attempt ledger", async () => {
     const client = new RecordingClient();
     await repositoryWith(client).recordProviderAttempts("tsk_0123456789abcdef0123456789abcdef", [

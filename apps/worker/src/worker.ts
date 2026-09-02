@@ -1,8 +1,7 @@
 import {
   RegionIdSchema,
   ResolveJobDataSchema,
-  type ResolveJobData,
-  type TaskError
+  type ResolveJobData
 } from "@tikdd/contracts";
 import { assertInternalStartup } from "@tikdd/deployment-preflight";
 import {
@@ -21,7 +20,6 @@ import {
   DLPandaProvider,
   MockProvider,
   ProviderRouter,
-  ProviderRoutingError,
   SSSTwitterProvider,
   TwitterSaverProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
@@ -31,13 +29,10 @@ import {
   RedisCircuitStore,
   RedisProviderRoutingHealthSource
 } from "@tikdd/routing-health";
-import { UnrecoverableError, Worker } from "bullmq";
+import { Worker } from "bullmq";
 import Redis from "ioredis";
 import { RedisRoutePolicyStore, RuntimeRoutePolicySource } from "@tikdd/route-policy";
-import {
-  createCandidateCipherFromEnvironment,
-  prepareEncryptedCandidates
-} from "./candidates";
+import { createCandidateCipherFromEnvironment } from "./candidates";
 import {
   loadProviderHealthConfiguration,
   startHealthRefreshLoop,
@@ -48,7 +43,7 @@ import {
   loadRolloutConfiguration
 } from "./rollout";
 import { loadSSSTwitterActivationConfiguration } from "./provider-activation";
-import { ResolveJobPlatformMismatchError, verifyResolveJobPlatform } from "./platform-consistency";
+import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
 const enableMockProvider = (process.env.ENABLE_MOCK_PROVIDER ?? "true") === "true";
@@ -181,75 +176,22 @@ const worker = new Worker<ResolveJobData>(
   "resolve",
   async (job) => {
     const data = ResolveJobDataSchema.parse(job.data);
-    await tasks.markResolving(data.taskId);
-
-    try {
-      const detected = verifyResolveJobPlatform(data);
-      const routed = await router.resolve({
-        taskId: data.taskId,
-        sourceUrl: data.sourceUrl,
-        canonicalUrl: detected.canonicalUrl,
-        platform: detected.platform,
-        signal: AbortSignal.timeout(routeTimeoutMs)
-      });
-
-      const candidates = prepareEncryptedCandidates({
-        taskId: data.taskId,
-        resolution: routed.resolution,
-        cipher: candidateCipher,
-        allowResolutionOnly
-      });
-      await tasks.completeWithResolution(
-        data.taskId,
-        routed.resolution.result,
-        candidates,
-        routed.attempts
-      );
-      if (data.admissionPermitId && data.admissionReferenceId) {
-        await admissionStore
-          ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
-          .catch(() => {
-            process.stderr.write("Task admission permit release failed.\n");
-          });
-      }
-      return {
-        taskId: data.taskId,
-        provider: routed.resolution.result.provenance.provider
-      };
-    } catch (error) {
-      if (error instanceof ResolveJobPlatformMismatchError) {
-        await tasks.fail(data.taskId, {
-          code: error.code,
-          message: error.message,
-          retryable: false
-        });
-        if (data.admissionPermitId && data.admissionReferenceId) {
-          await admissionStore
-            ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
-            .catch(() => process.stderr.write("Task admission permit release failed.\n"));
+    return processResolveJob(data, {
+      tasks,
+      router,
+      routeTimeoutMs,
+      candidateCipher,
+      allowResolutionOnly,
+      releaseAdmission: async (jobData) => {
+        if (jobData.admissionPermitId && jobData.admissionReferenceId) {
+          await admissionStore?.releaseTask(
+            jobData.admissionPermitId,
+            jobData.admissionReferenceId
+          );
         }
-        throw new UnrecoverableError(error.message);
-      }
-      if (error instanceof ProviderRoutingError) {
-        await tasks.recordProviderAttempts(data.taskId, error.attempts);
-        if (!error.retryable) {
-          await tasks.fail(data.taskId, {
-            code: error.failureCode.toUpperCase(),
-            message: error.message,
-            retryable: false
-          });
-          if (data.admissionPermitId && data.admissionReferenceId) {
-            await admissionStore
-              ?.releaseTask(data.admissionPermitId, data.admissionReferenceId)
-              .catch(() => {
-                process.stderr.write("Task admission permit release failed.\n");
-              });
-          }
-          throw new UnrecoverableError(error.message);
-        }
-      }
-      throw error;
-    }
+      },
+      logInternal: (event) => process.stderr.write(`${JSON.stringify(event)}\n`)
+    });
   },
   {
     connection: redis,
@@ -283,27 +225,19 @@ worker.on("completed", (job) => {
 
 worker.on("failed", (job) => {
   process.stderr.write(`Resolver job ${job?.id ?? "unknown"} failed.\n`);
-
-  if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
-    const taskError: TaskError = {
-      code: "PROVIDER_UNAVAILABLE",
-      message: "No resolver provider completed the task.",
-      retryable: true
-    };
-    void tasks
-      .fail(job.data.taskId, taskError)
-      .then(() =>
-        job.data.admissionPermitId && job.data.admissionReferenceId
-          ? admissionStore?.releaseTask(
-              job.data.admissionPermitId,
-              job.data.admissionReferenceId
-            )
-          : undefined
-      )
-      .catch(() => {
-        process.stderr.write("Terminal task admission release failed.\n");
-      });
-  }
+  void handleExhaustedResolveJob(
+    job,
+    tasks,
+    async (jobData) => {
+      if (jobData.admissionPermitId && jobData.admissionReferenceId) {
+        await admissionStore?.releaseTask(
+          jobData.admissionPermitId,
+          jobData.admissionReferenceId
+        );
+      }
+    },
+    (event) => process.stderr.write(`${JSON.stringify(event)}\n`)
+  ).catch(() => process.stderr.write("Terminal task failure handling failed.\n"));
 });
 
 worker.on("error", (error) => {

@@ -503,6 +503,69 @@ export class TaskRepository {
     );
   }
 
+  async failAfterProviderResolution(
+    id: string,
+    rawAttempts: readonly ProviderAttempt[],
+    error: TaskError
+  ): Promise<"failed" | "terminal_unchanged" | "missing"> {
+    const attempts = rawAttempts.map((attempt) => ProviderAttemptSchema.parse(attempt));
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const selected = await client.query<Pick<TaskRow, "status"> & QueryResultRow>(
+        `SELECT status
+         FROM resolve_tasks
+         WHERE id = $1 AND expires_at > NOW()
+         FOR UPDATE`,
+        [id]
+      );
+      const task = selected.rows[0];
+      if (!task) {
+        await client.query("COMMIT");
+        return "missing";
+      }
+      if (["succeeded", "failed", "expired"].includes(task.status)) {
+        await client.query("COMMIT");
+        return "terminal_unchanged";
+      }
+
+      await insertProviderAttempts(client, id, attempts);
+      await client.query(
+        `UPDATE resolve_tasks
+         SET status = 'failed', result = NULL, error = $2::jsonb, updated_at = NOW()
+         WHERE id = $1`,
+        [id, JSON.stringify(error)]
+      );
+      await client.query("DELETE FROM active_source_admissions WHERE task_id = $1", [id]);
+      await client.query("COMMIT");
+      return "failed";
+    } catch (failure) {
+      await client.query("ROLLBACK");
+      throw failure;
+    } finally {
+      client.release();
+    }
+  }
+
+  async failIfNonTerminal(id: string, error: TaskError): Promise<boolean> {
+    const result = await this.pool.query<{ failed: boolean } & QueryResultRow>(
+      `WITH failed_task AS (
+         UPDATE resolve_tasks
+         SET status = 'failed', result = NULL, error = $2::jsonb, updated_at = NOW()
+         WHERE id = $1
+           AND expires_at > NOW()
+           AND status IN ('queued', 'detecting', 'resolving')
+         RETURNING id
+       ), released AS (
+         DELETE FROM active_source_admissions
+         WHERE task_id IN (SELECT id FROM failed_task)
+       )
+       SELECT EXISTS (SELECT 1 FROM failed_task) AS failed`,
+      [id, JSON.stringify(error)]
+    );
+    return result.rows[0]?.failed === true;
+  }
+
   async recordProviderAttempts(id: string, attempts: readonly ProviderAttempt[]): Promise<void> {
     if (attempts.length === 0) {
       return;
