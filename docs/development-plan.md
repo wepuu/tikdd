@@ -181,9 +181,10 @@ MySQL or stopping host Redis are not Work Item 16 readiness requirements.
 Private TikDD PostgreSQL and TikDD Redis intentionally coexist with the permanent host datastores.
 Admin remains on demand and operational jobs remain one-shot. Only resources proven
 `legacy-TikDD-exclusive` may be stopped after new-stack and ingress verification; nothing is deleted
-during the initial rollback-confidence period. The first proven-empty PostgreSQL database may be
-initialized without existing off-host backup, after which encrypted off-host backup and restore
-testing are P0 production hardening.
+during the initial rollback-confidence period. P0-DR-01's encrypted off-host PostgreSQL backup and
+isolated restore drill are complete and recorded in
+[`docs/p0-dr-01-backup-restore.md`](p0-dr-01-backup-restore.md). Scheduling, retention and recurring
+restore testing remain a later reviewed operational decision.
 
 Phase C2 is gated separately: Gate A prepares containers, Gate B proves shared-host coexistence,
 Gate C performs Tunnel/Nginx ingress cutover while retaining the legacy TikDD rollback path, and

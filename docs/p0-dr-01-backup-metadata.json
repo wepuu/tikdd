@@ -1,0 +1,22 @@
+{
+  "workItem": "P0-DR-01",
+  "createdAt": "2026-09-03T13:10:45Z",
+  "mainSha": "4fc51aa176ce097c751df69537989648bdf7e65b",
+  "productionDatabase": "tikdd",
+  "productionPostgresVersion": "17.6",
+  "pgDumpVersion": "17.6",
+  "rawDumpBytes": 146789,
+  "encryptedFilename": "tikdd-prod-20260903T131045Z.dump.gpg",
+  "encryptedBytes": 38228,
+  "encryption": "GnuPG RSA recipient DD42F764EAADACCB2F83175EB6D179FAC2BB4313",
+  "sha256": "5537f439eecbb18f00c09e1b3980c4dcb3f606690f40baabec017bad7c78c73b",
+  "offHostDestinationClass": "operator-workstation-local-filesystem",
+  "restoreVerifiedAt": "2026-09-03T13:18:03.7667255Z",
+  "restorePostgresVersion": "17.6",
+  "pgRestoreVersion": "17.11",
+  "restoreResult": "passed",
+  "backupDurationSeconds": null,
+  "transferDurationSeconds": null,
+  "restoreDurationSeconds": 1.763,
+  "timingNote": "Backup and PSCP transfer were completed in one manual operator session without independent timers; values are observations, not an SLA."
+}
