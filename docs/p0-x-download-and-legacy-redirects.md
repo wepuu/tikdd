@@ -1,6 +1,6 @@
 # P0 production stabilization: X download and legacy redirects
 
-Status: Part B deployed; Part A diagnosed but Provider repair remains pending (2026-08-31)
+Status: P0-X-E2E-FINAL-VERIFY complete; P0-X-HTTP-01 resolved (2026-09-03)
 
 This record covers P0-FUNC-01 and P0-MIG-01. It does not authorize Work Item 17,
 recurring operational jobs, broad Provider traffic, or closure of the X Production Evidence Gate.
@@ -676,3 +676,45 @@ operational container remained.
 P0-X-RETRY-MASKING-01 is complete. P0-X-HTTP-01 remains open, X remains
 experimental/non-stable, the Production Evidence Gate remains open and Work Item 17 has not
 started.
+
+## P0-X-E2E-FINAL-VERIFY production result
+
+On 2026-09-03, the owner-authorized final E2E used exactly one production task for
+`https://x.com/SpaceX/status/2093477720638341395?s=20`; Worker canonicalization persisted
+`https://x.com/SpaceX/status/2093477720638341395`. The task was
+`tsk_f4b69a36835142fface0aef4dcd5a4a4`, reached `succeeded`, and produced eight normalized
+formats. The public projection retained the existing TikDD/API provenance shape; the internal
+Provider attempt ledger recorded SSSTwitter/X/NL as one successful attempt in 1,617 ms, with no
+failure or replay. BullMQ completed on attempt 1 of the configured 3-attempt budget, with no
+failure reason or stack trace.
+
+The completion transaction persisted eight encrypted redirect candidates. Every candidate matched
+the public format set and used Provider `ssstwitter`, platform `x`, region `nl`, mode `redirect`,
+host policy `ssstwitter-media-v1`, and `aes-256-gcm`; envelope length and expiry checks passed.
+The public task response contained normalized metadata and formats but no candidate URL, candidate
+ID, encrypted payload, Delivery token, cookie, `tt`, or `ts` value.
+
+Exactly one Delivery ticket was created (`201`, mode `redirect`) for the first valid format and
+redeemed once without following the redirect. The response was `302` with sanitized Location
+scheme `https` and hostname `ssscdn.io`; the response body was zero bytes. Persisted Delivery
+evidence was `ticket_creation=succeeded`, `redirect_validation=passed`, and
+`browser_handoff=redirect_issued`. No HTTP request to `ssscdn.io`, CDN request, or media bytes
+were made by TikDD.
+
+The temporary exact rollout rule was revision 11, enabled at 10,000 bps and expiring at
+`2026-09-03T11:38:58.000Z`; it was immediately closed as revision 12 with allocation zero and
+an expired timestamp. SSSTwitter was enabled only for the Worker during the window. The same
+immutable Service digest `sha256:271e61bd4d8e958230e7c8864e07102e242c0c9eaa374c79f6b95bf1eee9f6a3`
+was used before, during, and after the test. Worker start times were
+`2026-09-03T11:24:32.608380660Z` (verification) and
+`2026-09-03T11:30:20.695309420Z` (restored); API, Delivery, Web, PostgreSQL and Redis were not
+restarted.
+
+After restoration, all Provider, terms, rollout, health, Canary and diagnostic-trace controls were
+false; the SSSTwitter/X/NL rule was disabled with allocation zero; the temporary Nginx creation
+block was removed; and both local and public invalid task requests returned `400 INVALID_REQUEST`.
+All six continuous containers were healthy with zero restarts, the shared-host Stage Gate passed,
+and no operational one-shot container remained. This closes the technical P0 path and resolves
+`P0-X-HTTP-01`. X remains experimental/non-stable, the Production Evidence Gate remains open, and
+Work Item 17 remains not started. The required three-day calibration, policy lock, staged pilot,
+and seven-day evidence sequence are still pending.

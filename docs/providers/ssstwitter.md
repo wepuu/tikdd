@@ -326,3 +326,30 @@ The sanitized cross-provider operational evidence index is
 [`config/x-pilot-evidence.json`](../../config/x-pilot-evidence.json). Its status remains `pending`;
 technical canary and delivery-lifetime evidence do not establish production/commercial approval or
 satisfy the required seven consecutive daily reviews.
+
+## P0-X-E2E-FINAL-VERIFY production result
+
+On 2026-09-03, the exact owner-authorized SpaceX URL completed once through the production API,
+BullMQ, Worker, ProviderRouter and SSSTwitter path. Task `tsk_f4b69a36835142fface0aef4dcd5a4a4`
+reached `succeeded` with the canonical URL
+`https://x.com/SpaceX/status/2093477720638341395`, eight normalized formats, and one successful
+SSSTwitter/X/NL Provider attempt in 1,617 ms. BullMQ used attempt 1 of 3; no replay, failure
+reason, or stack trace occurred. Eight encrypted redirect candidates persisted successfully, all
+using host policy `ssstwitter-media-v1` and `aes-256-gcm`. The public task projection contained no
+candidate URL, candidate ID, encrypted payload, token, cookie, `tt`, or `ts` value.
+
+Exactly one redirect Delivery ticket was created with HTTP 201 and redeemed once with redirect
+following disabled. Redemption returned HTTP 302 with only the sanitized destination
+`https://ssscdn.io` recorded; the response body was zero bytes. Delivery evidence recorded
+`ticket_creation=succeeded`, `redirect_validation=passed`, and `browser_handoff=redirect_issued`.
+TikDD made no HTTP request to `ssscdn.io` and transferred no media bytes.
+
+The temporary SSSTwitter/X/NL rollout was revision 11 at 10,000 bps with expiry
+`2026-09-03T11:38:58.000Z`; it was closed as revision 12 with allocation zero. SSSTwitter was
+enabled only in the Worker during the window. The same immutable Service digest
+`sha256:271e61bd4d8e958230e7c8864e07102e242c0c9eaa374c79f6b95bf1eee9f6a3` remained in use;
+the Worker was restored at `2026-09-03T11:30:20.695309420Z`. All other services were untouched.
+All Provider, rollout, health, Canary and Trace controls are now off, the Nginx maintenance block
+is removed, public invalid requests return 400, all six services are healthy with zero restarts,
+and the Stage Gate passes. This resolves `P0-X-HTTP-01` technically; X remains non-stable and
+the Production Evidence Gate remains open.
