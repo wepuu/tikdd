@@ -37,7 +37,7 @@ export {
   type FailureInjectionProviderOptions
 } from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
-export { ProviderCanaryConfigSchema, selectProviderCanaries } from "./canary-config";
+export { ProviderCanaryConfigSchema, selectProviderCanaries, selectScheduledProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,
   type SSSTwitterProviderOptions,

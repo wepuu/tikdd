@@ -9,6 +9,7 @@ export interface CanarySchedulerConfiguration {
   measurementRetentionMs: number;
   rolloutMaximumStaleMs: number;
   rolloutCohortKey: Uint8Array;
+  scheduled: boolean;
 }
 
 function integer(environment: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -20,8 +21,10 @@ function integer(environment: NodeJS.ProcessEnv, name: string, fallback: number,
 export function loadCanarySchedulerConfiguration(
   environment: NodeJS.ProcessEnv = process.env
 ): CanarySchedulerConfiguration {
-  if (environment.TIKDD_CANARY_AUTHORIZED !== "true") {
-    throw new Error("TIKDD_CANARY_AUTHORIZED=true is required after reviewing the authorization record.");
+  const scheduled = environment.CANARY_EXECUTION_MODE === "scheduled";
+  const authorized = scheduled ? environment.TIKDD_SCHEDULED_CANARY_AUTHORIZED : environment.TIKDD_CANARY_AUTHORIZED;
+  if (authorized !== "true") {
+    throw new Error(`${scheduled ? "TIKDD_SCHEDULED_CANARY_AUTHORIZED" : "TIKDD_CANARY_AUTHORIZED"}=true is required after reviewing the authorization record.`);
   }
   if (environment.PROVIDER_ROLLOUT_ENABLED !== "true") {
     throw new Error("Scheduled canaries require runtime rollout controls.");
@@ -56,6 +59,7 @@ export function loadCanarySchedulerConfiguration(
     runTimeoutMs,
     measurementRetentionMs: integer(environment, "CANARY_MEASUREMENT_RETENTION_MS", 2_592_000_000, 86_400_000, 31_536_000_000),
     rolloutMaximumStaleMs: integer(environment, "PROVIDER_ROLLOUT_MAX_STALE_MS", 15_000, 5_000, 60_000),
-    rolloutCohortKey
+    rolloutCohortKey,
+    scheduled
   };
 }

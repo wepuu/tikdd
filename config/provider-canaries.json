@@ -5,6 +5,9 @@
     "assertedAt": "2026-08-30",
     "scope": "Only the exact provider, platform, and URL tuples enumerated below are authorized for bounded TikDD technical testing."
   },
+  "scheduledCanaryIds": [
+    "ssstwitter-x-recurring-001"
+  ],
   "canaries": [
     {
       "id": "twittersaver-x-authorized-001",

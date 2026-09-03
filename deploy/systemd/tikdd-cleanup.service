@@ -1,0 +1,10 @@
+[Unit]
+Description=TikDD scheduled cleanup cycle
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/tikdd/current
+ExecStart=/opt/tikdd/current/scripts/run-scheduled-operation.sh cleanup
+TimeoutStartSec=120s

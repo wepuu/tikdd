@@ -15,7 +15,12 @@ describe("canary scheduler configuration", () => {
     expect(() => loadCanarySchedulerConfiguration({ ...valid, PROVIDER_HEALTH_ENABLED: "false" })).toThrow(/circuit/i);
   });
   it("isolates canaries in a dedicated region", () => {
+    expect(() => loadCanarySchedulerConfiguration({ ...valid, CANARY_REGION: "nl" })).toThrow(/canary/);
     expect(() => loadCanarySchedulerConfiguration({ ...valid, CANARY_REGION: "global" })).toThrow(/canary/);
     expect(loadCanarySchedulerConfiguration(valid).region).toBe("canary-global");
+  });
+  it("uses a separate scheduled authorization flag", () => {
+    expect(() => loadCanarySchedulerConfiguration({ ...valid, CANARY_EXECUTION_MODE: "scheduled" })).toThrow(/SCHEDULED_CANARY_AUTHORIZED/);
+    expect(loadCanarySchedulerConfiguration({ ...valid, CANARY_EXECUTION_MODE: "scheduled", TIKDD_SCHEDULED_CANARY_AUTHORIZED: "true" }).scheduled).toBe(true);
   });
 });

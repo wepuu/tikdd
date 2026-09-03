@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   ProviderCanaryConfigSchema,
-  selectProviderCanaries
+  selectProviderCanaries,
+  selectScheduledProviderCanaries
 } from "../src/canary-config";
 
 const config = ProviderCanaryConfigSchema.parse({
@@ -54,6 +55,23 @@ describe("provider canary configuration", () => {
       platform: "x",
       url: "https://x.com/SpaceX/status/2093477720638341395?s=20"
     })]);
+  });
+
+  it("selects only the explicit recurring authorization", () => {
+    const checkedIn = ProviderCanaryConfigSchema.parse(JSON.parse(readFileSync(
+      new URL("../../../config/provider-canaries.json", import.meta.url), "utf8"
+    )));
+    expect(checkedIn.scheduledCanaryIds).toEqual(["ssstwitter-x-recurring-001"]);
+    expect(checkedIn.scheduledCanaryIds.every((id) => id !== "twittersaver-x-authorized-001" && id !== "dlpanda-tiktok-authorized-001")).toBe(true);
+  });
+
+  it("rejects unknown and duplicate scheduled IDs", () => {
+    expect(() => ProviderCanaryConfigSchema.parse({ ...config, scheduledCanaryIds: ["missing-id"] })).toThrow(/Scheduled Canary ID/);
+    expect(() => ProviderCanaryConfigSchema.parse({ ...config, scheduledCanaryIds: [config.canaries[0]!.id, config.canaries[0]!.id] })).toThrow(/unique/);
+  });
+
+  it("restricts scheduled selection to the reviewed recurring tuple", () => {
+    expect(() => selectScheduledProviderCanaries({ ...config, scheduledCanaryIds: [config.canaries[0]!.id] })).toThrow(/recurring tuple/);
   });
 
   it("selects one exact authorized tuple by canary ID", () => {

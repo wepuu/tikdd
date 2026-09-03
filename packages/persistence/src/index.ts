@@ -32,6 +32,7 @@ import { Pool, type PoolClient, type QueryResultRow } from "pg";
 export * from "./task-admission";
 export * from "./cleanup";
 export * from "./operational-diagnostics";
+export * from "./operational-services";
 export * from "./pilot-control";
 export * from "./pilot-evidence";
 export * from "./admin-control-plane";

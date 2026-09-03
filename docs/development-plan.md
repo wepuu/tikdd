@@ -209,8 +209,16 @@ P0-X-E2E-FINAL-VERIFY status (2026-09-03): complete. One owner-authorized produc
 X, SSSTwitter, normalized result persistence, encrypted redirect candidates, Delivery ticket
 creation and one-use 302 browser handoff without CDN/media transfer. `P0-X-HTTP-01` is resolved
 technically. X remains experimental/non-stable; the Production Evidence Gate remains open pending
-calibration, policy lock, staged pilot and seven consecutive healthy daily reviews. Work Item 17
-remains not started.
+calibration, policy lock, staged pilot and seven consecutive healthy daily reviews.
+
+Work Item 17 status (2026-09-04): implementation complete; production activation and recurring-run
+proof are pending. Host-owned systemd timers
+invoke isolated Docker Compose one-shot wrappers for Canary, evidence and cleanup. The persisted
+operational read model exposes last/next run, freshness, lease state and bounded failures; its
+readiness verifier fails closed for missing, stale or failed state. Scheduled Canary authorization
+is machine-restricted to `ssstwitter-x-recurring-001` in `canary-global`; public X allocation and
+all Worker Provider flags remain disabled. The X Production Evidence Gate remains open; calibration
+must not start until the recurring proof is complete.
 
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
@@ -226,6 +234,10 @@ application processes without enabling public Provider allocation.
 ### Work Item 17 — Scheduled operational services
 
 Lane: A, with read-model dependencies consumed by Lane B.
+
+Status: implementation complete; production proof pending (2026-09-04). See
+[`docs/work-item-17-scheduled-operational-services.md`](work-item-17-scheduled-operational-services.md)
+for the implementation, production activation and recurring-run evidence.
 
 Establish recurring production supervision for:
 

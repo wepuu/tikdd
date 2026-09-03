@@ -6,6 +6,7 @@ import {
   DLPandaProvider,
   ProviderCanaryConfigSchema,
   ProviderRouter,
+  selectScheduledProviderCanaries,
   SSSTwitterProvider,
   TwitterSaverProvider,
   type ProviderCircuitKey,
@@ -61,8 +62,9 @@ export async function executeCanaryRun() {
     provider.manifest.id,
     new ProviderRouter([provider], { ...routerOptions, maxAttempts: 1 })
   ]));
+  const definitions = configuration.scheduled ? selectScheduledProviderCanaries(config) : config.canaries;
   const summary = await runCanaries({
-    definitions: config.canaries,
+    definitions,
     router,
     routerForProvider: (providerId) => providerRouters.get(providerId) ?? null,
     repository: new OperationalDiagnosticsRepository(pool),
