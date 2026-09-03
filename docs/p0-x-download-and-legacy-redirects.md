@@ -656,5 +656,23 @@ Deterministic tests include candidate preparation, transaction failure, sanitize
 successful-attempt persistence, no second Provider call and a third/final-attempt Provider success
 followed by local failure. No database migration, queue split, Provider/HTTP/Delivery change or
 public result change was introduced. This work item sends no Provider, Delivery or CDN request.
-P0-X-HTTP-01 remains open, X remains experimental/non-stable, the Production Evidence Gate remains
-open and Work Item 17 has not started.
+
+The merged runtime was deployed by replacing only the Worker. The previous Worker used Service
+digest `sha256:edb4cf52bcb4ac931f14b250520f126afa4eed054524a3c790544d62a1a781ca`
+and had started at `2026-09-01T09:05:16.587009581Z`. The replacement uses immutable Service digest
+`sha256:271e61bd4d8e958230e7c8864e07102e242c0c9eaa374c79f6b95bf1eee9f6a3`,
+whose OCI revision is `9adbe5c93b33cd401743d6a42fb28f8a7e33f931`, and started at
+`2026-09-02T14:53:43.316957139Z`. API, Delivery, Web, PostgreSQL and TikDD Redis retained their
+existing container identities and start times. All six continuous containers were healthy with
+zero restarts, and the final shared-host stage gate passed.
+
+The production closeout kept TwitterSaver, DLPanda and SSSTwitter disabled; rollout, Provider
+health, Canary and diagnostic trace also remained disabled. The SSSTwitter/X/NL rule remained
+revision 10, disabled, with allocation zero. A public invalid-task request returned the expected
+`400 INVALID_REQUEST` without creating a resolve task. No Provider, Delivery or CDN request,
+Delivery ticket or media read was performed during deployment or verification, and no one-shot
+operational container remained.
+
+P0-X-RETRY-MASKING-01 is complete. P0-X-HTTP-01 remains open, X remains
+experimental/non-stable, the Production Evidence Gate remains open and Work Item 17 has not
+started.
