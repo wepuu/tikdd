@@ -8,9 +8,11 @@ This roadmap starts from the audited repository state, not from historical compl
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The immediate production objective remains closure of the X production baseline. The repository has
-no `stable` platform catalog entries today. A recognized or planned catalog entry is therefore not
-a claim that TikDD can currently download from that platform.
+The immediate production objective is completion of the X Production Evidence Gate. The bounded
+P0-X-E2E-FINAL-VERIFY has resolved the technical X path through SSSTwitter and Delivery, but X is
+not promoted to `stable` and the remaining evidence gates still control production allocation.
+The repository has no `stable` platform catalog entries today. A recognized or planned catalog
+entry is therefore not a claim that TikDD can currently download from that platform.
 
 ## Baseline classification
 
@@ -34,8 +36,9 @@ a claim that TikDD can currently download from that platform.
 - The scheduled Canary configuration has no exact SSSTwitter/X tuple.
 - Production application deployment and recurring Canary/evaluator/cleanup supervision are not
   represented in the repository.
-- Real deployment preflight, three-day calibration, policy review/lock, staged pilot, seven healthy
-  daily reviews, and final browser delivery verification remain incomplete.
+- Real deployment preflight, three-day calibration, policy review/lock, staged pilot, and seven
+  healthy daily reviews remain incomplete; the final owner/browser delivery verification is now
+  recorded by P0-X-E2E-FINAL-VERIFY.
 - `config/x-pilot-evidence.json` remains `pending`; deterministic CI cannot close this evidence.
 
 ## Coordinated future lanes
@@ -200,6 +203,13 @@ while the intentional Provider and rollout gates remain closed; no adapter defec
 no broad traffic is authorized. A bounded Nginx migration for the historical `/i` family and an
 explicit evidence-derived legacy-slug allowlist is under release validation. This work neither
 closes the X Production Evidence Gate nor starts Work Item 17.
+
+P0-X-E2E-FINAL-VERIFY status (2026-09-03): complete. One owner-authorized production task traversed
+X, SSSTwitter, normalized result persistence, encrypted redirect candidates, Delivery ticket
+creation and one-use 302 browser handoff without CDN/media transfer. `P0-X-HTTP-01` is resolved
+technically. X remains experimental/non-stable; the Production Evidence Gate remains open pending
+calibration, policy lock, staged pilot and seven consecutive healthy daily reviews. Work Item 17
+remains not started.
 
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
