@@ -221,10 +221,14 @@ Applications never auto-migrate. A release must:
 
 Missing off-host backup does not block creation and migration of the first empty TikDD database.
 The confirmation is single-use: change it back to `false` immediately after initialization. Once
-production traffic can create data, off-host encrypted PostgreSQL backup is P0 hardening. The owner
-must then define destination, retention, schedule, restore procedure and periodic restore testing;
-the existing MySQL/site backup timer is unrelated evidence. There is no automatic down migration
-and no claim of schema downgrade safety.
+production traffic can create data, use the reviewed [P0-DR-01 backup and restore drill](p0-dr-01-backup-restore.md)
+before treating the database as recoverable. The one-shot scripts
+`scripts/production-backup-postgres.sh`, `scripts/verify-postgres-backup.sh`, and
+`scripts/restore-postgres-drill.sh` keep plaintext temporary, encrypt with a public-only
+recipient on production, and require an off-host copy for restore. They do not schedule backups or
+choose a destination; the owner must separately define destination, retention, schedule and
+periodic restore testing. The existing MySQL/site backup timer is unrelated evidence. There is no
+automatic down migration and no claim of schema downgrade safety.
 
 ## 7. Health, startup and manual operations
 

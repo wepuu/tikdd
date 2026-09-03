@@ -302,5 +302,5 @@ window, no new OOM event appeared after the C2 boundary, and the root disk retai
 
 Provider, rollout, scheduled Canary and production-evidence gates remain disabled and fail closed.
 Admin remains stopped and unpublished. UFW and public host 80/443 policy were not changed. The
-remaining P0 production-hardening debt is an encrypted off-host PostgreSQL backup with a proved
-restore; Gate C does not waive that requirement or authorize Work Item 17.
+deferred encrypted off-host PostgreSQL backup and proved restore were subsequently closed by
+P0-DR-01; Gate C itself did not authorize that work or Work Item 17.
