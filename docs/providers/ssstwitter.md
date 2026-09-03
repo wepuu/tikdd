@@ -309,6 +309,17 @@ not resolve P0-X-HTTP-01. Validation is deterministic and generates zero Provide
 traffic. Full lifecycle evidence is recorded in
 [`../p0-x-download-and-legacy-redirects.md`](../p0-x-download-and-legacy-redirects.md).
 
+Production deployed the merged behavior by replacing only the Worker, from Service digest
+`sha256:edb4cf52bcb4ac931f14b250520f126afa4eed054524a3c790544d62a1a781ca`
+(`2026-09-01T09:05:16.587009581Z`) to immutable digest
+`sha256:271e61bd4d8e958230e7c8864e07102e242c0c9eaa374c79f6b95bf1eee9f6a3`
+at OCI revision `9adbe5c93b33cd401743d6a42fb28f8a7e33f931`
+(`2026-09-02T14:53:43.316957139Z`). The other five TikDD containers retained their start times;
+all six were healthy with zero restarts and the shared-host stage gate passed. SSSTwitter remained
+disabled, its X/NL allocation remained zero, and Canary and trace remained off. Deployment and
+verification created no X task, Provider request, Delivery ticket, CDN request or media read.
+P0-X-RETRY-MASKING-01 is therefore complete; P0-X-HTTP-01 remains open.
+
 ## Pilot closure evidence
 
 The sanitized cross-provider operational evidence index is
