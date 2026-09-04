@@ -47,7 +47,7 @@ try {
       batches: metrics.batches,
       deliveryTickets: metrics.rows.deliveryTickets,
       deliveryOutcomes: metrics.rows.deliveryOutcomes,
-      deliveryCandidates: metrics.rows.deliveryCandidates,
+      deliveryTargets: metrics.rows.deliveryCandidates,
       canaryMeasurements: metrics.rows.canaryMeasurements,
       errors: metrics.errors,
       failedStage: metrics.failedStage,
