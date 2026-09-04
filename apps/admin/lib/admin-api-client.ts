@@ -3,6 +3,7 @@ import {
   AdminPlatformListSchema,
   AdminProviderListSchema,
   AdminRouteDetailSchema,
+  AdminQualificationViewSchema,
   AdminRouteListSchema,
   AdminCsrfTokenSchema,
   AdminMutationReceiptSchema,
@@ -228,6 +229,13 @@ export async function loadAdminConsoleSnapshot(input: {
     : routes.status === "ready"
       ? { status: "ready" as const, data: null }
       : unavailable();
+  const qualification = selected
+    ? await read({
+        ...shared,
+        schema: AdminQualificationViewSchema.nullable(),
+        path: `/admin/v1/qualification/${encodeURIComponent(selected.tuple.providerId)}/${encodeURIComponent(selected.tuple.platform)}/${encodeURIComponent(selected.tuple.region)}`
+      })
+    : routes.status === "ready" ? { status: "ready" as const, data: null } : unavailable();
   const managedPlatform = input.managedPlatform ?? selected?.tuple.platform ?? (platforms.status === "ready" ? platforms.data.platforms[0]?.id : undefined);
   const platformRegion = runtime.status === "ready" ? runtime.data.region : selected?.tuple.region;
   const policyPlatform = input.policyPlatform ?? selected?.tuple.platform;
@@ -249,6 +257,7 @@ export async function loadAdminConsoleSnapshot(input: {
     overview,
     routes,
     selectedRoute,
+    qualification,
     providers,
     platforms,
     runtime,
@@ -302,4 +311,12 @@ export async function sendAdminRecoveryCommand(input:{requestHeaders:HeaderReade
   if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
   const response=await transport({url:new URL(`/admin/v1/settings/recovery/${input.path}`,configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
   if(!response.ok)throw new Error("Admin recovery command was rejected.");const receipt=AdminMutationReceiptSchema.parse(response.body);assertAdminSafeValue(receipt);return receipt;
+}
+
+export async function sendAdminQualificationCommand(input:{requestHeaders:HeaderReader;path:"review"|"lock-policy";csrfToken:string;command:unknown;configuration?:AdminApiConnection;transport?:AdminTransport}){
+  const configuration=input.configuration??loadAdminApiConnection();const transport=input.transport??nodeTransport;const assertion=sessionToken(input.requestHeaders);const body=JSON.stringify(input.command);
+  const outgoing:Record<string,string>={accept:"application/json","content-type":"application/json","content-length":String(Buffer.byteLength(body)),host:new URL(configuration.adminOrigin).host,origin:configuration.adminOrigin,"sec-fetch-site":"same-origin","x-tikdd-csrf":input.csrfToken};
+  if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
+  const response=await transport({url:new URL(`/admin/v1/qualification/${input.path}`,configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
+  if(!response.ok)throw new Error("Admin qualification command was rejected.");const receipt=AdminMutationReceiptSchema.parse(response.body);assertAdminSafeValue(receipt);return receipt;
 }

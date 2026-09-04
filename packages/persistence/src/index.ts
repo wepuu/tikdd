@@ -41,6 +41,7 @@ export * from "./admin-platform-presentation";
 export * from "./admin-content-management";
 export * from "./admin-content-publication";
 export * from "./admin-authentication";
+export * from "./admin-qualification";
 
 interface TaskRow extends QueryResultRow {
   id: string;

@@ -216,4 +216,21 @@ describe("Admin API browser boundary", () => {
       await unsafeApp.close();
     }
   });
+
+  it("keeps qualification reads and owner decisions behind authentication and CSRF",async()=>{
+    const csrfProtector=new AdminCsrfProtector(development.csrfSecret);const mutation={schemaVersion:"1" as const,commandId:`cmd_${"d".repeat(32)}`,aggregate:"qualification" as const,
+      targetId:"ssstwitter/x/nl",expectedRevision:null,acceptedRevision:1,currentRevision:1,propagatedRevision:1,state:"propagated" as const,acceptedAt:"2026-08-14T00:00:00.000Z",completedAt:"2026-08-14T00:00:00.000Z"};
+    const qualification={getView:async()=>({schemaVersion:"1" as const,generatedAt:"2026-08-14T00:00:00.000Z",tuple:{providerId:"ssstwitter",platform:"x",region:"nl"},
+      state:{stage:"candidate" as const,paused:true,pauseReason:"Awaiting owner review.",approvalReference:null,policyId:null,policyVersion:null,reviewer:null,revision:null,reviewedAt:null},
+      prerequisites:[{code:"manifest_declared" as const,satisfied:true,detail:"Manifest declared."},{code:"manifest_enabled" as const,satisfied:true,detail:"Manifest enabled."},{code:"region_supported" as const,satisfied:true,detail:"Region supported."},{code:"fixture_verified" as const,satisfied:true,detail:"Fixtures verified."},{code:"delivery_supported" as const,satisfied:true,detail:"Delivery supported."},{code:"canary_ready" as const,satisfied:false,detail:"Canary pending."},{code:"calibration_complete" as const,satisfied:false,detail:"Calibration pending."},{code:"policy_locked" as const,satisfied:false,detail:"Policy pending."}],
+      calibration:{requiredDays:3 as const,complete:false,windowStartedAt:null,windowEndedAt:null,days:[]},proposal:null,lockedPolicy:null,guard:null,rollout:{allocationBps:0,revision:null},
+      eligibility:{decisions:["approve" as const,"hold" as const,"deny" as const],promotionEligible:false,blockers:["Canary pending."],effectiveAllocationCapBps:0}}),review:async()=>mutation,lockPolicy:async()=>mutation};
+    const app=buildAdminApi({configuration:development,identityVerifier:new DevelopmentAdminIdentityVerifier("development_owner"),reads:reads(),qualification,csrfProtector});
+    try{const base={host:"localhost:3001",origin:"http://localhost:3001","content-type":"application/json","sec-fetch-site":"same-origin"};
+      expect((await app.inject({method:"GET",url:"/admin/v1/qualification/ssstwitter/x/nl",headers:{host:"localhost:3001"}})).statusCode).toBe(200);
+      const command={providerId:"ssstwitter",platform:"x",region:"nl",expectedRevision:null,decision:"hold",targetStage:"candidate",approvalReference:null,reason:"Keep paused.",confirmation:"ssstwitter/x/nl",idempotencyKey:"abcdefghijklmnop"};
+      expect((await app.inject({method:"POST",url:"/admin/v1/qualification/review",headers:base,payload:command})).statusCode).toBe(403);
+      const csrf=csrfProtector.issue("development_owner",development.adminOrigin);expect((await app.inject({method:"POST",url:"/admin/v1/qualification/review",headers:{...base,"x-tikdd-csrf":csrf},payload:command})).statusCode).toBe(200);
+    }finally{await app.close();}
+  });
 });

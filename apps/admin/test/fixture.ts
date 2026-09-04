@@ -98,6 +98,7 @@ export const consoleSnapshot = AdminConsoleSnapshotSchema.parse({
   overview: { status: "ready", data: ADMIN_OVERVIEW_FIXTURES.healthy },
   routes: { status: "ready", data: routeList },
   selectedRoute: { status: "ready", data: routeDetail },
+  qualification: { status: "ready", data: null },
   providers: { status: "ready", data: providers },
   platforms: { status: "ready", data: platforms },
   runtime: { status: "ready", data: runtime },

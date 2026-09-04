@@ -45,6 +45,7 @@ import { SeoWorkbench } from "./seo-workbench";
 import { AccountSecurity } from "./account-security";
 import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
+import { QualificationWorkbench } from "./qualification-workbench";
 
 type RefreshState = "idle" | "refreshing" | "failed";
 
@@ -268,6 +269,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
               </div>
             )}
             <RoutePolicyControl snapshot={snapshot} summary={selectedSummary} onComplete={()=>refresh(selectedSummary??undefined, managedPlatform, platform)} />
+            <QualificationWorkbench view={snapshot.qualification.status==="ready"?snapshot.qualification.data:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onComplete={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} />
           </section>
 
           <section className="alerts-section" id="alerts">

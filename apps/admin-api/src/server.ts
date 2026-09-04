@@ -9,6 +9,7 @@ import {
   AdminAccountRepository,
   AdminPlatformPresentationRepository,
   AdminRoutePolicyRepository,
+  AdminQualificationRepository,
   createDatabasePool,
   OperationalDiagnosticsRepository,
   PilotControlRepository,
@@ -26,6 +27,7 @@ import { AdminBoundedProbeRunner } from "./probe-runner";
 import { AdminPlatformManagementService } from "./platform-management-service";
 import { AdminContentManagementService } from "./content-management-service";
 import { WebContentRevalidator } from "./web-content-revalidator";
+import { AdminQualificationService } from "./qualification-service";
 import { loadAdmissionControlConfiguration,resolveProviderConcurrencyLimit } from "@tikdd/admission-control";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
@@ -118,6 +120,13 @@ const platformManagement = new AdminPlatformManagementService({
   reads,
   writes: new AdminPlatformPresentationRepository(pool)
 });
+const qualification = new AdminQualificationService({
+  region: configuration.region,
+  commandSecret: configuration.commandSecret,
+  freshnessMs: configuration.freshnessMs,
+  manifests,
+  repository: new AdminQualificationRepository(pool)
+});
 const webContentRevalidator = new WebContentRevalidator({ origin: configuration.webContent.origin, secret: configuration.webContent.revalidationSecret, timeoutMs: configuration.webContent.timeoutMs });
 const contentManagement = new AdminContentManagementService({
   commandSecret: configuration.commandSecret,
@@ -138,6 +147,7 @@ const app = buildAdminApi({
   routePolicies,
   platformManagement,
   contentManagement,
+  qualification,
   csrfProtector: new AdminCsrfProtector(configuration.csrfSecret),
   logger: true
 });

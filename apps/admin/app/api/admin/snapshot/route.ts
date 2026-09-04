@@ -1,10 +1,11 @@
-import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminContentCommand, sendAdminPlatformCommand, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminRouteSelection } from "../../../../lib/admin-api-client";
+import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminContentCommand, sendAdminPlatformCommand, sendAdminQualificationCommand, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminRouteSelection } from "../../../../lib/admin-api-client";
 import { AdminRoutePolicyDiscardCommandSchema,AdminRoutePolicyDraftCommandSchema,AdminRoutePolicyPublishCommandSchema,AdminRoutePolicyRollbackCommandSchema } from "@tikdd/admin-contracts";
 import { AdminRouteProbeCommandSchema,AdminRouteSafetyCommandSchema } from "@tikdd/admin-contracts";
 import { AdminPlatformDiscardCommandSchema,AdminPlatformDraftCommandSchema,AdminPlatformPublishCommandSchema,AdminPlatformRollbackCommandSchema } from "@tikdd/admin-contracts";
 import { AdminLocaleDiscardCommandSchema,AdminLocaleDraftCommandSchema,AdminPageDiscardCommandSchema,AdminPageDraftCommandSchema,AdminSharedContentDraftCommandSchema } from "@tikdd/admin-contracts";
 import { AdminContentPublishCommandSchema,AdminContentRollbackCommandSchema,AdminContentRetryPropagationCommandSchema } from "@tikdd/admin-contracts";
 import { AdminContentInvalidateCacheCommandSchema,AdminContentRebuildSnapshotCommandSchema } from "@tikdd/admin-contracts";
+import { AdminQualificationLockCommandSchema,AdminQualificationReviewCommandSchema } from "@tikdd/admin-contracts";
 import { z } from "zod";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -67,6 +68,8 @@ const CommandRequestSchema=z.discriminatedUnion("action",[
   ,z.strictObject({action:z.literal("content_retry"),csrfToken:z.string(),command:AdminContentRetryPropagationCommandSchema})
   ,z.strictObject({action:z.literal("recovery_rebuild"),csrfToken:z.string(),command:AdminContentRebuildSnapshotCommandSchema})
   ,z.strictObject({action:z.literal("recovery_invalidate"),csrfToken:z.string(),command:AdminContentInvalidateCacheCommandSchema})
+  ,z.strictObject({action:z.literal("qualification_review"),csrfToken:z.string(),command:AdminQualificationReviewCommandSchema})
+  ,z.strictObject({action:z.literal("qualification_lock"),csrfToken:z.string(),command:AdminQualificationLockCommandSchema})
 ]);
 
 export async function POST(request:NextRequest) {
@@ -80,6 +83,11 @@ export async function POST(request:NextRequest) {
     return NextResponse.json({error:{code:"INVALID_COMMAND",message:"Provide one bounded route-policy command."}},{status:400,headers:responseHeaders});
   }
   try{
+    if(parsed.action.startsWith("qualification_")){
+      const path=parsed.action==="qualification_review"?"review":"lock-policy";
+      const receipt=await sendAdminQualificationCommand({requestHeaders:await headers(),path,csrfToken:parsed.csrfToken,command:parsed.command,configuration});
+      return NextResponse.json(receipt,{headers:responseHeaders});
+    }
     if(parsed.action.startsWith("recovery_")){
       const path=parsed.action==="recovery_rebuild"?"rebuild-snapshot":"invalidate-content-cache";
       const receipt=await sendAdminRecoveryCommand({requestHeaders:await headers(),path,csrfToken:parsed.csrfToken,command:parsed.command,configuration});

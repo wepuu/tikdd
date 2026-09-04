@@ -112,7 +112,7 @@ describe("Admin console API client", () => {
       });
       expect(snapshot.overview.status).toBe("ready");
       expect(snapshot.routes.status).toBe("ready");
-      expect(observedHosts.length).toBe(14);
+      expect(observedHosts.length).toBe(15);
       expect(new Set(observedHosts)).toEqual(new Set(["admin.tikdd.example"]));
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

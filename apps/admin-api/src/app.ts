@@ -13,6 +13,7 @@ import {
   AdminSeoTechnicalViewSchema,
   AdminMutationReceiptSchema,
   AdminPlatformManagementViewSchema,
+  AdminQualificationViewSchema,
   AdminRoutePolicyViewSchema,
   LocaleTagSchema,
   assertAdminSafeValue,
@@ -40,6 +41,7 @@ import type { AdminCsrfProtector } from "./csrf";
 import type { AdminRoutePolicyService } from "./route-policy-service";
 import type { AdminPlatformManagementService } from "./platform-management-service";
 import type { AdminContentManagementService } from "./content-management-service";
+import type { AdminQualificationService } from "./qualification-service";
 import type { AdminApiConfiguration } from "./config";
 
 export interface AdminReadApi {
@@ -62,6 +64,7 @@ export interface BuildAdminApiOptions {
   routePolicies?: Pick<AdminRoutePolicyService, "getView" | "saveDraft" | "publish" | "discard" | "rollback" | "safety" | "probe">;
   platformManagement?: Pick<AdminPlatformManagementService, "getView" | "saveDraft" | "publish" | "discard" | "rollback">;
   contentManagement?: Pick<AdminContentManagementService, "getView" | "saveLocale" | "discardLocale" | "savePage" | "discardPage" | "saveShared" | "getPublicationView" | "getSeoTechnicalView" | "getSettingsRecoveryView" | "publish" | "rollback" | "retryPropagation" | "rebuildSnapshot" | "invalidateContentCache">;
+  qualification?: Pick<AdminQualificationService,"getView"|"review"|"lockPolicy">;
   csrfProtector?: AdminCsrfProtector;
   logger?: boolean;
 }
@@ -168,6 +171,7 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
         ,"/admin/v1/content/shared/draft"
         ,"/admin/v1/content/publish", "/admin/v1/content/rollback", "/admin/v1/content/retry-propagation"
         ,"/admin/v1/settings/recovery/rebuild-snapshot", "/admin/v1/settings/recovery/invalidate-content-cache"
+        ,"/admin/v1/qualification/review", "/admin/v1/qualification/lock-policy"
       ]);
       if (request.method !== "POST" || !allowed.has(request.url.split("?")[0] ?? "")) {
         return error(reply, 405, "METHOD_NOT_ALLOWED", "This Admin API command is not available.");
@@ -275,6 +279,8 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
     if(name==="AdminIdempotencyConflictError")return error(reply,409,"IDEMPOTENCY_CONFLICT","The command key was already used for different input.");
     if(name==="AdminPlatformReadinessError")return error(reply,422,"READINESS_BLOCKED","The platform does not satisfy the current publication readiness gate.");
     if(name==="AdminContentBoundaryError")return error(reply,422,"CONTENT_BOUNDARY_REJECTED","The content change violates the locale or template boundary.");
+    if(name==="AdminQualificationConflictError"||name==="AdminQualificationIdempotencyConflictError")return error(reply,409,"QUALIFICATION_CONFLICT","The qualification state changed; reload before retrying.");
+    if(name==="AdminQualificationReadinessError")return error(reply,422,"QUALIFICATION_BLOCKED","The qualification prerequisites are not satisfied.");
     if(name==="ZodError")return error(reply,400,"INVALID_COMMAND","Provide a bounded command for one exact route scope.");
     return error(reply,503,"CONTROL_UNAVAILABLE","The route-policy command could not be completed.");
   };
@@ -285,6 +291,15 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
   app.post("/admin/v1/route-policies/rollback",async(request,reply)=>{try{const subject=actor(request);if(!subject)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.routePolicies?.rollback(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/route-policies/safety",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.routePolicies)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.routePolicies.safety(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/route-policies/probe",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.routePolicies)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.routePolicies.probe(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
+  app.get<{Params:{providerId:string;platform:string;region:string}}>("/admin/v1/qualification/:providerId/:platform/:region",async(request,reply)=>{
+    const provider=AdminProviderIdSchema.safeParse(request.params.providerId);const platform=PlatformIdSchema.safeParse(request.params.platform);const region=RegionIdSchema.safeParse(request.params.region);
+    if(!provider.success||!platform.success||!region.success)return error(reply,400,"INVALID_ROUTE","Provide one exact Provider, platform, and region tuple.");
+    if(!options.qualification)return error(reply,503,"CONTROL_UNAVAILABLE","Qualification controls are unavailable.");
+    try{return safeSend(reply,AdminQualificationViewSchema.parse(await options.qualification.getView(provider.data,platform.data,region.data)));}
+    catch(cause){return commandError(reply,cause);}
+  });
+  app.post("/admin/v1/qualification/review",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.qualification)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.qualification.review(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
+  app.post("/admin/v1/qualification/lock-policy",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.qualification)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.qualification.lockPolicy(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/platform-presentations/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.platformManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.platformManagement.saveDraft(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/platform-presentations/publish",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.platformManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.platformManagement.publish(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/platform-presentations/discard",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.platformManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.platformManagement.discard(request.body,subject)));}catch(cause){return commandError(reply,cause);}});

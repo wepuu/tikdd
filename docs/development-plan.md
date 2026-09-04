@@ -257,6 +257,9 @@ environment without contacting any Provider outside exact authorized Canary tupl
 
 Lane: B.
 
+Status: implemented and verified locally on 2026-09-04; production deployment and operational evidence remain
+pending. See [the implementation record](work-item-18-qualification-admin.md).
+
 Expose the existing qualification, calibration, policy, and evidence primitives as one coherent
 owner workflow.
 
