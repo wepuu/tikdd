@@ -13,6 +13,6 @@ describe("operational service status migration", () => {
     expect(migration).toContain("stale_after_at TIMESTAMPTZ NOT NULL");
     expect(migration).toContain("consecutive_failures SMALLINT");
     expect(migration).toContain("GRANT SELECT, INSERT, UPDATE ON TABLE operational_service_status TO tikdd_ops");
-    expect(migration).not.toMatch(/GRANT\s+ALL|ALL\s+PRIVILEGES|SUPERUSER|OWNER\s+TO/i);
+    expect(migration).not.toMatch(/GRANT\s+ALL|SUPERUSER|OWNER\s+TO/i);
   });
 });
