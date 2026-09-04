@@ -57,7 +57,7 @@ try {
   });
   process.stdout.write(`${JSON.stringify({ service: "cleanup", state, ...metrics })}\n`);
   if (state !== "completed") process.exitCode = 1;
-} catch {
+} catch (error) {
   await status.recordFinished({
     service: "cleanup",
     deployment: configuration.deployment,
@@ -71,7 +71,10 @@ try {
     lastErrorCode: "startup_failure",
     sanitizedSummary: { mode: "execute", batches: 0, errors: 1, stoppedReason: "error", durationMs: 0 }
   }).catch(() => undefined);
-  process.stderr.write("Scheduled cleanup failed; inspect protected operational status.\n");
+  const errorCode = error && typeof error === "object" && "code" in error
+    ? String((error as { code?: unknown }).code ?? "unknown")
+    : error instanceof Error ? error.name : "unknown";
+  process.stderr.write(`Scheduled cleanup failed; inspect protected operational status (code=${errorCode}).\n`);
   process.exitCode = 1;
 } finally {
   await runtime?.close();
