@@ -45,6 +45,10 @@
     "backup:postgres": "sh scripts/production-backup-postgres.sh",
     "verify:postgres-backup": "sh scripts/verify-postgres-backup.sh",
     "restore:postgres-drill": "sh scripts/restore-postgres-drill.sh",
+    "verify:operational-services": "pnpm --filter @tikdd/persistence db:verify-operational-services",
+    "canary:scheduled": "pnpm --filter @tikdd/canary scheduled",
+    "evidence:scheduled": "pnpm --filter @tikdd/evidence scheduled",
+    "cleanup:scheduled": "pnpm --filter @tikdd/cleanup scheduled",
     "cleanup:start": "pnpm --filter @tikdd/cleanup start",
     "cleanup:run": "pnpm --filter @tikdd/cleanup execute",
     "cleanup:dry-run": "pnpm --filter @tikdd/cleanup dry-run",
@@ -87,6 +91,7 @@
     "test:work-item-13-canary": "vitest run packages/providers/test/canary-config.test.ts apps/canary/test/runner.test.ts",
     "verify:work-item-13": "node scripts/verify-work-item-13.mjs",
     "verify:work-item-16": "node scripts/verify-work-item-16.mjs",
+    "verify:work-item-17": "node scripts/verify-work-item-17.mjs",
     "smoke:work-item-16": "node scripts/smoke-work-item-16.mjs",
     "verify:work-item-11-5": "node scripts/verify-work-item-11-5.mjs",
     "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs"

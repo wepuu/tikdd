@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the TikDD cleanup cycle every minute
+
+[Timer]
+OnCalendar=*:0
+Persistent=true
+AccuracySec=1s
+Unit=tikdd-cleanup.service
+
+[Install]
+WantedBy=timers.target

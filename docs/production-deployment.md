@@ -1,8 +1,9 @@
 # TikDD production deployment operations
 
-This runbook implements Work Item 16 Phase B for the reviewed shared Ubuntu Server 24.04 LTS
-`linux/amd64` host in `nl`. It creates no Cloudflare resources, firewall rules, Provider allocation,
-or scheduler. The architecture contract remains
+This runbook implements the reviewed deployment foundation and Work Item 17 operational services
+for the shared Ubuntu Server 24.04 LTS `linux/amd64` host in `nl`. It creates no Cloudflare
+resources or public Provider allocation. Work Item 17 uses repository-owned host systemd timers
+for three isolated one-shot jobs; the architecture contract remains
 [the Work Item 16 deployment design](work-item-16-deployment-design.md).
 
 > **Current C2 owner state (2026-08-30):** the old TikDD deployment described by the historical C1
@@ -435,9 +436,22 @@ Hold any gate on OOM, rapidly growing swap, sustained severe pressure, material 
 MySQL/host-Redis/PostgreSQL instability, repeated restarts or unacceptable load. Public 80/443 close
 only in a later owner-approved firewall cutover after all hosted sites no longer need direct origin.
 
-## 13. Work Item 17 boundary
+## 13. Work Item 17 operational scheduling
 
-Work Item 17 alone owns cron/timers, recurring execution, last/next-run state, freshness,
-missed-run detection, scheduling alerts and supervision. This foundation supplies only manually
-invokable one-shot commands. It does not implement a scheduling container, loop, systemd timer or
-freshness claim.
+Work Item 17 owns recurring execution, last/next-run state, freshness, missed-run detection and
+supervision. The repository keeps `canary`, `evidence`, `cleanup` and `cleanup-dry-run` as manual
+one-shot operations and adds `canary-scheduled`, `evidence-scheduled` and `cleanup-scheduled`
+wrappers that call the existing runtimes. Host units in `deploy/systemd/` are installed by
+`scripts/install-operational-timers.sh`; each timer invokes
+`scripts/run-scheduled-operation.sh` through the shared `/run/lock/tikdd-deploy.lock` and runs a
+Docker Compose `--profile ops run --rm --no-deps` job. No scheduler container or permanent Node
+process is introduced, and the host installation never restarts Nginx, cloudflared, PHP-FPM,
+MySQL or host Redis.
+
+The `operational_service_status` current read model is authoritative for sanitized scheduler
+freshness. Run `pnpm verify:operational-services` to require fresh completed `canary`, `evidence`
+and `cleanup` rows without Provider access. Run `scripts/verify-operational-scheduler.sh` on the
+host to combine that readiness check with enabled/active timers and next triggers. The scheduled
+Canary is separately authorized with `TIKDD_SCHEDULED_CANARY_AUTHORIZED=true`, the exact
+`ssstwitter-x-recurring-001` definition and `CANARY_REGION=canary-global`; the manual
+`TIKDD_CANARY_AUTHORIZED` flag remains false and public Worker allocation remains zero.

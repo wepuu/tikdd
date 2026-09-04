@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/service.ts",
     "execute": "tsx src/run-once.ts",
+    "scheduled": "tsx src/scheduled.ts",
     "verify": "tsx src/verify-canary.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json"

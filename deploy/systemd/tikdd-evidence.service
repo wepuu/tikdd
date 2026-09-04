@@ -1,0 +1,10 @@
+[Unit]
+Description=TikDD scheduled evidence evaluator cycle
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/tikdd/current
+ExecStart=/opt/tikdd/current/scripts/run-scheduled-operation.sh evidence
+TimeoutStartSec=180s

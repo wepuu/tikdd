@@ -2,11 +2,12 @@ import type { ProviderRouter } from "@tikdd/providers";
 import { describe, expect, it } from "vitest";
 import type { CanarySchedulerConfiguration } from "../src/configuration";
 import { runCanaries } from "../src/runner";
+import { classifyCanaryExecution } from "../src/supervision";
 
 const configuration: CanarySchedulerConfiguration = {
   deployment: "test", region: "canary-global", intervalMs: 300000, leaseTtlMs: 15000,
   runTimeoutMs: 10000, measurementRetentionMs: 86400000, rolloutMaximumStaleMs: 15000,
-  rolloutCohortKey: Buffer.alloc(32)
+  rolloutCohortKey: Buffer.alloc(32), scheduled: true
 };
 
 describe("scheduled canary runner", () => {
@@ -58,5 +59,11 @@ describe("scheduled canary runner", () => {
     });
     expect(calls).toEqual(["provider-a"]);
     expect(result.failed).toBe(1);
+  });
+
+  it("keeps scheduler success separate from a failed Provider measurement", () => {
+    expect(classifyCanaryExecution({
+      runId: "run", leaseAcquired: true, sampleCount: 1, succeeded: 0, failed: 1, durationMs: 100, errorCount: 0
+    })).toMatchObject({ state: "completed", leaseState: "released", lastErrorCode: null });
   });
 });

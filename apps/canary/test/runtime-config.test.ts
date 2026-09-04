@@ -11,6 +11,7 @@ describe("scheduled canary provider file", () => {
     expect(() =>
       CanaryFileSchema.parse({
         ...current,
+        scheduledCanaryIds: [],
         canaries: [
           {
             id: "ssstwitter-x-fixture",

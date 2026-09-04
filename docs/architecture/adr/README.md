@@ -15,6 +15,7 @@
 - [ADR-0013: Bounded owner settings and known-snapshot recovery](0013-bounded-owner-settings-and-snapshot-recovery.md)
 - [ADR-0014: Provider capability evidence and deterministic traffic distribution](0014-provider-capability-evidence-and-deterministic-traffic-distribution.md)
 - [ADR-0015: Post-Provider completion retry boundary](0015-post-provider-completion-retry-boundary.md)
+- [ADR-0016: Production operational scheduling and freshness supervision](0016-operational-scheduling-and-freshness.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

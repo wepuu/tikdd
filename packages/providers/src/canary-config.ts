@@ -13,6 +13,7 @@ export const ProviderCanaryConfigSchema = z
       assertedAt: z.iso.date(),
       scope: z.string().min(1)
     }),
+    scheduledCanaryIds: z.array(ProviderCanaryIdSchema).max(16).default([]),
     canaries: z
       .array(
         z.object({
@@ -25,6 +26,16 @@ export const ProviderCanaryConfigSchema = z
       .min(1)
   })
   .superRefine((config, context) => {
+    const scheduledIds = new Set<string>();
+    for (const [index, scheduledId] of config.scheduledCanaryIds.entries()) {
+      if (scheduledIds.has(scheduledId)) {
+        context.addIssue({ code: "custom", message: "Scheduled Canary IDs must be unique.", path: ["scheduledCanaryIds", index] });
+      }
+      scheduledIds.add(scheduledId);
+      if (!config.canaries.some((canary) => canary.id === scheduledId)) {
+        context.addIssue({ code: "custom", message: "Scheduled Canary ID must reference a configured Canary.", path: ["scheduledCanaryIds", index] });
+      }
+    }
     const ids = new Set<string>();
     const tuples = new Set<string>();
     config.canaries.forEach((canary, index) => {
@@ -73,4 +84,17 @@ export function selectProviderCanaries(
     throw new Error("No canaries matched CANARY_ID and CANARY_PROVIDER.");
   }
   return selected;
+}
+
+export function selectScheduledProviderCanaries(config: ProviderCanaryConfig): readonly ProviderCanary[] {
+  if (config.scheduledCanaryIds.length === 0) throw new Error("No recurring scheduled Canary authorization is configured.");
+  const selected = config.scheduledCanaryIds.map((id) => config.canaries.find((canary) => canary.id === id));
+  if (selected.some((canary) => !canary)) throw new Error("A scheduled Canary authorization references an unknown ID.");
+  const result = selected as ProviderCanary[];
+  for (const canary of result) {
+    if (canary.provider !== "ssstwitter" || canary.platform !== "x" || !canary.url.startsWith("https://x.com/SpaceX/status/2093477720638341395")) {
+      throw new Error("Scheduled Canary authorization is outside the reviewed recurring tuple.");
+    }
+  }
+  return result;
 }

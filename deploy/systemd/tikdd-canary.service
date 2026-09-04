@@ -1,0 +1,10 @@
+[Unit]
+Description=TikDD scheduled Canary cycle
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/tikdd/current
+ExecStart=/opt/tikdd/current/scripts/run-scheduled-operation.sh canary
+TimeoutStartSec=180s

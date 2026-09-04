@@ -484,6 +484,105 @@ services:
     mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
     pids_limit: 128
 
+  canary-scheduled:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "canary:scheduled"]
+    restart: "no"
+    environment:
+      CANARY_EXECUTION_MODE: scheduled
+      TIKDD_SCHEDULED_CANARY_AUTHORIZED: ${TIKDD_SCHEDULED_CANARY_AUTHORIZED:-false}
+      PROVIDER_ROLLOUT_ENABLED: "true"
+      PROVIDER_HEALTH_ENABLED: "true"
+      ADMISSION_CONTROL_ENABLED: "true"
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL
+    secrets:
+      - source: ops_database_url
+        target: database_url
+      - redis_url
+      - provider_rollout_cohort_key
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  evidence-scheduled:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "evidence:scheduled"]
+    restart: "no"
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL
+    secrets:
+      - source: ops_database_url
+        target: database_url
+      - redis_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  cleanup-scheduled:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "cleanup:scheduled"]
+    restart: "no"
+    environment: *cleanup-environment
+    secrets: *cleanup-secrets
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  operational-readiness:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "verify:operational-services"]
+    restart: "no"
+    environment:
+      TIKDD_OPERATIONAL_DEPLOYMENT: ${EVIDENCE_DEPLOYMENT:-tikdd}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL
+    secrets:
+      - source: ops_database_url
+        target: database_url
+    networks:
+      - data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
   admin-account:
     <<: *application-base
     profiles: ["admin-ops"]
