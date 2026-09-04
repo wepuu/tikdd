@@ -30,6 +30,7 @@ CREATE INDEX IF NOT EXISTS operational_service_status_freshness_idx
 DO $migration$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tikdd_ops') THEN
+    REVOKE ALL PRIVILEGES ON TABLE operational_service_status FROM tikdd_ops;
     GRANT SELECT, INSERT, UPDATE ON TABLE operational_service_status TO tikdd_ops;
   END IF;
 END

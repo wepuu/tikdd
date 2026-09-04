@@ -39,7 +39,7 @@ export function verifyWorkItem17Static() {
   assert(/^TIKDD_CANARY_AUTHORIZED=false$/m.test(productionEnv) && /^TIKDD_SCHEDULED_CANARY_AUTHORIZED=true$/m.test(productionEnv), "Manual and scheduled Canary authorization flags must remain separate.");
   assert(/^PROVIDER_ROLLOUT_ENABLED=false$/m.test(productionEnv), "Public rollout must remain disabled.");
   assert(/operational_service_status/.test(migration) && /GRANT SELECT, INSERT, UPDATE ON TABLE operational_service_status TO tikdd_ops/.test(migration), "Operational status migration or narrow tikdd_ops grant is missing.");
-  assert(!/GRANT\s+ALL|ALL\s+PRIVILEGES|SUPERUSER|OWNER\s+TO/i.test(migration), "Operational status migration grants are too broad.");
+  assert(!/GRANT\s+ALL|SUPERUSER|OWNER\s+TO/i.test(migration), "Operational status migration grants are too broad.");
   assert(rootPackage.scripts?.["verify:operational-services"] === "pnpm --filter @tikdd/persistence db:verify-operational-services", "Operational readiness command is missing.");
   assert(rootPackage.scripts?.["verify:work-item-17"] === "node scripts/verify-work-item-17.mjs", "WI17 verifier command is missing.");
   assert(persistencePackage.scripts?.["db:verify-operational-services"] === "tsx src/verify-operational-services.ts", "Persistence operational verifier is missing.");
