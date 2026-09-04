@@ -211,8 +211,8 @@ creation and one-use 302 browser handoff without CDN/media transfer. `P0-X-HTTP-
 technically. X remains experimental/non-stable; the Production Evidence Gate remains open pending
 calibration, policy lock, staged pilot and seven consecutive healthy daily reviews.
 
-Work Item 17 status (2026-09-04): implementation complete; production activation and recurring-run
-proof are pending. Host-owned systemd timers
+Work Item 17 status (2026-09-04): implementation and production recurring-run proof complete.
+Host-owned systemd timers
 invoke isolated Docker Compose one-shot wrappers for Canary, evidence and cleanup. The persisted
 operational read model exposes last/next run, freshness, lease state and bounded failures; its
 readiness verifier fails closed for missing, stale or failed state. Scheduled Canary authorization
@@ -235,7 +235,7 @@ application processes without enabling public Provider allocation.
 
 Lane: A, with read-model dependencies consumed by Lane B.
 
-Status: implementation complete; production proof pending (2026-09-04). See
+Status: implementation and production proof complete (2026-09-04). See
 [`docs/work-item-17-scheduled-operational-services.md`](work-item-17-scheduled-operational-services.md)
 for the implementation, production activation and recurring-run evidence.
 

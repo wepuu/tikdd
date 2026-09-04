@@ -1,8 +1,7 @@
 # Work Item 17 — Scheduled operational services
 
-Status: implementation complete; production activation and recurring proof are recorded below
-after the merged release is deployed. This work item does not start X calibration, a staged pilot,
-or public X allocation.
+Status: implementation and production proof complete (2026-09-04). This work item does not start X
+calibration, a staged pilot, or public X allocation.
 
 ## Decision and boundaries
 
@@ -106,4 +105,38 @@ git diff --check
 
 Production migration, immutable service-image digest, timer activation, two timer-driven runs for
 each service, freshness output, Provider-attempt counts and shared-host Stage Gate results are
-appended to this document at handoff. No calibration window is started by Work Item 17.
+recorded below. No calibration window is started by Work Item 17.
+
+### Production evidence (2026-09-04)
+
+- Merged `main` deployed: `56c6596a853f0e80c2a6b709759d99debea72b9c` at
+  `/opt/tikdd/releases/56c6596a853f0e80c2a6b709759d99debea72b9c`.
+- Service image is immutable:
+  `ghcr.io/wepuu/tikdd-service@sha256:07a2d4d3b8a1dfb3b95b66f17bfc2abe546bb22538469e6cdf37af6f541099db`.
+- Migration `0021_operational_service_status.sql` applied idempotently. The inspected production
+  role is `tikdd_ops` with only `SELECT`, `INSERT`, and `UPDATE` on the status table (no `DELETE`).
+- The exact rollout rule is `ssstwitter-x-canary-global-w17`, revision `1`,
+  `ssstwitter/x/canary-global`, enabled with allocation `10000` bps. The existing
+  `ssstwitter/x/nl` rule is disabled at allocation `0` (revision `12`). Worker Provider flags,
+  rollout, health, and manual Canary authorization remain false; only the separate scheduled
+  authorization is true.
+- `tikdd-canary.timer`, `tikdd-evidence.timer`, and `tikdd-cleanup.timer` are enabled and active;
+  all units pass `systemd-analyze verify`, use `Persistent=true`, and Cleanup is `OnCalendar=*:0/1`.
+
+Timer-driven runs persisted by deployment `tikdd` (UTC; each pair is distinct):
+
+| service | run 1 | run 2 | result |
+| --- | --- | --- | --- |
+| canary | `319d7dc3-ff21-49d6-8392-8687b501f4e2` at 11:00:05 | `7786a777-8246-4f13-aaba-3d932db87beb` at 11:15:05 | completed/released, 1/1 succeeded each |
+| evidence | `454faecd-6e82-4e86-ab0d-e2de8aee38d1` at 10:55:04 | `b5c5c237-a876-4388-a514-034d32125a5f` at 11:00:05 | completed/released, tupleCount 0 |
+| cleanup | `3803b261-efe2-4082-80be-20cb01b9514f` at 10:52:03 | `7ad4c576-7d7a-4df0-add7-23a1f3dfae25` at 10:55:04 | completed/released, 0 errors |
+
+The final readiness verifier returned `fresh` and `ready=true` for all three services with
+`consecutive_failures=0` and `scheduler_and_operational_freshness=PASS`. Canary measurements total
+five, all `ssstwitter/x/canary-global` successes. The only `provider_attempts` row is a historical
+`ssstwitter/x/nl` attempt at 2026-09-03 11:25:07 UTC; no public task, Delivery candidate, or ticket
+was created during this proof (`public_counts=56/1/0/0`, pre-existing task/attempt data).
+The six resident containers were healthy with restart count `0`, and the shared-host Stage Gate
+passed with four Cloudflare HA connections. No permanent scheduled containers remain after each
+one-shot run. X remains experimental/non-stable; calibration, pilot, and the Production Evidence
+Gate are intentionally not started.
