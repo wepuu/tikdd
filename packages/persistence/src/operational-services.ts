@@ -187,6 +187,7 @@ export class OperationalServiceRepository {
        VALUES ($1,$2,$3,'running','acquired',$4,$5,$6,0,NULL,'{}'::jsonb,NOW())
        ON CONFLICT (service,deployment) DO UPDATE SET
          run_id=EXCLUDED.run_id,state='running',lease_state='acquired',last_started_at=EXCLUDED.last_started_at,
+         last_finished_at=NULL,
          next_expected_at=EXCLUDED.next_expected_at,stale_after_at=EXCLUDED.stale_after_at,
          last_error_code=NULL,sanitized_summary='{}'::jsonb,updated_at=NOW()` ,
       [input.service, input.deployment, input.runId, input.startedAt, nextExpected, staleAfter]
