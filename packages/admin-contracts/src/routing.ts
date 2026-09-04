@@ -216,7 +216,7 @@ export const AdminCsrfTokenSchema = z.strictObject({
 export const AdminMutationReceiptSchema = z.strictObject({
   schemaVersion: AdminSchemaVersionSchema,
   commandId: z.string().regex(/^cmd_[a-f0-9]{32}$/),
-  aggregate: z.enum(["route_policy", "platform_presentation", "locale", "page", "snapshot"]),
+  aggregate: z.enum(["route_policy", "platform_presentation", "locale", "page", "snapshot", "qualification"]),
   targetId: z.string().min(1).max(160).regex(/^[A-Za-z0-9]+(?:[._:@/-][A-Za-z0-9]+)*$/),
   expectedRevision: AdminRevisionSchema.nullable(),
   acceptedRevision: AdminRevisionSchema.nullable(),

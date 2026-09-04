@@ -9,6 +9,7 @@ import {
   AdminContentPublicationViewSchema,
   AdminRoutePolicyViewSchema,
   AdminPlatformManagementViewSchema,
+  AdminQualificationViewSchema,
   AdminRuntimeSchema,
   AdminSettingsRecoveryViewSchema,
   AdminSeoOverviewSchema
@@ -30,6 +31,7 @@ export const AdminConsoleSnapshotSchema = z.strictObject({
   overview: resource(AdminOverviewSchema),
   routes: resource(AdminRouteListSchema),
   selectedRoute: resource(AdminRouteDetailSchema.nullable()),
+  qualification: resource(AdminQualificationViewSchema.nullable()),
   providers: resource(AdminProviderListSchema),
   platforms: resource(AdminPlatformListSchema),
   runtime: resource(AdminRuntimeSchema),

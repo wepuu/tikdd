@@ -4,6 +4,7 @@ export * from "./content-management";
 export * from "./editorial";
 export * from "./operations";
 export * from "./platform-management";
+export * from "./qualification";
 export * from "./privacy";
 export * from "./public-content";
 export * from "./routing";
