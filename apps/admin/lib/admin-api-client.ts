@@ -1,5 +1,6 @@
 import {
   AdminOverviewSchema,
+  AdminOperationalTruthSchema,
   AdminPlatformListSchema,
   AdminProviderListSchema,
   AdminRouteDetailSchema,
@@ -211,8 +212,9 @@ export async function loadAdminConsoleSnapshot(input: {
   const configuration = input.configuration ?? loadAdminApiConnection();
   const transport = input.transport ?? nodeTransport;
   const shared = { headers: input.requestHeaders, configuration, transport };
-  const [overview, routes, providers, platforms, runtime, seo] = await Promise.all([
+  const [overview, operationalTruth, routes, providers, platforms, runtime, seo] = await Promise.all([
     read({ ...shared, schema: AdminOverviewSchema, path: "/admin/v1/overview" }),
+    read({ ...shared, schema: AdminOperationalTruthSchema, path: "/admin/v1/operational-truth" }),
     read({ ...shared, schema: AdminRouteListSchema, path: "/admin/v1/routes" }),
     read({ ...shared, schema: AdminProviderListSchema, path: "/admin/v1/providers" }),
     read({ ...shared, schema: AdminPlatformListSchema, path: "/admin/v1/platforms" }),
@@ -255,6 +257,7 @@ export async function loadAdminConsoleSnapshot(input: {
     generatedAt: new Date().toISOString(),
     refreshIntervalMs: configuration.refreshIntervalMs,
     overview,
+    operationalTruth,
     routes,
     selectedRoute,
     qualification,

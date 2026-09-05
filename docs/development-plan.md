@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@416c0f1`
-- Roadmap revision date: 2026-08-30
+- Repository checkpoint: `main@b21f050`
+- Roadmap revision date: 2026-09-05
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -257,8 +257,9 @@ environment without contacting any Provider outside exact authorized Canary tupl
 
 Lane: B.
 
-Status: implemented and verified locally on 2026-09-04; production deployment and operational evidence remain
-pending. See [the implementation record](work-item-18-qualification-admin.md).
+Status: implemented, verified, and deployed to the NL production host on 2026-09-05. Admin remains
+stopped and all public Provider rollout remains disabled. See
+[the implementation record](work-item-18-qualification-admin.md).
 
 Expose the existing qualification, calibration, policy, and evidence primitives as one coherent
 owner workflow.
@@ -278,6 +279,10 @@ engine, bypass approval/Manifest/Delivery gates, or allow automatic traffic gran
 ### Work Item 19 — Operational truth dashboard
 
 Lane: B.
+
+Status: implementation and local verification complete on 2026-09-05; production deployment is
+pending. The dashboard adds no write path and does not start Admin, calibration, a Provider, or a
+pilot. See [the implementation record](work-item-19-operational-truth-dashboard.md).
 
 Present a single, explainable support ladder that distinguishes:
 

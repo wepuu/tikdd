@@ -43,6 +43,20 @@ const production: AdminApiConfiguration = {
 function reads(): AdminReadApi {
   return {
     async getOverview() { return ADMIN_OVERVIEW_FIXTURES.partial; },
+    async getOperationalTruth() {
+      return {
+        schemaVersion: "1",
+        deployment: "local",
+        region: "nl",
+        generatedAt: "2026-08-11T12:00:00.000Z",
+        degradedSources: [],
+        services: (["canary", "evidence", "cleanup"] as const).map((service) => ({
+          service, state: "missing" as const, freshness: "missing" as const, ready: false,
+          observedAt: null, nextExpectedAt: null, consecutiveFailures: 0
+        })),
+        platforms: []
+      };
+    },
     async listRoutes() {
       return { schemaVersion: "1", generatedAt: "2026-08-11T12:00:00.000Z", degradedSources: [], routes: Object.values(ADMIN_ROUTE_FIXTURES) };
     },

@@ -7,8 +7,8 @@ pages never depend on Admin authentication, monitoring, or control-plane availab
 
 - Server-rendered initial data from the dedicated authenticated Admin API.
 - One fixed same-origin `/api/admin/snapshot` route for bounded browser refreshes.
-- Real overview, attention queue, Routing Observatory, Alerts, Provider/platform coverage,
-  publishing readiness, and dependency freshness projections.
+- Real overview, explainable operational-truth ladder, attention queue, Routing Observatory,
+  Alerts, Provider/platform coverage, publishing readiness, and dependency freshness projections.
 - Exact route selection and detail with honest healthy, paused, open, warning, stale,
   insufficient-data, unavailable, and empty states.
 - Read-only navigation for the complete owner-console information architecture.

@@ -4,6 +4,7 @@ import {
 } from "@tikdd/admin-contracts/fixtures";
 import type {
   AdminPlatformList,
+  AdminOperationalTruth,
   AdminProviderList,
   AdminRouteDetail,
   AdminRouteList,
@@ -91,11 +92,38 @@ export const seo: AdminSeoOverview = {
   pages: []
 };
 
+export const operationalTruth: AdminOperationalTruth = {
+  schemaVersion: "1",
+  deployment: "tikdd",
+  region: "nl",
+  generatedAt,
+  degradedSources: [],
+  services: (["canary", "evidence", "cleanup"] as const).map((service) => ({
+    service, state: "completed", freshness: "fresh", ready: true, observedAt: generatedAt,
+    nextExpectedAt: "2026-08-11T12:15:00.000Z", consecutiveFailures: 0
+  })),
+  platforms: [{
+    platform: "x", displayName: "X", region: "nl", catalogStatus: "stable", publicAvailability: "listed",
+    contentCoverageBps: 5_000, currentAvailability: "unavailable", indexEligibility: "ineligible",
+    ladder: (["catalog", "resolution", "delivery", "canary", "runtime", "lifecycle", "seo"] as const).map((id) => ({
+      id, state: id === "catalog" || id === "resolution" || id === "delivery" || id === "lifecycle" ? "pass" : "block", observedAt: null
+    })),
+    reasons: [{ code: "open_circuit", providerId: "twittersaver" }, { code: "content_incomplete", providerId: null }],
+    providers: [{
+      tuple: { providerId: "twittersaver", platform: "x", region: "nl" }, displayName: "TwitterSaver",
+      manifestEnabled: true, regionEligible: true, resolutionCapable: true, deliveryModes: ["redirect"], deliveryVerified: true,
+      canaryState: "stale", canaryObservedAt: "2026-08-11T11:30:00.000Z", allocationBps: 10_000, guardAction: null,
+      circuitState: "open", runtimeState: "open", reasons: ["canary_stale", "open_circuit"]
+    }]
+  }]
+};
+
 export const consoleSnapshot = AdminConsoleSnapshotSchema.parse({
   schemaVersion: "1",
   generatedAt,
   refreshIntervalMs: 30_000,
   overview: { status: "ready", data: ADMIN_OVERVIEW_FIXTURES.healthy },
+  operationalTruth: { status: "ready", data: operationalTruth },
   routes: { status: "ready", data: routeList },
   selectedRoute: { status: "ready", data: routeDetail },
   qualification: { status: "ready", data: null },

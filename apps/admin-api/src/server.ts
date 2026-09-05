@@ -12,6 +12,7 @@ import {
   AdminQualificationRepository,
   createDatabasePool,
   OperationalDiagnosticsRepository,
+  OperationalServiceRepository,
   PilotControlRepository,
   PilotEvidenceRepository,
   RolloutRuleRepository
@@ -40,6 +41,7 @@ const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:16379", {
 const queue = new Queue("resolve", { connection: redis });
 const editorial = new AdminControlPlaneReadRepository(pool);
 const operations = new OperationalDiagnosticsRepository(pool);
+const operationalServices = new OperationalServiceRepository(pool);
 const evidence = new PilotEvidenceRepository(pool);
 const rollout = new RolloutRuleRepository(pool);
 const routePolicyWrites = new AdminRoutePolicyRepository(pool, configuration.deployment);
@@ -67,6 +69,7 @@ const reads = new AdminReadService({
   guardRequired: configuration.guardRequired,
   guardMaximumStaleMs: configuration.guardMaximumStaleMs,
   operations,
+  operationalServices,
   editorial,
   queue: {
     async getJobCounts(...types: string[]) {

@@ -3,6 +3,7 @@ export * from "./authentication";
 export * from "./content-management";
 export * from "./editorial";
 export * from "./operations";
+export * from "./operational-truth";
 export * from "./platform-management";
 export * from "./qualification";
 export * from "./privacy";

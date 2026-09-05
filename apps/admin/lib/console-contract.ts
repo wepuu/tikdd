@@ -1,5 +1,6 @@
 import {
   AdminOverviewSchema,
+  AdminOperationalTruthSchema,
   AdminPlatformListSchema,
   AdminProviderListSchema,
   AdminRouteDetailSchema,
@@ -29,6 +30,7 @@ export const AdminConsoleSnapshotSchema = z.strictObject({
   generatedAt: z.iso.datetime({ offset: true }),
   refreshIntervalMs: z.number().int().min(15_000).max(300_000),
   overview: resource(AdminOverviewSchema),
+  operationalTruth: resource(AdminOperationalTruthSchema),
   routes: resource(AdminRouteListSchema),
   selectedRoute: resource(AdminRouteDetailSchema.nullable()),
   qualification: resource(AdminQualificationViewSchema.nullable()),
