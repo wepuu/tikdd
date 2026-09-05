@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@b21f050`
+- Repository checkpoint: `main@3375e5c`
 - Roadmap revision date: 2026-09-05
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -280,9 +280,10 @@ engine, bypass approval/Manifest/Delivery gates, or allow automatic traffic gran
 
 Lane: B.
 
-Status: implementation and local verification complete on 2026-09-05; production deployment is
-pending. The dashboard adds no write path and does not start Admin, calibration, a Provider, or a
-pilot. See [the implementation record](work-item-19-operational-truth-dashboard.md).
+Status: implementation, verification, and NL production deployment complete on 2026-09-05. The
+dashboard adds no write path; Admin remains stopped and calibration, Provider production traffic,
+and the public pilot remain unstarted. See
+[the implementation record](work-item-19-operational-truth-dashboard.md).
 
 Present a single, explainable support ladder that distinguishes:
 
