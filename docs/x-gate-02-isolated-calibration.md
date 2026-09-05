@@ -1,11 +1,12 @@
 # X-GATE-02 — Isolated calibration runtime
 
+Status: deployed but default-off; never started. ADR-0020 makes this an optional diagnostic lane.
+
 ## Outcome
 
 The repository now contains a fail-closed, default-off runtime lane for the exact SSSTwitter/X/NL
-internal calibration scope selected by ADR-0017. This is implementation readiness only. It does
-not authorize deployment, profile startup, calibration requests, Provider traffic, Admin startup,
-pilot rollout, publication, or indexing.
+internal calibration scope selected by ADR-0017. The profile remains stopped and separate from the
+public X Beta route.
 
 ## Boundaries
 

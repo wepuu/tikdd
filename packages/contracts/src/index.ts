@@ -232,8 +232,7 @@ export const ResolveTaskSchema = z.object({
 export type ResolveTask = z.infer<typeof ResolveTaskSchema>;
 
 export const CreateResolveTaskRequestSchema = z.object({
-  url: z.string().trim().url().max(2048),
-  confirmedRights: z.literal(true)
+  url: z.string().trim().url().max(2048)
 });
 export type CreateResolveTaskRequest = z.infer<typeof CreateResolveTaskRequestSchema>;
 

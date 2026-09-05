@@ -18,7 +18,7 @@
 ## Implementation decision
 
 The multilingual Next.js homepage implements this direction for English and Simplified Chinese. It
-uses self-hosted variable fonts, Phosphor icons, real asynchronous task polling, rights confirmation,
+uses self-hosted variable fonts, Phosphor icons, real asynchronous task polling,
 normalized format selection, and one-use delivery-ticket creation. Provider names, raw upstream
 warnings, and direct media URLs remain outside the consumer surface.
 

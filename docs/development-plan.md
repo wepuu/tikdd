@@ -1,18 +1,18 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@c708b75`
+- Repository checkpoint: `main@99dbafc`
 - Roadmap revision date: 2026-09-05
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The immediate production objective is completion of the X Production Evidence Gate. The bounded
-P0-X-E2E-FINAL-VERIFY has resolved the technical X path through SSSTwitter and Delivery, but X is
-not promoted to `stable` and the remaining evidence gates still control production allocation.
-The repository has no `stable` platform catalog entries today. A recognized or planned catalog
-entry is therefore not a claim that TikDD can currently download from that platform.
+The immediate production objective is a small public X Beta through SSSTwitter and Delivery.
+ADR-0020 replaces elapsed calibration and evidence prerequisites with a lightweight release loop:
+PR CI, GitHub-built immutable images, backup, one real browser download, a short health watch, and
+fast rollback. X remains experimental rather than `stable`; other catalog entries are not public
+support claims.
 
 ## Baseline classification
 
@@ -29,17 +29,13 @@ entry is therefore not a claim that TikDD can currently download from that platf
   content, locales, immutable publication snapshots, and technical SEO eligibility.
 - Work Item 13 generic capability-evidence and traffic-distribution baseline merged at `416c0f1`.
 
-### Unresolved production debt
+### Current MVP release debt
 
-- ADR-0017 freezes the first X gate to SSSTwitter/X/NL, but the exact internal calibration window
-  still requires a bounded owner authorization before Provider traffic begins.
-- Three sealed internal calibration days, policy review/lock, a separately authorized staged pilot,
-  and seven healthy sealed public reviews remain incomplete.
-- P0-X-E2E-FINAL-VERIFY proves the technical production path, but a post-pilot owner/browser check
-  under the intended route and final evidence reconciliation are still required.
-- `config/x-pilot-evidence.json` remains `pending`; deterministic CI cannot close this evidence.
-- Admin remains intentionally stopped and unpublished; any bounded review session requires a
-  separate owner authorization and must not create a traffic grant.
+- Publish the exact merge SHA as GitHub-built Web, Service, and Admin images.
+- Deploy with Provider traffic off, then enable only the existing SSSTwitter/X/NL rollout rule.
+- Complete one real browser download and a 15-minute health watch.
+- `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
+- Admin and the calibration profile remain intentionally stopped.
 
 ## Coordinated future lanes
 
@@ -50,8 +46,8 @@ qualification.
 
 ### Lane A — Production Foundation
 
-Primary objective: close the existing X production-baseline debt without weakening Manifest,
-Delivery, rollout, or evidence boundaries.
+Primary objective: operate and improve the X Beta without weakening Manifest, Delivery, rollout,
+or network safety boundaries.
 
 This lane owns:
 
@@ -59,14 +55,13 @@ This lane owns:
 - exact SSSTwitter/X scheduled Canary coverage;
 - reproducible application deployment;
 - recurring Canary, evaluator, and cleanup supervision;
-- real deployment preflight;
-- three-day internal calibration and policy review/lock;
-- staged X pilot and seven consecutive healthy reviews;
-- real owner/browser delivery-journey verification;
-- final evidence-backed production checkpoint.
+- real deployment preflight and backup;
+- GitHub-built immutable production images;
+- one real browser delivery journey per release;
+- short post-deploy health observation and fast rollback.
 
-No additional platform may receive production traffic or `stable` promotion before this lane's X
-Production Evidence Gate closes.
+Additional platforms remain separate small work items and require their own Provider and delivery
+review. X remains Beta until real usage supports a later stability decision.
 
 ### Lane B — Platform Operations
 
@@ -200,16 +195,15 @@ complete. Encrypted off-host PostgreSQL backup plus a proved restore remains P0 
 hardening and must be closed before production traffic is treated as fully recoverable.
 
 P0 stabilization status (2026-08-31): the X production failure was classified as no eligible route
-while the intentional Provider and rollout gates remain closed; no adapter defect is evidenced and
-no broad traffic is authorized. A bounded Nginx migration for the historical `/i` family and an
-explicit evidence-derived legacy-slug allowlist is under release validation. This work neither
-closes the X Production Evidence Gate nor starts Work Item 17.
+while the intentional Provider and rollout gates were closed; no adapter defect was evidenced. A
+bounded Nginx migration for the historical `/i` family and an explicit legacy-slug allowlist passed
+release validation.
 
 P0-X-E2E-FINAL-VERIFY status (2026-09-03): complete. One owner-authorized production task traversed
 X, SSSTwitter, normalized result persistence, encrypted redirect candidates, Delivery ticket
 creation and one-use 302 browser handoff without CDN/media transfer. `P0-X-HTTP-01` is resolved
-technically. X remains experimental/non-stable; the Production Evidence Gate remains open pending
-calibration, policy lock, staged pilot and seven consecutive healthy daily reviews.
+technically. X remains experimental/non-stable and is now released through ADR-0020's lightweight
+Beta loop.
 
 Work Item 17 status (2026-09-04): implementation and production recurring-run proof complete.
 Host-owned systemd timers
@@ -217,8 +211,8 @@ invoke isolated Docker Compose one-shot wrappers for Canary, evidence and cleanu
 operational read model exposes last/next run, freshness, lease state and bounded failures; its
 readiness verifier fails closed for missing, stale or failed state. Scheduled Canary authorization
 is machine-restricted to `ssstwitter-x-recurring-001` in `canary-global`; public X allocation and
-all Worker Provider flags remain disabled. The X Production Evidence Gate remains open; calibration
-must not start until the recurring proof is complete.
+all Worker Provider flags were disabled at that checkpoint. Calibration remains an optional,
+default-off diagnostic profile.
 
 Add reproducible deployment for the current service architecture in the selected production
 environment. It must deploy the required application services rather than PostgreSQL and Redis only.
@@ -302,44 +296,16 @@ show planned catalog breadth as downloadable support.
 Exit: the owner can answer “why is this platform unavailable or non-indexable?” from sanitized,
 authoritative projections without source-code inspection or direct database queries.
 
-## X Production Evidence Gate
+## Optional X evidence operations
 
-This is a real operational checkpoint, not an ordinary code-completion Work Item. It begins only
-after Work Items 15-17 provide a consistent deployed environment and current signals.
+ADR-0017 through ADR-0019 remain implemented diagnostic tools for the exact SSSTwitter/X/NL tuple.
+They have been deployed but the isolated calibration profile has not been started. Under ADR-0020,
+calendar-length evidence is not a launch gate and must remain `pending` until actually observed.
 
-Scope-freeze status (2026-09-05): ADR-0017 selects exactly SSSTwitter/X/NL for the first checkpoint.
-The seven-day checked-in index is limited to `public` observations; the preceding three-day window
-uses `internal` observations for the same tuple. This repository decision enables no Provider,
-Admin, rollout, publication, or indexing action. Calibration remains not authorized.
-See [the scope-freeze implementation record](x-gate-01-scope-freeze.md).
-
-Isolation implementation status (2026-09-05): X-GATE-02 adds a default-off, role-attested API and
-Worker lane with a dedicated queue for SSSTwitter/X/NL. It has not been deployed or started and
-does not authorize calibration or Provider traffic. See
-[the isolation implementation record](x-gate-02-isolated-calibration.md) and ADR-0018.
-
-Operations implementation status (2026-09-05): X-GATE-03 adds strict external authorization,
-fresh-snapshot preflight, bounded start/submit/status/stop commands, source-hash binding, and
-runtime-enforced window expiry. It has not been deployed or executed and grants no Provider
-traffic. See [the operations implementation record](x-gate-03-calibration-operations.md) and
-ADR-0019.
-
-Required evidence:
-
-1. at least three complete consecutive internal calibration days for each reviewed X
-   Provider/platform/region tuple;
-2. an evidence-backed proposal reviewed and locked as the active pilot policy;
-3. a bounded staged pilot under existing rollout and restrictive-guard controls;
-4. seven consecutive healthy daily evidence reviews with sufficient fresh samples;
-5. one real end-to-end owner/browser delivery verification under the intended production route;
-6. a final review reconciling deployment, approval, health, Delivery, policy, and product evidence.
-
-Deterministic CI, fixtures, a closed circuit, a successful isolated Canary, or a checked-in `ready`
-boolean cannot complete this gate. Missing/stale evidence holds or reduces traffic. Only the owner
-rollout action may grant or increase allocation.
-
-Exit: the evidence index can truthfully move from `pending` to complete for the exact reviewed X
-scope, and the production checkpoint is recorded without exposing private URLs or Provider data.
+The public Beta release gate is deliberately small: passing PR CI, immutable GitHub images, a
+pre-deploy backup, one real resolve-and-download browser journey, healthy core services, and a
+15-minute observation. Provider terms, delivery host validation, rollout control, admission,
+circuit breakers, and emergency deny remain mandatory.
 
 ### Work Item 20 — Instagram Provider feasibility
 

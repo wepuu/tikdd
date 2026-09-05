@@ -3,18 +3,17 @@ export type Locale = (typeof locales)[number];
 
 const copy = {
   en: {
-    nav: { home: "Home", features: "Features", process: "How it works", supported: "Supported sites", faq: "FAQ", language: "中文" },
+    nav: { home: "Home", features: "Features", process: "How it works", supported: "X Beta", faq: "FAQ", language: "中文" },
     hero: {
-      badge: "One link. Clear format choices.",
-      lead: "Download ", accent: "Videos", tail: " from URL",
-      description: "Paste a public video page from YouTube, TikTok, X, or another recognized site. TikDD resolves the available choices without exposing provider links."
+      badge: "X downloader · Public Beta",
+      lead: "Download ", accent: "X videos", tail: " from URL",
+      description: "Paste a public X post URL. TikDD resolves the available formats and creates a short-lived download link."
     },
     form: {
-      label: "Public video page URL",
-      placeholder: "Paste a YouTube, TikTok, X, or other public video URL",
-      rights: "I own this content or have permission to download it.",
-      action: "Resolve", working: "Resolving", waiting: "Waiting for a supported public link",
-      recognized: "link recognized.", confirmRights: "Confirm your download permission to continue.",
+      label: "Public X post URL",
+      placeholder: "Paste an x.com or twitter.com post URL",
+      action: "Resolve", working: "Resolving", waiting: "Waiting for a public X link",
+      recognized: "link recognized.",
       resolving: "Resolving available formats", ready: "Formats ready",
       invalid: "Paste a recognized public video page link.", clear: "Clear link", result: "Select quality",
       preview: "Preview", example: "Example result", exampleTitle: "Mountain Lake 4K",
@@ -43,11 +42,11 @@ const copy = {
       expired: "This task expired. Resolve the link again."
     },
     features: [
-      ["Broad recognition", "Recognizes public pages across a growing platform catalog."],
+      ["X Public Beta", "Recognizes public x.com and twitter.com post URLs."],
       ["Clear formats", "Normalizes quality and media details into one consistent view."],
       ["Controlled delivery", "Uses short-lived delivery links instead of exposing upstream URLs."]
     ],
-    supported: { label: "Supports:", platforms: ["YouTube", "TikTok", "X", "More"] },
+    supported: { label: "Public Beta:", platforms: ["X"] },
     process: {
       title: "How it works",
       steps: [
@@ -59,7 +58,7 @@ const copy = {
     faq: {
       title: "Frequently asked questions",
       items: [
-        ["Which links can I use?", "Use public media pages you own or have permission to download."],
+        ["Which links can I use?", "The current Beta accepts public x.com and twitter.com post URLs."],
         ["Do I need an account?", "No account is required for the current resolver flow."],
         ["Why can a recognized link fail?", "Private, paid, restricted, or recently changed pages may not resolve."]
       ]
@@ -68,19 +67,19 @@ const copy = {
       title: "Designed around safe delivery", labels: "Scoped · Expiring · One use",
       description: "Public results never include provider download URLs or secret headers."
     },
-    legal: "TikDD is not affiliated with the platforms listed here. Download only content you own or are authorized to use."
+    legal: "TikDD is an independent tool and is not affiliated with X."
   },
   "zh-CN": {
-    nav: { home: "首页", features: "功能", process: "工作方式", supported: "支持网站", faq: "常见问题", language: "English" },
+    nav: { home: "首页", features: "功能", process: "工作方式", supported: "X Beta", faq: "常见问题", language: "English" },
     hero: {
-      badge: "一个链接，清晰的格式选择",
-      lead: "从链接下载", accent: "视频", tail: "",
-      description: "粘贴 YouTube、TikTok、X 或其他已识别网站的公开视频页面。TikDD 解析可用格式，同时不向浏览器暴露第三方直链。"
+      badge: "X 下载工具 · 公开测试版",
+      lead: "从链接下载", accent: "X 视频", tail: "",
+      description: "粘贴公开的 X 帖子链接，TikDD 会解析可用格式并生成短期下载链接。"
     },
     form: {
-      label: "公开视频页面链接", placeholder: "粘贴 YouTube、TikTok、X 或其他公开视频链接",
-      rights: "我拥有该内容，或已获得下载授权。", action: "解析", working: "解析中",
-      waiting: "等待支持的公开视频链接", recognized: "链接已识别。", confirmRights: "请确认下载授权后继续。",
+      label: "公开 X 帖子链接", placeholder: "粘贴 x.com 或 twitter.com 帖子链接",
+      action: "解析", working: "解析中",
+      waiting: "等待公开的 X 链接", recognized: "链接已识别。",
       resolving: "正在解析可用格式", ready: "格式已就绪",
       invalid: "请粘贴可识别的公开视频页面链接。", clear: "清除链接", result: "选择清晰度",
       preview: "预览", example: "示例结果", exampleTitle: "山间湖泊 4K", exampleMeta: "链接解析完成后将在这里显示可用格式。",
@@ -107,11 +106,11 @@ const copy = {
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
     },
     features: [
-      ["广泛识别", "识别持续扩展的平台目录中的公开视频页面。"],
+      ["X 公开测试", "识别公开的 x.com 和 twitter.com 帖子链接。"],
       ["格式清晰", "将清晰度和媒体信息统一为一致的选择界面。"],
       ["受控交付", "使用短期交付链接，不公开上游媒体地址。"]
     ],
-    supported: { label: "支持：", platforms: ["YouTube", "TikTok", "X", "更多"] },
+    supported: { label: "公开测试：", platforms: ["X"] },
     process: {
       title: "工作方式",
       steps: [
@@ -123,7 +122,7 @@ const copy = {
     faq: {
       title: "常见问题",
       items: [
-        ["可以使用哪些链接？", "仅使用你拥有或已获得下载授权的公开媒体页面。"],
+        ["可以使用哪些链接？", "当前测试版接受公开的 x.com 和 twitter.com 帖子链接。"],
         ["需要创建账号吗？", "当前解析流程不需要账号。"],
         ["为什么已识别的链接仍可能失败？", "私密、付费、受限或近期结构发生变化的页面可能无法解析。"]
       ]
@@ -132,7 +131,7 @@ const copy = {
       title: "围绕安全交付设计", labels: "限定范围 · 短期有效 · 单次使用",
       description: "公开结果不会包含第三方下载地址或私密请求头。"
     },
-    legal: "TikDD 与页面中列出的平台不存在隶属关系。仅下载你拥有或已获授权使用的内容。"
+    legal: "TikDD 是独立工具，与 X 不存在隶属关系。"
   }
 } as const;
 

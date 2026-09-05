@@ -151,7 +151,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
     return reply.code(400).send({
       error: {
         code: "INVALID_REQUEST",
-        message: "Provide a valid supported URL and confirm you have download rights.",
+        message: "Provide a valid supported URL.",
         retryable: false
       }
     });
@@ -265,8 +265,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
       ),
       requestFingerprint: taskAdmissionHasher.request({
         platform: detected.platform,
-        canonicalUrl: detected.canonicalUrl,
-        confirmedRights: true
+        canonicalUrl: detected.canonicalUrl
       }),
       idempotencyKeyDigest:
         idempotencyKeyResult?.success === true

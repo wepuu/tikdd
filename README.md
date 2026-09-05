@@ -121,6 +121,11 @@ Authorized operational probes are documented in the [canary operations guide](do
 pnpm check
 ```
 
+Pull requests run this command in CI. After a merge to `main`, GitHub publishes immutable Web,
+Service, and Admin images tagged with the exact commit SHA. Production deployments use those
+registry images and the lightweight checklist in
+[MVP release process](docs/mvp-release-process.md); local Docker images are never production input.
+
 The production-shaped X pilot has an additional deterministic Docker gate:
 
 ```sh
@@ -129,8 +134,8 @@ pnpm verify:work-item-10
 
 It runs migrations, fixture-only provider/routing/delivery/public-state contracts, audited rollout
 and pilot controls, admission, circuit, canary-metadata, cleanup, and the full repository check. It
-never runs a live provider canary. The external three-day calibration and seven-day evidence remain
-a separate operational gate.
+never runs a live provider canary. Longer calibration and evidence windows are optional diagnostic
+tools under ADR-0020, not Beta launch prerequisites.
 
 Work item 11 adds the privacy-safe evidence and evaluator gate:
 
@@ -149,8 +154,8 @@ that real-time evidence is still pending, uses the single CI command:
 pnpm verify:work-item-11-baseline
 ```
 
-This command never contacts a real Provider or enables Pilot traffic. The real three-day calibration
-and seven-day observation remain elapsed operating work for the personal site owner.
+This command never contacts a real Provider or enables public traffic. Live checks occur only in the
+bounded post-deploy smoke described by ADR-0020.
 
 The internal deployment boundary is separately fail-closed. Its checked-in plan remains pending
 until the personal deployment settings and Provider-use confirmations are supplied:
@@ -172,7 +177,8 @@ through the asynchronous mock route.
 
 ## Safety and product constraints
 
-- Users must confirm they own the content or have permission to download it.
+- Public task creation accepts a validated URL without a client acknowledgement step.
+- The current public product is an experimental X-only Beta backed by `ssstwitter` in `nl`.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

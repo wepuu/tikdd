@@ -10,8 +10,7 @@ const createResponse = await fetch(`${apiBaseUrl}/v1/resolve-tasks`, {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
-    url: "https://www.instagram.com/reel/TikDDSmokeTest/",
-    confirmedRights: true
+    url: "https://www.instagram.com/reel/TikDDSmokeTest/"
   })
 });
 if (!createResponse.ok) {
@@ -45,4 +44,3 @@ process.stdout.write(
     2
   )}\n`
 );
-

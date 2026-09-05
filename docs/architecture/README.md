@@ -59,7 +59,8 @@ Work item 9.6 closes ADR-0007 with one Docker/CI failure-matrix gate. Production
 yt-dlp isolation, proxying, and temporary-object delivery are later milestones. ADR-0008 now fixes
 the qualification lifecycle and evidence boundary for work item 10: operator grants remain the only
 way to raise traffic, while a separately audited automatic guard may only hold, reduce, or deny an
-existing grant. Numeric pilot SLOs are locked only after three complete internal calibration days.
+existing grant. ADR-0020 makes calendar-length calibration optional for the personal-site Beta;
+measured SLOs can be refined later from real operation without fabricating evidence.
 Work item 10.1 selected the disabled, `canary-ready` SSSTwitter adapter as the second X
 implementation candidate after a corrected-parser canary returned two formats and one sanitized
 media hostname. Delivery policy activation and worker registration remain blocked on work item 10.2.
@@ -148,7 +149,7 @@ restricted content is a transient outage and attempt to bypass it with another p
 ### Web
 
 - Server-rendered localized content, metadata, canonical URLs, hreflang, robots, and sitemaps.
-- URL entry, rights confirmation, task progress, format selection, and actionable status messages.
+- URL entry, task progress, format selection, and actionable status messages.
 - No provider credentials, provider-specific behavior, or media transfer.
 
 ### Control API

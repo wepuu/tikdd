@@ -31,7 +31,7 @@ were not recorded in the audit.
 ## Audited journey
 
 1. **Recognized link — healthy.** The X URL is recognized before submission, Resolve stays disabled
-   until rights confirmation, and the required action is clear. Evidence:
+   until URL recognition, and the required action is clear. Historical evidence:
    [desktop](work-item-11-2/01-desktop-recognized.png) and
    [360px mobile](work-item-11-2/02-mobile-recognized.png).
 2. **Resolving — healthy.** The primary action becomes disabled and busy, the result card replaces

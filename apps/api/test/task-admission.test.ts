@@ -10,8 +10,7 @@ describe("task admission fingerprints", () => {
     const source = hasher.canonicalSource("x", "https://x.com/user/status/1");
     const request = hasher.request({
       platform: "x",
-      canonicalUrl: "https://x.com/user/status/1",
-      confirmedRights: true
+      canonicalUrl: "https://x.com/user/status/1"
     });
     expect(Buffer.from(source)).toHaveLength(32);
     expect(Buffer.from(hasher.canonicalSource("x", "https://x.com/user/status/1"))).toEqual(
