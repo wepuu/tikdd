@@ -48,6 +48,7 @@ export type InternalPreflightPlan = z.infer<typeof InternalPreflightPlanSchema>;
 
 export const InternalRuntimeSchema = z.object({
   serviceRole: z.enum(["combined", "api", "worker"]),
+  authorizationId: z.string().max(128), windowStartsAt: z.string(), windowEndsAt: z.string(),
   nodeEnv: z.string(), deploymentStage: z.string(), deploymentId: z.string(), region: z.string(),
   observationClass: z.string(), resolveQueueName: ResolveQueueNameSchema,
   enabledProviders: z.array(SlugSchema), mockEnabled: z.boolean(),
@@ -92,6 +93,9 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
   });
   return InternalRuntimeSchema.parse({
     serviceRole: environment.TIKDD_INTERNAL_RUNTIME_ROLE ?? "combined",
+    authorizationId: environment.TIKDD_INTERNAL_AUTHORIZATION_ID ?? "",
+    windowStartsAt: environment.TIKDD_INTERNAL_WINDOW_STARTS_AT ?? "",
+    windowEndsAt: environment.TIKDD_INTERNAL_WINDOW_ENDS_AT ?? "",
     nodeEnv: environment.NODE_ENV ?? "development", deploymentStage: environment.TIKDD_DEPLOYMENT_STAGE ?? "local",
     deploymentId: environment.TIKDD_DEPLOYMENT_ID ?? "", region: environment.WORKER_REGION ?? "global",
     observationClass: environment.TIKDD_OBSERVATION_CLASS ?? "public",
@@ -114,8 +118,28 @@ function equalSets(left: readonly string[], right: readonly string[]): boolean {
 
 function isIsolatedInternalRuntime(runtime: InternalRuntime): boolean {
   return (runtime.serviceRole === "api" || runtime.serviceRole === "worker")
+    && /^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$/.test(runtime.authorizationId)
+    && InstantSchema.safeParse(runtime.windowStartsAt).success
+    && InstantSchema.safeParse(runtime.windowEndsAt).success
     && runtime.resolveQueueName !== DEFAULT_RESOLVE_QUEUE_NAME
     && runtime.resolveQueueName.startsWith("resolve-internal-");
+}
+
+function isCurrentInternalWindow(runtime: InternalRuntime, now: Date): boolean {
+  const startsAt = new Date(runtime.windowStartsAt).getTime();
+  const endsAt = new Date(runtime.windowEndsAt).getTime();
+  return startsAt % 86_400_000 === 0
+    && startsAt <= now.getTime()
+    && endsAt > now.getTime()
+    && endsAt - startsAt === 3 * 86_400_000;
+}
+
+export function getInternalRuntimeWindowEnd(environment: NodeJS.ProcessEnv = process.env): Date | null {
+  const runtime = loadInternalRuntime(environment);
+  if (runtime.observationClass !== "internal" && runtime.deploymentStage !== "internal") return null;
+  const parsed = InstantSchema.safeParse(runtime.windowEndsAt);
+  if (!parsed.success) throw new Error("Internal runtime window end is invalid.");
+  return new Date(parsed.data);
 }
 
 function providerCapabilityReason(
@@ -200,6 +224,11 @@ export function evaluateInternalPreflight(input: { plan: unknown; runtime: unkno
     isIsolatedInternalRuntime(runtime),
     isIsolatedInternalRuntime(runtime) ? "explicit_role_and_internal_queue" : "explicit_role_or_internal_queue_missing"
   );
+  add(
+    "authorization_window",
+    isCurrentInternalWindow(runtime, now),
+    isCurrentInternalWindow(runtime, now) ? "active_three_day_utc_window" : "authorization_window_inactive"
+  );
   const proxySafe = plan.network.trustedProxyMode === "direct" ? runtime.trustedProxyCidrs.length === 0 : plan.network.trustedProxyMode === "trusted-proxy" && runtime.trustedProxyCidrs.length > 0;
   add("trusted_proxy", proxySafe, proxySafe ? "boundary_matches_review" : "proxy_boundary_mismatch");
   add("postgres", signals.postgresReady, signals.postgresReady ? "ready" : "unavailable");
@@ -229,6 +258,7 @@ export function issueInternalPreflightAttestation(input: { report: InternalPrefl
   const report = InternalPreflightReportSchema.parse(input.report); const runtime = InternalRuntimeSchema.parse(input.runtime); const now = input.now ?? new Date();
   if (report.decision !== "ready" || report.scope.deploymentId === null || report.scope.region === null) throw new Error("A blocked preflight cannot issue an attestation.");
   if (!isIsolatedInternalRuntime(runtime)) throw new Error("Internal preflight attestation requires an explicit API or Worker role and an isolated resolve-internal-* queue.");
+  if (!isCurrentInternalWindow(runtime, now)) throw new Error("Internal preflight attestation requires an active three-day authorization window.");
   const reportAgeMs = now.getTime() - new Date(report.generatedAt).getTime();
   if (reportAgeMs < 0 || reportAgeMs > 30_000 || runtime.deploymentId !== report.scope.deploymentId || runtime.region !== report.scope.region || !equalSets(runtime.enabledProviders, report.scope.providers)) throw new Error("The ready preflight report is stale or does not match this runtime.");
   if (input.ttlMs < 60_000 || input.ttlMs > 900_000) throw new Error("Internal preflight attestation TTL is invalid.");
@@ -242,6 +272,7 @@ export function assertInternalStartup(expectedRole: "api" | "worker", environmen
   if (runtime.observationClass !== "internal" && runtime.deploymentStage !== "internal") return "public";
   if (runtime.observationClass !== "internal" || runtime.deploymentStage !== "internal" || runtime.nodeEnv !== "production") throw new Error("Internal observation requires the production internal deployment stage.");
   if (!isIsolatedInternalRuntime(runtime) || runtime.serviceRole !== expectedRole) throw new Error(`Internal ${expectedRole} startup requires its explicit service role and an isolated resolve-internal-* queue.`);
+  if (!isCurrentInternalWindow(runtime, now)) throw new Error("Internal startup requires an active three-day authorization window.");
   const encoded = environment.TIKDD_INTERNAL_PREFLIGHT_ATTESTATION; const encodedKey = environment.TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL;
   if (!encoded || !encodedKey) throw new Error("A current signed internal preflight attestation is required.");
   let attestation: z.infer<typeof AttestationSchema>;

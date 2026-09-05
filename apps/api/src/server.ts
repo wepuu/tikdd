@@ -13,7 +13,7 @@ import {
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
-import { assertInternalStartup } from "@tikdd/deployment-preflight";
+import { assertInternalStartup, getInternalRuntimeWindowEnd } from "@tikdd/deployment-preflight";
 import {
   createDatabasePool,
   OperationalDiagnosticsRepository,
@@ -50,6 +50,7 @@ const pilotEvidenceDiagnosticsActorId = process.env.PILOT_EVIDENCE_DIAGNOSTICS_A
 const workerRegion = process.env.WORKER_REGION ?? "global";
 const admissionConfiguration = loadAdmissionControlConfiguration();
 const observationClass = assertInternalStartup("api");
+const internalWindowEndsAt = getInternalRuntimeWindowEnd();
 const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
 
 if (
@@ -141,6 +142,9 @@ registerPilotEvidenceDiagnostics(app, {
 });
 
 app.post("/v1/resolve-tasks", async (request, reply) => {
+  if (internalWindowEndsAt && internalWindowEndsAt.getTime() <= Date.now()) {
+    return reply.code(503).send({ error: { code: "CALIBRATION_WINDOW_CLOSED", message: "The authorized calibration window is closed.", retryable: false } });
+  }
   const requestResult = CreateResolveTaskRequestSchema.safeParse(request.body);
 
   if (!requestResult.success) {
@@ -383,5 +387,9 @@ const close = async (signal: string) => {
 
 process.once("SIGINT", () => void close("SIGINT"));
 process.once("SIGTERM", () => void close("SIGTERM"));
+
+if (internalWindowEndsAt) {
+  setTimeout(() => void close("INTERNAL_WINDOW_EXPIRED"), Math.max(0, internalWindowEndsAt.getTime() - Date.now())).unref();
+}
 
 await app.listen({ port, host: "0.0.0.0" });

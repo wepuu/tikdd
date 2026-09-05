@@ -318,6 +318,12 @@ Worker lane with a dedicated queue for SSSTwitter/X/NL. It has not been deployed
 does not authorize calibration or Provider traffic. See
 [the isolation implementation record](x-gate-02-isolated-calibration.md) and ADR-0018.
 
+Operations implementation status (2026-09-05): X-GATE-03 adds strict external authorization,
+fresh-snapshot preflight, bounded start/submit/status/stop commands, source-hash binding, and
+runtime-enforced window expiry. It has not been deployed or executed and grants no Provider
+traffic. See [the operations implementation record](x-gate-03-calibration-operations.md) and
+ADR-0019.
+
 Required evidence:
 
 1. at least three complete consecutive internal calibration days for each reviewed X

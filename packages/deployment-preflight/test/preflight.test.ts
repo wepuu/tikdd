@@ -20,6 +20,9 @@ const plan = {
 const environment = {
   NODE_ENV: "production", TIKDD_DEPLOYMENT_STAGE: "internal", TIKDD_DEPLOYMENT_ID: "tikdd",
   TIKDD_INTERNAL_RUNTIME_ROLE: "api", TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
+  TIKDD_INTERNAL_AUTHORIZATION_ID: "authorization.x.nl.0001",
+  TIKDD_INTERNAL_WINDOW_STARTS_AT: "2026-08-11T00:00:00.000Z",
+  TIKDD_INTERNAL_WINDOW_ENDS_AT: "2026-08-14T00:00:00.000Z",
   TIKDD_OBSERVATION_CLASS: "internal", WORKER_REGION: "nl", ENABLE_MOCK_PROVIDER: "false",
   ENABLE_TWITTERSAVER_PROVIDER: "true", ENABLE_SSSTWITTER_PROVIDER: "true", ENABLE_DLPANDA_PROVIDER: "false",
   TWITTERSAVER_TERMS_APPROVED: "true", SSSTWITTER_TERMS_APPROVED: "true", SSSTWITTER_DELIVERY_AUDIT_APPROVED: "true",
@@ -163,6 +166,21 @@ describe("internal deployment preflight", () => {
     expect(() => assertInternalStartup("api", { ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve-private" }, now)).toThrow(/isolated resolve-internal/);
     expect(() => assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: undefined }, now)).toThrow(/explicit service role/);
     expect(() => assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: "combined" }, now)).toThrow(/explicit service role/);
+  });
+
+  it("fails closed outside the exact three-day authorization window", () => {
+    const runtime = loadInternalRuntime({ ...environment, TIKDD_INTERNAL_WINDOW_ENDS_AT: "2026-08-13T00:00:00.000Z" });
+    const report = evaluateInternalPreflight({ plan, runtime, signals, manifests, now });
+    expect(report.blockers).toContainEqual(expect.objectContaining({
+      id: "authorization_window",
+      reason: "authorization_window_inactive"
+    }));
+    expect(() => assertInternalStartup("api", environment, new Date("2026-08-14T00:00:00.000Z"))).toThrow(/authorization window/);
+    expect(() => assertInternalStartup("api", {
+      ...environment,
+      TIKDD_INTERNAL_WINDOW_STARTS_AT: "2026-08-11T01:00:00.000Z",
+      TIKDD_INTERNAL_WINDOW_ENDS_AT: "2026-08-14T01:00:00.000Z"
+    }, now)).toThrow(/authorization window/);
   });
 
   it("binds a short-lived signed attestation to the exact runtime", () => {
