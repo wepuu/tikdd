@@ -5,14 +5,13 @@
     "deploymentId": "tikdd",
     "region": "nl",
     "platform": "x",
-    "providers": ["twittersaver", "ssstwitter"]
+    "providers": ["ssstwitter"]
   },
   "network": {
     "trustedProxyMode": "trusted-proxy",
-    "providerPageHosts": ["twittersaver.net", "ssstwitter.com"]
+    "providerPageHosts": ["ssstwitter.com"]
   },
   "providerUse": [
-    { "providerId": "twittersaver", "termsConfirmed": true, "productionUseConfirmed": true },
     { "providerId": "ssstwitter", "termsConfirmed": true, "productionUseConfirmed": true }
   ],
   "bounds": {

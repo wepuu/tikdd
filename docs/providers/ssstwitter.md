@@ -322,10 +322,11 @@ P0-X-RETRY-MASKING-01 is therefore complete; P0-X-HTTP-01 remains open.
 
 ## Pilot closure evidence
 
-The sanitized cross-provider operational evidence index is
-[`config/x-pilot-evidence.json`](../../config/x-pilot-evidence.json). Its status remains `pending`;
-technical canary and delivery-lifetime evidence do not establish production/commercial approval or
-satisfy the required seven consecutive daily reviews.
+The sanitized first-gate operational evidence index is
+[`config/x-pilot-evidence.json`](../../config/x-pilot-evidence.json). ADR-0017 scopes it to
+SSSTwitter/X/NL public observations. Its status remains `pending`; technical Canary and
+delivery-lifetime evidence do not establish production permission or satisfy the required seven
+consecutive daily reviews.
 
 ## P0-X-E2E-FINAL-VERIFY production result
 

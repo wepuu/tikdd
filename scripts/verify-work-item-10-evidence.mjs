@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 
 const evidencePath = new URL("../config/x-pilot-evidence.json", import.meta.url);
 const evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
-const allowedTopLevel = new Set(["schemaVersion", "status", "requiredConsecutiveDays", "providers", "dailyReviews"]);
+const allowedTopLevel = new Set(["schemaVersion", "status", "requiredConsecutiveDays", "scope", "dailyReviews"]);
+const allowedScopeKeys = new Set(["provider", "platform", "region", "observationClass"]);
 const forbiddenKey = /(url|task|candidate|cookie|header|token|secret|payload|media|title|author|address)/i;
 
 function inspect(value, path = []) {
@@ -17,12 +18,23 @@ function inspect(value, path = []) {
   }
 }
 
-if (evidence.schemaVersion !== 1) throw new Error("X pilot evidence schemaVersion must be 1.");
+if (evidence.schemaVersion !== 2) throw new Error("X pilot evidence schemaVersion must be 2.");
 if (!['pending', 'complete'].includes(evidence.status)) throw new Error("X pilot evidence status is invalid.");
 if (evidence.requiredConsecutiveDays !== 7) throw new Error("X pilot evidence must require seven consecutive days.");
 if (Object.keys(evidence).some((key) => !allowedTopLevel.has(key))) throw new Error("X pilot evidence contains an unknown top-level field.");
-if (!Array.isArray(evidence.providers) || [...evidence.providers].sort().join(",") !== "ssstwitter,twittersaver") {
-  throw new Error("X pilot evidence must cover exactly TwitterSaver and SSSTwitter.");
+if (!evidence.scope || typeof evidence.scope !== "object" || Array.isArray(evidence.scope)) {
+  throw new Error("X pilot evidence must declare one exact scope.");
+}
+if (Object.keys(evidence.scope).length !== allowedScopeKeys.size || Object.keys(evidence.scope).some((key) => !allowedScopeKeys.has(key))) {
+  throw new Error("X pilot evidence scope fields are invalid.");
+}
+if (
+  evidence.scope.provider !== "ssstwitter" ||
+  evidence.scope.platform !== "x" ||
+  evidence.scope.region !== "nl" ||
+  evidence.scope.observationClass !== "public"
+) {
+  throw new Error("X pilot evidence must cover exactly SSSTwitter/X/NL public observations.");
 }
 if (!Array.isArray(evidence.dailyReviews)) throw new Error("X pilot dailyReviews must be an array.");
 inspect(evidence);
@@ -47,7 +59,7 @@ if (evidence.status === "complete") {
 
 process.stdout.write(`${JSON.stringify({
   externalPilotEvidence: evidence.status,
-  providerCount: evidence.providers.length,
+  scope: evidence.scope,
   healthyReviewCount: evidence.dailyReviews.filter((review) => review.healthy && review.sampleSufficient).length,
   requiredConsecutiveDays: evidence.requiredConsecutiveDays,
   deterministicGateMayPass: true,

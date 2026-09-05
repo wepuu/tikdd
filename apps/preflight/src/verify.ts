@@ -16,8 +16,8 @@ const report = evaluateInternalPreflight({ plan, runtime, signals: {
 }, manifests });
 assert.equal(report.decision, "blocked");
 assert.ok(report.verified.some((check) => check.id === "plan_status"));
-assert.ok(report.verified.some((check) => check.id === "provider_use:twittersaver"));
 assert.ok(report.verified.some((check) => check.id === "provider_use:ssstwitter"));
+assert.deepEqual(plan.scope.providers, ["ssstwitter"]);
 assert.ok(report.blockers.some((check) => check.id === "runtime_boundaries"));
 assert.doesNotMatch(JSON.stringify(report), /sourceUrl|targetUrl|tokenValue|cookie|headerValue|payload|secretValue/i);
 process.stdout.write("Confirmed static deployment plan still fails closed without matching live runtime signals.\n");

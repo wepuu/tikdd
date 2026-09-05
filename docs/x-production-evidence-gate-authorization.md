@@ -1,6 +1,6 @@
 # X Production Evidence Gate — authorization packet
 
-Status: **not authorized / not started** as of 2026-09-05.
+Status: **scope frozen / calibration not authorized** as of 2026-09-05.
 
 This packet prepares the next operational decision. It is not itself permission to contact a
 Provider, start calibration, create or increase a rollout grant, start Admin, or publish/index X.
@@ -14,23 +14,18 @@ Provider, start calibration, create or increase a rollout grant, start Admin, or
   `ssstwitter-x-recurring-001`.
 - Worker Provider flags and public rollout remain disabled.
 - WI18 is deployed but Admin is stopped; no calibration or pilot record was created by deployment.
-- `config/x-pilot-evidence.json` currently names both `twittersaver` and `ssstwitter`, while the
-  recurring Canary allowlist contains only SSSTwitter. This scope mismatch must be resolved before
-  calibration begins.
+- ADR-0017 and `config/x-pilot-evidence.json` freeze the first external evidence scope to exactly
+  `ssstwitter/x/nl/public`; the preceding calibration uses the same tuple with class `internal`.
+- `config/x-internal-preflight.json` now requires exactly SSSTwitter for that internal scope.
+- TwitterSaver remains a separate disabled candidate and is not part of the first X gate.
 
 ## Decision required from the owner
 
-Authorize one exact calibration scope, including Provider, platform, concrete region, approved
-observation class/cohort, bounded cadence/concurrency, start and stop time, and emergency stop
-owner. The recommended first decision is a single reviewed tuple, not an implicit two-Provider
-program. `canary-global` technical health must not be substituted for `nl` calibration evidence.
-
-The authorization must also say whether the evidence index will:
-
-1. remain a two-Provider gate, which requires separate complete calibration and later pilot evidence
-   for both TwitterSaver and SSSTwitter; or
-2. be reviewed and narrowed in a separate code change to the selected production Provider before
-   evidence collection.
+Authorize calibration for the frozen `ssstwitter/x/nl/internal` scope, including the approved
+owner/team cohort, bounded task cadence and maximum concurrency, exact start and stop time, and an
+opaque emergency-stop owner. The authorization must name the already reviewed exact test input or
+approve a replacement tuple separately. `canary-global` technical health must not be substituted
+for `nl` calibration evidence.
 
 ## Proposed bounded sequence after explicit authorization
 

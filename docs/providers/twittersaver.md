@@ -7,9 +7,8 @@
 - Default state: disabled
 - Technical review: 2026-08-04
 - Test authorization: project owner asserted on 2026-08-04
-- Production-use confirmation: recorded for the concrete `nl` deployment in
-  `config/x-internal-preflight.json`; traffic remains blocked by independent runtime and evidence
-  gates
+- Current production scope: excluded from the ADR-0017 SSSTwitter-only internal preflight and first
+  X evidence gate; the Provider remains disabled
 - Reviewed routing regions: `nl` (production), `global` (local/historical), `canary-global`
   (isolated technical Canary)
 - X routing priority: 900 (primary)
@@ -43,12 +42,11 @@ transitory viewing and prohibit commercial use of site materials. That is incomp
 permission for a production or commercial server integration. `ENABLE_TWITTERSAVER_PROVIDER=true`
 therefore also requires the separately audited `TWITTERSAVER_TERMS_APPROVED=true` flag.
 
-The project owner has asserted technical-test authorization and has separately recorded terms and
-production-use confirmation for the concrete `nl` deployment in the checked-in preflight plan.
-External legal evidence is not stored in this repository. This confirmation admits the code-owned
-region capability but does not create a rollout grant, qualification evidence, or public traffic.
-The adapter remains disabled by default and requires both runtime flags plus every independent
-rollout, health, Delivery, and evidence gate.
+The project owner has asserted technical-test authorization and historically reviewed the Provider
+for `nl`; external legal evidence is not stored in this repository. ADR-0017 excludes TwitterSaver
+from the current checked-in internal preflight and first X production evidence gate. The adapter
+remains disabled by default. Any future production qualification requires a new exact-scope
+decision plus every independent runtime, rollout, health, Delivery, and evidence gate.
 
 ## Test and operations notes
 
@@ -67,7 +65,6 @@ rollout, health, Delivery, and evidence gate.
 - Kill switch: `ENABLE_TWITTERSAVER_PROVIDER=false`.
 ## Pilot closure evidence
 
-The sanitized cross-provider operational evidence index is
-[`config/x-pilot-evidence.json`](../../config/x-pilot-evidence.json). Its status remains `pending`;
-technical canary evidence does not establish production/commercial approval or satisfy the required
-seven consecutive daily reviews.
+ADR-0017 excludes TwitterSaver from the first X production evidence checkpoint. The Provider
+remains disabled and independently reviewable; its technical Canary evidence does not establish
+production permission and cannot satisfy the SSSTwitter/X/NL evidence index.
