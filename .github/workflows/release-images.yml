@@ -23,11 +23,11 @@ jobs:
       matrix:
         include:
           - target: service
-            image: tikdd-service
+            image: tikdd-release-service
           - target: web
-            image: tikdd-web
+            image: tikdd-release-web
           - target: admin
-            image: tikdd-admin
+            image: tikdd-release-admin
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
