@@ -56,6 +56,8 @@ stage_gate_command="$(release_value TIKDD_STAGE_VERIFY_COMMAND "")"
 postgres_data_dir="$(release_value TIKDD_POSTGRES_DATA_DIR "/var/lib/tikdd/postgres")"
 backup_verify_command="$(release_value TIKDD_BACKUP_VERIFY_COMMAND "")"
 initial_empty_confirmed="$(release_value TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED "false")"
+provider_rollout_enabled="$(release_value PROVIDER_ROLLOUT_ENABLED "false")"
+preflight_signals="$(release_value TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON "")"
 
 run_stage_gate() {
   stage="$1"
@@ -105,6 +107,32 @@ stage_service() {
   run_stage_gate "$service"
 }
 
+run_provider_preflight() {
+  [ -n "$preflight_signals" ] || {
+    echo "TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required for deployment." >&2
+    exit 78
+  }
+
+  expected_status=2
+  expected_decision=blocked
+  if [ "$provider_rollout_enabled" = "true" ]; then
+    expected_status=0
+    expected_decision=ready
+  fi
+
+  preflight_status=0
+  compose --profile ops run --rm \
+    -e "TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON=$preflight_signals" \
+    preflight || preflight_status="$?"
+
+  if [ "$preflight_status" -ne "$expected_status" ]; then
+    echo "Provider preflight decision mismatch: expected $expected_decision (exit $expected_status), received exit $preflight_status." >&2
+    [ "$preflight_status" -ne 0 ] && return "$preflight_status"
+    return 78
+  fi
+  echo "provider_preflight=PASS expected_decision=$expected_decision exit_status=$preflight_status"
+}
+
 case "$action" in
   validate)
     validate
@@ -124,7 +152,7 @@ case "$action" in
     stage_service delivery
     stage_service worker
     stage_service web
-    compose --profile ops run --rm preflight
+    run_provider_preflight
     run_stage_gate preflight
     compose ps
     ;;
@@ -134,7 +162,7 @@ case "$action" in
     : "${TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED:?Set TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED=true only after review.}"
     [ "$TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED" = "true" ] || { echo "Schema compatibility is not confirmed." >&2; exit 78; }
     run_stage_gate rollback-baseline
-    TIKDD_RELEASE_ENV="$TIKDD_ROLLBACK_ENV" "$0" validate
+    TIKDD_RELEASE_ENV="$TIKDD_ROLLBACK_ENV" sh "$0" validate
     docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" pull web api worker delivery
     for service in api delivery worker web; do
       docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" up -d --wait "$service"

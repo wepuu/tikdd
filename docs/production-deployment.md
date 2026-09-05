@@ -254,15 +254,24 @@ Start the fail-closed public foundation through the staged release command:
 export TIKDD_STAGE_VERIFY_COMMAND=/usr/local/sbin/tikdd-stage-gate
 # Only for the first proven-empty PostgreSQL directory; otherwise export the reviewed backup hook.
 export TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true
+# Supply measured values. This conservative example proves that Provider traffic remains blocked.
+export TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON='{"postgresReady":true,"redisReady":true,"providerEgressReady":false,"cleanupLastSucceededAt":null,"evidenceLastSucceededAt":null,"emergencyDenyPropagationMs":null,"workerRestartFailClosed":true,"deliveryExpiryFailClosed":true,"manualRecoveryRequired":true}'
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh deploy
 ```
 
-These release-control variables belong to the root operator environment, not the Compose
-`production.env` injected into application containers. Subsequent releases leave the empty-database
-confirmation unset/false and export `TIKDD_BACKUP_VERIFY_COMMAND` instead.
+These release-control variables belong to the root operator environment or the root-readable
+release environment. Subsequent releases leave the empty-database confirmation unset/false and
+export `TIKDD_BACKUP_VERIFY_COMMAND` instead. Every deployment must additionally provide a complete,
+truthful `TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON` object. The release runner passes that value only
+to the one-shot preflight container.
 
 The enforced order is baseline, image preparation, PostgreSQL, TikDD Redis, migration, API,
-Delivery, Worker, Web and preflight, with the stage gate after every significant step. Host MySQL,
+Delivery, Worker, Web and Provider preflight, with the stage gate after every significant step. A
+release with `PROVIDER_ROLLOUT_ENABLED=false` succeeds only when that preflight returns the explicit
+`blocked` decision (exit 2). A rollout-enabled release succeeds only when it returns `ready` (exit
+0). Missing/malformed signals, crashes and any decision/status mismatch stop the release. This
+keeps ordinary application deployment separate from Provider traffic qualification without
+bypassing the fail-closed gate. Host MySQL,
 host Redis, shared PHP-FPM, Nginx and all existing sites remain online. Admin is excluded from the
 continuous deploy path and is started only when needed:
 
@@ -367,7 +376,8 @@ in generic cleanup, and never automatically delete the rollback release.
 
 `scripts/production-release.sh deploy` validates Compose, obtains `flock`, requires the stage gate,
 applies the backup-or-fresh-empty database gate, pulls immutable minimum-set images, starts each
-service in the reviewed order and runs internal preflight. It never starts Admin, stops shared PHP
+service in the reviewed order and validates the Provider preflight decision against the release's
+rollout switch. It never starts Admin, stops shared PHP
 components, manages host MySQL/Redis/PHP/Nginx/cloudflared, creates rollout rules or grants Provider
 traffic. Nginx/Tunnel work remains a separate reviewed host action after coexistence is proven.
 
@@ -375,7 +385,9 @@ Rollback requires `TIKDD_ROLLBACK_ENV` pointing to the previous approved immutab
 bundle and an explicit `TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED=true`. It preserves PostgreSQL data,
 route-policy/audit history and evidence. It never runs reverse migrations. If the previous
 application is incompatible with the current schema, stop and use a forward fix or a coordinated
-database restoration under the owner-approved restore procedure.
+database restoration under the owner-approved restore procedure. Rollback validation is invoked
+through `sh`, so extracted release archives do not need to preserve an executable bit on the
+release script.
 
 The old TikDD application is not a rollback path: the owner shut it down and released its runtime
 before C2. Gate A/B rollback stops and removes only newly staged TikDD containers while preserving
