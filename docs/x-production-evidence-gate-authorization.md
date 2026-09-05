@@ -7,7 +7,8 @@ Provider, start calibration, create or increase a rollout grant, start Admin, or
 
 ## Current verified baseline
 
-- Production release: `3a359ce02372cbb1a2db27cb5d228dbb9ed158d2`.
+- Production release: `3375e5c5be931ccbe04d7a348887cd89d48237b9` (WI19 deployed; Admin
+  remains stopped).
 - WI17 Canary, evidence, and cleanup timers have recurring production proof.
 - The only scheduled Provider tuple is `ssstwitter/x/canary-global` through
   `ssstwitter-x-recurring-001`.
