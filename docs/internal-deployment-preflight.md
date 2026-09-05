@@ -4,10 +4,10 @@ Work item 11.5 provides a small, fail-closed production checklist for a personal
 It is not an audit, approval workflow, compliance dashboard, or multi-role operating model.
 
 The checked-in [`config/x-internal-preflight.json`](../config/x-internal-preflight.json) is `ready`
-for deployment `tikdd`, runtime region `nl`, and a trusted Cloudflare/Nginx ingress boundary. The
-site owner confirmed production use of TwitterSaver and SSSTwitter on 2026-08-11. This static state
-does not authorize traffic: the deployed runtime must still supply current technical signals and
-pass every check before an attestation can be issued.
+for deployment `tikdd`, runtime region `nl`, a trusted Cloudflare/Nginx ingress boundary, and the
+single SSSTwitter Provider selected by ADR-0017. The site owner confirmed SSSTwitter production use
+for this scope. This static state does not authorize traffic: the deployed runtime must still
+supply current technical signals and pass every check before an attestation can be issued.
 
 Provider page requests use direct egress by default. The trusted-proxy setting applies only to the
 Cloudflare/Nginx request path into TikDD; it does not configure an outbound Provider proxy.

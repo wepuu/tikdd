@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@3375e5c`
+- Repository checkpoint: `main@c708b75`
 - Roadmap revision date: 2026-09-05
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -31,15 +31,15 @@ entry is therefore not a claim that TikDD can currently download from that platf
 
 ### Unresolved production debt
 
-- The reviewed NL deployment region is inconsistent with the TwitterSaver and SSSTwitter Manifest
-  regions (`global` and `canary-global`).
-- The scheduled Canary configuration has no exact SSSTwitter/X tuple.
-- Production application deployment and recurring Canary/evaluator/cleanup supervision are not
-  represented in the repository.
-- Real deployment preflight, three-day calibration, policy review/lock, staged pilot, and seven
-  healthy daily reviews remain incomplete; the final owner/browser delivery verification is now
-  recorded by P0-X-E2E-FINAL-VERIFY.
+- ADR-0017 freezes the first X gate to SSSTwitter/X/NL, but the exact internal calibration window
+  still requires a bounded owner authorization before Provider traffic begins.
+- Three sealed internal calibration days, policy review/lock, a separately authorized staged pilot,
+  and seven healthy sealed public reviews remain incomplete.
+- P0-X-E2E-FINAL-VERIFY proves the technical production path, but a post-pilot owner/browser check
+  under the intended route and final evidence reconciliation are still required.
 - `config/x-pilot-evidence.json` remains `pending`; deterministic CI cannot close this evidence.
+- Admin remains intentionally stopped and unpublished; any bounded review session requires a
+  separate owner authorization and must not create a traffic grant.
 
 ## Coordinated future lanes
 
@@ -306,6 +306,12 @@ authoritative projections without source-code inspection or direct database quer
 
 This is a real operational checkpoint, not an ordinary code-completion Work Item. It begins only
 after Work Items 15-17 provide a consistent deployed environment and current signals.
+
+Scope-freeze status (2026-09-05): ADR-0017 selects exactly SSSTwitter/X/NL for the first checkpoint.
+The seven-day checked-in index is limited to `public` observations; the preceding three-day window
+uses `internal` observations for the same tuple. This repository decision enables no Provider,
+Admin, rollout, publication, or indexing action. Calibration remains not authorized.
+See [the scope-freeze implementation record](x-gate-01-scope-freeze.md).
 
 Required evidence:
 
