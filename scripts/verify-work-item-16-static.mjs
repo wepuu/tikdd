@@ -155,6 +155,11 @@ export function verifyWorkItem16Static() {
   }
   const deployCase = releaseScript.match(/  deploy\)\n([\s\S]*?)\n    ;;/)?.[1] ?? "";
   assert(!/admin-api|admin-start|stage_service admin/.test(deployCase), "Admin must not start as part of the continuous deployment set.");
+  assert(/TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required for deployment/.test(releaseScript), "Deployment must require complete operator-supplied preflight signals.");
+  assert(/provider_rollout_enabled[\s\S]*expected_status=2[\s\S]*expected_decision=blocked[\s\S]*expected_status=0[\s\S]*expected_decision=ready/.test(releaseScript), "Provider preflight expectations must derive from the rollout switch.");
+  assert(/preflight \|\| preflight_status="\$\?"/.test(releaseScript), "Deployment must capture the provider preflight decision without weakening schema/runtime failures.");
+  assert(/Provider preflight decision mismatch/.test(releaseScript), "Unexpected provider preflight outcomes must fail closed.");
+  assert(/TIKDD_RELEASE_ENV="\$TIKDD_ROLLBACK_ENV" sh "\$0" validate/.test(releaseScript), "Rollback validation must not depend on the release script executable bit.");
   assert(!/systemctl/.test(releaseScript), "Release automation must not manage host systemd services.");
   assert(!/^\s*service\s+(?:mysql|redis)(?:-server)?\b/m.test(releaseScript), "Release automation must not manage shared host datastores.");
   assert(!/docker\s+(?:stop|rm)\b/.test(releaseScript), "Release automation must not use raw Docker lifecycle commands.");
