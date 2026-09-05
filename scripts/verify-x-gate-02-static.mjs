@@ -27,7 +27,10 @@ export function verifyXGate02Static(root = repositoryRoot) {
     requireText(block, 'profiles: ["calibration"]', `${service} default-off profile`);
     requireText(block, 'restart: "no"', `${service} no automatic restart`);
   }
-  requireText(compose, "TIKDD_RESOLVE_QUEUE_NAME: resolve\n", "explicit public queue");
+  const publicApi = serviceBlock(compose, "api");
+  requireText(publicApi, "DATABASE_URL_FILE: /run/secrets/database_url", "public API database secret-file binding");
+  requireText(publicApi, "REDIS_URL_FILE: /run/secrets/redis_url", "public API Redis secret-file binding");
+  requireText(publicApi, "TIKDD_RESOLVE_QUEUE_NAME: resolve\n", "explicit public API queue");
   requireText(compose, "TIKDD_RESOLVE_QUEUE_NAME: resolve-internal-ssstwitter-x-nl", "isolated calibration queue");
   requireText(compose, "  calibration-data:\n    internal: true", "private calibration network");
   const calibrationApi = serviceBlock(compose, "calibration-api");

@@ -144,6 +144,8 @@ export function verifyWorkItem16Static() {
   for (const name of ["web", "api", "worker", "delivery", "admin-api", "admin", "migration", "preflight", "canary", "evidence", "cleanup", "cleanup-dry-run"]) {
     assert(/^    secrets:/m.test(blocks[name]), `${name} is missing its explicit secret mount list.`);
   }
+  assert(/^      DATABASE_URL_FILE: \/run\/secrets\/database_url$/m.test(blocks.api), "Public API database secret-file binding is missing.");
+  assert(/^      REDIS_URL_FILE: \/run\/secrets\/redis_url$/m.test(blocks.api), "Public API Redis secret-file binding is missing.");
   assert(!/docker\s+system\s+prune|-a\s+--volumes/.test(releaseScript), "The release script contains destructive generic Docker cleanup.");
   assert(/TIKDD_STAGE_VERIFY_COMMAND/.test(releaseScript), "Shared-host stage verification is not mandatory.");
   assert(/TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED/.test(releaseScript), "The explicit fresh-empty database gate is missing.");
