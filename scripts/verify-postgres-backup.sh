@@ -31,7 +31,7 @@ checksum_file="$artifact.sha256"
 set -o pipefail
 gpg --homedir "$gpg_home" --batch --quiet --decrypt "$artifact" | \
   docker run --rm -i --read-only --network none \
-    --security-opt no-new-privileges:true --cap-drop ALL "$postgres_image" pg_restore --list - \
+    --security-opt no-new-privileges:true --cap-drop ALL "$postgres_image" pg_restore --list \
     >/dev/null
 
 printf '%s\n' \
