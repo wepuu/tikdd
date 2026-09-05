@@ -29,7 +29,13 @@ export function verifyXGate02Static(root = repositoryRoot) {
   }
   requireText(compose, "TIKDD_RESOLVE_QUEUE_NAME: resolve\n", "explicit public queue");
   requireText(compose, "TIKDD_RESOLVE_QUEUE_NAME: resolve-internal-ssstwitter-x-nl", "isolated calibration queue");
-  requireText(compose, "127.0.0.1:${TIKDD_CALIBRATION_API_HOST_PORT:-3410}:4000", "loopback-only calibration API");
+  requireText(compose, "  calibration-data:\n    internal: true", "private calibration network");
+  const calibrationApi = serviceBlock(compose, "calibration-api");
+  if (/^    ports:/m.test(calibrationApi) || /      - (?:data|host-ingress)/m.test(calibrationApi)) {
+    throw new Error("X-GATE-02 invariant violated: calibration API must not have public/shared ingress");
+  }
+  requireText(calibrationApi, "      - calibration-data", "private calibration API network");
+  requireText(serviceBlock(compose, "calibration-worker"), "      - calibration-data", "private calibration Worker network");
   requireText(compose, "TIKDD_INTERNAL_RUNTIME_ROLE: api", "API role binding");
   requireText(compose, "TIKDD_INTERNAL_RUNTIME_ROLE: worker", "Worker role binding");
   requireText(compose, "/run/tikdd/calibration-api.attestation", "API attestation path");
@@ -41,12 +47,16 @@ export function verifyXGate02Static(root = repositoryRoot) {
   requireText(worker, "loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME)", "Worker queue contract");
   requireText(preflight, "serviceRole: z.enum", "role-bound runtime");
   requireText(preflight, "resolveQueueName: ResolveQueueNameSchema", "queue-bound runtime");
+  requireText(preflight, 'runtime.resolveQueueName.startsWith("resolve-internal-")', "internal queue fail-closed check");
+  requireText(api, 'assertInternalStartup("api")', "API executable role binding");
+  requireText(worker, 'assertInternalStartup("worker")', "Worker executable role binding");
   if (/3410|calibration/i.test(nginx)) throw new Error("X-GATE-02 invariant violated: calibration API is routed by Nginx");
 
   return {
     profile: "calibration",
     publicQueue: "resolve",
     calibrationQueue: "resolve-internal-ssstwitter-x-nl",
+    calibrationApiPublished: false,
     liveProviderNetwork: false
   };
 }

@@ -7,6 +7,7 @@ describe("X-GATE-02 static boundaries", () => {
       profile: "calibration",
       publicQueue: "resolve",
       calibrationQueue: "resolve-internal-ssstwitter-x-nl",
+      calibrationApiPublished: false,
       liveProviderNetwork: false
     });
   });

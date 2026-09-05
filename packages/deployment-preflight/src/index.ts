@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import {
+  DEFAULT_RESOLVE_QUEUE_NAME,
   loadResolveQueueName,
   ProviderManifestSchema,
   ResolveQueueNameSchema,
@@ -111,6 +112,12 @@ function equalSets(left: readonly string[], right: readonly string[]): boolean {
   return [...left].sort().join("\0") === [...right].sort().join("\0");
 }
 
+function isIsolatedInternalRuntime(runtime: InternalRuntime): boolean {
+  return (runtime.serviceRole === "api" || runtime.serviceRole === "worker")
+    && runtime.resolveQueueName !== DEFAULT_RESOLVE_QUEUE_NAME
+    && runtime.resolveQueueName.startsWith("resolve-internal-");
+}
+
 function providerCapabilityReason(
   providerId: string,
   platform: string,
@@ -188,6 +195,11 @@ export function evaluateInternalPreflight(input: { plan: unknown; runtime: unkno
       : runtime.deliverySecretPresent && runtime.rolloutSecretPresent && runtime.admissionSecretPresent && runtime.diagnosticsCredentialPresent && runtime.evidenceDiagnosticsCredentialPresent;
   const runtimeSafe = commonRuntimeSafe && roleRuntimeSafe;
   add("runtime_boundaries", runtimeSafe, runtimeSafe ? "fail_closed_controls_enabled" : "runtime_boundary_missing");
+  add(
+    "runtime_isolation",
+    isIsolatedInternalRuntime(runtime),
+    isIsolatedInternalRuntime(runtime) ? "explicit_role_and_internal_queue" : "explicit_role_or_internal_queue_missing"
+  );
   const proxySafe = plan.network.trustedProxyMode === "direct" ? runtime.trustedProxyCidrs.length === 0 : plan.network.trustedProxyMode === "trusted-proxy" && runtime.trustedProxyCidrs.length > 0;
   add("trusted_proxy", proxySafe, proxySafe ? "boundary_matches_review" : "proxy_boundary_mismatch");
   add("postgres", signals.postgresReady, signals.postgresReady ? "ready" : "unavailable");
@@ -216,6 +228,7 @@ function signPayload(payload: z.infer<typeof AttestationPayloadSchema>, key: Buf
 export function issueInternalPreflightAttestation(input: { report: InternalPreflightReport; runtime: InternalRuntime; encodedKey: string; now?: Date; ttlMs: number }): string {
   const report = InternalPreflightReportSchema.parse(input.report); const runtime = InternalRuntimeSchema.parse(input.runtime); const now = input.now ?? new Date();
   if (report.decision !== "ready" || report.scope.deploymentId === null || report.scope.region === null) throw new Error("A blocked preflight cannot issue an attestation.");
+  if (!isIsolatedInternalRuntime(runtime)) throw new Error("Internal preflight attestation requires an explicit API or Worker role and an isolated resolve-internal-* queue.");
   const reportAgeMs = now.getTime() - new Date(report.generatedAt).getTime();
   if (reportAgeMs < 0 || reportAgeMs > 30_000 || runtime.deploymentId !== report.scope.deploymentId || runtime.region !== report.scope.region || !equalSets(runtime.enabledProviders, report.scope.providers)) throw new Error("The ready preflight report is stale or does not match this runtime.");
   if (input.ttlMs < 60_000 || input.ttlMs > 900_000) throw new Error("Internal preflight attestation TTL is invalid.");
@@ -224,10 +237,11 @@ export function issueInternalPreflightAttestation(input: { report: InternalPrefl
   return Buffer.from(JSON.stringify(value)).toString("base64url");
 }
 
-export function assertInternalStartup(environment: NodeJS.ProcessEnv = process.env, now = new Date()): "public" | "internal" {
+export function assertInternalStartup(expectedRole: "api" | "worker", environment: NodeJS.ProcessEnv = process.env, now = new Date()): "public" | "internal" {
   const runtime = loadInternalRuntime(environment);
   if (runtime.observationClass !== "internal" && runtime.deploymentStage !== "internal") return "public";
   if (runtime.observationClass !== "internal" || runtime.deploymentStage !== "internal" || runtime.nodeEnv !== "production") throw new Error("Internal observation requires the production internal deployment stage.");
+  if (!isIsolatedInternalRuntime(runtime) || runtime.serviceRole !== expectedRole) throw new Error(`Internal ${expectedRole} startup requires its explicit service role and an isolated resolve-internal-* queue.`);
   const encoded = environment.TIKDD_INTERNAL_PREFLIGHT_ATTESTATION; const encodedKey = environment.TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL;
   if (!encoded || !encodedKey) throw new Error("A current signed internal preflight attestation is required.");
   let attestation: z.infer<typeof AttestationSchema>;

@@ -63,6 +63,7 @@ services:
       - postgres_password
     networks:
       - data
+      - calibration-data
     mem_limit: ${TIKDD_POSTGRES_MEMORY_LIMIT:-512m}
     pids_limit: 128
     logging: *bounded-logging
@@ -107,6 +108,7 @@ services:
       - redis_password
     networks:
       - data
+      - calibration-data
     mem_limit: ${TIKDD_REDIS_MEMORY_LIMIT:-192m}
     pids_limit: 64
     logging: *bounded-logging
@@ -333,8 +335,6 @@ services:
       TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/calibration-api.attestation
       TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL TASK_ADMISSION_HMAC_KEY_BASE64URL PROVIDER_DIAGNOSTICS_TOKEN PILOT_EVIDENCE_DIAGNOSTICS_TOKEN TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
       TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
-    ports:
-      - 127.0.0.1:${TIKDD_CALIBRATION_API_HOST_PORT:-3410}:4000
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
@@ -355,8 +355,7 @@ services:
       - pilot_evidence_diagnostics_token
       - internal_preflight_hmac_key
     networks:
-      - data
-      - host-ingress
+      - calibration-data
     depends_on:
       postgres:
         condition: service_healthy
@@ -400,7 +399,7 @@ services:
       - provider_rollout_cohort_key
       - internal_preflight_hmac_key
     networks:
-      - data
+      - calibration-data
       - provider-egress
     depends_on:
       postgres:
@@ -789,6 +788,12 @@ networks:
       config:
         - subnet: ${TIKDD_DATA_SUBNET:-172.30.40.0/24}
           gateway: ${TIKDD_DATA_GATEWAY:-172.30.40.1}
+  calibration-data:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${TIKDD_CALIBRATION_DATA_SUBNET:-172.30.43.0/24}
+          gateway: ${TIKDD_CALIBRATION_DATA_GATEWAY:-172.30.43.1}
   host-ingress:
     driver: bridge
     driver_opts:

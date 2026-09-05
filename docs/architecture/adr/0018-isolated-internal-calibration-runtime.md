@@ -14,8 +14,9 @@ which would require API-only and Worker-only secrets to be mounted into both ser
 
 ## Decision
 
-Internal calibration uses a default-off Compose profile with a loopback-only API and a separate
-Worker. Both use the exact queue `resolve-internal-ssstwitter-x-nl`; the public API and Worker remain
+Internal calibration uses a default-off Compose profile with a private, un-published API and a separate
+Worker. Both join the internal `calibration-data` network instead of the shared application `data`
+network and use the exact queue `resolve-internal-ssstwitter-x-nl`; the public API and Worker remain
 on `resolve`. Queue names are runtime validated through `@tikdd/contracts`.
 
 The calibration API and Worker receive separate short-lived startup attestations. Each attestation
@@ -24,9 +25,11 @@ least-privilege control state. API preflight requires admission and diagnostics 
 Worker preflight requires delivery encryption and rollout cohort credentials. Neither role must
 receive the other's secrets.
 
-The `calibration` profile has `restart: "no"`, concurrency one, loopback-only API publication, and
+The `calibration` profile has `restart: "no"`, concurrency one, no API host publication, and
 default-false SSSTwitter approval and rollout inputs. Merely deploying this code cannot start the
-profile or grant Provider traffic.
+profile or grant Provider traffic. Operator submission requires Docker-authorized execution inside
+the calibration API container; host loopback and shared application networks are not treated as
+authorization boundaries.
 
 ## Consequences
 

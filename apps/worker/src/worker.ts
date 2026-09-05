@@ -75,7 +75,7 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deploymentId)) throw new Error("TIKDD_DEP
 const routePolicyMaximumStaleMs = Number.parseInt(process.env.ADMIN_ROUTE_POLICY_TTL_MS ?? "60000",10);
 const localStackReadinessToken = process.env.LOCAL_STACK_READINESS_TOKEN ?? null;
 const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
-assertInternalStartup();
+assertInternalStartup("worker");
 
 if (
   localStackReadinessToken !== null &&

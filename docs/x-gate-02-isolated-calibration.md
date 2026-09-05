@@ -11,7 +11,9 @@ pilot rollout, publication, or indexing.
 
 - Public API and Worker explicitly use `resolve`.
 - Calibration API and Worker use `resolve-internal-ssstwitter-x-nl`.
-- The calibration API is published only on loopback port 3410 and is not routed by Nginx.
+- The calibration API has no host-published port, is not routed by Nginx, and is reachable only on
+  the private `calibration-data` network shared with PostgreSQL, Redis, and the calibration Worker.
+  Operator tooling must submit through a Docker-authorized execution path inside its container.
 - Calibration services exist only in the `calibration` Compose profile and use `restart: "no"`.
 - SSSTwitter, its terms/audit assertions, and rollout all default to false in that profile.
 - The calibration Worker has concurrency one and is the only calibration service with Provider

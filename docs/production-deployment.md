@@ -147,13 +147,16 @@ publication and the shared `data`/`provider-egress` namespace. Admin API binds
 `127.0.0.1:4100` inside that namespace. Port 4100 has no publication and is inaccessible through a
 normal Docker network address.
 
-The Docker networks are `data`, `host-ingress` and `provider-egress`. `data` is internal and
+The Docker networks are `data`, `calibration-data`, `host-ingress` and `provider-egress`. `data` is internal and
 contains explicit PostgreSQL/Redis consumers. `host-ingress` is limited to Web and API, defaults
 published ports to loopback, and disables IP masquerading so it cannot become general egress.
-Only Worker, Delivery, Admin API and Canary join `provider-egress`.
-The audited NL plan reserves `172.30.40.0/24` (gateway `172.30.40.1`) for `data` and
-`172.30.41.0/24` (gateway `172.30.41.1`) for `provider-egress`, plus `172.30.42.0/24` (gateway
-`172.30.42.1`) for `host-ingress`. Recheck host routes immediately before creation. After API
+Only Worker, Delivery, Admin API, Canary, and the calibration Worker join `provider-egress`.
+`calibration-data` is internal and connects only PostgreSQL, Redis, and the two default-off
+calibration runtime services; public application peers do not join it.
+The audited NL plan reserves `172.30.40.0/24` (gateway `172.30.40.1`) for `data`,
+`172.30.43.0/24` (gateway `172.30.43.1`) for `calibration-data`, `172.30.41.0/24` (gateway
+`172.30.41.1`) for `provider-egress`, and `172.30.42.0/24` (gateway `172.30.42.1`) for
+`host-ingress`. Recheck host routes immediately before creation. After API
 startup, confirm its actual socket peer before accepting `TRUSTED_PROXY_CIDRS=172.30.42.1/32`;
 never trust a broad private range.
 Initial Provider qualification uses the normal deterministic NL IPv4 path; no proxy rotation,
@@ -471,9 +474,11 @@ Canary is separately authorized with `TIKDD_SCHEDULED_CANARY_AUTHORIZED=true`, t
 ## 14. Default-off internal calibration profile
 
 ADR-0018 defines an isolated `calibration` Compose profile for the exact SSSTwitter/X/NL scope.
-It is absent from normal production `up` operations, publishes its API only on loopback port 3410,
-uses the dedicated `resolve-internal-ssstwitter-x-nl` queue, and never restarts automatically.
-Nginx and Cloudflare have no route to this API.
+It is absent from normal production `up` operations, does not publish its API on the host or shared
+application network, uses the private `calibration-data` network and the
+dedicated `resolve-internal-ssstwitter-x-nl` queue, and never restarts automatically. Nginx and
+Cloudflare have no route to this API. Operator tooling must submit through Docker-authorized
+execution inside the service network.
 
 Repository review may expand the profile with `docker compose ... --profile calibration config`,
 but must not run it. A later, separately approved calibration window must set all four

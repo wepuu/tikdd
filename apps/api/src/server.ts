@@ -49,7 +49,7 @@ const pilotEvidenceDiagnosticsToken = process.env.PILOT_EVIDENCE_DIAGNOSTICS_TOK
 const pilotEvidenceDiagnosticsActorId = process.env.PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID || null;
 const workerRegion = process.env.WORKER_REGION ?? "global";
 const admissionConfiguration = loadAdmissionControlConfiguration();
-const observationClass = assertInternalStartup();
+const observationClass = assertInternalStartup("api");
 const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
 
 if (
