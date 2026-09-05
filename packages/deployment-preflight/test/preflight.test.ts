@@ -19,6 +19,7 @@ const plan = {
 };
 const environment = {
   NODE_ENV: "production", TIKDD_DEPLOYMENT_STAGE: "internal", TIKDD_DEPLOYMENT_ID: "tikdd",
+  TIKDD_INTERNAL_RUNTIME_ROLE: "api", TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
   TIKDD_OBSERVATION_CLASS: "internal", WORKER_REGION: "nl", ENABLE_MOCK_PROVIDER: "false",
   ENABLE_TWITTERSAVER_PROVIDER: "true", ENABLE_SSSTWITTER_PROVIDER: "true", ENABLE_DLPANDA_PROVIDER: "false",
   TWITTERSAVER_TERMS_APPROVED: "true", SSSTWITTER_TERMS_APPROVED: "true", SSSTWITTER_DELIVERY_AUDIT_APPROVED: "true",
@@ -129,18 +130,85 @@ describe("internal deployment preflight", () => {
     expect(blocked.blockers.map(({ id }) => id).sort()).toEqual(expect.arrayContaining(["plan_status", "provider_use:twittersaver", "runtime_boundaries", "postgres", "redis", "provider_egress", "cleanup_freshness", "evidence_freshness", "emergency_deny", "worker_restart", "delivery_expiry", "manual_recovery"]));
   });
 
+  it("fails closed when an internal runtime uses the public queue or an ambiguous role", () => {
+    const unsafeRuntimes = [
+      loadInternalRuntime({ ...environment, TIKDD_RESOLVE_QUEUE_NAME: undefined }),
+      loadInternalRuntime({ ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve" }),
+      loadInternalRuntime({ ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve-private" }),
+      loadInternalRuntime({ ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: undefined }),
+      loadInternalRuntime({ ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: "combined" })
+    ];
+
+    for (const runtime of unsafeRuntimes) {
+      const report = evaluateInternalPreflight({ plan, runtime, signals, manifests, now });
+      expect(report.decision).toBe("blocked");
+      expect(report.blockers).toContainEqual(expect.objectContaining({
+        id: "runtime_isolation",
+        reason: "explicit_role_or_internal_queue_missing"
+      }));
+    }
+
+    const safeRuntime = loadInternalRuntime(environment);
+    const readyReport = evaluateInternalPreflight({ plan, runtime: safeRuntime, signals, manifests, now });
+    expect(() => issueInternalPreflightAttestation({
+      report: readyReport,
+      runtime: unsafeRuntimes[0]!,
+      encodedKey: Buffer.alloc(32, 10).toString("base64url"),
+      now,
+      ttlMs: 600_000
+    })).toThrow(/isolated resolve-internal/);
+
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_RESOLVE_QUEUE_NAME: undefined }, now)).toThrow(/isolated resolve-internal/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve" }, now)).toThrow(/isolated resolve-internal/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve-private" }, now)).toThrow(/isolated resolve-internal/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: undefined }, now)).toThrow(/explicit service role/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_RUNTIME_ROLE: "combined" }, now)).toThrow(/explicit service role/);
+  });
+
   it("binds a short-lived signed attestation to the exact runtime", () => {
     const runtime = loadInternalRuntime(environment); const report = evaluateInternalPreflight({ plan, runtime, signals, manifests, now });
     const encodedKey = Buffer.alloc(32, 11).toString("base64url");
     const attestation = issueInternalPreflightAttestation({ report, runtime, encodedKey, now, ttlMs: 600_000 });
     expect(() => issueInternalPreflightAttestation({ report, runtime, encodedKey, now: new Date("2026-08-11T08:01:00.000Z"), ttlMs: 600_000 })).toThrow(/report is stale/);
-    expect(assertInternalStartup({ ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toBe("internal");
-    expect(() => assertInternalStartup({ ...environment, WORKER_REGION: "other", TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
-    expect(() => assertInternalStartup({ ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:11:00.000Z"))).toThrow(/stale or expired/);
+    expect(assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toBe("internal");
+    expect(() => assertInternalStartup("api", { ...environment, WORKER_REGION: "other", TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-other", TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
+    expect(() => assertInternalStartup("api", { ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:11:00.000Z"))).toThrow(/stale or expired/);
+  });
+
+  it("uses role-specific least-privilege startup boundaries", () => {
+    const apiEnvironment = {
+      ...environment,
+      TIKDD_INTERNAL_RUNTIME_ROLE: "api",
+      TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
+      DELIVERY_ENCRYPTION_KEY_ID: undefined,
+      DELIVERY_ENCRYPTION_KEY_BASE64URL: undefined,
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL: undefined
+    };
+    const workerEnvironment = {
+      ...environment,
+      TIKDD_INTERNAL_RUNTIME_ROLE: "worker",
+      TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
+      TASK_ADMISSION_HMAC_KEY_BASE64URL: undefined,
+      PROVIDER_DIAGNOSTICS_TOKEN: undefined,
+      PILOT_EVIDENCE_DIAGNOSTICS_TOKEN: undefined,
+      PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID: undefined
+    };
+
+    expect(evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(apiEnvironment), signals, manifests, now }).decision).toBe("ready");
+    expect(evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(workerEnvironment), signals, manifests, now }).decision).toBe("ready");
+
+    const encodedKey = Buffer.alloc(32, 12).toString("base64url");
+    const apiRuntime = loadInternalRuntime(apiEnvironment);
+    const apiReport = evaluateInternalPreflight({ plan, runtime: apiRuntime, signals, manifests, now });
+    const apiAttestation = issueInternalPreflightAttestation({ report: apiReport, runtime: apiRuntime, encodedKey, now, ttlMs: 600_000 });
+    expect(assertInternalStartup("api", { ...apiEnvironment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: apiAttestation }, new Date("2026-08-11T08:05:00.000Z"))).toBe("internal");
+    expect(() => assertInternalStartup("worker", { ...apiEnvironment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: apiAttestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/Internal worker startup/);
+    expect(() => assertInternalStartup("worker", { ...workerEnvironment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: apiAttestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
   });
 
   it("does not require an internal attestation for the public/local path", () => {
-    expect(assertInternalStartup({ NODE_ENV: "development" })).toBe("public");
-    expect(() => assertInternalStartup({ NODE_ENV: "production", TIKDD_OBSERVATION_CLASS: "internal" })).toThrow(/production internal deployment stage/);
+    expect(assertInternalStartup("api", { NODE_ENV: "development" })).toBe("public");
+    expect(() => assertInternalStartup("api", { NODE_ENV: "production", TIKDD_OBSERVATION_CLASS: "internal" })).toThrow(/production internal deployment stage/);
   });
 });

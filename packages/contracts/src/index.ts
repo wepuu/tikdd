@@ -16,6 +16,18 @@ export const RegionIdSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 export type RegionId = z.infer<typeof RegionIdSchema>;
 
+export const ResolveQueueNameSchema = z
+  .string()
+  .min(1)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+export type ResolveQueueName = z.infer<typeof ResolveQueueNameSchema>;
+export const DEFAULT_RESOLVE_QUEUE_NAME: ResolveQueueName = "resolve";
+
+export function loadResolveQueueName(value: string | undefined): ResolveQueueName {
+  return ResolveQueueNameSchema.parse(value ?? DEFAULT_RESOLVE_QUEUE_NAME);
+}
+
 export const ProviderRegionSchema = z.union([RegionIdSchema, z.literal("*")]);
 export type ProviderRegion = z.infer<typeof ProviderRegionSchema>;
 

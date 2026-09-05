@@ -1,5 +1,11 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { ProviderManifestSchema, type ProviderManifest } from "@tikdd/contracts";
+import {
+  DEFAULT_RESOLVE_QUEUE_NAME,
+  loadResolveQueueName,
+  ProviderManifestSchema,
+  ResolveQueueNameSchema,
+  type ProviderManifest
+} from "@tikdd/contracts";
 import { z } from "zod";
 
 const SlugSchema = z.string().min(1).max(100).regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/);
@@ -41,8 +47,10 @@ export const InternalPreflightPlanSchema = z.object({
 export type InternalPreflightPlan = z.infer<typeof InternalPreflightPlanSchema>;
 
 export const InternalRuntimeSchema = z.object({
+  serviceRole: z.enum(["combined", "api", "worker"]),
   nodeEnv: z.string(), deploymentStage: z.string(), deploymentId: z.string(), region: z.string(),
-  observationClass: z.string(), enabledProviders: z.array(SlugSchema), mockEnabled: z.boolean(),
+  observationClass: z.string(), resolveQueueName: ResolveQueueNameSchema,
+  enabledProviders: z.array(SlugSchema), mockEnabled: z.boolean(),
   providerApprovalsPresent: z.boolean(),
   rolloutEnabled: z.boolean(), developmentBypass: z.boolean(), admissionEnabled: z.boolean(),
   trustedProxyCidrs: z.array(z.string()), deliverySecretPresent: z.boolean(),
@@ -83,9 +91,11 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     return bool(environment.SSSTWITTER_TERMS_APPROVED) && bool(environment.SSSTWITTER_DELIVERY_AUDIT_APPROVED);
   });
   return InternalRuntimeSchema.parse({
+    serviceRole: environment.TIKDD_INTERNAL_RUNTIME_ROLE ?? "combined",
     nodeEnv: environment.NODE_ENV ?? "development", deploymentStage: environment.TIKDD_DEPLOYMENT_STAGE ?? "local",
     deploymentId: environment.TIKDD_DEPLOYMENT_ID ?? "", region: environment.WORKER_REGION ?? "global",
-    observationClass: environment.TIKDD_OBSERVATION_CLASS ?? "public", enabledProviders: providers,
+    observationClass: environment.TIKDD_OBSERVATION_CLASS ?? "public",
+    resolveQueueName: loadResolveQueueName(environment.TIKDD_RESOLVE_QUEUE_NAME), enabledProviders: providers,
     providerApprovalsPresent,
     mockEnabled: bool(environment.ENABLE_MOCK_PROVIDER), rolloutEnabled: bool(environment.PROVIDER_ROLLOUT_ENABLED),
     developmentBypass: bool(environment.PROVIDER_ROLLOUT_DEVELOPMENT_BYPASS), admissionEnabled: bool(environment.ADMISSION_CONTROL_ENABLED),
@@ -100,6 +110,12 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
 
 function equalSets(left: readonly string[], right: readonly string[]): boolean {
   return [...left].sort().join("\0") === [...right].sort().join("\0");
+}
+
+function isIsolatedInternalRuntime(runtime: InternalRuntime): boolean {
+  return (runtime.serviceRole === "api" || runtime.serviceRole === "worker")
+    && runtime.resolveQueueName !== DEFAULT_RESOLVE_QUEUE_NAME
+    && runtime.resolveQueueName.startsWith("resolve-internal-");
 }
 
 function providerCapabilityReason(
@@ -171,8 +187,19 @@ export function evaluateInternalPreflight(input: { plan: unknown; runtime: unkno
   } else {
     add("provider_capabilities", false, "deployment_region_missing");
   }
-  const runtimeSafe = runtime.nodeEnv === "production" && !runtime.mockEnabled && runtime.providerApprovalsPresent && runtime.rolloutEnabled && !runtime.developmentBypass && runtime.admissionEnabled && runtime.deliverySecretPresent && runtime.rolloutSecretPresent && runtime.admissionSecretPresent && runtime.diagnosticsCredentialPresent && runtime.evidenceDiagnosticsCredentialPresent;
+  const commonRuntimeSafe = runtime.nodeEnv === "production" && !runtime.mockEnabled && runtime.providerApprovalsPresent && runtime.rolloutEnabled && !runtime.developmentBypass && runtime.admissionEnabled;
+  const roleRuntimeSafe = runtime.serviceRole === "api"
+    ? runtime.admissionSecretPresent && runtime.diagnosticsCredentialPresent && runtime.evidenceDiagnosticsCredentialPresent
+    : runtime.serviceRole === "worker"
+      ? runtime.deliverySecretPresent && runtime.rolloutSecretPresent
+      : runtime.deliverySecretPresent && runtime.rolloutSecretPresent && runtime.admissionSecretPresent && runtime.diagnosticsCredentialPresent && runtime.evidenceDiagnosticsCredentialPresent;
+  const runtimeSafe = commonRuntimeSafe && roleRuntimeSafe;
   add("runtime_boundaries", runtimeSafe, runtimeSafe ? "fail_closed_controls_enabled" : "runtime_boundary_missing");
+  add(
+    "runtime_isolation",
+    isIsolatedInternalRuntime(runtime),
+    isIsolatedInternalRuntime(runtime) ? "explicit_role_and_internal_queue" : "explicit_role_or_internal_queue_missing"
+  );
   const proxySafe = plan.network.trustedProxyMode === "direct" ? runtime.trustedProxyCidrs.length === 0 : plan.network.trustedProxyMode === "trusted-proxy" && runtime.trustedProxyCidrs.length > 0;
   add("trusted_proxy", proxySafe, proxySafe ? "boundary_matches_review" : "proxy_boundary_mismatch");
   add("postgres", signals.postgresReady, signals.postgresReady ? "ready" : "unavailable");
@@ -191,28 +218,30 @@ export function evaluateInternalPreflight(input: { plan: unknown; runtime: unkno
   return InternalPreflightReportSchema.parse({ schemaVersion: 1, decision: blockers.length === 0 ? "ready" : "blocked", generatedAt: now.toISOString(), summary: { passed: verified.length, blocked: blockers.length }, scope: plan.scope, blockers, verified });
 }
 
-const AttestationPayloadSchema = z.object({ schemaVersion: z.literal(1), deploymentId: SlugSchema, region: SlugSchema, platform: z.literal("x"), providers: z.array(SlugSchema), runtimeDigest: z.string().regex(/^[a-f0-9]{64}$/), issuedAt: InstantSchema, expiresAt: InstantSchema }).strict();
+const AttestationPayloadSchema = z.object({ schemaVersion: z.literal(2), serviceRole: z.enum(["combined", "api", "worker"]), deploymentId: SlugSchema, region: SlugSchema, platform: z.literal("x"), providers: z.array(SlugSchema), resolveQueueName: ResolveQueueNameSchema, runtimeDigest: z.string().regex(/^[a-f0-9]{64}$/), issuedAt: InstantSchema, expiresAt: InstantSchema }).strict();
 const AttestationSchema = z.object({ payload: AttestationPayloadSchema, signature: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict();
 function canonicalRuntime(runtime: InternalRuntime): string { return JSON.stringify(InternalRuntimeSchema.parse(runtime)); }
 function runtimeDigest(runtime: InternalRuntime): string { return createHash("sha256").update(canonicalRuntime(runtime)).digest("hex"); }
 function readKey(encoded: string): Buffer { const key = Buffer.from(encoded, "base64url"); if (!/^[A-Za-z0-9_-]+$/.test(encoded) || key.length < 32 || key.toString("base64url") !== encoded) throw new Error("Internal preflight HMAC key must contain at least 32 canonical base64url bytes."); return key; }
-function signPayload(payload: z.infer<typeof AttestationPayloadSchema>, key: Buffer): string { return createHmac("sha256", key).update("tikdd-internal-preflight-v1\0").update(JSON.stringify(payload)).digest("base64url"); }
+function signPayload(payload: z.infer<typeof AttestationPayloadSchema>, key: Buffer): string { return createHmac("sha256", key).update("tikdd-internal-preflight-v2\0").update(JSON.stringify(payload)).digest("base64url"); }
 
 export function issueInternalPreflightAttestation(input: { report: InternalPreflightReport; runtime: InternalRuntime; encodedKey: string; now?: Date; ttlMs: number }): string {
   const report = InternalPreflightReportSchema.parse(input.report); const runtime = InternalRuntimeSchema.parse(input.runtime); const now = input.now ?? new Date();
   if (report.decision !== "ready" || report.scope.deploymentId === null || report.scope.region === null) throw new Error("A blocked preflight cannot issue an attestation.");
+  if (!isIsolatedInternalRuntime(runtime)) throw new Error("Internal preflight attestation requires an explicit API or Worker role and an isolated resolve-internal-* queue.");
   const reportAgeMs = now.getTime() - new Date(report.generatedAt).getTime();
   if (reportAgeMs < 0 || reportAgeMs > 30_000 || runtime.deploymentId !== report.scope.deploymentId || runtime.region !== report.scope.region || !equalSets(runtime.enabledProviders, report.scope.providers)) throw new Error("The ready preflight report is stale or does not match this runtime.");
   if (input.ttlMs < 60_000 || input.ttlMs > 900_000) throw new Error("Internal preflight attestation TTL is invalid.");
-  const payload = AttestationPayloadSchema.parse({ schemaVersion: 1, deploymentId: report.scope.deploymentId, region: report.scope.region, platform: "x", providers: report.scope.providers, runtimeDigest: runtimeDigest(runtime), issuedAt: now.toISOString(), expiresAt: new Date(now.getTime() + input.ttlMs).toISOString() });
+  const payload = AttestationPayloadSchema.parse({ schemaVersion: 2, serviceRole: runtime.serviceRole, deploymentId: report.scope.deploymentId, region: report.scope.region, platform: "x", providers: report.scope.providers, resolveQueueName: runtime.resolveQueueName, runtimeDigest: runtimeDigest(runtime), issuedAt: now.toISOString(), expiresAt: new Date(now.getTime() + input.ttlMs).toISOString() });
   const value = AttestationSchema.parse({ payload, signature: signPayload(payload, readKey(input.encodedKey)) });
   return Buffer.from(JSON.stringify(value)).toString("base64url");
 }
 
-export function assertInternalStartup(environment: NodeJS.ProcessEnv = process.env, now = new Date()): "public" | "internal" {
+export function assertInternalStartup(expectedRole: "api" | "worker", environment: NodeJS.ProcessEnv = process.env, now = new Date()): "public" | "internal" {
   const runtime = loadInternalRuntime(environment);
   if (runtime.observationClass !== "internal" && runtime.deploymentStage !== "internal") return "public";
   if (runtime.observationClass !== "internal" || runtime.deploymentStage !== "internal" || runtime.nodeEnv !== "production") throw new Error("Internal observation requires the production internal deployment stage.");
+  if (!isIsolatedInternalRuntime(runtime) || runtime.serviceRole !== expectedRole) throw new Error(`Internal ${expectedRole} startup requires its explicit service role and an isolated resolve-internal-* queue.`);
   const encoded = environment.TIKDD_INTERNAL_PREFLIGHT_ATTESTATION; const encodedKey = environment.TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL;
   if (!encoded || !encodedKey) throw new Error("A current signed internal preflight attestation is required.");
   let attestation: z.infer<typeof AttestationSchema>;

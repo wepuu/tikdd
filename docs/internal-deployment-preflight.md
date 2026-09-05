@@ -24,8 +24,9 @@ An internal task requires:
 5. working emergency disable, fail-closed Worker restart, delivery expiry, and manual recovery;
 6. a signed attestation valid for at most 15 minutes and bound to the exact runtime configuration.
 
-API and Worker must verify the same attestation before producing `internal` evidence. Missing or
-mismatched settings block startup. The attestation does not create a rollout grant or enable traffic.
+API and Worker must verify separate role-bound attestations before producing `internal` evidence.
+Each role must use an explicit `resolve-internal-*` queue; missing, public-default, or mismatched
+settings block startup. An attestation does not create a rollout grant or enable traffic.
 
 ## Run
 
@@ -43,8 +44,10 @@ The command prints `decision`, `summary`, `scope`, `blockers`, and `verified`. E
 blocked and creates no attestation. A ready result writes the attestation once; the key and secret
 values are never included in the report.
 
-Load the attestation into `TIKDD_INTERNAL_PREFLIGHT_ATTESTATION` for API and Worker without changing
-the runtime settings, then remove the short-lived file after startup.
+Run preflight separately with `TIKDD_INTERNAL_RUNTIME_ROLE=api` and
+`TIKDD_INTERNAL_RUNTIME_ROLE=worker`, keeping the same explicit internal queue. Load only the
+matching attestation into each process's `TIKDD_INTERNAL_PREFLIGHT_ATTESTATION` without changing its
+runtime settings, then remove both short-lived files after startup.
 
 Use `pnpm verify:work-item-11-5` with local PostgreSQL and Redis to verify the implementation without
 Provider network access or Pilot traffic.

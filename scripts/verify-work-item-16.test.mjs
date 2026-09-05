@@ -5,7 +5,7 @@ describe("Work Item 16 production deployment contract", () => {
   it("keeps ingress, namespaces, networks, jobs, images, and secrets inside the approved boundary", () => {
     expect(verifyWorkItem16Static()).toEqual({
       serviceCount: 15,
-      networkCount: 3,
+      networkCount: 4,
       publishedServiceCount: 4
     });
   });
