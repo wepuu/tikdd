@@ -24,7 +24,7 @@ than placing desktop and mobile mockups in one generated image.
 - Do not imply guaranteed speed, original quality, universal compatibility, absolute privacy,
   audience size, unlimited use, or a permanently free service.
 - Show only product capabilities that exist or can be represented honestly: recognized public URLs,
-  asynchronous resolution, normalized format choices, rights confirmation, and expiring delivery.
+  asynchronous resolution, normalized format choices, and expiring delivery.
 - Use no more than two font families per direction. Type must accommodate English and Simplified
   Chinese without a visibly different brand voice.
 - Use real icons from a reviewed library during implementation. Generated concepts may indicate icon
@@ -102,7 +102,7 @@ failure and must answer every row with visible evidence.
 | Visual restraint | Boldness is concentrated in one memorable device; other effects support hierarchy. |
 | Truthfulness | No unsupported speed, quality, coverage, privacy, popularity, or pricing claim appears. |
 | Accessibility | Contrast, focus affordance, control sizing, state distinction, and reduced-motion fallback are feasible. |
-| Responsive fit | The structure can collapse to 360 px without reordering the user journey or hiding rights confirmation. |
+| Responsive fit | The structure can collapse to 360 px without reordering the user journey or hiding task feedback. |
 | Build feasibility | The direction can be implemented in the current Next.js/React surface without fake assets or a new UI framework. |
 
 ## Required artifacts

@@ -1,5 +1,8 @@
 # Work item 10 implementation plan
 
+> Historical plan. ADR-0020 supersedes its elapsed-time launch gates and former client
+> acknowledgement while retaining Provider, delivery, rollout, and network safety boundaries.
+
 ## Outcome
 
 Work item 10 turns the production-shaped X path into a controlled pilot with two real providers.
@@ -189,7 +192,7 @@ Exit gate:
 
 Status: complete on 2026-08-10. Deterministic development-only application states exercise the
 existing localized resolver without external requests. Desktop and 360-pixel mobile evidence covers
-recognition, rights confirmation, normal and slower success, retryable and terminal failures,
+recognition, immediate submission, normal and slower success, retryable and terminal failures,
 duplicate admission, delivery preparation, expiry, and regeneration. Four P0 flow/accessibility
 gaps were closed and no P0 finding remains. See
 [the work item 10.4 audit](design/work-item-10-4-audit.md).
@@ -197,7 +200,7 @@ gaps were closed and no P0 finding remains. See
 Audit the implemented desktop and 360-pixel mobile journey using actual application states, not a
 new visual concept. Capture and compare at least:
 
-- recognized and rights-confirmation state;
+- recognized-link state;
 - normal primary-provider success;
 - slower fallback success;
 - retryable temporary failure;

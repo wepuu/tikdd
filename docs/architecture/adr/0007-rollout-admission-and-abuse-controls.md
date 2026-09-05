@@ -33,7 +33,7 @@ delivery access to another anonymous caller.
 
 A request and provider route pass these gates in order:
 
-1. public request validation, rights confirmation, platform host recognition, and request limits;
+1. public request validation, platform host recognition, and request limits;
 2. idempotency and active canonical-request admission;
 3. static provider manifest capability, production safety, region, and runtime rollout policy;
 4. exact provider/platform/region circuit permission;
@@ -105,7 +105,7 @@ bounded ASCII format and never logs or persists the raw value. It stores a serve
 request fingerprint, task ID, creation time, and expiry in PostgreSQL.
 
 The request fingerprint covers the normalized contract fields that affect behavior, including the
-canonical platform URL and rights confirmation, using length-delimited canonical encoding. It does
+canonical platform URL, using length-delimited canonical encoding. It does
 not use JSON property order. The digest and request fingerprint use domain-separated keyed HMACs so
 database disclosure does not permit cheap recovery of submitted URLs or client keys.
 

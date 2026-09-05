@@ -6,19 +6,8 @@ type PublishedPage = PublishedContentSnapshot["pages"][number];
 export function copyForPage(page: PublishedPage): SiteCopy {
   const base = structuredClone(getCopy((page.locale === "zh-CN" ? "zh-CN" : "en") as Locale));
   if (page.content.template !== "homepage") return base;
-  const content = page.content;
-  base.hero.lead = "";
-  base.hero.accent = content.heroTitle;
-  base.hero.tail = "";
-  base.hero.description = content.heroSubtitle;
-  base.form.label = content.inputLabel;
-  base.form.placeholder = content.inputPlaceholder;
-  base.form.action = content.primaryActionLabel;
-  base.supported.label = content.supportedPlatformsTitle;
-  base.process.title = content.howItWorksTitle;
-  base.process.steps = content.howItWorksSteps.map(({ title, description }) => [title, description]);
-  base.faq.title = content.faqTitle;
-  base.faq.items = content.faqItems.map(({ question, answerMarkdown }) => [question, answerMarkdown]);
+  // The public X Beta copy is release-owned while Admin remains off. This also prevents a
+  // previously published homepage snapshot from restoring the removed submission gate.
   return base;
 }
 

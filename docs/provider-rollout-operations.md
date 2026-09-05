@@ -81,8 +81,8 @@ missing, stale, expired, or zero-cap state denies new attempts.
   deny still wins before both the operator grant and guard, and workers observe its snapshot without
   a Web/API deployment.
 
-The deterministic implementation can be verified before production approval, but it is not the
-three-day calibration or seven-day rollout evidence required to close work item 10.
+The deterministic implementation is the safety baseline. Under ADR-0020, longer calibration and
+rollout evidence are optional diagnostics and do not block the personal-site X Beta.
 
 ## Apply a reviewed rule
 

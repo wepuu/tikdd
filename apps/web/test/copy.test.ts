@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getCopy } from "../lib/copy";
+import { copyForPage } from "../lib/content-presentation";
+import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("delivery handoff copy", () => {
   it("sets the new-tab expectation before and after browser handoff in both locales", () => {
@@ -21,5 +23,16 @@ describe("delivery handoff copy", () => {
     expect(handoffCopy).not.toContain("twittersaver");
     expect(handoffCopy).not.toContain("ssstwitter");
     expect(handoffCopy).not.toContain("fallback");
+  });
+
+  it("keeps the release-owned X Beta surface when an older homepage snapshot is active", () => {
+    const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(({ locale }) => locale === "en");
+    expect(homepage).toBeDefined();
+    const current = copyForPage(homepage!);
+
+    expect(current.hero.badge).toContain("Public Beta");
+    expect(current.supported.platforms).toEqual(["X"]);
+    expect(current.faq.items[0]?.[1]).toContain("x.com");
+    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X.");
   });
 });

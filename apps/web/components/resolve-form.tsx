@@ -9,17 +9,14 @@ import {
   DownloadSimpleIcon,
   GlobeHemisphereWestIcon,
   LinkSimpleIcon,
-  LockSimpleIcon,
   PlayIcon,
   ScanIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
-  TiktokLogoIcon,
   VideoCameraIcon,
   WarningCircleIcon,
   XIcon,
   XLogoIcon,
-  YoutubeLogoIcon
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
@@ -145,13 +142,12 @@ function admissionMessage(code: string, copy: SiteCopy["form"]): string {
   }
 }
 
-const platformIcons = [YoutubeLogoIcon, TiktokLogoIcon, XLogoIcon, DotsThreeIcon] as const;
+const platformIcons = [XLogoIcon] as const;
 const processIcons = [LinkSimpleIcon, ScanIcon, DownloadSimpleIcon] as const;
 const featureIcons = [GlobeHemisphereWestIcon, SlidersHorizontalIcon, ShieldCheckIcon] as const;
 
 export function ResolveForm({ copy, featureLabel, features, process, supported }: ResolveFormProps) {
   const [url, setUrl] = useState("");
-  const [confirmedRights, setConfirmedRights] = useState(false);
   const [task, setTask] = useState<ResolveTask | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
   const [submissionError, setSubmissionError] = useState<TaskError | null>(null);
@@ -179,7 +175,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     if (!scenario) return;
     setUrl(qaUrl);
     if (scenario === "recognized") return;
-    setConfirmedRights(true);
     if (scenario === "ready-slow") {
       setTask(qaTask("resolving"));
       setIsWorking(true);
@@ -276,7 +271,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
 
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!detectedPlatform || !confirmedRights || isWorking) return;
+    if (!detectedPlatform || isWorking) return;
     setIsWorking(true);
     setSubmissionError(null);
     setTask(null);
@@ -298,7 +293,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
       const response = await fetch(`${apiBaseUrl}/v1/resolve-tasks`, {
         method: "POST",
         headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
-        body: JSON.stringify({ url: normalizedUrl, confirmedRights: true })
+        body: JSON.stringify({ url: normalizedUrl })
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as ApiError | null;
@@ -363,7 +358,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     submissionKeyRef.current = null;
     focusedStateRef.current = null;
     setUrl("");
-    setConfirmedRights(false);
     setTask(null);
     setSelectedFormatId(null);
     setSubmissionError(null);
@@ -417,7 +411,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     : result
       ? copy.ready
       : detectedPlatform
-        ? `${platformName(detectedPlatform)} ${copy.recognized}${confirmedRights ? "" : ` ${copy.confirmRights}`}`
+        ? `${platformName(detectedPlatform)} ${copy.recognized}`
         : copy.waiting;
   const resultTitle = result
     ? publicResultTitle(result, copy.resolvedTitle)
@@ -448,7 +442,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
                 submissionKeyRef.current = null;
                 focusedStateRef.current = null;
                 setUrl(event.target.value);
-                setConfirmedRights(false);
                 setTask(null);
                 setSubmissionError(null);
                 setDelivery(null);
@@ -461,16 +454,12 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
             {url ? <button className="clear-link" type="button" onClick={clearLink} aria-label={copy.clear}><XIcon size={18} weight="bold" /></button> : null}
           </div>
           <span className="resolver-divider" aria-hidden="true" />
-          <button className="resolve-action" type="submit" disabled={!detectedPlatform || !confirmedRights || isWorking}>
+          <button className="resolve-action" type="submit" disabled={!detectedPlatform || isWorking}>
             {isWorking ? <CircleNotchIcon className="spin" size={21} weight="bold" /> : <DownloadSimpleIcon size={21} weight="bold" />}
             <span>{isWorking ? copy.working : copy.action}</span>
           </button>
         </div>
         <div className="resolver-guidance">
-          <label className="rights-confirmation">
-            <input type="checkbox" checked={confirmedRights} onChange={(event) => setConfirmedRights(event.target.checked)} />
-            <LockSimpleIcon size={15} weight="bold" aria-hidden="true" /><span>{copy.rights}</span>
-          </label>
           <p id="url-status" className="url-status" aria-live="polite">{url.trim() && !detectedPlatform ? copy.invalid : statusText}</p>
         </div>
       </form>

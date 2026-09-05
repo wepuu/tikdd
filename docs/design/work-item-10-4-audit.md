@@ -35,9 +35,8 @@ The screenshots and implemented state logic exposed these rollout-blocking gaps:
 
 ## Audited journey
 
-1. **Recognized link and rights confirmation — healthy.** A recognized X URL leaves Resolve
-   disabled until confirmation and explains the required action. Editing or clearing the URL resets
-   confirmation and all task/delivery state. Evidence:
+1. **Recognized link and submission state — historical.** A recognized X URL enabled the previous
+   submission flow. Editing or clearing the URL reset task and delivery state. Evidence:
    [desktop](work-item-10-4/02-baseline-desktop-recognized.png) and
    [360px mobile](work-item-10-4/12-mobile-recognized.png).
 2. **Normal success and ready formats — healthy.** Success moves keyboard focus to the neutral

@@ -1,5 +1,8 @@
 # TikDD next implementation plan
 
+> Historical roadmap. ADR-0020 and `docs/development-plan.md` now define the X Beta release loop;
+> elapsed calibration windows and the former client acknowledgement are no longer launch gates.
+
 > Historical record: this plan captured the pre-rebaseline execution sequence through Work Items
 > 11 and 12. It is preserved for traceability and must not be used as the current delivery order.
 > The authoritative future sequence begins with Work Item 14 in the
@@ -57,7 +60,7 @@ boundaries needed for future adapters.
 
 1. The user pastes an authorized public page URL.
 2. TikDD recognizes the platform locally and explains whether it is available in the user's region.
-3. The user confirms download rights and starts an asynchronous task.
+3. The user starts an asynchronous task.
 4. The page shows useful queued and resolving states without revealing provider implementation
    details.
 5. On success, the user sees understandable format choices and requests one download.
@@ -146,9 +149,8 @@ while making task state the dominant product structure.
 
 Implemented scope:
 
-1. Keep one rights confirmation directly beneath the resolver on desktop and mobile, and show the
-   disabled-action reason beside it.
-2. Reset rights confirmation when the submitted URL changes.
+1. Keep recognized-link feedback directly beneath the resolver on desktop and mobile.
+2. Reset task feedback when the submitted URL changes.
 3. Move focus and the viewport to the result card when resolution succeeds, with reduced-motion
    behavior preserved.
 4. Put the active result before feature and process education on mobile and hide those educational

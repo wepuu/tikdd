@@ -1,6 +1,6 @@
 # X-GATE-03 — Bounded calibration operations
 
-Status: implemented and locally verified; not deployed or executed.
+Status: deployed but not executed. ADR-0020 makes this optional diagnostic tooling.
 
 ## Inputs
 

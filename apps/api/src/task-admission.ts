@@ -65,12 +65,10 @@ export class TaskAdmissionHasher {
   request(input: {
     platform: Platform;
     canonicalUrl: string;
-    confirmedRights: true;
   }): Uint8Array {
     return this.digest("request", [
       ["platform", input.platform],
-      ["canonicalUrl", input.canonicalUrl],
-      ["confirmedRights", input.confirmedRights ? "true" : "false"]
+      ["canonicalUrl", input.canonicalUrl]
     ]);
   }
 }

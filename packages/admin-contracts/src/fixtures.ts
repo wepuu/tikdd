@@ -168,7 +168,7 @@ export const ADMIN_HOMEPAGE_FIXTURE: AdminPageRevision = {
     supportedPlatformsTitle: "Supported platforms",
     howItWorksTitle: "How it works",
     howItWorksSteps: [
-      { title: "Paste", description: "Enter a public page link you are authorized to use." },
+      { title: "Paste", description: "Enter a supported public page link." },
       { title: "Choose", description: "Review the normalized formats returned by TikDD." }
     ],
     faqTitle: "Frequently asked questions",

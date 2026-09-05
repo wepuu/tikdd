@@ -1,13 +1,17 @@
 # X Production Evidence Gate — authorization packet
 
-Status: **scope frozen / calibration not authorized** as of 2026-09-05.
+Status: **historical authorization packet; superseded by ADR-0020** as of 2026-09-05.
+
+The mechanisms below remain available for optional diagnosis, but their elapsed-time sequence no
+longer blocks the personal-site X Beta. The current lightweight release process is documented in
+`docs/mvp-release-process.md`.
 
 This packet prepares the next operational decision. It is not itself permission to contact a
 Provider, start calibration, create or increase a rollout grant, start Admin, or publish/index X.
 
 ## Current verified baseline
 
-- Production release: `3375e5c5be931ccbe04d7a348887cd89d48237b9` (WI19 deployed; Admin
+- Production release at supersession: `99dbafcde40f9880e7129ce7ce53620c6083a285` (Admin
   remains stopped).
 - WI17 Canary, evidence, and cleanup timers have recurring production proof.
 - The only scheduled Provider tuple is `ssstwitter/x/canary-global` through

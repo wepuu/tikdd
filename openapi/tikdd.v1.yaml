@@ -285,15 +285,12 @@ components:
     CreateResolveTaskRequest:
       type: object
       additionalProperties: false
-      required: [url, confirmedRights]
+      required: [url]
       properties:
         url:
           type: string
           format: uri
           maxLength: 2048
-        confirmedRights:
-          type: boolean
-          const: true
     ResolveTask:
       type: object
       additionalProperties: false

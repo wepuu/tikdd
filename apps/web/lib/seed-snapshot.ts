@@ -2,12 +2,12 @@ import { PublishedContentSnapshotSchema, type PublishedContentSnapshot } from "@
 
 const homepage = (locale: "en" | "zh-CN") => locale === "en" ? {
   template: "homepage" as const,
-  heroTitle: "Download videos from public links",
-  heroSubtitle: "Paste a public video page from YouTube, TikTok, X, or another recognized site. TikDD resolves clear format choices without exposing provider links.",
-  inputLabel: "Public video page URL",
-  inputPlaceholder: "Paste a YouTube, TikTok, X, or other public video URL",
+  heroTitle: "Download X videos from public posts",
+  heroSubtitle: "Paste a public X post URL. TikDD resolves clear format choices and creates a short-lived download link.",
+  inputLabel: "Public X post URL",
+  inputPlaceholder: "Paste an x.com or twitter.com post URL",
   primaryActionLabel: "Resolve",
-  supportedPlatformsTitle: "Supported platforms",
+  supportedPlatformsTitle: "X Public Beta",
   howItWorksTitle: "How it works",
   howItWorksSteps: [
     { title: "Paste URL", description: "Copy a public video page link into the field above." },
@@ -16,27 +16,27 @@ const homepage = (locale: "en" | "zh-CN") => locale === "en" ? {
   ],
   faqTitle: "Frequently asked questions",
   faqItems: [
-    { question: "Which links can I use?", answerMarkdown: "Use public media pages you own or have permission to download." },
+    { question: "Which links can I use?", answerMarkdown: "The current Beta accepts public x.com and twitter.com post URLs." },
     { question: "Do I need an account?", answerMarkdown: "No account is required for the current resolver flow." },
     { question: "Why can a recognized link fail?", answerMarkdown: "Private, paid, restricted, or recently changed pages may not resolve." }
   ]
 } : {
   template: "homepage" as const,
-  heroTitle: "从公开链接下载视频",
-  heroSubtitle: "粘贴 YouTube、TikTok、X 或其他已识别网站的公开视频页面。TikDD 会解析清晰的格式选项，同时不暴露第三方直链。",
-  inputLabel: "公开视频页面链接",
-  inputPlaceholder: "粘贴 YouTube、TikTok、X 或其他公开视频链接",
+  heroTitle: "从公开帖子下载 X 视频",
+  heroSubtitle: "粘贴公开的 X 帖子链接，TikDD 会解析清晰的格式选项并生成短期下载链接。",
+  inputLabel: "公开 X 帖子链接",
+  inputPlaceholder: "粘贴 x.com 或 twitter.com 帖子链接",
   primaryActionLabel: "解析",
-  supportedPlatformsTitle: "支持的平台",
+  supportedPlatformsTitle: "X 公开测试版",
   howItWorksTitle: "工作方式",
   howItWorksSteps: [
-    { title: "粘贴链接", description: "将你有权使用的公开视频页面链接粘贴到输入框。" },
+    { title: "粘贴链接", description: "将公开的 X 帖子链接粘贴到输入框。" },
     { title: "解析视频", description: "TikDD 识别平台并检查可用格式。" },
     { title: "选择格式", description: "选择格式并申请一个短期有效的下载链接。" }
   ],
   faqTitle: "常见问题",
   faqItems: [
-    { question: "可以使用哪些链接？", answerMarkdown: "仅使用你拥有或已获得下载授权的公开媒体页面。" },
+    { question: "可以使用哪些链接？", answerMarkdown: "当前测试版接受公开的 x.com 和 twitter.com 帖子链接。" },
     { question: "需要创建账号吗？", answerMarkdown: "当前解析流程不需要账号。" },
     { question: "为什么已识别的链接仍可能失败？", answerMarkdown: "私密、付费、受限或页面结构近期变化的内容可能无法解析。" }
   ]
@@ -44,12 +44,12 @@ const homepage = (locale: "en" | "zh-CN") => locale === "en" ? {
 
 const seo = (locale: "en" | "zh-CN") => ({
   localPath: "/",
-  searchTitle: locale === "en" ? "TikDD public video downloader" : "TikDD 公共视频下载工具",
+  searchTitle: locale === "en" ? "TikDD X video downloader Beta" : "TikDD X 视频下载 Beta",
   searchDescription: locale === "en"
-    ? "Resolve supported public video pages and choose an available format through TikDD's multilingual download workflow."
-    : "使用 TikDD 多语言下载流程解析支持的公开视频页面，查看清晰的媒体信息，并选择当前可用的视频格式。",
-  socialTitle: locale === "en" ? "TikDD public video downloader" : "TikDD 公共视频下载工具",
-  socialDescription: locale === "en" ? "Resolve supported public pages with TikDD." : "使用 TikDD 解析支持的公开视频页面。",
+    ? "Resolve public X posts and choose an available format through TikDD's multilingual download workflow."
+    : "使用 TikDD 多语言下载流程解析公开的 X 帖子，查看清晰的媒体信息并选择当前可用的视频格式。",
+  socialTitle: locale === "en" ? "TikDD X video downloader Beta" : "TikDD X 视频下载 Beta",
+  socialDescription: locale === "en" ? "Resolve public X posts with TikDD." : "使用 TikDD 解析公开的 X 帖子。",
   socialImageAssetId: null,
   indexable: true,
   includeInSitemap: true,
@@ -76,8 +76,8 @@ export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = Publish
     seo: seo(locale as "en" | "zh-CN")
   })),
   sharedContent: [
-    { locale: "en", siteName:"TikDD", navigationLabel: "Home", footerTagline: "Clear formats. Controlled delivery.", legalNoticeMarkdown: "Download only content you own or are authorized to use.",defaultSocialTitle:"TikDD public video downloader",defaultSocialDescription:"Resolve supported public pages with TikDD.",defaultSocialImageAssetId:null },
-    { locale: "zh-CN", siteName:"TikDD", navigationLabel: "首页", footerTagline: "格式清晰，交付受控。", legalNoticeMarkdown: "仅下载你拥有或已获授权使用的内容。",defaultSocialTitle:"TikDD 公共视频下载工具",defaultSocialDescription:"使用 TikDD 解析支持的公开视频页面。",defaultSocialImageAssetId:null }
+    { locale: "en", siteName:"TikDD", navigationLabel: "Home", footerTagline: "Clear formats. Controlled delivery.", legalNoticeMarkdown: "TikDD is an independent tool and is not affiliated with X.",defaultSocialTitle:"TikDD X video downloader Beta",defaultSocialDescription:"Resolve public X posts with TikDD.",defaultSocialImageAssetId:null },
+    { locale: "zh-CN", siteName:"TikDD", navigationLabel: "首页", footerTagline: "格式清晰，交付受控。", legalNoticeMarkdown: "TikDD 是独立工具，与 X 不存在隶属关系。",defaultSocialTitle:"TikDD X 视频下载 Beta",defaultSocialDescription:"使用 TikDD 解析公开的 X 帖子。",defaultSocialImageAssetId:null }
   ],
   generatedAt: "2026-08-12T00:00:00.000Z"
 });
