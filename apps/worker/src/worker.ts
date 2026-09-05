@@ -4,7 +4,7 @@ import {
   ResolveJobDataSchema,
   type ResolveJobData
 } from "@tikdd/contracts";
-import { assertInternalStartup } from "@tikdd/deployment-preflight";
+import { assertInternalStartup, getInternalRuntimeWindowEnd } from "@tikdd/deployment-preflight";
 import {
   RedisAdmissionStore,
   loadAdmissionControlConfiguration
@@ -76,6 +76,7 @@ const routePolicyMaximumStaleMs = Number.parseInt(process.env.ADMIN_ROUTE_POLICY
 const localStackReadinessToken = process.env.LOCAL_STACK_READINESS_TOKEN ?? null;
 const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
 assertInternalStartup("worker");
+const internalWindowEndsAt = getInternalRuntimeWindowEnd();
 
 if (
   localStackReadinessToken !== null &&
@@ -259,3 +260,7 @@ const close = async (signal: string) => {
 
 process.once("SIGINT", () => void close("SIGINT"));
 process.once("SIGTERM", () => void close("SIGTERM"));
+
+if (internalWindowEndsAt) {
+  setTimeout(() => void close("INTERNAL_WINDOW_EXPIRED"), Math.max(0, internalWindowEndsAt.getTime() - Date.now())).unref();
+}

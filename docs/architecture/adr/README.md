@@ -18,6 +18,7 @@
 - [ADR-0016: Production operational scheduling and freshness supervision](0016-operational-scheduling-and-freshness.md)
 - [ADR-0017: Single-tuple first X production evidence gate](0017-x-production-evidence-scope.md)
 - [ADR-0018: Isolated internal calibration runtime](0018-isolated-internal-calibration-runtime.md)
+- [ADR-0019: Bounded calibration operations](0019-bounded-calibration-operations.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

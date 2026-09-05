@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "pending",
+  "authorizationId": "replace.with.opaque.authorization.id",
+  "scope": {
+    "providerId": "ssstwitter",
+    "platform": "x",
+    "region": "nl",
+    "observationClass": "internal"
+  },
+  "operatorCohortId": "replace.owner.cohort",
+  "sourceSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "releaseSha": "0000000000000000000000000000000000000000",
+  "qualificationRevision": 1,
+  "startsAt": "2026-01-01T00:00:00.000Z",
+  "endsAt": "2026-01-04T00:00:00.000Z",
+  "taskLimit": 9,
+  "cadenceMs": 300000,
+  "maximumConcurrency": 1,
+  "emergencyStopOwner": "replace.stop.owner",
+  "approvedAt": "2025-12-31T12:00:00.000Z"
+}

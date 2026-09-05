@@ -96,6 +96,12 @@
     "verify:work-item-18": "pnpm --filter @tikdd/persistence db:verify-admin-qualification && pnpm test:work-item-18",
     "test:work-item-19": "vitest run packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/read-service.test.ts apps/admin-api/test/app.test.ts apps/admin/test/admin-api-client.test.ts apps/admin/test/console-model.test.ts",
     "verify:x-gate-02": "node scripts/verify-x-gate-02.mjs",
+    "calibration:preflight": "node scripts/calibration-operations.mjs preflight",
+    "calibration:start": "node scripts/calibration-operations.mjs start",
+    "calibration:submit": "node scripts/calibration-operations.mjs submit",
+    "calibration:status": "node scripts/calibration-operations.mjs status",
+    "calibration:stop": "node scripts/calibration-operations.mjs stop",
+    "verify:x-gate-03": "node scripts/verify-x-gate-03.mjs",
     "smoke:work-item-16": "node scripts/smoke-work-item-16.mjs",
     "verify:work-item-11-5": "node scripts/verify-work-item-11-5.mjs",
     "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs"

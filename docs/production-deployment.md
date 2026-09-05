@@ -480,6 +480,11 @@ dedicated `resolve-internal-ssstwitter-x-nl` queue, and never restarts automatic
 Cloudflare have no route to this API. Operator tooling must submit through Docker-authorized
 execution inside the service network.
 
+ADR-0019 adds the only supported calibration lifecycle commands. See
+`docs/x-gate-03-calibration-operations.md`. An active authorization document is deliberately not
+part of a release. Normal deployment must leave all `TIKDD_CALIBRATION_*` gate values false and the
+authorization/window values empty.
+
 Repository review may expand the profile with `docker compose ... --profile calibration config`,
 but must not run it. A later, separately approved calibration window must set all four
 `TIKDD_CALIBRATION_*` gates true, supply current sanitized preflight signals, and create distinct
