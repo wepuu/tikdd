@@ -467,3 +467,21 @@ host to combine that readiness check with enabled/active timers and next trigger
 Canary is separately authorized with `TIKDD_SCHEDULED_CANARY_AUTHORIZED=true`, the exact
 `ssstwitter-x-recurring-001` definition and `CANARY_REGION=canary-global`; the manual
 `TIKDD_CANARY_AUTHORIZED` flag remains false and public Worker allocation remains zero.
+
+## 14. Default-off internal calibration profile
+
+ADR-0018 defines an isolated `calibration` Compose profile for the exact SSSTwitter/X/NL scope.
+It is absent from normal production `up` operations, publishes its API only on loopback port 3410,
+uses the dedicated `resolve-internal-ssstwitter-x-nl` queue, and never restarts automatically.
+Nginx and Cloudflare have no route to this API.
+
+Repository review may expand the profile with `docker compose ... --profile calibration config`,
+but must not run it. A later, separately approved calibration window must set all four
+`TIKDD_CALIBRATION_*` gates true, supply current sanitized preflight signals, and create distinct
+`calibration-api.attestation` and `calibration-worker.attestation` files by running the matching
+networkless preflight services. The API and Worker then verify their own role- and queue-bound
+attestation before startup. At window close, stop both services, revoke the gates, and remove the
+expired attestations before considering any later run.
+
+Deploying the profile definition is not authorization to start it, submit calibration URLs, enable
+Admin, create rollout rules, contact a Provider, or begin a pilot.

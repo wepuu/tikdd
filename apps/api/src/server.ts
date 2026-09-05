@@ -8,6 +8,7 @@ import {
 import {
   CreateResolveTaskRequestSchema,
   IdempotencyKeySchema,
+  loadResolveQueueName,
   ResolveJobDataSchema,
   type ResolveJobData,
   type TaskError
@@ -49,6 +50,7 @@ const pilotEvidenceDiagnosticsActorId = process.env.PILOT_EVIDENCE_DIAGNOSTICS_A
 const workerRegion = process.env.WORKER_REGION ?? "global";
 const admissionConfiguration = loadAdmissionControlConfiguration();
 const observationClass = assertInternalStartup();
+const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
 
 if (
   !Number.isFinite(port) ||
@@ -87,7 +89,7 @@ const admissionStore =
     : null;
 const trustedProxyResolver = new TrustedProxyResolver(admissionConfiguration.trustedProxyCidrs);
 const circuitStore = new RedisCircuitStore(redis);
-const resolveQueue = new Queue<ResolveJobData>("resolve", { connection: redis });
+const resolveQueue = new Queue<ResolveJobData>(resolveQueueName, { connection: redis });
 
 await app.register(cors, {
   origin: webOrigin,

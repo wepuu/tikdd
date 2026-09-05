@@ -313,6 +313,11 @@ uses `internal` observations for the same tuple. This repository decision enable
 Admin, rollout, publication, or indexing action. Calibration remains not authorized.
 See [the scope-freeze implementation record](x-gate-01-scope-freeze.md).
 
+Isolation implementation status (2026-09-05): X-GATE-02 adds a default-off, role-attested API and
+Worker lane with a dedicated queue for SSSTwitter/X/NL. It has not been deployed or started and
+does not authorize calibration or Provider traffic. See
+[the isolation implementation record](x-gate-02-isolated-calibration.md) and ADR-0018.
+
 Required evidence:
 
 1. at least three complete consecutive internal calibration days for each reviewed X

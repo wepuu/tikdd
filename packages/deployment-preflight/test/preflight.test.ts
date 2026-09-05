@@ -136,7 +136,38 @@ describe("internal deployment preflight", () => {
     expect(() => issueInternalPreflightAttestation({ report, runtime, encodedKey, now: new Date("2026-08-11T08:01:00.000Z"), ttlMs: 600_000 })).toThrow(/report is stale/);
     expect(assertInternalStartup({ ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toBe("internal");
     expect(() => assertInternalStartup({ ...environment, WORKER_REGION: "other", TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
+    expect(() => assertInternalStartup({ ...environment, TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl", TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
     expect(() => assertInternalStartup({ ...environment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: attestation }, new Date("2026-08-11T08:11:00.000Z"))).toThrow(/stale or expired/);
+  });
+
+  it("uses role-specific least-privilege startup boundaries", () => {
+    const apiEnvironment = {
+      ...environment,
+      TIKDD_INTERNAL_RUNTIME_ROLE: "api",
+      TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
+      DELIVERY_ENCRYPTION_KEY_ID: undefined,
+      DELIVERY_ENCRYPTION_KEY_BASE64URL: undefined,
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL: undefined
+    };
+    const workerEnvironment = {
+      ...environment,
+      TIKDD_INTERNAL_RUNTIME_ROLE: "worker",
+      TIKDD_RESOLVE_QUEUE_NAME: "resolve-internal-ssstwitter-x-nl",
+      TASK_ADMISSION_HMAC_KEY_BASE64URL: undefined,
+      PROVIDER_DIAGNOSTICS_TOKEN: undefined,
+      PILOT_EVIDENCE_DIAGNOSTICS_TOKEN: undefined,
+      PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID: undefined
+    };
+
+    expect(evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(apiEnvironment), signals, manifests, now }).decision).toBe("ready");
+    expect(evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(workerEnvironment), signals, manifests, now }).decision).toBe("ready");
+
+    const encodedKey = Buffer.alloc(32, 12).toString("base64url");
+    const apiRuntime = loadInternalRuntime(apiEnvironment);
+    const apiReport = evaluateInternalPreflight({ plan, runtime: apiRuntime, signals, manifests, now });
+    const apiAttestation = issueInternalPreflightAttestation({ report: apiReport, runtime: apiRuntime, encodedKey, now, ttlMs: 600_000 });
+    expect(assertInternalStartup({ ...apiEnvironment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: apiAttestation }, new Date("2026-08-11T08:05:00.000Z"))).toBe("internal");
+    expect(() => assertInternalStartup({ ...workerEnvironment, TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL: encodedKey, TIKDD_INTERNAL_PREFLIGHT_ATTESTATION: apiAttestation }, new Date("2026-08-11T08:05:00.000Z"))).toThrow(/does not match/);
   });
 
   it("does not require an internal attestation for the public/local path", () => {

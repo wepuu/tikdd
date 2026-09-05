@@ -1,4 +1,5 @@
 import {
+  loadResolveQueueName,
   RegionIdSchema,
   ResolveJobDataSchema,
   type ResolveJobData
@@ -73,6 +74,7 @@ const deploymentId = process.env.TIKDD_DEPLOYMENT_ID ?? (production ? "" : "tikd
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(deploymentId)) throw new Error("TIKDD_DEPLOYMENT_ID is invalid.");
 const routePolicyMaximumStaleMs = Number.parseInt(process.env.ADMIN_ROUTE_POLICY_TTL_MS ?? "60000",10);
 const localStackReadinessToken = process.env.LOCAL_STACK_READINESS_TOKEN ?? null;
+const resolveQueueName = loadResolveQueueName(process.env.TIKDD_RESOLVE_QUEUE_NAME);
 assertInternalStartup();
 
 if (
@@ -173,7 +175,7 @@ if (providerHealth.enabled && providerHealth.policy) {
 }
 
 const worker = new Worker<ResolveJobData>(
-  "resolve",
+  resolveQueueName,
   async (job) => {
     const data = ResolveJobDataSchema.parse(job.data);
     return processResolveJob(data, {

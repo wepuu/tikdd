@@ -95,6 +95,7 @@
     "test:work-item-18": "vitest run apps/admin-api/test/qualification-service.test.ts packages/persistence/test/qualification-admin-migration.test.ts packages/admin-contracts/test/qualification-contract.test.ts packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/app.test.ts apps/admin/test/admin-api-client.test.ts",
     "verify:work-item-18": "pnpm --filter @tikdd/persistence db:verify-admin-qualification && pnpm test:work-item-18",
     "test:work-item-19": "vitest run packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/read-service.test.ts apps/admin-api/test/app.test.ts apps/admin/test/admin-api-client.test.ts apps/admin/test/console-model.test.ts",
+    "verify:x-gate-02": "node scripts/verify-x-gate-02.mjs",
     "smoke:work-item-16": "node scripts/smoke-work-item-16.mjs",
     "verify:work-item-11-5": "node scripts/verify-work-item-11-5.mjs",
     "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs"

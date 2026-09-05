@@ -161,8 +161,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 20s
     environment:
-      DATABASE_URL_FILE: /run/secrets/database_url
-      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_RESOLVE_QUEUE_NAME: resolve
       TASK_ADMISSION_HMAC_KEY_BASE64URL_FILE: /run/secrets/task_admission_hmac_key
       PROVIDER_DIAGNOSTICS_TOKEN_FILE: /run/secrets/provider_diagnostics_token
       PILOT_EVIDENCE_DIAGNOSTICS_TOKEN_FILE: /run/secrets/pilot_evidence_diagnostics_token
@@ -201,12 +200,185 @@ services:
     restart: unless-stopped
     stop_grace_period: 45s
     environment:
+      TIKDD_RESOLVE_QUEUE_NAME: resolve
       DATABASE_URL_FILE: /run/secrets/database_url
       REDIS_URL_FILE: /run/secrets/redis_url
       DELIVERY_ENCRYPTION_KEY_BASE64URL_FILE: /run/secrets/delivery_encryption_key
       PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
       TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
       TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/preflight.attestation
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL DELIVERY_ENCRYPTION_KEY_BASE64URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+      TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
+    healthcheck:
+      test: ["CMD", "/workspace/docker/secret-entrypoint.sh", "pnpm", "--filter", "@tikdd/worker", "probe:production"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    secrets:
+      - source: worker_database_url
+        target: database_url
+      - redis_url
+      - delivery_encryption_key
+      - provider_rollout_cohort_key
+      - internal_preflight_hmac_key
+    networks:
+      - data
+      - provider-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_WORKER_MEMORY_LIMIT:-384m}
+    pids_limit: 192
+
+  calibration-api-preflight:
+    <<: *application-base
+    profiles: ["calibration"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "preflight:internal"]
+    restart: "no"
+    network_mode: none
+    environment: &calibration-api-environment
+      TIKDD_DEPLOYMENT_STAGE: internal
+      TIKDD_OBSERVATION_CLASS: internal
+      TIKDD_INTERNAL_RUNTIME_ROLE: api
+      TIKDD_RESOLVE_QUEUE_NAME: resolve-internal-ssstwitter-x-nl
+      ENABLE_MOCK_PROVIDER: "false"
+      ENABLE_TWITTERSAVER_PROVIDER: "false"
+      ENABLE_DLPANDA_PROVIDER: "false"
+      ENABLE_SSSTWITTER_PROVIDER: ${TIKDD_CALIBRATION_ENABLE_SSSTWITTER_PROVIDER:-false}
+      SSSTWITTER_TERMS_APPROVED: ${TIKDD_CALIBRATION_SSSTWITTER_TERMS_APPROVED:-false}
+      SSSTWITTER_DELIVERY_AUDIT_APPROVED: ${TIKDD_CALIBRATION_SSSTWITTER_DELIVERY_AUDIT_APPROVED:-false}
+      PROVIDER_ROLLOUT_ENABLED: ${TIKDD_CALIBRATION_ROLLOUT_ENABLED:-false}
+      PROVIDER_ROLLOUT_DEVELOPMENT_BYPASS: "false"
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TASK_ADMISSION_HMAC_KEY_BASE64URL_FILE: /run/secrets/task_admission_hmac_key
+      PROVIDER_DIAGNOSTICS_TOKEN_FILE: /run/secrets/provider_diagnostics_token
+      PILOT_EVIDENCE_DIAGNOSTICS_TOKEN_FILE: /run/secrets/pilot_evidence_diagnostics_token
+      TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_OUTPUT: /run/tikdd/calibration-api.attestation
+      TIKDD_REQUIRED_SECRET_ENV_VARS: TASK_ADMISSION_HMAC_KEY_BASE64URL PROVIDER_DIAGNOSTICS_TOKEN PILOT_EVIDENCE_DIAGNOSTICS_TOKEN TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+    secrets:
+      - task_admission_hmac_key
+      - provider_diagnostics_token
+      - pilot_evidence_diagnostics_token
+      - internal_preflight_hmac_key
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  calibration-worker-preflight:
+    <<: *application-base
+    profiles: ["calibration"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "preflight:internal"]
+    restart: "no"
+    network_mode: none
+    environment: &calibration-worker-environment
+      TIKDD_DEPLOYMENT_STAGE: internal
+      TIKDD_OBSERVATION_CLASS: internal
+      TIKDD_INTERNAL_RUNTIME_ROLE: worker
+      TIKDD_RESOLVE_QUEUE_NAME: resolve-internal-ssstwitter-x-nl
+      ENABLE_MOCK_PROVIDER: "false"
+      ENABLE_TWITTERSAVER_PROVIDER: "false"
+      ENABLE_DLPANDA_PROVIDER: "false"
+      ENABLE_SSSTWITTER_PROVIDER: ${TIKDD_CALIBRATION_ENABLE_SSSTWITTER_PROVIDER:-false}
+      SSSTWITTER_TERMS_APPROVED: ${TIKDD_CALIBRATION_SSSTWITTER_TERMS_APPROVED:-false}
+      SSSTWITTER_DELIVERY_AUDIT_APPROVED: ${TIKDD_CALIBRATION_SSSTWITTER_DELIVERY_AUDIT_APPROVED:-false}
+      PROVIDER_ROLLOUT_ENABLED: ${TIKDD_CALIBRATION_ROLLOUT_ENABLED:-false}
+      PROVIDER_ROLLOUT_DEVELOPMENT_BYPASS: "false"
+      RESOLVER_CONCURRENCY: "1"
+      DELIVERY_ENCRYPTION_KEY_BASE64URL_FILE: /run/secrets/delivery_encryption_key
+      PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
+      TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_OUTPUT: /run/tikdd/calibration-worker.attestation
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DELIVERY_ENCRYPTION_KEY_BASE64URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+    secrets:
+      - delivery_encryption_key
+      - provider_rollout_cohort_key
+      - internal_preflight_hmac_key
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
+  calibration-api:
+    <<: *application-base
+    profiles: ["calibration"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/api", "start"]
+    restart: "no"
+    stop_grace_period: 20s
+    environment:
+      <<: *calibration-api-environment
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_OUTPUT: ""
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/calibration-api.attestation
+      TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL TASK_ADMISSION_HMAC_KEY_BASE64URL PROVIDER_DIAGNOSTICS_TOKEN PILOT_EVIDENCE_DIAGNOSTICS_TOKEN TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
+      TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
+    ports:
+      - 127.0.0.1:${TIKDD_CALIBRATION_API_HOST_PORT:-3410}:4000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    secrets:
+      - source: api_database_url
+        target: database_url
+      - redis_url
+      - task_admission_hmac_key
+      - provider_diagnostics_token
+      - pilot_evidence_diagnostics_token
+      - internal_preflight_hmac_key
+    networks:
+      - data
+      - host-ingress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: ${TIKDD_API_MEMORY_LIMIT:-320m}
+    pids_limit: 128
+
+  calibration-worker:
+    <<: *application-base
+    profiles: ["calibration"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/worker", "start"]
+    restart: "no"
+    stop_grace_period: 45s
+    environment:
+      <<: *calibration-worker-environment
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_OUTPUT: ""
+      TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/calibration-worker.attestation
       TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL DELIVERY_ENCRYPTION_KEY_BASE64URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
       TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
     healthcheck:

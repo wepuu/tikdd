@@ -9,5 +9,8 @@ enabled, delivery-verified platform capability whose explicit region list (or an
 `"*"` declaration) admits the concrete deployment region. Owner assertions and reachable egress
 cannot substitute for this capability check.
 
-API and Worker processes that label tasks `internal` must verify the same signed attestation before
-startup. Public/development processes remain unchanged.
+API and Worker processes that label tasks `internal` must verify short-lived signed attestations
+before startup. Attestations are bound to the exact service role, resolve queue, deployment,
+region, Provider set, and relevant least-privilege runtime controls. API and Worker therefore use
+separate attestations and do not need each other's secrets. Public/development processes remain
+unchanged.
