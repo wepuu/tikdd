@@ -163,6 +163,8 @@ services:
     restart: unless-stopped
     stop_grace_period: 20s
     environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
       TIKDD_RESOLVE_QUEUE_NAME: resolve
       TASK_ADMISSION_HMAC_KEY_BASE64URL_FILE: /run/secrets/task_admission_hmac_key
       PROVIDER_DIAGNOSTICS_TOKEN_FILE: /run/secrets/provider_diagnostics_token
