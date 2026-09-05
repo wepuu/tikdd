@@ -46,12 +46,13 @@ import { AccountSecurity } from "./account-security";
 import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
 import { QualificationWorkbench } from "./qualification-workbench";
+import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 
 type RefreshState = "idle" | "refreshing" | "failed";
 
 const navGroups = [
   { label: "主页", items: [{ href: "#overview", label: "总览", icon: HouseLine }] },
-  { label: "运行", items: [{ href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
+  { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
   { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
   { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }] },
   { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }] }
@@ -241,6 +242,11 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
                 {alerts.length > 0 ? alerts.slice(0, 4).map((alert) => <AttentionItem alert={alert} key={alert.id} />) : <EmptyState icon={<CheckCircle size={27} weight="fill" />} title="当前没有告警" detail="新告警会按严重度出现在这里。" />}
               </div>
             </div>
+          </section>
+
+          <section className="truth-section" id="operational-truth">
+            <SectionHeading eyebrow="OPERATE / EXPLAINABLE SUPPORT" title="运营真相" detail="从可识别到可索引逐级核对；任一断点都保留具体原因，不把计划中的平台显示为可下载。" />
+            <OperationalTruthDashboard view={snapshot.operationalTruth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
           </section>
 
           <section className="routing-section" id="routing">

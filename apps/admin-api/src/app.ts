@@ -19,6 +19,7 @@ import {
   assertAdminSafeValue,
   type AdminLocaleList,
   type AdminOverview,
+  type AdminOperationalTruth,
   type AdminPageList,
   type AdminPlatformList,
   type AdminProviderList,
@@ -46,6 +47,7 @@ import type { AdminApiConfiguration } from "./config";
 
 export interface AdminReadApi {
   getOverview(): Promise<AdminOverview>;
+  getOperationalTruth(): Promise<AdminOperationalTruth>;
   listRoutes(): Promise<AdminRouteList>;
   getRouteDetail(providerId: string, platform: string, region: string): Promise<AdminRouteDetail | null>;
   listProviders(): Promise<AdminProviderList>;
@@ -249,6 +251,8 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
     safeSend(reply, await options.reads.listProviders()));
   app.get("/admin/v1/platforms", async (_request, reply) =>
     safeSend(reply, await options.reads.listPlatforms()));
+  app.get("/admin/v1/operational-truth", async (_request, reply) =>
+    safeSend(reply, await options.reads.getOperationalTruth()));
 
   app.get<{Params:{platform:string;region:string}}>("/admin/v1/platform-presentations/:platform/:region",async(request,reply)=>{
     const platform=PlatformIdSchema.safeParse(request.params.platform);const region=RegionIdSchema.safeParse(request.params.region);

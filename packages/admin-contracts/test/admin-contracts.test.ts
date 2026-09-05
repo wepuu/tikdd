@@ -9,6 +9,7 @@ import {
   AdminLocaleDraftCommandSchema,
   AdminPageDraftCommandSchema,
   AdminOverviewSchema,
+  AdminOperationalTruthSchema,
   AdminPageRevisionSchema,
   AdminPlatformDraftCommandSchema,
   AdminPlatformManagementViewSchema,
@@ -85,6 +86,26 @@ describe("Admin internal contracts", () => {
     ]) {
       expect(() => assertAdminSafeValue(unsafe)).toThrow();
     }
+  });
+
+  it("requires one complete seven-stage operational truth ladder", () => {
+    const truth = {
+      schemaVersion: "1",
+      deployment: "tikdd",
+      region: "nl",
+      generatedAt: "2026-08-11T12:00:00.000Z",
+      degradedSources: [],
+      services: (["canary", "evidence", "cleanup"] as const).map((service) => ({ service, state: "missing", freshness: "missing", ready: false, observedAt: null, nextExpectedAt: null, consecutiveFailures: 0 })),
+      platforms: [{
+        platform: "x", displayName: "X", region: "nl", catalogStatus: "experimental", publicAvailability: "preview",
+        contentCoverageBps: 0, currentAvailability: "unavailable", indexEligibility: "ineligible",
+        ladder: (["catalog", "resolution", "delivery", "canary", "runtime", "lifecycle", "seo"] as const).map((id) => ({ id, state: id === "catalog" ? "pass" : "block", observedAt: null })),
+        reasons: [{ code: "provider_disabled", providerId: "ssstwitter" }], providers: []
+      }]
+    };
+    expect(AdminOperationalTruthSchema.parse(truth)).toEqual(truth);
+    expect(() => AdminOperationalTruthSchema.parse({ ...truth, platforms: [{ ...truth.platforms[0], sourceUrl: "https://x.com/a/status/1" }] })).toThrow();
+    expect(() => AdminOperationalTruthSchema.parse({ ...truth, platforms: [{ ...truth.platforms[0], ladder: truth.platforms[0]!.ladder.slice(0, 6) }] })).toThrow();
   });
 
   it("accepts canonical BCP 47 locale tags and rejects invalid registry relationships", () => {

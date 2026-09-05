@@ -82,6 +82,27 @@ function options(overrides: Partial<AdminReadServiceOptions> = {}): AdminReadSer
       async listAttemptRouteSummaries() { return [{ providerId: "twittersaver", platform: "x", region: "nl", attemptCount: 50, failureCounts: { provider_challenge: 1 } }]; },
       async listCanaryHealth() { return []; }
     },
+    operationalServices: {
+      async list() {
+        return (["canary", "evidence", "cleanup"] as const).map((service) => ({
+          service,
+          deployment: "tikdd",
+          runId: `${service}-run`,
+          state: "completed" as const,
+          leaseState: "released" as const,
+          lastStartedAt: now.toISOString(),
+          lastFinishedAt: now.toISOString(),
+          nextExpectedAt: new Date(now.getTime() + 60_000).toISOString(),
+          staleAfterAt: new Date(now.getTime() + 120_000).toISOString(),
+          consecutiveFailures: 0,
+          lastErrorCode: null,
+          sanitizedSummary: {},
+          updatedAt: now.toISOString(),
+          freshness: "fresh" as const,
+          ready: true
+        }));
+      }
+    },
     editorial: {
       async listRoutePolicies() { return []; },
       async listLocales() { return [...ADMIN_LOCALE_FIXTURES].filter(({ state }) => state === "published"); },
@@ -116,6 +137,51 @@ describe("Admin read composition", () => {
     const overview = await service.getOverview();
     expect(overview).toMatchObject({ state: "healthy", queue: { queued: 1 }, delivery: { handoffCount: 10, failureCount: 1 } });
     expect(() => assertAdminSafeValue({ routes, overview })).not.toThrow();
+  });
+
+  it("explains support as a seven-stage ladder without confusing catalog recognition with availability", async () => {
+    const service = new AdminReadService(options({
+      manifests: [{ ...manifest, enabled: false }],
+      operations: {
+        async listAttemptRouteSummaries() { return []; },
+        async listCanaryHealth() {
+          return [{
+            canaryId: "x-nl",
+            providerId: "twittersaver",
+            platform: "x",
+            region: "nl",
+            sampleCount: 1,
+            successCount: 1,
+            latestStatus: "succeeded",
+            latestFailureCode: null,
+            latencyP95Ms: 800,
+            averageFormatCount: 1,
+            minimumLinkLifetimeMs: 60_000,
+            averageFallbackDepth: 0,
+            lastRecordedAt: now.toISOString(),
+            failureCounts: {}
+          }];
+        }
+      }
+    }));
+    const truth = await service.getOperationalTruth();
+    expect(truth.services.every(({ ready }) => ready)).toBe(true);
+    expect(truth.platforms[0]).toMatchObject({
+      platform: "x",
+      currentAvailability: "unavailable",
+      indexEligibility: "ineligible",
+      ladder: [
+        { id: "catalog", state: "pass" },
+        { id: "resolution", state: "pass" },
+        { id: "delivery", state: "pass" },
+        { id: "canary", state: "pass" },
+        { id: "runtime", state: "block" },
+        { id: "lifecycle", state: "pass" },
+        { id: "seo", state: "block" }
+      ]
+    });
+    expect(truth.platforms[0]?.reasons).toContainEqual({ code: "provider_disabled", providerId: "twittersaver" });
+    expect(() => assertAdminSafeValue(truth)).not.toThrow();
   });
 
   it("marks rollout failure unavailable instead of inventing a pause or healthy route", async () => {

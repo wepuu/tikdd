@@ -1,5 +1,6 @@
 import {
   AdminLocaleListSchema,
+  AdminOperationalTruthSchema,
   AdminOverviewSchema,
   AdminPageListSchema,
   AdminPlatformListSchema,
@@ -11,6 +12,7 @@ import {
   AdminDegradedSourceSchema,
   type AdminLocaleRevision,
   type AdminOverview,
+  type AdminOperationalTruth,
   type AdminPageRevision,
   type AdminPlatformPresentationRevisionV2,
   type AdminPlatformList,
@@ -20,6 +22,7 @@ import {
   type AdminRoutePolicyRevision,
   type AdminRouteSummary,
   type AdminRuntime,
+  type AdminSupportReasonCode,
   type AdminSeoOverview,
   type PublishedContentSnapshot
 } from "@tikdd/admin-contracts";
@@ -27,7 +30,8 @@ import type { ProviderManifest } from "@tikdd/contracts";
 import type {
   AdminOverviewPersistenceMetrics,
   AttemptRouteSummary,
-  CanaryHealthSummary
+  CanaryHealthSummary,
+  OperationalServiceProjection
 } from "@tikdd/persistence";
 import type { PlatformDefinition } from "@tikdd/platform";
 import type { CircuitSnapshot } from "@tikdd/routing-health";
@@ -73,6 +77,7 @@ export interface AdminReadServiceOptions {
   guardRequired?: boolean;
   guardMaximumStaleMs?: number;
   operations: AdminOperationalReadSource;
+  operationalServices?: { list(deployment: string, now?: Date): Promise<OperationalServiceProjection[]> };
   editorial: AdminEditorialReadSource;
   queue: AdminQueueReadSource;
   health: AdminReadHealthSource;
@@ -441,6 +446,186 @@ export class AdminReadService {
           seoReady: platform.status === "stable" && healthyRouteCount > 0 && contentCoverageBps === 10_000
         };
       })
+    });
+  }
+
+  async getOperationalTruth(): Promise<AdminOperationalTruth> {
+    const now = this.now();
+    const since = new Date(now.getTime() - 24 * 60 * 60 * 1_000);
+    const [routeResult, localeResult, pageResult, presentationResult, canaryResult, guardResult, serviceResult] = await Promise.all([
+      settled(this.listRoutes(), this.options.readTimeoutMs * 2),
+      settled(this.options.editorial.listLocales("published"), this.options.readTimeoutMs),
+      settled(this.options.editorial.listPages("published"), this.options.readTimeoutMs),
+      settled(this.options.editorial.listPlatformPresentations?.("published", this.options.region) ?? Promise.resolve([]), this.options.readTimeoutMs),
+      settled(this.options.operations.listCanaryHealth(since), this.options.readTimeoutMs),
+      this.options.guards
+        ? settled(this.options.guards.loadGuardSnapshot(), this.options.readTimeoutMs)
+        : Promise.resolve({ value: null, failed: this.options.guardRequired === true }),
+      this.options.operationalServices
+        ? settled(this.options.operationalServices.list(this.options.deployment, now), this.options.readTimeoutMs)
+        : Promise.resolve({ value: null, failed: true })
+    ]);
+    const degraded: AdminDegradedSource[] = [
+      ...(routeResult.value?.degradedSources ?? [])
+    ];
+    if (routeResult.failed || canaryResult.failed || serviceResult.failed) degraded.push("operations");
+    if (localeResult.failed || pageResult.failed || presentationResult.failed) degraded.push("editorial");
+    if (guardResult.failed) degraded.push("pilot_guard");
+
+    const routes = routeResult.value?.routes ?? [];
+    const localeCount = localeResult.value?.length ?? 0;
+    const pages = pageResult.value ?? [];
+    const platformRows = new Map(this.options.platforms.map((catalog) => {
+      const platformRoutes = routes.filter(({ tuple }) => tuple.platform === catalog.id);
+      const pageLocaleCount = new Set(
+        pages.filter((page) => page.pageType === "platform" && page.platform === catalog.id).map(({ locale }) => locale)
+      ).size;
+      const contentCoverageBps = localeCount === 0 ? 0 : Math.round((pageLocaleCount / localeCount) * 10_000);
+      const healthyRouteCount = platformRoutes.filter(({ state, productionEligible }) => productionEligible && state === "healthy").length;
+      const presentation = presentationResult.value?.find((item) => item.platform === catalog.id);
+      const publicAvailability = presentation?.publicAvailability ?? (catalog.status === "paused"
+        ? "paused" as const
+        : catalog.status === "stable"
+          ? "listed" as const
+          : catalog.status === "experimental"
+            ? "preview" as const
+            : "hidden" as const);
+      return [catalog.id, {
+        displayName: presentation?.publicDisplayName ?? catalog.displayName,
+        publicAvailability,
+        contentCoverageBps,
+        seoReady: catalog.status === "stable" && healthyRouteCount > 0 && contentCoverageBps === 10_000
+      }] as const;
+    }));
+    const canaries = new Map((canaryResult.value ?? []).map((item) => [key(item.providerId, item.platform, item.region), item]));
+    const guards = new Map((guardResult.value?.guards ?? []).map((item) => [key(item.providerId, item.platform, item.region), item]));
+
+    const platforms = this.options.platforms.map((catalog) => {
+      const row = platformRows.get(catalog.id);
+      const editorialUnavailable = localeResult.failed || pageResult.failed || presentationResult.failed;
+      const platformRoutes = routes.filter(({ tuple }) => tuple.platform === catalog.id);
+      const providers = this.options.manifests.flatMap((manifest) => {
+        const capability = manifest.platforms.find(({ platform }) => platform === catalog.id);
+        if (!capability) return [];
+        const regionEligible = manifest.regions.includes("*") || manifest.regions.includes(this.options.region);
+        const route = platformRoutes.find(({ tuple }) => tuple.providerId === manifest.id);
+        const canary = canaries.get(key(manifest.id, catalog.id, this.options.region));
+        const guard = guards.get(key(manifest.id, catalog.id, this.options.region));
+        const canaryStale = canary
+          ? now.getTime() - new Date(canary.lastRecordedAt).getTime() > this.options.freshnessMs
+          : false;
+        const canaryState = canaryResult.failed
+          ? "unavailable" as const
+          : !canary
+            ? "not_configured" as const
+            : canaryStale
+              ? "stale" as const
+              : canary.latestStatus === "succeeded"
+                ? "fresh" as const
+                : "failed" as const;
+        const reasons: AdminSupportReasonCode[] = [];
+        if (!regionEligible) reasons.push("region_mismatch");
+        if (!manifest.enabled) reasons.push("provider_disabled");
+        if (capability.deliveryModes.length === 0) reasons.push("no_delivery_mode");
+        if (capability.verificationStatus !== "delivery_verified") reasons.push("delivery_unverified");
+        if (canaryState === "not_configured") reasons.push("canary_not_configured");
+        if (canaryState === "failed") reasons.push("canary_failed");
+        if (canaryState === "stale") reasons.push("canary_stale");
+        if (canaryState === "unavailable") reasons.push("canary_unavailable");
+        if (manifest.enabled && regionEligible && capability.deliveryModes.length > 0 && capability.verificationStatus === "delivery_verified" && (route?.allocationBps ?? 0) === 0) {
+          reasons.push("missing_rollout_grant");
+        }
+        if (guard && guard.action !== "eligible_for_review") reasons.push("restrictive_guard");
+        if (route?.circuitState === "open") reasons.push("open_circuit");
+        if (route?.state === "stale") reasons.push("circuit_stale");
+        if (route?.state === "insufficient_data") reasons.push("insufficient_runtime_evidence");
+        if (route?.state === "unavailable") reasons.push("runtime_data_unavailable");
+        return [{
+          tuple: { providerId: manifest.id, platform: catalog.id, region: this.options.region },
+          displayName: manifest.displayName,
+          manifestEnabled: manifest.enabled,
+          regionEligible,
+          resolutionCapable: true,
+          deliveryModes: capability.deliveryModes,
+          deliveryVerified: capability.verificationStatus === "delivery_verified",
+          canaryState,
+          canaryObservedAt: canary?.lastRecordedAt ?? null,
+          allocationBps: route?.allocationBps ?? 0,
+          guardAction: guard?.action ?? null,
+          circuitState: route?.circuitState ?? "unknown",
+          runtimeState: route?.state ?? "not_routed",
+          reasons: [...new Set(reasons)]
+        }];
+      });
+      const reasonRows: AdminOperationalTruth["platforms"][number]["reasons"] = providers.flatMap((provider) =>
+        provider.reasons.map((code) => ({ code, providerId: provider.tuple.providerId })));
+      if (providers.length === 0) reasonRows.push({ code: "no_provider_capability" as const, providerId: null });
+      if (catalog.status !== "stable") reasonRows.push({ code: "catalog_not_stable" as const, providerId: null });
+      if (!editorialUnavailable && (!row || row.publicAvailability !== "listed")) reasonRows.push({ code: "platform_not_listed" as const, providerId: null });
+      if (!editorialUnavailable && (!row || row.contentCoverageBps < 10_000)) reasonRows.push({ code: "content_incomplete" as const, providerId: null });
+      if (!editorialUnavailable && !row?.seoReady) reasonRows.push({ code: "seo_ineligible" as const, providerId: null });
+
+      const regionProviders = providers.filter(({ regionEligible }) => regionEligible);
+      const deliveryProviders = regionProviders.filter(({ deliveryModes, deliveryVerified }) => deliveryModes.length > 0 && deliveryVerified);
+      const freshCanary = deliveryProviders.some(({ canaryState }) => canaryState === "fresh");
+      const canaryUnavailable = canaryResult.failed;
+      const healthyRoutes = platformRoutes.filter(({ allocationBps, state }) => allocationBps > 0 && state === "healthy");
+      const warningRoutes = platformRoutes.filter(({ allocationBps, state }) => allocationBps > 0 && state === "warning");
+      const runtimePartial = platformRoutes.some(({ state }) => ["warning", "stale", "insufficient_data"].includes(state));
+      const runtimeUnavailable = routeResult.failed || (routeResult.value?.degradedSources ?? []).some((source) => ["rollout", "pilot_guard", "routing_health"].includes(source));
+      const observedCanaries = providers.map(({ canaryObservedAt }) => canaryObservedAt).filter((value): value is string => value !== null).sort();
+      const observedRoutes = platformRoutes.map(({ observedAt }) => observedAt).filter((value): value is string => value !== null).sort();
+      return {
+        platform: catalog.id,
+        displayName: row?.displayName ?? catalog.displayName,
+        region: this.options.region,
+        catalogStatus: catalog.status,
+        publicAvailability: row?.publicAvailability ?? (catalog.status === "paused" ? "paused" : "hidden"),
+        contentCoverageBps: row?.contentCoverageBps ?? 0,
+        currentAvailability: healthyRoutes.length > 0 ? "available" as const : runtimeUnavailable || warningRoutes.length > 0 || runtimePartial ? "degraded" as const : "unavailable" as const,
+        indexEligibility: editorialUnavailable ? "unavailable" as const : row?.seoReady ? "eligible" as const : "ineligible" as const,
+        ladder: [
+          { id: "catalog" as const, state: "pass" as const, observedAt: null },
+          { id: "resolution" as const, state: regionProviders.length > 0 ? "pass" as const : "block" as const, observedAt: null },
+          { id: "delivery" as const, state: deliveryProviders.length > 0 ? "pass" as const : "block" as const, observedAt: null },
+          { id: "canary" as const, state: canaryUnavailable ? "unavailable" as const : freshCanary ? "pass" as const : observedCanaries.length > 0 ? "warning" as const : "block" as const, observedAt: observedCanaries.at(-1) ?? null },
+          { id: "runtime" as const, state: runtimeUnavailable ? "unavailable" as const : healthyRoutes.length > 0 ? "pass" as const : warningRoutes.length > 0 || runtimePartial ? "warning" as const : "block" as const, observedAt: observedRoutes.at(-1) ?? null },
+          { id: "lifecycle" as const, state: catalog.status === "stable" ? "pass" as const : catalog.status === "experimental" ? "warning" as const : "block" as const, observedAt: null },
+          { id: "seo" as const, state: editorialUnavailable ? "unavailable" as const : row?.seoReady ? "pass" as const : "block" as const, observedAt: editorialUnavailable ? null : now.toISOString() }
+        ],
+        reasons: [...new Map(reasonRows.map((reason) => [`${reason.code}\0${reason.providerId ?? ""}`, reason])).values()],
+        providers
+      };
+    });
+
+    const serviceMap = new Map((serviceResult.value ?? []).map((item) => [item.service, item]));
+    return AdminOperationalTruthSchema.parse({
+      schemaVersion: "1",
+      deployment: this.options.deployment,
+      region: this.options.region,
+      generatedAt: now.toISOString(),
+      degradedSources: uniqueSources(degraded),
+      services: (["canary", "evidence", "cleanup"] as const).map((service) => {
+        const status = serviceMap.get(service);
+        return status ? {
+          service,
+          state: status.state,
+          freshness: status.freshness,
+          ready: status.ready,
+          observedAt: status.lastFinishedAt,
+          nextExpectedAt: status.nextExpectedAt,
+          consecutiveFailures: status.consecutiveFailures
+        } : {
+          service,
+          state: "missing" as const,
+          freshness: "missing" as const,
+          ready: false,
+          observedAt: null,
+          nextExpectedAt: null,
+          consecutiveFailures: 0
+        };
+      }),
+      platforms
     });
   }
 

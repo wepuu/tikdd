@@ -2,7 +2,7 @@ import { ADMIN_OVERVIEW_FIXTURES } from "@tikdd/admin-contracts/fixtures";
 import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminApiConnection, type AdminTransport } from "../lib/admin-api-client";
-import { platforms, providers, routeDetail, routeList, runtime, seo } from "./fixture";
+import { operationalTruth, platforms, providers, routeDetail, routeList, runtime, seo } from "./fixture";
 
 const csrf={schemaVersion:"1",csrfToken:`v1.${"a".repeat(40)}.${"b".repeat(43)}`,expiresInSeconds:300};
 const routePolicy={schemaVersion:"1",platform:"x",region:"nl",headRevision:null,baselineProviderIds:["twittersaver"],effectiveProviderIds:["twittersaver"],technicalProviderIds:[],excludedProviders:[],published:null,draft:null,propagation:{state:"propagated",durableRevision:null,projectedRevision:null}};
@@ -17,6 +17,7 @@ const production: AdminApiConnection = {
 
 const payloads = new Map<string, unknown>([
   ["/admin/v1/overview", ADMIN_OVERVIEW_FIXTURES.healthy],
+  ["/admin/v1/operational-truth", operationalTruth],
   ["/admin/v1/routes", routeList],
   ["/admin/v1/providers", providers],
   ["/admin/v1/platforms", platforms],
@@ -112,7 +113,7 @@ describe("Admin console API client", () => {
       });
       expect(snapshot.overview.status).toBe("ready");
       expect(snapshot.routes.status).toBe("ready");
-      expect(observedHosts.length).toBe(15);
+      expect(observedHosts.length).toBe(16);
       expect(new Set(observedHosts)).toEqual(new Set(["admin.tikdd.example"]));
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

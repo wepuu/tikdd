@@ -28,6 +28,10 @@ and an existing same-platform page association. A `listed` publication must pass
 catalog, route, locale, page, and SEO readiness gate; Admin cannot edit hosts, extractors, adapter
 capability, route eligibility, or delivery allowlists.
 
+Work Item 19 adds `/admin/v1/operational-truth`, a read-only seven-stage support ladder with exact
+sanitized exclusion reasons and WI17 scheduler freshness. It composes existing authorities and
+cannot create traffic, qualification, rollout, publication, or Provider-request side effects.
+
 Content management uses an open canonical BCP 47 Locale registry, code-owned page definitions,
 strict structured content, Safe Markdown, and versioned locale/page/shared-block drafts. Fallback
 content is explicit and cannot satisfy translation readiness. Public Web still reads no draft.
