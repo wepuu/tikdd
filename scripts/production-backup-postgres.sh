@@ -71,7 +71,7 @@ raw_bytes=$(stat -c '%s' "$plain_partial")
 
 # Validate the custom archive in a network-isolated disposable container before encryption.
 cat "$plain_partial" | docker run --rm -i --read-only --network none \
-  --security-opt no-new-privileges:true --cap-drop ALL "$postgres_image" pg_restore --list - \
+  --security-opt no-new-privileges:true --cap-drop ALL "$postgres_image" pg_restore --list \
   >/dev/null
 
 gpg --batch --yes --trust-model always --output "$encrypted_partial" \
