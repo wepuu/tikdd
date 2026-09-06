@@ -25,14 +25,27 @@ describe("delivery handoff copy", () => {
     expect(handoffCopy).not.toContain("fallback");
   });
 
-  it("keeps the release-owned X Beta surface when an older homepage snapshot is active", () => {
+  it("keeps the release-owned X and Instagram Beta surface when an older homepage snapshot is active", () => {
     const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(({ locale }) => locale === "en");
     expect(homepage).toBeDefined();
     const current = copyForPage(homepage!);
 
     expect(current.hero.badge).toContain("Public Beta");
-    expect(current.supported.platforms).toEqual(["X"]);
+    expect(current.supported.platforms).toEqual(["X", "Instagram"]);
     expect(current.faq.items[0]?.[1]).toContain("x.com");
-    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X.");
+    expect(current.faq.items[0]?.[1]).toContain("Instagram");
+    expect(current.form.label).toBe("Public video page URL");
+    expect(current.trust.description).toContain("third-party processing service");
+    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X or Instagram.");
+  });
+
+  it("states the public-only and credential-free Instagram boundary in both locales", () => {
+    const english = JSON.stringify(getCopy("en"));
+    const chinese = JSON.stringify(getCopy("zh-CN"));
+
+    expect(english).toContain("public Instagram Reels");
+    expect(english).toContain("cookies");
+    expect(chinese).toContain("公开的 Instagram Reel");
+    expect(chinese).toContain("sessionid");
   });
 });

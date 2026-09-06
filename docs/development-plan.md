@@ -1,19 +1,20 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@3f22e1c`
+- Repository checkpoint: `main@00bc4b9`
 - Roadmap revision date: 2026-09-06
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The first public X Beta is live through SSSTwitter and Delivery. ADR-0020 replaces elapsed
+The first public X Beta is live through SSSTwitter and Delivery. A production-disabled SaveFromIns
+Instagram adapter is deployed and Work Item 22 is preparing the public disclosure and bounded
+qualification path. ADR-0020 replaces elapsed
 calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
 immutable images, backup, one real browser download, a short health watch, and fast rollback. X
-remains experimental rather than `stable`; other catalog entries are not public support claims.
-The next product lane is bounded Provider feasibility for Instagram. A failed feasibility review
-does not create an adapter, production route, public support claim, or SEO page.
+remains experimental rather than `stable`; Instagram is not live until its exact route is separately
+authorized and proven. No Instagram SEO page is created before qualification.
 
 ## Baseline classification
 
@@ -32,7 +33,9 @@ does not create an adapter, production route, public support claim, or SEO page.
 
 ### Current production baseline
 
-- X Public Beta is live from `main@3f22e1c` using GitHub-built immutable images.
+- X Public Beta is live from `main@00bc4b9` using GitHub-built immutable images.
+- SaveFromIns/Instagram/NL code is deployed but its Provider flags remain false, approval fields are
+  empty, no rollout rule exists, and production has recorded zero SaveFromIns attempts.
 - The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
   an emergency deny path.
 - A real resolve, delivery-ticket, and non-zero browser-style media transfer passed, followed by a
@@ -337,8 +340,8 @@ that no safe candidate currently exists.
 
 Lane: B.
 
-Status: production-disabled `savefromins.com` adapter implemented on
-`codex/wi21-savefromins-instagram-adapter`. It includes deterministic fixtures, normalization,
+Status: merged and deployed from `main@00bc4b9` on 2026-09-06 with all activation gates false and
+zero Provider attempts. The `savefromins.com` adapter includes deterministic fixtures, normalization,
 typed errors, bounded requests, NL-only routing, three fail-closed activation gates, and the
 ADR-0021 reviewed `cdninstagram.com` subdomain policy. Production qualification and traffic remain
 blocked until automated-use approval and a separate owner-authorized rollout. Do not adapt DLPanda
@@ -359,6 +362,12 @@ Do not introduce an Instagram-specific task API or downloader architecture.
 ### Work Item 22 — Instagram qualification
 
 Lane: B, gated by Work Item 21 and an independently reviewed Instagram delivery path.
+
+Status: implementation in progress on `codex/wi22-instagram-beta-launch`. Phase A updates the
+release-owned bilingual homepage, neutral non-affiliation notice, and explicit disclosure that a
+submitted public page URL is sent to a third-party processing service. It creates no rollout rule
+and keeps every SaveFromIns gate false. Phase B requires separate owner authorization before any
+Instagram Provider traffic, followed by one real browser download and a short production watch.
 
 Qualify exact Provider/Instagram/region tuples through targeted tests, rollout, Delivery outcomes,
 circuit monitoring, and the ADR-0020 lightweight release loop. Calibration and longer evidence

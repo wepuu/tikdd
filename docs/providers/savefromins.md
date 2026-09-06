@@ -1,18 +1,18 @@
 # SaveFromIns provider feasibility record
 
-- Candidate ID: `savefromins` (research only; not a registered Provider)
+- Provider ID: `savefromins`
 - Site: <https://savefromins.com/>
 - Evaluated platform: Instagram
 - Evaluated region: `nl`
 - Review date: 2026-09-06
 - Production approval: not established
-- Manifest capability: none
-- Delivery policy: none
-- Runtime state: absent and disabled
+- Manifest capability: Instagram in `nl`, disabled by default
+- Delivery policy: `savefromins-instagram-media-v1`
+- Runtime state: deployed from `main@00bc4b9`, all activation gates false
 
 ## Work Item 21 implementation
 
-The production-disabled adapter is implemented on `codex/wi21-savefromins-instagram-adapter` with
+The production-disabled adapter was merged and deployed from `main@00bc4b9` with
 strict JSON validation, bounded requests, normalized errors, deterministic fixtures, NL-only
 Manifest scope, rollout gating, and no live CI dependency. A second owner-supplied public sample
 resolved successfully and returned a different `cdninstagram.com` edge host, confirming that a
@@ -31,10 +31,12 @@ Cookie, Instagram `sessionid`, CAPTCHA, or interactive challenge. Its front-end 
 treated as Provider protocol detail and is not recorded as a TikDD credential or public contract.
 
 The project owner supplied two public Reel samples. TikDD removed the `utm_source` and `stkn` query
-parameters and submitted the first canonical URL once from the NL environment. The API returned
+parameters and submitted both canonical URLs during bounded reviews from the NL environment. The
+first API response returned
 HTTP 200 with a success state, one normalized-looking `720P` MP4 resource, and a direct candidate on
-`scontent-bos5-1.cdninstagram.com`. The second sample was not sent because the first established a
-clear success path.
+`scontent-bos5-1.cdninstagram.com`. The second resolved successfully and returned a different
+`cdninstagram.com` edge hostname, which is why the policy is suffix-scoped with label-boundary
+validation instead of pinned to one edge.
 
 A bounded 1 KiB Range request resolved the observed candidate host only to public addresses, used
 HTTPS without a redirect, returned HTTP 206 and `video/mp4`, advertised a total length of 8,656,415
@@ -64,10 +66,11 @@ must be covered by TikDD's own privacy copy before activation.
 Status: **conditional technical go; production no-go pending review**.
 
 SaveFromIns is the only Work Item 20 candidate that demonstrated a cookie-free, non-interactive
-Instagram resolve and a deliverable MP4 response from NL. It may be used for a small,
-production-disabled adapter implementation with sanitized fixtures and no live CI dependency.
+Instagram resolve and a deliverable MP4 response from NL. Its small production-disabled adapter,
+sanitized fixtures, and deterministic CI coverage are now implemented and deployed.
 
-Before qualification or traffic, the implementation review must establish:
+The implementation review established items 2 through 5 below. Before qualification or traffic,
+the owner must still record item 1 and explicitly authorize the bounded rollout:
 
 1. explicit approval for TikDD's automated server-side use;
 2. a bounded, evidence-backed Instagram media-host and redirect policy rather than trusting response
