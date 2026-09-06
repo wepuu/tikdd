@@ -18,7 +18,12 @@ import {
   RolloutRuleRepository
 } from "@tikdd/persistence";
 import { listPlatformDefinitions } from "@tikdd/platform";
-import { DLPandaProvider, SSSTwitterProvider, TwitterSaverProvider } from "@tikdd/providers";
+import {
+  DLPandaProvider,
+  SaveFromInsProvider,
+  SSSTwitterProvider,
+  TwitterSaverProvider
+} from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { RedisRoutePolicyStore } from "@tikdd/route-policy";
 import { RedisRolloutStore } from "@tikdd/rollout-control";
@@ -52,7 +57,8 @@ const rolloutStore = new RedisRolloutStore(redis);
 const providerAdapters = [
   new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }),
   new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }),
-  new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" })
+  new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }),
+  new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();

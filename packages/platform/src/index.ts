@@ -233,6 +233,7 @@ const TRACKING_PARAMETERS = new Set([
   "sender_device",
   "si",
   "source",
+  "stkn",
   "t",
   "utm_campaign",
   "utm_content",

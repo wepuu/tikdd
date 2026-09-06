@@ -83,6 +83,10 @@ describe("detectPlatform", () => {
     [
       "https://www.tiktok.com/@creator/video/123?is_from_webapp=1&sender_device=pc",
       "https://www.tiktok.com/@creator/video/123"
+    ],
+    [
+      "https://www.instagram.com/reel/Fixture/?utm_source=ig_web_copy_link&stkn=opaque-share-token",
+      "https://www.instagram.com/reel/Fixture/"
     ]
   ])("removes platform share tracking from %s", (input, expected) => {
     expect(detectPlatform(input).canonicalUrl).toBe(expected);

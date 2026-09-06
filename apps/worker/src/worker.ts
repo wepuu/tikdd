@@ -21,6 +21,7 @@ import {
   DLPandaProvider,
   MockProvider,
   ProviderRouter,
+  SaveFromInsProvider,
   SSSTwitterProvider,
   TwitterSaverProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
@@ -44,6 +45,7 @@ import {
   loadRolloutConfiguration
 } from "./rollout";
 import { loadSSSTwitterActivationConfiguration } from "./provider-activation";
+import { loadSaveFromInsActivationConfiguration } from "./savefromins-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -55,6 +57,7 @@ const twitterSaverTermsApproved =
   (process.env.TWITTERSAVER_TERMS_APPROVED ?? "false") === "true";
 const dlPandaTermsApproved = (process.env.DLPANDA_TERMS_APPROVED ?? "false") === "true";
 const ssstwitterActivation = loadSSSTwitterActivationConfiguration();
+const savefrominsActivation = loadSaveFromInsActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -138,6 +141,12 @@ if (ssstwitterActivation.enabled) {
     enabled: true,
     diagnosticTrace: ssstwitterDiagnosticTrace,
     region: workerRegion
+  }));
+}
+if (savefrominsActivation.enabled) {
+  providers.push(new SaveFromInsProvider({
+    enabled: true,
+    requestAuth: savefrominsActivation.requestAuth
   }));
 }
 if (enableMockProvider) {
