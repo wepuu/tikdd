@@ -1,18 +1,19 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@99dbafc`
-- Roadmap revision date: 2026-09-05
+- Repository checkpoint: `main@3f22e1c`
+- Roadmap revision date: 2026-09-06
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The immediate production objective is a small public X Beta through SSSTwitter and Delivery.
-ADR-0020 replaces elapsed calibration and evidence prerequisites with a lightweight release loop:
-PR CI, GitHub-built immutable images, backup, one real browser download, a short health watch, and
-fast rollback. X remains experimental rather than `stable`; other catalog entries are not public
-support claims.
+The first public X Beta is live through SSSTwitter and Delivery. ADR-0020 replaces elapsed
+calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
+immutable images, backup, one real browser download, a short health watch, and fast rollback. X
+remains experimental rather than `stable`; other catalog entries are not public support claims.
+The next product lane is bounded Provider feasibility for Instagram. A failed feasibility review
+does not create an adapter, production route, public support claim, or SEO page.
 
 ## Baseline classification
 
@@ -29,11 +30,13 @@ support claims.
   content, locales, immutable publication snapshots, and technical SEO eligibility.
 - Work Item 13 generic capability-evidence and traffic-distribution baseline merged at `416c0f1`.
 
-### Current MVP release debt
+### Current production baseline
 
-- Publish the exact merge SHA as GitHub-built Web, Service, and Admin images.
-- Deploy with Provider traffic off, then enable only the existing SSSTwitter/X/NL rollout rule.
-- Complete one real browser download and a 15-minute health watch.
+- X Public Beta is live from `main@3f22e1c` using GitHub-built immutable images.
+- The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
+  an emergency deny path.
+- A real resolve, delivery-ticket, and non-zero browser-style media transfer passed, followed by a
+  clean 15-minute production watch.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
 - Admin and the calibration profile remain intentionally stopped.
 
@@ -312,6 +315,16 @@ circuit breakers, and emergency deny remain mandatory.
 Lane: B with Lane C preparation. May run during the X evidence window, but cannot enable Instagram
 production traffic, stable promotion, or indexing.
 
+Status: complete with one technical candidate on 2026-09-06. DLPanda was rejected after owner
+testing confirmed that it does not provide a usable Instagram path for TikDD. `reelsvideo.io`
+required Cloudflare Turnstile and returned HTTP 429 to both the synthetic and reviewed real-sample
+probes. The later candidate `savefromins.com` resolved the first reviewed public Reel without a
+login or interactive challenge and its direct Instagram CDN candidate passed a bounded public-DNS,
+HTTPS, MP4, and Range check. Production use remains unapproved until its automated-use terms and
+the variable Instagram CDN host policy receive an explicit review. No candidate was added to a
+Manifest and no production state changed. See
+[the feasibility record](work-item-20-instagram-provider-feasibility.md).
+
 Evaluate authorized Provider candidates using exact reviewed test tuples. Cover adapter feasibility,
 normalized errors, region behavior, delivery feasibility, challenge behavior, request bounds, and
 commercial/technical constraints. Reuse the existing platform catalog entry and Provider research
@@ -323,6 +336,12 @@ that no safe candidate currently exists.
 ### Work Item 21 — Instagram Provider adapter
 
 Lane: B.
+
+Status: ready for a production-disabled `savefromins.com` adapter slice. The technical candidate may
+advance through deterministic fixtures, normalization, typed errors, request bounds, and routing
+tests. Production qualification and traffic remain blocked until automated-use approval and a
+reviewed bounded Instagram CDN host policy are recorded. Do not adapt DLPanda or `reelsvideo.io`
+around their current boundaries.
 
 Implement the selected capability through the existing Provider architecture:
 
@@ -338,11 +357,12 @@ Do not introduce an Instagram-specific task API or downloader architecture.
 
 ### Work Item 22 — Instagram qualification
 
-Lane: B, gated by Work Item 21 and by the X Production Evidence Gate for any production allocation.
+Lane: B, gated by Work Item 21 and an independently reviewed Instagram delivery path.
 
-Qualify exact Provider/Instagram/region tuples through the existing Canary, calibration, rollout,
-Delivery-outcome, circuit, and evidence system. Resolution-only proof may advance technical
-feasibility but cannot qualify production download delivery.
+Qualify exact Provider/Instagram/region tuples through targeted tests, rollout, Delivery outcomes,
+circuit monitoring, and the ADR-0020 lightweight release loop. Calibration and longer evidence
+windows remain optional diagnostics. Resolution-only proof may advance technical feasibility but
+cannot qualify production download delivery.
 
 Exit: the route has current reviewed delivery evidence and an operator-approved bounded rollout;
 catalog promotion remains a separate product decision after the required observation window.
