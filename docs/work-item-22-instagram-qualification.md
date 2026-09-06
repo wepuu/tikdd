@@ -82,5 +82,19 @@ upstream format and media-host shape using bounded, redacted evidence. Any Deliv
 requires a separate code review and spoofed-host tests; another production attempt requires fresh
 operator authorization.
 
+## Repair candidate
+
+Disabled-route diagnostics confirmed that SaveFromIns remains usable for both supplied Reels. Each
+returned one direct 720P MP4. One candidate remained under `cdninstagram.com`; the failed production
+sample had rotated to an `fna.fbcdn.net` subdomain. Its public DNS, HTTPS Range response, media type,
+size, file signature, redirect behavior, and TLS identity passed the bounded review recorded in
+ADR-0022.
+
+The repair versions the Delivery policy rather than widening version 1. New candidates use
+`savefromins-instagram-media-v2`, which accepts real subdomains of `cdninstagram.com` and
+`fna.fbcdn.net` only. Production remains disabled until this change passes PR CI, is deployed from
+immutable GitHub images with all gates false, and receives a new owner authorization for the two
+browser downloads and short observation.
+
 Work Item 22 exits only after current delivery evidence and an operator-approved bounded rollout.
 Work Item 23 owns the separate Instagram landing page and SEO eligibility decision.

@@ -12,7 +12,7 @@ const API_ORIGIN = "https://api.savefromins.com";
 const API_PATH = "/api/contentsite_api/media/parse";
 const REQUEST_DOMAIN = "api-ak.savefromins.com";
 const ALLOWED_HOSTS = new Set(["api.savefromins.com"]);
-const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v1";
+const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 
 const ResourceSchema = z.object({

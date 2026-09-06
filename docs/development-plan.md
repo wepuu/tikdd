@@ -366,10 +366,12 @@ Lane: B, gated by Work Item 21 and an independently reviewed Instagram delivery 
 Status: Phase A is deployed from `main@7ddafbd`. The owner authorized Phase B on 2026-09-06, but the
 first real browser task ended with three sanitized `invalid_result` Provider attempts and zero
 Delivery candidates. The exact rollout rule was disabled first, all SaveFromIns gates were returned
-to false, and the second sample and 15-minute watch were not started. Instagram Beta is therefore
-not launched. The next step is a bounded review of current upstream format and media-host behavior;
-any Delivery policy change requires code review and spoofed-host tests before a newly authorized
-production attempt.
+to false, and the second sample and 15-minute watch were not started. Disabled-route diagnostics
+then confirmed that both supplied samples still resolve, but one now uses the reviewed Meta FNA CDN
+family. ADR-0022 owns a versioned, label-boundary Delivery repair for `fna.fbcdn.net`; the parent
+`fbcdn.net` family remains denied. Instagram Beta is not launched until the repair passes PR CI,
+deploys default-off from immutable GitHub images, and completes a newly authorized production
+qualification.
 
 Qualify exact Provider/Instagram/region tuples through targeted tests, rollout, Delivery outcomes,
 circuit monitoring, and the ADR-0020 lightweight release loop. Calibration and longer evidence

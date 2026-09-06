@@ -245,7 +245,21 @@ describe("reviewed delivery network policy", () => {
     ).toThrow(/reviewed host policy/);
   });
 
-  it("allows only real Instagram CDN subdomains for SaveFromIns", () => {
+  it("versions the reviewed Instagram CDN suffixes for SaveFromIns", () => {
+    for (const targetUrl of [
+      "https://scontent-iad3-1.cdninstagram.com/fixture/video.mp4",
+      "https://instagram.fsjc1-4.fna.fbcdn.net/fixture/video.mp4"
+    ]) {
+      expect(
+        assertDeliveryTargetPolicy({
+          providerId: "savefromins",
+          mode: "redirect",
+          hostPolicyId: "savefromins-instagram-media-v2",
+          targetUrl
+        }).hostname
+      ).toBe(new URL(targetUrl).hostname);
+    }
+
     expect(
       assertDeliveryTargetPolicy({
         providerId: "savefromins",
@@ -255,16 +269,29 @@ describe("reviewed delivery network policy", () => {
       }).hostname
     ).toBe("scontent-iad3-1.cdninstagram.com");
 
+    expect(() =>
+      assertDeliveryTargetPolicy({
+        providerId: "savefromins",
+        mode: "redirect",
+        hostPolicyId: "savefromins-instagram-media-v1",
+        targetUrl: "https://instagram.fsjc1-4.fna.fbcdn.net/fixture/video.mp4"
+      })
+    ).toThrow(/not allowed/);
+
     for (const targetUrl of [
       "https://cdninstagram.com/fixture/video.mp4",
       "https://cdninstagram.com.example.test/fixture/video.mp4",
-      "https://evilcdninstagram.com/fixture/video.mp4"
+      "https://evilcdninstagram.com/fixture/video.mp4",
+      "https://fna.fbcdn.net/fixture/video.mp4",
+      "https://fna.fbcdn.net.example.test/fixture/video.mp4",
+      "https://evilfna.fbcdn.net/fixture/video.mp4",
+      "https://static.xx.fbcdn.net/fixture/video.mp4"
     ]) {
       expect(() =>
         assertDeliveryTargetPolicy({
           providerId: "savefromins",
           mode: "redirect",
-          hostPolicyId: "savefromins-instagram-media-v1",
+          hostPolicyId: "savefromins-instagram-media-v2",
           targetUrl
         })
       ).toThrow(/not allowed/);

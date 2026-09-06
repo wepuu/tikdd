@@ -7,7 +7,7 @@
 - Review date: 2026-09-06
 - Production approval: automated-use decision recorded; route qualification failed and traffic is disabled
 - Manifest capability: Instagram in `nl`, disabled by default
-- Delivery policy: `savefromins-instagram-media-v1`
+- Delivery policy: new candidates use `savefromins-instagram-media-v2`; version 1 remains registered for compatibility
 - Runtime state: deployed from `main@7ddafbd`; rule revision 6 has zero allocation and all activation gates are false
 
 ## Work Item 21 implementation
@@ -82,3 +82,16 @@ shape must be re-reviewed without broadening the Delivery boundary from an obser
    and schema-changed responses;
 4. strict time, byte, redirect, concurrency, and retry ceilings; and
 5. a disabled-by-default Manifest capability and rollout kill switch.
+
+## Work Item 22 repair evidence
+
+With the production rule and all three SaveFromIns gates disabled, two bounded diagnostics on
+2026-09-06 returned HTTP 200, a success state, and one direct 720P MP4 for each owner-supplied Reel.
+The second sample used a reviewed `cdninstagram.com` subdomain. The first used
+`instagram.fsjc1-4.fna.fbcdn.net`, explaining the earlier `invalid_result` outcome under version 1.
+
+The new host resolved only to public addresses. A 1 KiB HTTPS Range request returned HTTP 206,
+`video/mp4`, a total length of 8,656,415 bytes, an ISO Base Media File signature, and no redirect.
+ADR-0022 therefore adds only the label-boundary suffix `fna.fbcdn.net` to version 2; it does not
+allow the parent `fbcdn.net` family or runtime host discovery. This evidence supports a code repair,
+not production activation. Another real browser qualification still requires owner authorization.

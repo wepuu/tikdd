@@ -58,6 +58,10 @@ describe("production-shaped Instagram routing contract", () => {
       rolloutSource: allow
     }).resolve(input);
     expect(routed.resolution.result.provenance.provider).toBe("savefromins");
+    expect(routed.resolution.candidates).toHaveLength(1);
+    expect(routed.resolution.candidates[0]?.hostPolicyId).toBe(
+      "savefromins-instagram-media-v2"
+    );
     expect(routed.attempts).toHaveLength(1);
     expect(routed.attempts[0]).toMatchObject({
       providerId: "savefromins",

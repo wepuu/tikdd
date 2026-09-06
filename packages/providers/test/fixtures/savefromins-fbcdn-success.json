@@ -1,0 +1,17 @@
+{
+  "status": 1,
+  "status_code": "success",
+  "data": {
+    "title": "Authorized Instagram FNA fixture",
+    "duration": 18,
+    "resources": [
+      {
+        "quality": "720P",
+        "format": "mp4",
+        "type": "video",
+        "download_mode": "direct",
+        "download_url": "https://instagram.fsjc1-4.fna.fbcdn.net/fixture/video.mp4"
+      }
+    ]
+  }
+}

@@ -21,6 +21,7 @@
 - [ADR-0019: Bounded calibration operations](0019-bounded-calibration-operations.md)
 - [ADR-0020: Lightweight X Beta release loop](0020-mvp-x-beta-release-loop.md)
 - [ADR-0021: Reviewed delivery host suffixes](0021-reviewed-delivery-host-suffixes.md)
+- [ADR-0022: Versioned Instagram FNA delivery policy](0022-versioned-instagram-fna-delivery-policy.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
