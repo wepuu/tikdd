@@ -17,6 +17,13 @@ export const PILOT_PROVIDERS = Object.freeze({
       "SSSTWITTER_TERMS_APPROVED",
       "SSSTWITTER_DELIVERY_AUDIT_APPROVED"
     ])
+  }),
+  savefromins: Object.freeze({
+    host: "api.savefromins.com",
+    approvals: Object.freeze([
+      "SAVEFROMINS_TERMS_APPROVED",
+      "SAVEFROMINS_DELIVERY_AUDIT_APPROVED"
+    ])
   })
 });
 
@@ -41,7 +48,7 @@ function parseProviders(value) {
     .filter(Boolean);
   if (providers.length === 0) {
     throw new Error(
-      "TIKDD_PILOT_PROVIDERS must name at least one exact provider: twittersaver, dlpanda, or ssstwitter."
+      "TIKDD_PILOT_PROVIDERS must name at least one exact provider: twittersaver, dlpanda, ssstwitter, or savefromins."
     );
   }
   if (new Set(providers).size !== providers.length) {
@@ -130,6 +137,7 @@ export function buildLocalStackProfile({
     environment.ENABLE_TWITTERSAVER_PROVIDER = "false";
     environment.ENABLE_DLPANDA_PROVIDER = "false";
     environment.ENABLE_SSSTWITTER_PROVIDER = "false";
+    environment.ENABLE_SAVEFROMINS_PROVIDER = "false";
     environment.PROVIDER_ROLLOUT_ENABLED = "false";
     environment.PROVIDER_ROLLOUT_DEVELOPMENT_BYPASS = "false";
     delete environment.DELIVERY_ENCRYPTION_KEY_ID;
@@ -168,6 +176,7 @@ export function buildLocalStackProfile({
   environment.ENABLE_TWITTERSAVER_PROVIDER = String(providers.includes("twittersaver"));
   environment.ENABLE_DLPANDA_PROVIDER = String(providers.includes("dlpanda"));
   environment.ENABLE_SSSTWITTER_PROVIDER = String(providers.includes("ssstwitter"));
+  environment.ENABLE_SAVEFROMINS_PROVIDER = String(providers.includes("savefromins"));
   environment.PROVIDER_ROLLOUT_ENABLED = "false";
   environment.PROVIDER_ROLLOUT_DEVELOPMENT_BYPASS = "true";
   environment.DELIVERY_ENCRYPTION_KEY_ID = `local-pilot-${entropy(8).toString("hex")}`;

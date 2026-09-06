@@ -23,6 +23,7 @@ describe("local stack profile", () => {
     expect(profile.providers).toEqual([]);
     expect(profile.environment.ENABLE_MOCK_PROVIDER).toBe("true");
     expect(profile.environment.ENABLE_TWITTERSAVER_PROVIDER).toBe("false");
+    expect(profile.environment.ENABLE_SAVEFROMINS_PROVIDER).toBe("false");
     expect(profile.environment.HTTP_PROXY).toBeUndefined();
     expect(profile.environment.LOCAL_STACK_READINESS_TOKEN).toHaveLength(32);
   });
@@ -71,6 +72,24 @@ describe("local stack profile", () => {
         entropy
       })
     ).toThrow("DLPANDA_TERMS_APPROVED=true");
+  });
+
+  it("requires explicit SaveFromIns gates and preserves its request marker", () => {
+    const profile = buildLocalStackProfile({
+      mode: "pilot",
+      commandEnvironment: {
+        TIKDD_LOCAL_LIVE_AUTHORIZED: "true",
+        TIKDD_PILOT_PROVIDERS: "savefromins",
+        SAVEFROMINS_TERMS_APPROVED: "true",
+        SAVEFROMINS_DELIVERY_AUDIT_APPROVED: "true",
+        SAVEFROMINS_REQUEST_AUTH: "fixtureauth123"
+      },
+      entropy
+    });
+    expect(profile.providers).toEqual(["savefromins"]);
+    expect(profile.providerHosts).toEqual(["api.savefromins.com"]);
+    expect(profile.environment.ENABLE_SAVEFROMINS_PROVIDER).toBe("true");
+    expect(profile.environment.SAVEFROMINS_REQUEST_AUTH).toBe("fixtureauth123");
   });
 });
 

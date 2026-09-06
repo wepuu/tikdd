@@ -337,11 +337,12 @@ that no safe candidate currently exists.
 
 Lane: B.
 
-Status: ready for a production-disabled `savefromins.com` adapter slice. The technical candidate may
-advance through deterministic fixtures, normalization, typed errors, request bounds, and routing
-tests. Production qualification and traffic remain blocked until automated-use approval and a
-reviewed bounded Instagram CDN host policy are recorded. Do not adapt DLPanda or `reelsvideo.io`
-around their current boundaries.
+Status: production-disabled `savefromins.com` adapter implemented on
+`codex/wi21-savefromins-instagram-adapter`. It includes deterministic fixtures, normalization,
+typed errors, bounded requests, NL-only routing, three fail-closed activation gates, and the
+ADR-0021 reviewed `cdninstagram.com` subdomain policy. Production qualification and traffic remain
+blocked until automated-use approval and a separate owner-authorized rollout. Do not adapt DLPanda
+or `reelsvideo.io` around their current boundaries.
 
 Implement the selected capability through the existing Provider architecture:
 

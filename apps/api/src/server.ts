@@ -29,7 +29,12 @@ import {
   listPlatformSummaries,
   UnsupportedPlatformError
 } from "@tikdd/platform";
-import { DLPandaProvider, SSSTwitterProvider, TwitterSaverProvider } from "@tikdd/providers";
+import {
+  DLPandaProvider,
+  SaveFromInsProvider,
+  SSSTwitterProvider,
+  TwitterSaverProvider
+} from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { Queue } from "bullmq";
 import Fastify from "fastify";
@@ -129,7 +134,8 @@ registerProviderHealthDiagnostics(app, {
   manifests: [
     new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }).manifest,
     new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }).manifest,
-    new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest
+    new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest,
+    new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

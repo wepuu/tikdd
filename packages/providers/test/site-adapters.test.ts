@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DLPandaProvider,
   ProviderRouter,
+  SaveFromInsProvider,
   SSSTwitterProvider,
   TwitterSaverProvider,
   type ResolveInput
@@ -17,6 +18,13 @@ const xInput: ResolveInput = {
   sourceUrl: "https://x.com/authorized/status/123456",
   canonicalUrl: "https://x.com/authorized/status/123456",
   platform: "x"
+};
+
+const instagramInput: ResolveInput = {
+  taskId: "tsk_3123456789abcdef0123456789abcdef",
+  sourceUrl: "https://www.instagram.com/reel/Fixture/?utm_source=copy",
+  canonicalUrl: "https://www.instagram.com/reel/Fixture/",
+  platform: "instagram"
 };
 
 function response(body: string, url: string, init: ResponseInit = {}): Response {
@@ -196,6 +204,104 @@ describe("DLPandaProvider", () => {
   it("does not declare Instagram because the site requires a session cookie", () => {
     const provider = new DLPandaProvider({ enabled: true });
     expect(provider.manifest.platforms.some(({ platform }) => platform === "instagram")).toBe(false);
+  });
+});
+
+describe("SaveFromInsProvider", () => {
+  it("submits only the canonical URL and normalizes a direct MP4 candidate", async () => {
+    const success = await fixture("savefromins-success.json");
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input, init) => {
+        calls.push({ url: input.toString(), ...(init ? { init } : {}) });
+        return response(success, input.toString(), {
+          headers: { "content-type": "application/json; charset=utf-8" }
+        });
+      }
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(provider.manifest.regions).toEqual(["nl"]);
+    expect(resolution.result.media.title).toBe("Authorized Instagram fixture");
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720P"]);
+    expect(resolution.candidates).toHaveLength(1);
+    expect(resolution.candidates[0]).toMatchObject({
+      mode: "redirect",
+      hostPolicyId: "savefromins-instagram-media-v1",
+      secretHeaders: {}
+    });
+    const requestBody = calls[0]?.init?.body?.toString() ?? "";
+    expect(requestBody).toContain("link=https%3A%2F%2Fwww.instagram.com%2Freel%2FFixture%2F");
+    expect(requestBody).not.toContain("utm_source");
+    expect(JSON.stringify(resolution.result)).not.toContain("cdninstagram.com");
+    expect(JSON.stringify(resolution.result)).not.toContain("fixtureauth123");
+  });
+
+  it.each([
+    ["private", "This post is private", "content_private", false, false],
+    ["not_found", "This post was removed", "content_not_found", false, false],
+    ["rate_limit", "Too many requests", "provider_rate_limited", true, true],
+    ["challenge", "Captcha required", "provider_challenge", true, true],
+    ["authentication", "Instagram session cookie required", "authentication_required", false, false],
+    ["unsupported", "Invalid URL", "unsupported_url", false, true]
+  ])("maps %s failures", async (_name, message, failureCode, retryable, fallbackAllowed) => {
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(
+        JSON.stringify({ status: 0, status_code: "error", message }),
+        input.toString(),
+        { headers: { "content-type": "application/json" } }
+      )
+    });
+    await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
+      failureCode,
+      retryable,
+      fallbackAllowed
+    });
+  });
+
+  it("rejects malformed responses and unreviewed media hosts", async () => {
+    const bodies = [
+      "not-json",
+      JSON.stringify({
+        status: 1,
+        status_code: "success",
+        data: {
+          title: "Changed host",
+          duration: 1,
+          resources: [{
+            quality: "720P",
+            format: "mp4",
+            type: "video",
+            download_mode: "direct",
+            download_url: "https://cdninstagram.com.example.test/video.mp4"
+          }]
+        }
+      })
+    ];
+    for (const body of bodies) {
+      const provider = new SaveFromInsProvider({
+        enabled: true,
+        requestAuth: "fixtureauth123",
+        fetchImpl: async (input) => response(body, input.toString(), {
+          headers: { "content-type": "application/json" }
+        })
+      });
+      await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
+        retryable: true,
+        fallbackAllowed: true
+      });
+    }
+  });
+
+  it("fails closed when its request marker is absent", async () => {
+    const provider = new SaveFromInsProvider({ enabled: true });
+    await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
+      failureCode: "provider_unavailable"
+    });
   });
 });
 

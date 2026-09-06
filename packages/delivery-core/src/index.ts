@@ -178,7 +178,10 @@ export const DeliveryHostPolicySchema = z.object({
   id: HostPolicyIdSchema,
   providerId: InternalProviderIdSchema,
   modes: z.array(DeliveryModeSchema).min(1),
-  hosts: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)).min(1)
+  hosts: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)),
+  hostSuffixes: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)).default([])
+}).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
+  message: "A delivery host policy must include an exact host or reviewed suffix."
 });
 export type DeliveryHostPolicy = z.infer<typeof DeliveryHostPolicySchema>;
 
@@ -196,9 +199,18 @@ export const SSSTWITTER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   hosts: ["ssscdn.io"]
 });
 
+export const SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "savefromins-instagram-media-v1",
+  providerId: "savefromins",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["cdninstagram.com"]
+});
+
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
-  [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY]
+  [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY],
+  [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -217,7 +229,10 @@ export function assertDeliveryTargetPolicy(input: {
     throw new Error("The delivery candidate does not match a reviewed host policy.");
   }
   const url = new URL(HttpsTargetUrlSchema.parse(input.targetUrl));
-  if (!policy.hosts.includes(url.hostname.toLowerCase())) {
+  const hostname = url.hostname.toLowerCase();
+  const exactMatch = policy.hosts.includes(hostname);
+  const suffixMatch = policy.hostSuffixes.some((suffix) => hostname.endsWith(`.${suffix}`));
+  if (!exactMatch && !suffixMatch) {
     throw new Error("The delivery target host is not allowed by its reviewed policy.");
   }
   return url;

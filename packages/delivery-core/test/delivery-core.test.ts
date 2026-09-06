@@ -244,4 +244,30 @@ describe("reviewed delivery network policy", () => {
       })
     ).toThrow(/reviewed host policy/);
   });
+
+  it("allows only real Instagram CDN subdomains for SaveFromIns", () => {
+    expect(
+      assertDeliveryTargetPolicy({
+        providerId: "savefromins",
+        mode: "redirect",
+        hostPolicyId: "savefromins-instagram-media-v1",
+        targetUrl: "https://scontent-iad3-1.cdninstagram.com/fixture/video.mp4"
+      }).hostname
+    ).toBe("scontent-iad3-1.cdninstagram.com");
+
+    for (const targetUrl of [
+      "https://cdninstagram.com/fixture/video.mp4",
+      "https://cdninstagram.com.example.test/fixture/video.mp4",
+      "https://evilcdninstagram.com/fixture/video.mp4"
+    ]) {
+      expect(() =>
+        assertDeliveryTargetPolicy({
+          providerId: "savefromins",
+          mode: "redirect",
+          hostPolicyId: "savefromins-instagram-media-v1",
+          targetUrl
+        })
+      ).toThrow(/not allowed/);
+    }
+  });
 });

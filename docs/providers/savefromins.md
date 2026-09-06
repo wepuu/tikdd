@@ -10,6 +10,19 @@
 - Delivery policy: none
 - Runtime state: absent and disabled
 
+## Work Item 21 implementation
+
+The production-disabled adapter is implemented on `codex/wi21-savefromins-instagram-adapter` with
+strict JSON validation, bounded requests, normalized errors, deterministic fixtures, NL-only
+Manifest scope, rollout gating, and no live CI dependency. A second owner-supplied public sample
+resolved successfully and returned a different `cdninstagram.com` edge host, confirming that a
+single exact edge hostname is not a viable Delivery policy.
+
+ADR-0021 therefore permits only real subdomains of the code-reviewed `cdninstagram.com` suffix and
+retains HTTPS, label-boundary spoof rejection, and redemption-time public DNS validation. The
+adapter remains off unless terms approval, Delivery audit approval, and the Provider request marker
+are all explicitly configured. This implementation does not grant production traffic.
+
 ## Public workflow observed
 
 The public page completed with HTTP 200 and exposed a browser-side form submission to an HTTPS API
