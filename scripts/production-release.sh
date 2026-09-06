@@ -12,7 +12,8 @@ if [ ! -r "$release_env" ]; then
 fi
 
 compose() {
-  docker compose --env-file "$release_env" -f "$compose_file" "$@"
+  TIKDD_PRODUCTION_ENV_FILE="$release_env" \
+    docker compose --env-file "$release_env" -f "$compose_file" "$@"
 }
 
 read_release_value() {
@@ -163,9 +164,11 @@ case "$action" in
     [ "$TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED" = "true" ] || { echo "Schema compatibility is not confirmed." >&2; exit 78; }
     run_stage_gate rollback-baseline
     TIKDD_RELEASE_ENV="$TIKDD_ROLLBACK_ENV" sh "$0" validate
-    docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" pull web api worker delivery
+    TIKDD_PRODUCTION_ENV_FILE="$TIKDD_ROLLBACK_ENV" \
+      docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" pull web api worker delivery
     for service in api delivery worker web; do
-      docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" up -d --wait "$service"
+      TIKDD_PRODUCTION_ENV_FILE="$TIKDD_ROLLBACK_ENV" \
+        docker compose --env-file "$TIKDD_ROLLBACK_ENV" -f "$compose_file" up -d --wait "$service"
       run_stage_gate "rollback-$service"
     done
     ;;

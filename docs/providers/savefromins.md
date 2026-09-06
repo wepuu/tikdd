@@ -5,10 +5,10 @@
 - Evaluated platform: Instagram
 - Evaluated region: `nl`
 - Review date: 2026-09-06
-- Production approval: not established
+- Production approval: automated-use decision recorded; route qualification failed and traffic is disabled
 - Manifest capability: Instagram in `nl`, disabled by default
 - Delivery policy: `savefromins-instagram-media-v1`
-- Runtime state: deployed from `main@00bc4b9`, all activation gates false
+- Runtime state: deployed from `main@7ddafbd`; rule revision 6 has zero allocation and all activation gates are false
 
 ## Work Item 21 implementation
 
@@ -63,14 +63,17 @@ must be covered by TikDD's own privacy copy before activation.
 
 ## Decision
 
-Status: **conditional technical go; production no-go pending review**.
+Status: **production no-go after failed qualification**.
 
 SaveFromIns is the only Work Item 20 candidate that demonstrated a cookie-free, non-interactive
 Instagram resolve and a deliverable MP4 response from NL. Its small production-disabled adapter,
 sanitized fixtures, and deterministic CI coverage are now implemented and deployed.
 
-The implementation review established items 2 through 5 below. Before qualification or traffic,
-the owner must still record item 1 and explicitly authorize the bounded rollout:
+The implementation review established items 2 through 5 below. The owner recorded item 1 and
+authorized a bounded rollout on 2026-09-06. The first real browser task produced three sanitized
+`invalid_result` attempts and no Delivery candidate, so the exact rule and all gates were disabled
+immediately. Before another qualification attempt, the current upstream response and media-host
+shape must be re-reviewed without broadening the Delivery boundary from an observed response alone:
 
 1. explicit approval for TikDD's automated server-side use;
 2. a bounded, evidence-backed Instagram media-host and redirect policy rather than trusting response

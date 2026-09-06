@@ -363,11 +363,13 @@ Do not introduce an Instagram-specific task API or downloader architecture.
 
 Lane: B, gated by Work Item 21 and an independently reviewed Instagram delivery path.
 
-Status: implementation in progress on `codex/wi22-instagram-beta-launch`. Phase A updates the
-release-owned bilingual homepage, neutral non-affiliation notice, and explicit disclosure that a
-submitted public page URL is sent to a third-party processing service. It creates no rollout rule
-and keeps every SaveFromIns gate false. Phase B requires separate owner authorization before any
-Instagram Provider traffic, followed by one real browser download and a short production watch.
+Status: Phase A is deployed from `main@7ddafbd`. The owner authorized Phase B on 2026-09-06, but the
+first real browser task ended with three sanitized `invalid_result` Provider attempts and zero
+Delivery candidates. The exact rollout rule was disabled first, all SaveFromIns gates were returned
+to false, and the second sample and 15-minute watch were not started. Instagram Beta is therefore
+not launched. The next step is a bounded review of current upstream format and media-host behavior;
+any Delivery policy change requires code review and spoofed-host tests before a newly authorized
+production attempt.
 
 Qualify exact Provider/Instagram/region tuples through targeted tests, rollout, Delivery outcomes,
 circuit monitoring, and the ADR-0020 lightweight release loop. Calibration and longer evidence

@@ -148,6 +148,14 @@ export function verifyWorkItem16Static() {
   assert(/^      REDIS_URL_FILE: \/run\/secrets\/redis_url$/m.test(blocks.api), "Public API Redis secret-file binding is missing.");
   assert(!/docker\s+system\s+prune|-a\s+--volumes/.test(releaseScript), "The release script contains destructive generic Docker cleanup.");
   assert(/TIKDD_STAGE_VERIFY_COMMAND/.test(releaseScript), "Shared-host stage verification is not mandatory.");
+  assert(
+    /compose\(\) \{\s+TIKDD_PRODUCTION_ENV_FILE="\$release_env"[\s\\]+docker compose --env-file "\$release_env"/.test(releaseScript),
+    "Compose must bind service env_file loading to the exact release environment."
+  );
+  assert(
+    (releaseScript.match(/TIKDD_PRODUCTION_ENV_FILE="\$TIKDD_ROLLBACK_ENV"/g) ?? []).length === 2,
+    "Rollback pull and startup must bind service env_file loading to the approved rollback environment."
+  );
   assert(/TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED/.test(releaseScript), "The explicit fresh-empty database gate is missing.");
   assert(/Fresh-empty confirmation cannot be used for a non-empty PostgreSQL data directory/.test(releaseScript), "Fresh initialization does not fail closed for existing data.");
   const deployOrder = ["stage_service postgres", "stage_service redis", "stage_service api", "stage_service delivery", "stage_service worker", "stage_service web"];
