@@ -11,6 +11,21 @@
 - Test authorization: project owner asserted on 2026-08-04
 - Production approval: not established; production enablement remains blocked
 
+## Work Item 20 Instagram feasibility
+
+Status: rejected on 2026-09-06.
+
+The project owner tested DLPanda for Instagram and confirmed that it does not provide a usable
+Instagram path for TikDD. A bounded NL page review also found that Instagram uses a separate POST
+and CSRF workflow rather than the existing adapter's `t0ken` GET protocol. The page exposes an
+optional `ig-sessionid` field and returned `DL_PRIVATE_MEDIA` for the synthetic unavailable test
+URL without establishing a downloadable public result.
+
+TikDD will not accept, store, or forward an Instagram `sessionid`. No Instagram capability, media
+host, delivery policy, fixture claim, Canary, or rollout rule is added for DLPanda. This assessment
+supersedes further DLPanda investigation in Work Item 20 while leaving its existing non-Instagram
+capabilities unchanged.
+
 ## Work item 10.1 X qualification
 
 - Qualification tuple: `dlpanda` / `x` / `global`

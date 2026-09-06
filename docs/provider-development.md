@@ -98,3 +98,5 @@ Current records:
 - [TwitterSaver](providers/twittersaver.md)
 - [DLPanda](providers/dlpanda.md)
 - [SSSTwitter](providers/ssstwitter.md)
+- [ReelsVideo Instagram feasibility](providers/reelsvideo.md)
+- [SaveFromIns Instagram feasibility](providers/savefromins.md)
