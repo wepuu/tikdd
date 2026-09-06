@@ -58,6 +58,7 @@ postgres_data_dir="$(release_value TIKDD_POSTGRES_DATA_DIR "/var/lib/tikdd/postg
 backup_verify_command="$(release_value TIKDD_BACKUP_VERIFY_COMMAND "")"
 initial_empty_confirmed="$(release_value TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED "false")"
 provider_rollout_enabled="$(release_value PROVIDER_ROLLOUT_ENABLED "false")"
+internal_preflight_required="$(release_value TIKDD_INTERNAL_PREFLIGHT_REQUIRED "false")"
 preflight_signals="$(release_value TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON "")"
 
 run_stage_gate() {
@@ -109,8 +110,20 @@ stage_service() {
 }
 
 run_provider_preflight() {
+  case "$internal_preflight_required" in
+    false)
+      echo "internal_preflight=SKIPPED reason=public_release"
+      return
+      ;;
+    true) ;;
+    *)
+      echo "TIKDD_INTERNAL_PREFLIGHT_REQUIRED must be true or false." >&2
+      exit 78
+      ;;
+  esac
+
   [ -n "$preflight_signals" ] || {
-    echo "TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required for deployment." >&2
+    echo "TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required when internal preflight is enabled." >&2
     exit 78
   }
 

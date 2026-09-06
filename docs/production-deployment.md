@@ -258,22 +258,26 @@ export TIKDD_STAGE_VERIFY_COMMAND=/usr/local/sbin/tikdd-stage-gate
 # Only for the first proven-empty PostgreSQL directory; otherwise export the reviewed backup hook.
 export TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true
 # Supply measured values. This conservative example proves that Provider traffic remains blocked.
-export TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON='{"postgresReady":true,"redisReady":true,"providerEgressReady":false,"cleanupLastSucceededAt":null,"evidenceLastSucceededAt":null,"emergencyDenyPropagationMs":null,"workerRestartFailClosed":true,"deliveryExpiryFailClosed":true,"manualRecoveryRequired":true}'
+export TIKDD_INTERNAL_PREFLIGHT_REQUIRED=false
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh deploy
 ```
 
 These release-control variables belong to the root operator environment or the root-readable
 release environment. Subsequent releases leave the empty-database confirmation unset/false and
-export `TIKDD_BACKUP_VERIFY_COMMAND` instead. Every deployment must additionally provide a complete,
-truthful `TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON` object. The release runner passes that value only
-to the one-shot preflight container.
+export `TIKDD_BACKUP_VERIFY_COMMAND` instead. Public MVP releases keep
+`TIKDD_INTERNAL_PREFLIGHT_REQUIRED=false`: the shared-host stage gate, backup verification and
+ordinary service health checks still run, while the isolated three-day calibration preflight is
+skipped explicitly. Set it to `true` only for an authorized isolated calibration deployment and
+provide a complete, truthful `TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON` object; the release runner
+passes that value only to the one-shot preflight container.
 
 The enforced order is baseline, image preparation, PostgreSQL, TikDD Redis, migration, API,
-Delivery, Worker, Web and Provider preflight, with the stage gate after every significant step. A
-release with `PROVIDER_ROLLOUT_ENABLED=false` succeeds only when that preflight returns the explicit
-`blocked` decision (exit 2). A rollout-enabled release succeeds only when it returns `ready` (exit
-0). Missing/malformed signals, crashes and any decision/status mismatch stop the release. This
-keeps ordinary application deployment separate from Provider traffic qualification without
+Delivery, Worker and Web, with the stage gate after every significant step. An authorized isolated
+calibration release additionally runs Provider preflight. With that mode enabled, a release with
+`PROVIDER_ROLLOUT_ENABLED=false` succeeds only when preflight returns the explicit `blocked`
+decision (exit 2), while a rollout-enabled release succeeds only when it returns `ready` (exit 0).
+Missing/malformed signals, crashes and any decision/status mismatch stop that calibration release.
+This keeps ordinary application deployment separate from Provider traffic qualification without
 bypassing the fail-closed gate. Host MySQL,
 host Redis, shared PHP-FPM, Nginx and all existing sites remain online. Admin is excluded from the
 continuous deploy path and is started only when needed:
