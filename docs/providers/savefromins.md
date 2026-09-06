@@ -5,10 +5,10 @@
 - Evaluated platform: Instagram
 - Evaluated region: `nl`
 - Review date: 2026-09-06
-- Production approval: not established
+- Production approval: automated-use decision recorded; route qualification failed and traffic is disabled
 - Manifest capability: Instagram in `nl`, disabled by default
-- Delivery policy: `savefromins-instagram-media-v1`
-- Runtime state: deployed from `main@00bc4b9`, all activation gates false
+- Delivery policy: new candidates use `savefromins-instagram-media-v2`; version 1 remains registered for compatibility
+- Runtime state: deployed from `main@7ddafbd`; rule revision 6 has zero allocation and all activation gates are false
 
 ## Work Item 21 implementation
 
@@ -63,14 +63,17 @@ must be covered by TikDD's own privacy copy before activation.
 
 ## Decision
 
-Status: **conditional technical go; production no-go pending review**.
+Status: **production no-go after failed qualification**.
 
 SaveFromIns is the only Work Item 20 candidate that demonstrated a cookie-free, non-interactive
 Instagram resolve and a deliverable MP4 response from NL. Its small production-disabled adapter,
 sanitized fixtures, and deterministic CI coverage are now implemented and deployed.
 
-The implementation review established items 2 through 5 below. Before qualification or traffic,
-the owner must still record item 1 and explicitly authorize the bounded rollout:
+The implementation review established items 2 through 5 below. The owner recorded item 1 and
+authorized a bounded rollout on 2026-09-06. The first real browser task produced three sanitized
+`invalid_result` attempts and no Delivery candidate, so the exact rule and all gates were disabled
+immediately. Before another qualification attempt, the current upstream response and media-host
+shape must be re-reviewed without broadening the Delivery boundary from an observed response alone:
 
 1. explicit approval for TikDD's automated server-side use;
 2. a bounded, evidence-backed Instagram media-host and redirect policy rather than trusting response
@@ -79,3 +82,16 @@ the owner must still record item 1 and explicitly authorize the bounded rollout:
    and schema-changed responses;
 4. strict time, byte, redirect, concurrency, and retry ceilings; and
 5. a disabled-by-default Manifest capability and rollout kill switch.
+
+## Work Item 22 repair evidence
+
+With the production rule and all three SaveFromIns gates disabled, two bounded diagnostics on
+2026-09-06 returned HTTP 200, a success state, and one direct 720P MP4 for each owner-supplied Reel.
+The second sample used a reviewed `cdninstagram.com` subdomain. The first used
+`instagram.fsjc1-4.fna.fbcdn.net`, explaining the earlier `invalid_result` outcome under version 1.
+
+The new host resolved only to public addresses. A 1 KiB HTTPS Range request returned HTTP 206,
+`video/mp4`, a total length of 8,656,415 bytes, an ISO Base Media File signature, and no redirect.
+ADR-0022 therefore adds only the label-boundary suffix `fna.fbcdn.net` to version 2; it does not
+allow the parent `fbcdn.net` family or runtime host discovery. This evidence supports a code repair,
+not production activation. Another real browser qualification still requires owner authorization.

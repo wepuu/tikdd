@@ -229,7 +229,7 @@ describe("SaveFromInsProvider", () => {
     expect(resolution.candidates).toHaveLength(1);
     expect(resolution.candidates[0]).toMatchObject({
       mode: "redirect",
-      hostPolicyId: "savefromins-instagram-media-v1",
+      hostPolicyId: "savefromins-instagram-media-v2",
       secretHeaders: {}
     });
     const requestBody = calls[0]?.init?.body?.toString() ?? "";
@@ -237,6 +237,22 @@ describe("SaveFromInsProvider", () => {
     expect(requestBody).not.toContain("utm_source");
     expect(JSON.stringify(resolution.result)).not.toContain("cdninstagram.com");
     expect(JSON.stringify(resolution.result)).not.toContain("fixtureauth123");
+  });
+
+  it("accepts the reviewed Meta FNA CDN family without exposing its URL", async () => {
+    const success = await fixture("savefromins-fbcdn-success.json");
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(success, input.toString(), {
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.candidates).toHaveLength(1);
+    expect(resolution.candidates[0]?.hostPolicyId).toBe("savefromins-instagram-media-v2");
+    expect(JSON.stringify(resolution.result)).not.toContain("fbcdn.net");
   });
 
   it.each([

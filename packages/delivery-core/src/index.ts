@@ -199,7 +199,7 @@ export const SSSTWITTER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   hosts: ["ssscdn.io"]
 });
 
-export const SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+export const SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1 = DeliveryHostPolicySchema.parse({
   id: "savefromins-instagram-media-v1",
   providerId: "savefromins",
   modes: ["redirect"],
@@ -207,9 +207,18 @@ export const SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.
   hostSuffixes: ["cdninstagram.com"]
 });
 
+export const SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "savefromins-instagram-media-v2",
+  providerId: "savefromins",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["cdninstagram.com", "fna.fbcdn.net"]
+});
+
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
   [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY],
+  [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1],
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY]
 ]);
 

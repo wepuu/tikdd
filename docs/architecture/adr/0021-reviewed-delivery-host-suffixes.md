@@ -2,6 +2,9 @@
 
 Status: Accepted — 2026-09-06
 
+Superseded in part by ADR-0022 for new SaveFromIns candidates. Version 1 retains this decision's
+original `cdninstagram.com`-only boundary.
+
 ## Context
 
 TikDD Delivery policies previously allowed only exact media hosts. SaveFromIns returned direct
