@@ -167,7 +167,9 @@ export function verifyWorkItem16Static() {
   }
   const deployCase = releaseScript.match(/  deploy\)\n([\s\S]*?)\n    ;;/)?.[1] ?? "";
   assert(!/admin-api|admin-start|stage_service admin/.test(deployCase), "Admin must not start as part of the continuous deployment set.");
-  assert(/TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required for deployment/.test(releaseScript), "Deployment must require complete operator-supplied preflight signals.");
+  assert(/TIKDD_INTERNAL_PREFLIGHT_REQUIRED "false"/.test(releaseScript), "Public releases must default to skipping the isolated calibration preflight.");
+  assert(/internal_preflight=SKIPPED reason=public_release/.test(releaseScript), "A skipped internal preflight must be explicit in release output.");
+  assert(/TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON is required when internal preflight is enabled/.test(releaseScript), "An enabled internal preflight must require complete operator-supplied signals.");
   assert(/provider_rollout_enabled[\s\S]*expected_status=2[\s\S]*expected_decision=blocked[\s\S]*expected_status=0[\s\S]*expected_decision=ready/.test(releaseScript), "Provider preflight expectations must derive from the rollout switch.");
   assert(/preflight \|\| preflight_status="\$\?"/.test(releaseScript), "Deployment must capture the provider preflight decision without weakening schema/runtime failures.");
   assert(/Provider preflight decision mismatch/.test(releaseScript), "Unexpected provider preflight outcomes must fail closed.");

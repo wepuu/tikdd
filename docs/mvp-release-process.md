@@ -27,3 +27,8 @@ the existing production rollback command to restore the previous release environ
 
 Do not invent successful evidence. Record the exact SHA, image digests, backup artifact, smoke URL,
 task/delivery identifiers, health result, and any rollback action in the release handoff.
+
+Public MVP deployments keep `TIKDD_INTERNAL_PREFLIGHT_REQUIRED=false`. The internal preflight is a
+calibration-only diagnostic that requires an isolated queue and a current three-day authorization
+window; it is not a public release gate. Backup verification, staged host checks, health checks,
+rollout rules and Provider process flags remain mandatory.
