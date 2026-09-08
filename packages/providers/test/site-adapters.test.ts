@@ -258,6 +258,81 @@ describe("SaveFromInsProvider", () => {
     expect(JSON.stringify(resolution.result)).not.toContain("fbcdn.net");
   });
 
+  it("normalizes empty video quality and ignores an incomplete audio sibling", async () => {
+    const success = await fixture("savefromins-empty-quality-success.json");
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(success, input.toString(), {
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.result.formats).toHaveLength(1);
+    expect(resolution.result.formats[0]).toMatchObject({
+      container: "mp4",
+      mimeType: "video/mp4",
+      quality: "Original",
+      hasVideo: true,
+      hasAudio: true
+    });
+    expect(resolution.candidates).toHaveLength(1);
+    expect(resolution.candidates[0]?.hostPolicyId).toBe("savefromins-instagram-media-v2");
+    expect(JSON.stringify(resolution.result)).not.toContain("fna.fbcdn.net");
+    expect(JSON.stringify(resolution)).not.toContain("resource_content");
+  });
+
+  it("skips a malformed direct-video sibling when another reviewed MP4 is valid", async () => {
+    const success = JSON.parse(await fixture("savefromins-success.json"));
+    success.data.resources.unshift({
+      quality: "1080P",
+      format: "mp4",
+      type: "video",
+      download_mode: "direct",
+      download_url: "not-a-url"
+    });
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(JSON.stringify(success), input.toString(), {
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720P"]);
+    expect(resolution.candidates).toHaveLength(1);
+  });
+
+  it("fails closed when a successful response contains no valid direct MP4 resource", async () => {
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(JSON.stringify({
+        status: 1,
+        status_code: "success",
+        data: {
+          title: "Incomplete resources",
+          duration: 0,
+          resources: [{
+            quality: "",
+            format: "MP3",
+            type: "audio",
+            download_mode: "",
+            download_url: ""
+          }]
+        }
+      }), input.toString(), { headers: { "content-type": "application/json" } })
+    });
+
+    await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
+      failureCode: "invalid_result",
+      retryable: true,
+      fallbackAllowed: true
+    });
+  });
+
   it.each([
     ["private", "This post is private", "content_private", false, false],
     ["not_found", "This post was removed", "content_not_found", false, false],

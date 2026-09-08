@@ -95,3 +95,24 @@ The new host resolved only to public addresses. A 1 KiB HTTPS Range request retu
 ADR-0022 therefore adds only the label-boundary suffix `fna.fbcdn.net` to version 2; it does not
 allow the parent `fbcdn.net` family or runtime host discovery. This evidence supports a code repair,
 not production activation. Another real browser qualification still requires owner authorization.
+
+## 2026-09-08 empty-quality compatibility incident
+
+After the Instagram Beta entered production, the owner supplied the public Reel shortcode
+`DZxoImOOKrZ` after TikDD returned its generic retryable failure. The sanitized production attempt
+ledger recorded one `savefromins` / `instagram` / `nl` attempt ending in
+`provider_schema_changed`. A separately authorized, bounded diagnostic from the production Worker
+then received HTTP 200 with `status=1`, `status_code=success`, and two resources.
+
+The response contained one direct MP4 video on a real `fna.fbcdn.net` subdomain, so the existing
+ADR-0022 Delivery policy was sufficient. The video had an empty quality string. An unrelated audio
+resource also had empty quality and download-mode fields and no valid download URL. The adapter
+validated every resource before selecting direct MP4 video, so either incomplete sibling caused the
+entire successful response to be classified as a schema change.
+
+The compatibility repair keeps the response count ceiling and the existing request and Delivery
+allowlists, validates resources independently, ignores malformed or irrelevant siblings, and maps
+an empty video quality to `Original`. A successful Provider response with no valid direct MP4 is
+now `invalid_result`; malformed JSON or a malformed response envelope remains
+`provider_schema_changed`. No request marker, raw Provider response, submitted URL parameters, or
+media URL is retained in this record.
