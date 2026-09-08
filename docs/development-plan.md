@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@0c097ae1f677028aad09f6b079dacab982e15d9c`
+- Repository checkpoint: `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`
 - Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -20,7 +20,9 @@ bilingual Instagram landing page for content review; it is deliberately noindex 
 the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 is the next
 focused increment: code-owned structured data for eligible published content. Its implementation is
 merged at `main@0c097ae1f677028aad09f6b079dacab982e15d9c`; production rollout remains a separate
-approved release action.
+approved release action. Work Item 25A is merged at `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`;
+the next small slice is Work Item 25B, which wires bounded bilingual Instagram GEO inputs into the
+reviewable seed/content flow without changing indexability or Provider state.
 
 ## Baseline classification
 
@@ -465,13 +467,31 @@ rendering changes.
 
 #### Work Item 25A — Bounded GEO content foundation
 
-Status: implementation in progress on `codex/wi25-geo-content-model`.
+Status: implemented and merged at `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`; production
+deployment remains pending.
 
 This first slice adds an optional, backward-compatible `geo` object to platform-page JSONB content,
 with a concise direct answer, review state, review timestamp, and code-owned source references. It
 adds an indexability blocker for unreviewed platform content, renders the answer and approved
 sources visibly, and exposes only fixed source choices in Admin. It does not add a migration, start
 Admin in production, change Provider rollout, or make the Instagram Beta indexable.
+
+#### Work Item 25B — Instagram GEO editorial seed and publication
+
+Status: implemented on `codex/wi25b-instagram-geo-content`; PR and production deployment are
+pending.
+
+Populate the existing bilingual Instagram Beta pages with bounded, non-indexable GEO inputs using
+the 25A contract. Reuse `limitationsMarkdown` for limitations, use only code-owned source IDs, keep
+the content in draft until an owner review is actually performed, and keep localized labels valid.
+This slice adds no schema or migration, does not start Admin permanently, and does not change
+Provider, rollout, calibration, or stable-platform state. If the production database has an active
+snapshot, publishing the reviewed content is a separate on-demand Admin operation followed by
+stopping Admin again.
+
+Exit: the bundled and reviewed content snapshots validate in both locales, the Instagram pages
+render the direct answer and fixed sources while remaining noindex, and the existing download flow
+is unchanged.
 
 ## Reusable platform launch pipeline
 

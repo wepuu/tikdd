@@ -9,6 +9,7 @@ describe("public published-content loader", () => {
     expect(instagramPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
     expect(instagramPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
+    expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
     expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(2);
   });
 

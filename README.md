@@ -41,8 +41,9 @@ Work Item 23 ships the bilingual Instagram Beta landing page at
 hreflang, and separate from Provider rollout until the catalog eligibility gate passes. See the
 [Work Item 23 record](docs/work-item-23-instagram-landing-page.md). Work Item 24 adds fixed,
 code-owned JSON-LD only to eligible published pages; it never accepts raw structured data from
-Admin. Work Item 25A adds a bounded GEO answer block with code-owned source references while
-keeping experimental platform pages noindex.
+Admin. Work Item 25A adds a bounded GEO answer block with code-owned source references, and Work Item
+25B wires bounded bilingual Instagram inputs into the seed/content flow while keeping experimental
+platform pages noindex. See the [Work Item 25B record](docs/work-item-25b-instagram-geo-content.md).
 
 ## Platform and provider model
 
