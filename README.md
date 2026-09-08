@@ -6,7 +6,7 @@ providers in priority order until one returns valid normalized metadata and form
 delivery service turns reviewed internal candidates into controlled browser delivery.
 
 The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
-delivery-verified X redirect capabilities; SaveFromIns has a production-disabled Instagram
+delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified Instagram Beta
 redirect capability; DLPanda has multi-platform resolution-only capabilities. All real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
@@ -178,8 +178,8 @@ through the asynchronous mock route.
 ## Safety and product constraints
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
-- The current live product is an experimental X Beta backed by `ssstwitter` in `nl`; the Instagram
-  Beta remains disabled until its separate production qualification and rollout authorization.
+- The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
+  and `savefromins` in `nl`; neither platform is promoted as stable support.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

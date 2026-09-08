@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ResolveForm } from "../../../components/resolve-form";
 import { alternatesForPage, copyForPage } from "../../../lib/content-presentation";
+import { pageMetadataCopy } from "../../../lib/page-metadata";
 import { findPublishedPage, findPublishedRedirect, getPublishedSnapshot, localizedPath, resolvePublishedLocale } from "../../../lib/published-content";
 
 export const dynamicParams = true;
@@ -15,15 +16,12 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const snapshot = await getPublishedSnapshot();
   const page = findPublishedPage(snapshot, route.locale, route.slug ?? []);
   if (!page) return { robots: { index: false, follow: false } };
-  const shared = snapshot.sharedContent.find((item) => item.locale === page.locale);
   const canonical = localizedPath(page.locale, page.seo.localPath);
-  const betaMetadata = page.pageType === "homepage" ? (page.locale === "zh-CN"
-    ? { title: "TikDD X 视频下载 Beta", description: "解析公开的 X 帖子并选择可用的视频格式。" }
-    : { title: "TikDD X video downloader Beta", description: "Resolve public X posts and choose an available video format." }) : null;
+  const metadata = pageMetadataCopy(snapshot, page);
   return {
-    metadataBase: new URL(siteUrl), title: betaMetadata?.title ?? page.seo.searchTitle, description: betaMetadata?.description ?? page.seo.searchDescription,
+    metadataBase: new URL(siteUrl), title: metadata.title, description: metadata.description,
     alternates: { canonical, languages: alternatesForPage(snapshot, page) }, robots: { index: page.seo.indexable, follow: page.seo.indexable },
-    openGraph: { type: "website", locale: page.locale.replace("-", "_"), title: betaMetadata?.title ?? page.seo.socialTitle ?? shared?.defaultSocialTitle ?? page.seo.searchTitle, description: betaMetadata?.description ?? page.seo.socialDescription ?? shared?.defaultSocialDescription ?? page.seo.searchDescription, url: canonical, siteName: shared?.siteName ?? "TikDD" }
+    openGraph: { type: "website", locale: page.locale.replace("-", "_"), title: metadata.socialTitle, description: metadata.socialDescription, url: canonical, siteName: metadata.siteName }
   };
 }
 

@@ -4,6 +4,11 @@ import { PublishedContentLoader, findPublishedPage, resetPublishedContentStateFo
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("public published-content loader", () => {
+  it("does not add an indexable Instagram landing page before its SEO work item", () => {
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.pageType === "platform")).toEqual([]);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(2);
+  });
+
   it("uses only a runtime-validated active snapshot", async () => {
     resetPublishedContentStateForTest();
     const source: PublicContentSource = { loadActive: async () => BUNDLED_PUBLIC_CONTENT_SNAPSHOT, loadCandidate: async () => null };
