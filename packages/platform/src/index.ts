@@ -52,7 +52,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "instagram",
     displayName: "Instagram",
-    status: "planned",
+    status: "experimental",
     source: "yt-dlp",
     hosts: [host("instagram.com")],
     extractorKeys: ["Instagram", "instagram:story"]

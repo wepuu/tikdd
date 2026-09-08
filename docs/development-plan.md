@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@79830a1`
+- Repository checkpoint: `main@c3fbd21758676d738e14f3fd56f69899691752c8`
 - Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -10,8 +10,8 @@ SEO architecture. Future work extends or productizes those systems. It does not 
 
 The public X and Instagram Betas are live through SSSTwitter, SaveFromIns, and Delivery. Work Item
 22 completed the Instagram qualification with two real browser downloads and a clean 15-minute
-watch. Work Item 22.1 is the next small product repair: populate reviewed result thumbnails and
-retain the existing platform-icon fallback. ADR-0020 replaces elapsed
+watch. Work Item 22.1 shipped reviewed result thumbnails with the existing platform-icon fallback
+from `main@c3fbd217` on 2026-09-08. ADR-0020 replaces elapsed
 calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
 immutable images, backup, one real browser download, a short health watch, and fast rollback. X
 and Instagram remain experimental rather than `stable`. Work Item 23 may now evaluate the separate
@@ -42,6 +42,9 @@ Instagram SEO page; thumbnail repair does not make an indexing decision.
 - Real X and Instagram resolve, delivery-ticket, and non-zero browser transfers passed. Instagram
   recorded two successful SaveFromIns attempts and six successful Delivery outcomes during its
   clean 15-minute production watch.
+- The Work Item 22.1 release returned a reviewed Instagram thumbnail as `200 image/jpeg` with a
+  non-zero 48,905-byte body and no redirect; all six core containers remained healthy with zero
+  restarts during the 15-minute observation.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
 - Admin and the calibration profile remain intentionally stopped.
 
@@ -365,15 +368,12 @@ Do not introduce an Instagram-specific task API or downloader architecture.
 
 Lane: B, gated by Work Item 21 and an independently reviewed Instagram delivery path.
 
-Status: Phase A is deployed from `main@7ddafbd`. The owner authorized Phase B on 2026-09-06, but the
-first real browser task ended with three sanitized `invalid_result` Provider attempts and zero
-Delivery candidates. The exact rollout rule was disabled first, all SaveFromIns gates were returned
-to false, and the second sample and 15-minute watch were not started. Disabled-route diagnostics
-then confirmed that both supplied samples still resolve, but one now uses the reviewed Meta FNA CDN
-family. ADR-0022 owns a versioned, label-boundary Delivery repair for `fna.fbcdn.net`; the parent
-`fbcdn.net` family remains denied. Instagram Beta is not launched until the repair passes PR CI,
-deploys default-off from immutable GitHub images, and completes a newly authorized production
-qualification.
+Status: complete. The initial authorized Phase B attempt failed closed, disabled the rollout before
+the runtime gates, and identified the missing reviewed Meta FNA CDN family. ADR-0022 added the
+versioned, label-boundary Delivery policy for `fna.fbcdn.net` while keeping the parent `fbcdn.net`
+family denied. After that repair, both owner-supplied public Reels completed real browser downloads
+and the route passed its 15-minute production observation. Instagram remains an experimental Beta,
+not stable support.
 
 Qualify exact Provider/Instagram/region tuples through targeted tests, rollout, Delivery outcomes,
 circuit monitoring, and the ADR-0020 lightweight release loop. Calibration and longer evidence
@@ -382,6 +382,26 @@ cannot qualify production download delivery.
 
 Exit: the route has current reviewed delivery evidence and an operator-approved bounded rollout;
 catalog promotion remains a separate product decision after the required observation window.
+
+### Work Item 22.1 — Reviewed result thumbnails
+
+Lane: B product repair.
+
+Status: merged and deployed from `main@c3fbd217` on 2026-09-08. ADR-0024 permits only reviewed
+exact-host X and Instagram result thumbnails and retains the platform-icon fallback. Production
+smoke verified a reviewed Instagram image response with a non-zero body and no redirect; the six
+core containers remained healthy with zero restarts during the 15-minute observation.
+
+### Work Item 22.2 — Production support truth alignment
+
+Lane: B product truth maintenance.
+
+Align the platform catalog, homepage metadata, README, and roadmap with the live X and Instagram
+Betas. Both platforms remain `experimental`; this work does not add an Instagram landing page,
+change rollout, expand the sitemap, start Admin, or start calibration.
+
+Exit: API catalog output reports Instagram as experimental, both homepage locales describe X and
+Instagram, and the current roadmap points to Work Item 23 without changing SEO eligibility.
 
 ### Work Item 23 — Instagram landing page
 

@@ -66,6 +66,11 @@ describe("detectPlatform", () => {
     }
   });
 
+  it("reports the live Instagram Beta as experimental without promoting it to stable", () => {
+    const instagram = listPlatformDefinitions().find((platform) => platform.id === "instagram");
+    expect(instagram).toMatchObject({ status: "experimental", source: "yt-dlp" });
+  });
+
   it("rejects non-http schemes", () => {
     expect(isSupportedPlatformUrl("file:///etc/passwd")).toBe(false);
   });

@@ -157,8 +157,9 @@ Implemented scope:
    cards while a task is resolving or ready.
 5. Replace development/provider-flavored mock titles with localized consumer copy.
 6. Show normalized author, duration, platform, and format-count metadata when available.
-7. Use a neutral platform result preview until an approved thumbnail-delivery boundary exists;
-   never load arbitrary upstream thumbnail URLs in the browser.
+7. Historical baseline: use a neutral platform result preview until an approved thumbnail-delivery
+   boundary exists. ADR-0024 now permits reviewed exact-host X and Instagram thumbnails with the
+   platform-icon fallback; arbitrary upstream image URLs remain prohibited.
 
 Exit gate:
 
