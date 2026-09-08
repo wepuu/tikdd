@@ -166,11 +166,18 @@ export const ResolveTaskStatusSchema = z.enum([
 ]);
 export type ResolveTaskStatus = z.infer<typeof ResolveTaskStatusSchema>;
 
+export const PublicThumbnailUrlSchema = z.string().url().max(4_096).superRefine((value, context) => {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password || url.port) {
+    context.addIssue({ code: "custom", message: "Thumbnail URLs must use credential-free HTTPS on the default port." });
+  }
+});
+
 export const MediaSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(500),
   author: z.string().max(200).nullable(),
-  thumbnailUrl: z.string().url().nullable(),
+  thumbnailUrl: PublicThumbnailUrlSchema.nullable(),
   durationSeconds: z.number().nonnegative().nullable(),
   isLive: z.boolean()
 });

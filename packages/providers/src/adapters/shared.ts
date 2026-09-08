@@ -52,6 +52,31 @@ export interface ParsedMedia {
   warnings?: string[];
 }
 
+export function reviewedThumbnailUrl(
+  value: unknown,
+  allowedHosts: ReadonlySet<string>
+): string | null {
+  if (typeof value !== "string" || value.length === 0 || value.length > 4_096) {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      !allowedHosts.has(url.hostname.toLowerCase())
+    ) {
+      return null;
+    }
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 const HTML_ENTITIES: Readonly<Record<string, string>> = {
   amp: "&",
   apos: "'",

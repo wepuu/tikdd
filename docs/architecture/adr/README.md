@@ -23,6 +23,7 @@
 - [ADR-0021: Reviewed delivery host suffixes](0021-reviewed-delivery-host-suffixes.md)
 - [ADR-0022: Versioned Instagram FNA delivery policy](0022-versioned-instagram-fna-delivery-policy.md)
 - [ADR-0023: Separate public release checks from internal calibration preflight](0023-public-release-vs-internal-preflight.md)
+- [ADR-0024: Reviewed external result thumbnails](0024-reviewed-external-result-thumbnails.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

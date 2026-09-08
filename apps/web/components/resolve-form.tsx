@@ -20,7 +20,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
-import { formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
+import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureIntent } from "../lib/task-presentation";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -158,6 +158,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   const [isWorking, setIsWorking] = useState(false);
   const [workingLonger, setWorkingLonger] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
+  const [failedThumbnailUrl, setFailedThumbnailUrl] = useState<string | null>(null);
   const resultCardRef = useRef<HTMLElement>(null);
   const focusedStateRef = useRef<string | null>(null);
   const submissionKeyRef = useRef<{ url: string; key: string } | null>(null);
@@ -214,6 +215,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   useEffect(() => {
     const firstFormatId = task?.status === "succeeded" ? task.result?.formats[0]?.id : null;
     setSelectedFormatId(firstFormatId ?? null);
+    setFailedThumbnailUrl(null);
   }, [task?.id, task?.status]);
 
   useEffect(() => {
@@ -390,6 +392,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   }
 
   const result = task?.status === "succeeded" ? task.result : null;
+  const thumbnailUrl = displayThumbnailUrl(result?.media.thumbnailUrl ?? null, failedThumbnailUrl);
+  const showThumbnail = Boolean(thumbnailUrl);
   const resultFormats = result?.formats ?? [];
   const selectedFormat = resultFormats.find((format) => format.id === selectedFormatId) ?? resultFormats[0];
   const failureIntent = publicFailureIntent(task, submissionError);
@@ -500,8 +504,19 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
           <div className="preview-column">
             <h2>{copy.preview}</h2>
             {result ? (
-              <div className="preview-media resolved-preview" aria-label={`${platformName(task!.platform)} ${copy.resolvedPreview}`}>
-                <span className="resolved-preview-icon" aria-hidden="true"><VideoCameraIcon size={44} weight="duotone" /></span>
+              <div className={`preview-media resolved-preview ${showThumbnail ? "has-thumbnail" : ""}`} aria-label={`${platformName(task!.platform)} ${copy.resolvedPreview}`}>
+                {showThumbnail ? (
+                  <img
+                    src={thumbnailUrl!}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => setFailedThumbnailUrl(thumbnailUrl)}
+                  />
+                ) : (
+                  <span className="resolved-preview-icon" aria-hidden="true"><VideoCameraIcon size={44} weight="duotone" /></span>
+                )}
                 <span className="preview-chip">{platformName(task!.platform)}</span>
               </div>
             ) : isWorking ? (

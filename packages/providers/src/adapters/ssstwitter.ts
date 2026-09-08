@@ -7,6 +7,7 @@ import type {
 import {
   createRedirectResolution,
   readAttributes,
+  reviewedThumbnailUrl,
   requestText,
   textFromHtml,
   type ParsedFormat,
@@ -15,6 +16,8 @@ import {
 
 const ORIGIN = "https://ssstwitter.com";
 const ALLOWED_HOSTS = new Set(["ssstwitter.com", "www.ssstwitter.com"]);
+const X_SOURCE_HOSTS = new Set(["x.com", "www.x.com", "twitter.com", "www.twitter.com"]);
+const X_THUMBNAIL_HOSTS = new Set(["pbs.twimg.com"]);
 const MEDIA_HOST_POLICY_ID = "ssstwitter-media-v1";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const SSSTWITTER_BROWSER_USER_AGENT =
@@ -162,6 +165,44 @@ function parseResult(html: string): {
   };
 }
 
+function parseXThumbnail(html: string): string | null {
+  for (const match of html.matchAll(/<meta\b([^>]*)>/gi)) {
+    const attributes = readAttributes(match[1] ?? "");
+    const name = attributes.get("property") ?? attributes.get("name");
+    if (name?.toLowerCase() !== "og:image" && name?.toLowerCase() !== "twitter:image") {
+      continue;
+    }
+    const thumbnailUrl = reviewedThumbnailUrl(attributes.get("content"), X_THUMBNAIL_HOSTS);
+    if (thumbnailUrl) return thumbnailUrl;
+  }
+  return null;
+}
+
+async function resolveXThumbnail(fetchImpl: ProviderFetch, input: ResolveInput): Promise<string | null> {
+  try {
+    const timeoutSignal = AbortSignal.timeout(4_000);
+    const signal = input.signal ? AbortSignal.any([input.signal, timeoutSignal]) : timeoutSignal;
+    const response = await requestText(
+      fetchImpl,
+      new URL(input.canonicalUrl),
+      {
+        method: "GET",
+        redirect: "manual",
+        signal,
+        headers: {
+          accept: "text/html,application/xhtml+xml",
+          "user-agent": SSSTWITTER_BROWSER_USER_AGENT
+        }
+      },
+      X_SOURCE_HOSTS,
+      { maximumBytes: 512_000, expectedContentTypes: ["text/html", "application/xhtml+xml"] }
+    );
+    return parseXThumbnail(response.body);
+  } catch {
+    return null;
+  }
+}
+
 export class SSSTwitterProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly fetchImpl: ProviderFetch;
@@ -276,6 +317,7 @@ export class SSSTwitterProvider implements ResolverProvider {
       stage = "result_parse_start";
       trace?.stage(stage);
       const parsed = parseResult(result.body);
+      const thumbnailUrl = await resolveXThumbnail(this.fetchImpl, input);
       stage = "result_parse_success";
       trace?.stage(stage);
       this.qualificationEvidence = { candidateHosts: parsed.candidateHosts };
@@ -289,6 +331,7 @@ export class SSSTwitterProvider implements ResolverProvider {
           input,
           {
             title: parsed.title,
+            thumbnailUrl,
             formats: parsed.formats,
             warnings: ["SSSTwitter production rollout is not approved."]
           },

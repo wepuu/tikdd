@@ -225,6 +225,9 @@ describe("SaveFromInsProvider", () => {
     const resolution = await provider.resolve(instagramInput);
     expect(provider.manifest.regions).toEqual(["nl"]);
     expect(resolution.result.media.title).toBe("Authorized Instagram fixture");
+    expect(resolution.result.media.thumbnailUrl).toBe(
+      "https://api-ak.savefromins.com/media/thumbnail?id=fixture"
+    );
     expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720P"]);
     expect(resolution.candidates).toHaveLength(1);
     expect(resolution.candidates[0]).toMatchObject({
@@ -313,6 +316,26 @@ describe("SaveFromInsProvider", () => {
     }
   });
 
+  it.each([
+    "http://api-ak.savefromins.com/media/thumbnail",
+    "https://api-ak.savefromins.com.evil.test/media/thumbnail",
+    "https://user:pass@api-ak.savefromins.com/media/thumbnail",
+    "https://api-ak.savefromins.com:8443/media/thumbnail"
+  ])("drops an unreviewed Instagram thumbnail without failing the video: %s", async (thumbnail) => {
+    const success = JSON.parse(await fixture("savefromins-success.json"));
+    success.data.thumbnail = thumbnail;
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(JSON.stringify(success), input.toString(), {
+        headers: { "content-type": "application/json" }
+      })
+    });
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.result.media.thumbnailUrl).toBeNull();
+    expect(resolution.result.formats).toHaveLength(1);
+  });
+
   it("fails closed when its request marker is absent", async () => {
     const provider = new SaveFromInsProvider({ enabled: true });
     await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
@@ -331,6 +354,12 @@ describe("SSSTwitterProvider", () => {
     const fetchImpl: typeof fetch = async (input, init) => {
       const url = input.toString();
       calls.push({ url, ...(init ? { init } : {}) });
+      if (new URL(url).hostname.endsWith("x.com")) {
+        return htmlResponse(
+          '<meta property="og:image" content="https://pbs.twimg.com/amplify_video_thumb/fixture/img/test.jpg">',
+          url
+        );
+      }
       return calls.length === 1
         ? htmlResponse(landingHtml, url, {
             headers: { "set-cookie": "qualification_session=fixture; Path=/; HttpOnly" }
@@ -343,6 +372,9 @@ describe("SSSTwitterProvider", () => {
     const resolution = await provider.resolve(xInput);
 
     expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720p", "360p"]);
+    expect(resolution.result.media.thumbnailUrl).toBe(
+      "https://pbs.twimg.com/amplify_video_thumb/fixture/img/test.jpg"
+    );
     expect(resolution.candidates).toHaveLength(2);
     expect(resolution.candidates.map(({ formatId }) => formatId)).toEqual(
       resolution.result.formats.map(({ id }) => id)
@@ -361,7 +393,7 @@ describe("SSSTwitterProvider", () => {
     expect(new Date(resolution.candidates[0]!.expiresAt).getTime()).toBeLessThanOrEqual(
       Date.now() + 4 * 60 * 1000
     );
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     const expectedUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
     expect(calls[0]?.init?.headers).toMatchObject({
@@ -380,10 +412,37 @@ describe("SSSTwitterProvider", () => {
     expect(calls[1]?.init?.body?.toString()).toBe(
       "id=https%3A%2F%2Fx.com%2Fauthorized%2Fstatus%2F123456&locale=en&tt=fixture-token&ts=1785771900&source=form"
     );
+    expect(calls[2]?.url).toBe(xInput.canonicalUrl);
+    expect(calls[2]?.init?.redirect).toBe("manual");
     expect(provider.consumeQualificationEvidence()).toEqual({
       candidateHosts: ["ssscdn.io"]
     });
     expect(provider.consumeQualificationEvidence()).toBeNull();
+  });
+
+  it("drops spoofed X thumbnail hosts without failing the SSSTwitter result", async () => {
+    const [landingHtml, resultHtml] = await Promise.all([
+      fixture("ssstwitter-landing.html"),
+      fixture("ssstwitter-success.html")
+    ]);
+    let providerCalls = 0;
+    const provider = new SSSTwitterProvider({
+      enabled: true,
+      fetchImpl: async (input) => {
+        const url = input.toString();
+        if (new URL(url).hostname.endsWith("x.com")) {
+          return htmlResponse(
+            '<meta name="twitter:image" content="https://pbs.twimg.com.evil.test/preview.jpg">',
+            url
+          );
+        }
+        providerCalls += 1;
+        return htmlResponse(providerCalls === 1 ? landingHtml : resultHtml, url);
+      }
+    });
+    const resolution = await provider.resolve(xInput);
+    expect(resolution.result.media.thumbnailUrl).toBeNull();
+    expect(resolution.result.formats).toHaveLength(2);
   });
 
   it("rejects an unreviewed media host instead of broadening delivery policy", async () => {

@@ -1,20 +1,21 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@00bc4b9`
-- Roadmap revision date: 2026-09-06
+- Repository checkpoint: `main@79830a1`
+- Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The first public X Beta is live through SSSTwitter and Delivery. A production-disabled SaveFromIns
-Instagram adapter is deployed and Work Item 22 is preparing the public disclosure and bounded
-qualification path. ADR-0020 replaces elapsed
+The public X and Instagram Betas are live through SSSTwitter, SaveFromIns, and Delivery. Work Item
+22 completed the Instagram qualification with two real browser downloads and a clean 15-minute
+watch. Work Item 22.1 is the next small product repair: populate reviewed result thumbnails and
+retain the existing platform-icon fallback. ADR-0020 replaces elapsed
 calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
 immutable images, backup, one real browser download, a short health watch, and fast rollback. X
-remains experimental rather than `stable`; Instagram is not live until its exact route is separately
-authorized and proven. No Instagram SEO page is created before qualification.
+and Instagram remain experimental rather than `stable`. Work Item 23 may now evaluate the separate
+Instagram SEO page; thumbnail repair does not make an indexing decision.
 
 ## Baseline classification
 
@@ -33,12 +34,13 @@ authorized and proven. No Instagram SEO page is created before qualification.
 
 ### Current production baseline
 
-- X Public Beta is live from `main@00bc4b9` using GitHub-built immutable images.
-- SaveFromIns/Instagram/NL code is deployed but its Provider flags remain false, approval fields are
-  empty, no rollout rule exists, and production has recorded zero SaveFromIns attempts.
+- X and Instagram Public Beta are live from GitHub-built immutable images.
+- The SaveFromIns/Instagram/NL rule is revision 9, enabled at full allocation; its three reviewed
+  runtime gates are true.
 - The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
   an emergency deny path.
-- A real resolve, delivery-ticket, and non-zero browser-style media transfer passed, followed by a
+- Real X and Instagram resolve, delivery-ticket, and non-zero browser transfers passed. Instagram
+  recorded two successful SaveFromIns attempts and six successful Delivery outcomes during its
   clean 15-minute production watch.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
 - Admin and the calibration profile remain intentionally stopped.

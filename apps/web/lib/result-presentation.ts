@@ -21,3 +21,10 @@ export function publicResultTitle(
   }
   return title;
 }
+
+export function displayThumbnailUrl(
+  thumbnailUrl: string | null,
+  failedThumbnailUrl: string | null
+): string | null {
+  return thumbnailUrl && thumbnailUrl !== failedThumbnailUrl ? thumbnailUrl : null;
+}

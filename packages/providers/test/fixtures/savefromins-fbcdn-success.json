@@ -4,6 +4,7 @@
   "data": {
     "title": "Authorized Instagram FNA fixture",
     "duration": 18,
+    "thumbnail": "https://api-ak.savefromins.com/media/thumbnail?id=fixture-fbcdn",
     "resources": [
       {
         "quality": "720P",
