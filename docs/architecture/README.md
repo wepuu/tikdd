@@ -137,6 +137,8 @@ outside sitemap/hreflang while Instagram is experimental. The SEO passport permi
 state and still blocks any request to index an ineligible platform.
 ADR-0025 defines the next structured-data increment: fixed JSON-LD templates are generated only
 from eligible published fields and never accepted as raw Admin content.
+ADR-0026 adds the bounded GEO content foundation: reviewed direct answers and code-owned source
+references may be rendered visibly, while indexability still requires the existing platform gate.
 
 ## Failure policy
 

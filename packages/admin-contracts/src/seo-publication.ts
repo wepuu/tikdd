@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { AdminSchemaVersionSchema } from "./common";
 import { LocaleTagSchema, type PublishedContentSnapshot } from "./editorial";
+import { isGeoContentReady } from "./geo-content";
 
 export const AdminSeoBlockerSchema=z.enum([
   "revision_not_ready","reserved_private_path","path_collision","redirect_collision","redirect_chain",
-  "redirect_loop","slug_migration_missing","platform_not_eligible","fallback_not_indexable","sitemap_conflict"
+  "redirect_loop","slug_migration_missing","platform_not_eligible","geo_content_not_ready","fallback_not_indexable","sitemap_conflict"
 ]);
 export const StructuredDataTemplateSchema=z.enum(["SoftwareApplication","FAQPage","HowTo","BreadcrumbList"]);
 export const AdminSeoPassportSchema=z.strictObject({
@@ -44,7 +45,9 @@ export function deriveSeoTechnicalView(input:{snapshot:PublishedContentSnapshot;
     // Experimental platform pages may be published for editorial review, but they must
     // remain noindex and outside the sitemap until the catalog/provider eligibility gate
     // passes. A malformed platform page (missing its platform slug) is always blocked.
-    if(page.pageType==="platform"&&(!page.platform||(!eligible.has(page.platform)&&(page.seo.indexable||page.seo.includeInSitemap))))add(page.pageId,page.locale,"platform_not_eligible");if(page.seo.includeInSitemap&&!page.seo.indexable)add(page.pageId,page.locale,"sitemap_conflict");blockersByKey.set(key,blockersByKey.get(key)??new Set());}
+    if(page.pageType==="platform"&&(!page.platform||(!eligible.has(page.platform)&&(page.seo.indexable||page.seo.includeInSitemap))))add(page.pageId,page.locale,"platform_not_eligible");
+    if(page.pageType==="platform"&&page.content.template==="platform"&&page.seo.indexable&&!isGeoContentReady(page.content.geo))add(page.pageId,page.locale,"geo_content_not_ready");
+    if(page.seo.includeInSitemap&&!page.seo.indexable)add(page.pageId,page.locale,"sitemap_conflict");blockersByKey.set(key,blockersByKey.get(key)??new Set());}
   const passports=snapshot.pages.map(page=>{const key=`${page.pageId}/${page.locale}`;const group=snapshot.pages.filter(item=>item.pageId===page.pageId&&item.seo.indexable&&!blockersByKey.get(`${item.pageId}/${item.locale}`)?.size);const blockers=[...(blockersByKey.get(key)??[])];const indexableEligible=page.seo.indexable&&blockers.length===0;return{schemaVersion:"1" as const,pageId:page.pageId,locale:page.locale,canonicalPath:localized(page.locale,page.seo.localPath),hreflang:indexableEligible?group.map(item=>({locale:item.locale,path:localized(item.locale,item.seo.localPath)})):[],search:{title:page.seo.searchTitle,description:page.seo.searchDescription},social:{title:page.seo.socialTitle??page.seo.searchTitle,description:page.seo.socialDescription??page.seo.searchDescription,imageAssetId:page.seo.socialImageAssetId},sitemapEligible:indexableEligible&&page.seo.includeInSitemap,indexableEligible,structuredDataTemplates:structuredDataTemplates(page,indexableEligible),redirects:page.seo.redirectFrom.map(from=>({from:localized(page.locale,from),to:localized(page.locale,page.seo.localPath)})),blockers};});
   return AdminSeoTechnicalViewSchema.parse({schemaVersion:"1",generatedAt:input.generatedAt,privateRoutePrefixes:PRIVATE_PREFIXES,passports,sitemapPaths:passports.filter(item=>item.sitemapEligible).map(item=>item.canonicalPath).sort(),blockerCount:passports.reduce((sum,item)=>sum+item.blockers.length,0)});
 }

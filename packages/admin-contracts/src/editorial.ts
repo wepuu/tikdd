@@ -8,6 +8,7 @@ import {
   AdminSchemaVersionSchema,
   AdminTimestampSchema
 } from "./common";
+import { GeoContentSchema } from "./geo-content";
 
 function isCanonicalLocale(value: string): boolean {
   try {
@@ -73,7 +74,10 @@ export const PlatformPageContentSchema = z.strictObject({
   introduction: LongTextSchema,
   limitationsMarkdown: SafeMarkdownSchema,
   howToSteps: z.array(StepSchema).min(2).max(8),
-  faqItems: z.array(FaqItemSchema).max(20)
+  faqItems: z.array(FaqItemSchema).max(20),
+  // Optional keeps older published snapshots readable while new reviewed pages
+  // can opt into the GEO publication contract.
+  geo: GeoContentSchema.nullable().default(null)
 });
 
 export const GuidePageContentSchema = z.strictObject({
