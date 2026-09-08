@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@c3fbd21758676d738e14f3fd56f69899691752c8`
+- Repository checkpoint: `main@df7aa842c481d9fceaaa4e36e1affda5ff63432f`
 - Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -14,8 +14,9 @@ watch. Work Item 22.1 shipped reviewed result thumbnails with the existing platf
 from `main@c3fbd217` on 2026-09-08. ADR-0020 replaces elapsed
 calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
 immutable images, backup, one real browser download, a short health watch, and fast rollback. X
-and Instagram remain experimental rather than `stable`. Work Item 23 may now evaluate the separate
-Instagram SEO page; thumbnail repair does not make an indexing decision.
+and Instagram remain experimental rather than `stable`. Work Item 23 now prepares a reviewed,
+bilingual Instagram landing page for content review; it is deliberately noindex and absent from
+the sitemap/hreflang group until the existing eligibility gate passes.
 
 ## Baseline classification
 
@@ -407,10 +408,16 @@ Instagram, and the current roadmap points to Work Item 23 without changing SEO e
 
 Lane: C. Target public route: `/instagram-downloader/`.
 
-Create the page through the existing platform-page schema, locale registry, structured editor,
-preview, immutable publication snapshot, and SEO passport. Editorial work may precede production
-qualification, but the page remains explicitly non-indexable and absent from sitemap/hreflang until
-the existing eligibility gate passes.
+Status: implementation in progress. The bundled fallback snapshot now contains reviewed English
+and Simplified Chinese platform content, and the public route renders the shared resolver, localized
+steps, limitations, and FAQ through the existing structured page template. The SEO passport permits
+an experimental platform page only when it is explicitly noindex; requesting indexability still
+returns `platform_not_eligible`. The page is absent from sitemap and hreflang by derivation.
+
+The normal production path remains content-editorial: create or revise the two locale cells through
+the existing Admin structured editor, preview and publish one immutable snapshot, then separately
+review the SEO passport. This work item does not start Admin, change Provider rollout, or promote
+Instagram to `stable`.
 
 Exit: reviewed localized content is publication-ready, and indexability is still derived rather than
 manually asserted.

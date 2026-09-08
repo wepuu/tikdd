@@ -323,3 +323,9 @@ footer > span { color: var(--ink-soft); font-size: 0.66rem; }
 .published-document h3 { margin-bottom: 6px; }
 .published-document p { color: var(--muted); font-size: 1.05rem; line-height: 1.8; white-space: pre-wrap; }
 .published-document details { border-top: 1px solid var(--line); padding: 18px 0; }
+.platform-page { padding-bottom: 12px; }
+.platform-intro { margin-bottom: 0; padding-bottom: 24px; text-align: center; }
+.platform-intro .hero-badge { margin-bottom: 18px; }
+.platform-intro > p:not(.hero-badge) { max-width: 680px; margin-left: auto; margin-right: auto; }
+.platform-resolver { padding: 0 38px; }
+.platform-details { margin-top: 42px; padding-bottom: 56px; }

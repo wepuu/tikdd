@@ -4,8 +4,11 @@ import { PublishedContentLoader, findPublishedPage, resetPublishedContentStateFo
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("public published-content loader", () => {
-  it("does not add an indexable Instagram landing page before its SEO work item", () => {
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.pageType === "platform")).toEqual([]);
+  it("bundles a reviewed bilingual Instagram page without making it indexable", () => {
+    const instagramPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "instagram");
+    expect(instagramPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+    expect(instagramPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(2);
   });
 

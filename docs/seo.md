@@ -16,8 +16,10 @@
 
 ## Content rules
 
-- Do not launch a platform page until the catalog entry is `stable` and at least one monitored
-  production provider works in the target region.
+- Do not index or promote a platform page until the catalog entry is `stable` and at least one
+  monitored production provider works in the target region. An experimental platform page may be
+  published for human content review when `indexable=false` and `includeInSitemap=false`; the SEO
+  passport must derive that noindex state and omit hreflang links.
 - Each locale is written or reviewed by a fluent editor; do not bulk-publish thin translated pages.
 - Explain platform limitations, authorization requirements, format behavior, and actionable failure
   cases rather than repeating download keywords.
