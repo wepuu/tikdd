@@ -8,6 +8,7 @@ import {
   DotsThreeIcon,
   DownloadSimpleIcon,
   GlobeHemisphereWestIcon,
+  InstagramLogoIcon,
   LinkSimpleIcon,
   PlayIcon,
   ScanIcon,
@@ -142,7 +143,7 @@ function admissionMessage(code: string, copy: SiteCopy["form"]): string {
   }
 }
 
-const platformIcons = [XLogoIcon] as const;
+const platformIcons = [XLogoIcon, InstagramLogoIcon] as const;
 const processIcons = [LinkSimpleIcon, ScanIcon, DownloadSimpleIcon] as const;
 const featureIcons = [GlobeHemisphereWestIcon, SlidersHorizontalIcon, ShieldCheckIcon] as const;
 

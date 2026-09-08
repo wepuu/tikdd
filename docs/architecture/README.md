@@ -131,6 +131,11 @@ Anonymous quotas and provider concurrency are documented in
 [ADR-0010](adr/0010-owner-control-plane-routing-and-publication.md) defines Admin authentication,
 route-policy overlays, structured multilingual publishing, and derived SEO boundaries.
 
+The Instagram Beta landing page reuses this boundary: its bundled English and Simplified Chinese
+content is rendered through the platform template and shared resolver, but remains noindex and
+outside sitemap/hreflang while Instagram is experimental. The SEO passport permits that review
+state and still blocks any request to index an ineligible platform.
+
 ## Failure policy
 
 | Failure class | Try next provider | Retry queue job | User-facing intent |

@@ -232,6 +232,50 @@ describe("Admin internal contracts", () => {
     expect(view.sitemapPaths).toEqual(["/en","/zh-CN"]);
   });
 
+  it("allows an experimental platform page for noindex editorial review only", () => {
+    const homepage = ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!;
+    const instagramPage = {
+      ...homepage,
+      pageId: "page_instagram",
+      pageType: "platform" as const,
+      platform: "instagram",
+      content: {
+        template: "platform" as const,
+        eyebrow: "Instagram Beta",
+        title: "Instagram video downloader Beta",
+        introduction: "Paste a public Instagram Reel or post link to resolve available formats through TikDD.",
+        limitationsMarkdown: "Public links only. Private or restricted posts may not resolve.",
+        howToSteps: [
+          { title: "Paste a link", description: "Copy a public Instagram Reel or post link." },
+          { title: "Choose a format", description: "Select an available format and request delivery." }
+        ],
+        faqItems: []
+      },
+      seo: {
+        ...homepage.seo,
+        localPath: "/instagram-downloader",
+        searchTitle: "TikDD Instagram video downloader Beta",
+        searchDescription: "Resolve public Instagram Reels and posts through TikDD's reviewed Beta workflow.",
+        socialTitle: null,
+        socialDescription: null,
+        indexable: false,
+        includeInSitemap: false,
+        redirectFrom: []
+      }
+    };
+    const snapshot = PublishedContentSnapshotSchema.parse({ ...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE, pages: [homepage, instagramPage] });
+    const review = deriveSeoTechnicalView({ snapshot, eligiblePlatforms: [], generatedAt: "2026-08-12T00:00:00.000Z" });
+    const reviewPassport = review.passports.find((passport) => passport.pageId === "page_instagram");
+    expect(reviewPassport).toMatchObject({ blockers: [], indexableEligible: false, sitemapEligible: false, hreflang: [] });
+
+    const indexableSnapshot = PublishedContentSnapshotSchema.parse({
+      ...snapshot,
+      pages: [{ ...homepage }, { ...instagramPage, seo: { ...instagramPage.seo, indexable: true, includeInSitemap: true } }]
+    });
+    const indexable = deriveSeoTechnicalView({ snapshot: indexableSnapshot, eligiblePlatforms: [], generatedAt: "2026-08-12T00:00:00.000Z" });
+    expect(indexable.passports.find((passport) => passport.pageId === "page_instagram")?.blockers).toContain("platform_not_eligible");
+  });
+
   it("blocks private paths, collisions, unsafe redirect graphs, and unreviewed slug changes",()=>{
     const page=ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!;const prior={...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE,pages:[page]};
     const snapshot={...prior,revision:2,pages:[{...page,seo:{...page.seo,localPath:"/tasks/private",redirectFrom:["/legacy"]}},{...page,pageId:"page_faq",pageType:"faq" as const,content:{template:"faq" as const,title:"Frequently asked questions",introduction:"Answers for public TikDD media resolution workflows.",items:[{question:"How?",answerMarkdown:"Use a public page link."}]},seo:{...page.seo,localPath:"/tasks/private",redirectFrom:["/legacy"]}}]};

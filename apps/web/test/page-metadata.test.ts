@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pageMetadataCopy } from "../lib/page-metadata";
+import { alternatesForPage } from "../lib/content-presentation";
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("published page metadata", () => {
@@ -18,5 +19,14 @@ describe("published page metadata", () => {
       expect(metadata.socialTitle).toContain(platform);
       expect(metadata.socialDescription).toContain(platform);
     }
+  });
+
+  it("keeps the noindex Instagram review page out of hreflang", () => {
+    const page = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(
+      (candidate) => candidate.pageId === "page_instagram" && candidate.locale === "en"
+    );
+    expect(page).toBeDefined();
+    expect(page?.seo.indexable).toBe(false);
+    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toEqual({});
   });
 });
