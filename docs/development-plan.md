@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@df7aa842c481d9fceaaa4e36e1affda5ff63432f`
+- Repository checkpoint: `main@177775c9193f3699ddfcb96c962b9df23ca193aa`
 - Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -14,9 +14,11 @@ watch. Work Item 22.1 shipped reviewed result thumbnails with the existing platf
 from `main@c3fbd217` on 2026-09-08. ADR-0020 replaces elapsed
 calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
 immutable images, backup, one real browser download, a short health watch, and fast rollback. X
-and Instagram remain experimental rather than `stable`. Work Item 23 now prepares a reviewed,
+and Instagram remain experimental rather than `stable`. Work Item 23 is merged and deployed from
+`main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
 bilingual Instagram landing page for content review; it is deliberately noindex and absent from
-the sitemap/hreflang group until the existing eligibility gate passes.
+the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 is the next
+focused increment: code-owned structured data for eligible published content.
 
 ## Baseline classification
 
@@ -46,6 +48,9 @@ the sitemap/hreflang group until the existing eligibility gate passes.
 - The Work Item 22.1 release returned a reviewed Instagram thumbnail as `200 image/jpeg` with a
   non-zero 48,905-byte body and no redirect; all six core containers remained healthy with zero
   restarts during the 15-minute observation.
+- The Work Item 23 release returned HTTP 200 for both localized Instagram Beta routes, retained
+  `noindex`, and passed one real X download, one real Instagram download, and a 15-minute
+  post-deploy watch with zero core-container restarts and zero observed API/Delivery 5xx.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
 - Admin and the calibration profile remain intentionally stopped.
 
@@ -408,7 +413,7 @@ Instagram, and the current roadmap points to Work Item 23 without changing SEO e
 
 Lane: C. Target public route: `/instagram-downloader/`.
 
-Status: implementation in progress. The bundled fallback snapshot now contains reviewed English
+Status: complete and deployed. The bundled fallback snapshot contains reviewed English
 and Simplified Chinese platform content, and the public route renders the shared resolver, localized
 steps, limitations, and FAQ through the existing structured page template. The SEO passport permits
 an experimental platform page only when it is explicitly noindex; requesting indexability still
@@ -425,6 +430,10 @@ manually asserted.
 ### Work Item 24 — Structured data foundation
 
 Lane: C.
+
+Status: implementation in progress. This increment adds ADR-0025, a bounded template collection
+in the SEO passport, and a server-side JSON-LD renderer. It does not change Provider rollout,
+start Admin, or make the Instagram Beta indexable.
 
 Implement fixed code-owned JSON-LD templates derived only from validated fields in the active
 published snapshot. Initial schema candidates are:

@@ -32,3 +32,12 @@ the page indexable.
 - Admin contract tests cover noindex experimental review and stable-only indexability.
 - Web tests cover bilingual seed content, metadata, and hreflang exclusion.
 - `pnpm lint`, targeted Vitest suites, and workspace type checks pass before PR CI.
+
+## Production closeout
+
+The implementation merged in PR #60 as `main@177775c9193f3699ddfcb96c962b9df23ca193aa` and was
+deployed to the NL host from GitHub-built immutable images. Both localized routes returned HTTP 200
+with `noindex`; the existing X and Instagram rollout rules and gates were preserved. One real X
+download (26,119,225 bytes) and one real Instagram download (8,656,415 bytes) returned HTTP 200,
+followed by a 15-minute observation with all six core containers healthy, zero restarts, and zero
+observed API/Delivery 5xx lines. Admin, calibration, and other Providers remained stopped.
