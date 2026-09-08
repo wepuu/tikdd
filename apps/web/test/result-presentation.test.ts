@@ -1,6 +1,6 @@
 import type { ResolveResult } from "@tikdd/contracts";
 import { describe, expect, it } from "vitest";
-import { formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
+import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 
 function result(overrides: Partial<ResolveResult> = {}): ResolveResult {
   return {
@@ -52,5 +52,12 @@ describe("result presentation", () => {
     expect(formatMediaDuration(null)).toBeNull();
     expect(formatMediaDuration(167)).toBe("2:47");
     expect(formatMediaDuration(3723)).toBe("1:02:03");
+  });
+
+  it("shows a normalized thumbnail and falls back after that URL fails", () => {
+    const thumbnail = "https://pbs.twimg.com/media/preview.jpg";
+    expect(displayThumbnailUrl(thumbnail, null)).toBe(thumbnail);
+    expect(displayThumbnailUrl(thumbnail, thumbnail)).toBeNull();
+    expect(displayThumbnailUrl(null, null)).toBeNull();
   });
 });

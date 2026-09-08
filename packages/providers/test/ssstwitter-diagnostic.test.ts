@@ -50,11 +50,17 @@ async function providerFixture() {
     fixture("ssstwitter-success.html")
   ]);
   let calls = 0;
+  let providerCalls = 0;
   return {
     fetchImpl: (async (request) => {
       calls += 1;
-      return response(calls % 2 === 1 ? landing : result, request.toString(),
-        calls % 2 === 1
+      const url = request.toString();
+      if (new URL(url).hostname.endsWith("x.com")) {
+        return response('<meta property="og:image" content="https://pbs.twimg.com/media/diagnostic.jpg">', url);
+      }
+      providerCalls += 1;
+      return response(providerCalls % 2 === 1 ? landing : result, url,
+        providerCalls % 2 === 1
           ? { headers: { "set-cookie": "qualification_session=fixture; Path=/; HttpOnly" } }
           : {});
     }) as typeof fetch,
@@ -82,7 +88,7 @@ describe("SSSTwitter task-scoped diagnostic trace", () => {
     await provider.resolve(input);
 
     expect(events).toEqual([]);
-    expect(fixtureFetch.calls).toBe(2);
+    expect(fixtureFetch.calls).toBe(3);
   });
 
   it("emits nothing when the exact canonical URL hash does not match", async () => {
@@ -220,7 +226,7 @@ describe("SSSTwitter task-scoped diagnostic trace", () => {
     expect(events.filter(({ kind, stage }) => kind === "stage" && stage === "resolve_start"))
       .toHaveLength(2);
     expect(new Set(events.map(({ invocationOrdinal }) => invocationOrdinal))).toEqual(new Set([1, 2]));
-    expect(fixtureFetch.calls).toBe(6);
+    expect(fixtureFetch.calls).toBe(9);
   });
 
   it("records the exact failed stage and sanitized ProviderError message", async () => {

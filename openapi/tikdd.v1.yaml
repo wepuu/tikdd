@@ -380,6 +380,9 @@ components:
         thumbnailUrl:
           type: [string, "null"]
           format: uri
+          maxLength: 4096
+          pattern: ^https://
+          description: Reviewed credential-free HTTPS preview image URL, or null when unavailable.
         durationSeconds:
           type: [number, "null"]
           minimum: 0

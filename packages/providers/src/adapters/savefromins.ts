@@ -3,6 +3,7 @@ import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
 import {
   createRedirectResolution,
+  reviewedThumbnailUrl,
   requestText,
   type ParsedFormat,
   type ProviderFetch
@@ -12,6 +13,7 @@ const API_ORIGIN = "https://api.savefromins.com";
 const API_PATH = "/api/contentsite_api/media/parse";
 const REQUEST_DOMAIN = "api-ak.savefromins.com";
 const ALLOWED_HOSTS = new Set(["api.savefromins.com"]);
+const THUMBNAIL_HOSTS = new Set(["api-ak.savefromins.com"]);
 const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 
@@ -31,6 +33,7 @@ const ResponseSchema = z.object({
   data: z.object({
     title: z.string().max(500).nullish(),
     duration: z.number().int().nonnegative().max(86_400).nullish(),
+    thumbnail: z.unknown().optional(),
     resources: z.array(ResourceSchema).max(20)
   }).nullish()
 });
@@ -166,6 +169,7 @@ export class SaveFromInsProvider implements ResolverProvider {
         input,
         {
           title: payload.data.title ?? null,
+          thumbnailUrl: reviewedThumbnailUrl(payload.data.thumbnail, THUMBNAIL_HOSTS),
           durationSeconds: payload.data.duration ?? null,
           formats,
           warnings: ["SaveFromIns is limited to public Instagram posts."]

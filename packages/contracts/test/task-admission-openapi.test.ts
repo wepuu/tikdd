@@ -25,6 +25,7 @@ describe("task admission OpenAPI boundary", () => {
     expect(specification).toContain("CONCURRENCY_LIMITED");
     expect(specification).toContain("equivalent-source allowance");
     expect(specification).toContain("required: [url]");
+    expect(specification).toContain("Reviewed credential-free HTTPS preview image URL");
     expect(specification).not.toMatch(/existing task id|existing result/i);
   });
 });

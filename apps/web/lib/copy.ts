@@ -65,7 +65,7 @@ const copy = {
     },
     trust: {
       title: "Designed around safe delivery", labels: "Scoped · Expiring · One use",
-      description: "TikDD sends the public page URL to a third-party processing service. Public results never include provider download URLs or secret headers."
+      description: "TikDD sends the public page URL to a third-party processing service. When available, the preview image loads from a reviewed third-party image host. Public results never include provider download URLs or secret headers."
     },
     legal: "TikDD is an independent tool and is not affiliated with X or Instagram."
   },
@@ -129,7 +129,7 @@ const copy = {
     },
     trust: {
       title: "围绕安全交付设计", labels: "限定范围 · 短期有效 · 单次使用",
-      description: "TikDD 会将公开页面链接发送给第三方处理服务。公开结果不会包含第三方下载地址或私密请求头。"
+      description: "TikDD 会将公开页面链接发送给第三方处理服务。可用时，预览图会从经过审核的第三方图片主机加载。公开结果不会包含第三方下载地址或私密请求头。"
     },
     legal: "TikDD 是独立工具，与 X 或 Instagram 不存在隶属关系。"
   }

@@ -221,6 +221,9 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .preview-media::after { content: ""; height: 58px; position: absolute; left: 14px; right: 14px; bottom: 12px; background: rgba(255, 255, 255, 0.73); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 10px; backdrop-filter: blur(9px); }
 .resolved-preview { display: grid; place-items: center; color: #4669df; background: linear-gradient(145deg, rgba(220, 238, 255, 0.94), rgba(236, 230, 255, 0.9)); border: 1px solid rgba(191, 208, 239, 0.78); }
 .resolved-preview::after { display: none; }
+.resolved-preview.has-thumbnail { background: #dfe8f6; }
+.resolved-preview.has-thumbnail img { position: absolute; inset: 0; }
+.resolved-preview.has-thumbnail::before { content: ""; position: absolute; z-index: 1; inset: 58% 0 0; background: linear-gradient(to bottom, transparent, rgba(19, 31, 58, 0.28)); pointer-events: none; }
 .resolved-preview.is-failure { color: var(--danger); background: linear-gradient(145deg, rgba(255, 239, 243, 0.96), rgba(244, 238, 255, 0.92)); }
 .resolved-preview-icon { width: 82px; height: 82px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 24px; box-shadow: 0 15px 34px rgba(64, 88, 170, 0.14); }
 .play-button { width: 62px; height: 62px; position: absolute; z-index: 2; top: 50%; left: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(145deg, #8b5cf6, #337fff); border-radius: 50%; box-shadow: 0 12px 28px rgba(47, 88, 225, 0.34); transform: translate(-50%, -50%); }

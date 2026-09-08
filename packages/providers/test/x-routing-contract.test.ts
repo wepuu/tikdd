@@ -78,12 +78,20 @@ function ssProvider(outcome: "success" | "retryable", calls: string[]): SSSTwitt
   return new SSSTwitterProvider({
     enabled: true,
     fetchImpl: async (request) => {
+      const url = request.toString();
+      if (new URL(url).hostname.endsWith("x.com")) {
+        calls.push("ssstwitter:thumbnail");
+        return response(
+          '<meta property="og:image" content="https://pbs.twimg.com/media/routing-preview.jpg">',
+          url
+        );
+      }
       requestCount += 1;
       calls.push(`ssstwitter:${requestCount === 1 ? "landing" : "resolve"}`);
       if (outcome === "retryable") {
-        return response("temporarily unavailable", request.toString(), { status: 503 });
+        return response("temporarily unavailable", url, { status: 503 });
       }
-      return response(requestCount === 1 ? ssLanding : ssResult, request.toString());
+      return response(requestCount === 1 ? ssLanding : ssResult, url);
     }
   });
 }
@@ -123,7 +131,8 @@ describe("production-shaped X routing contract", () => {
     expect(calls).toEqual([
       "twittersaver:landing",
       "ssstwitter:landing",
-      "ssstwitter:resolve"
+      "ssstwitter:resolve",
+      "ssstwitter:thumbnail"
     ]);
     expect(routed.attempts.map(({ providerId, failureCode }) => [providerId, failureCode])).toEqual([
       ["twittersaver", "provider_unavailable"],
@@ -206,7 +215,7 @@ describe("production-shaped X routing contract", () => {
     ).resolve(input);
 
     expect(routed.resolution.result.provenance.provider).toBe("ssstwitter");
-    expect(calls).toEqual(["ssstwitter:landing", "ssstwitter:resolve"]);
+    expect(calls).toEqual(["ssstwitter:landing", "ssstwitter:resolve", "ssstwitter:thumbnail"]);
   });
 
   it("skips a concurrency-busy primary without consuming the attempt budget", async () => {
@@ -224,7 +233,7 @@ describe("production-shaped X routing contract", () => {
 
     expect(routed.resolution.result.provenance.provider).toBe("ssstwitter");
     expect(routed.attempts).toHaveLength(1);
-    expect(calls).toEqual(["ssstwitter:landing", "ssstwitter:resolve"]);
+    expect(calls).toEqual(["ssstwitter:landing", "ssstwitter:resolve", "ssstwitter:thumbnail"]);
   });
 
   it("does not call the secondary after the route attempt budget is exhausted", async () => {
