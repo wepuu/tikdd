@@ -18,7 +18,7 @@ const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 
 const ResourceSchema = z.object({
-  quality: z.string().min(1).max(80),
+  quality: z.string().max(80),
   format: z.string().min(1).max(24),
   type: z.string().min(1).max(24),
   download_mode: z.string().min(1).max(24),
@@ -34,7 +34,7 @@ const ResponseSchema = z.object({
     title: z.string().max(500).nullish(),
     duration: z.number().int().nonnegative().max(86_400).nullish(),
     thumbnail: z.unknown().optional(),
-    resources: z.array(ResourceSchema).max(20)
+    resources: z.array(z.unknown()).max(20)
   }).nullish()
 });
 
@@ -147,20 +147,34 @@ export class SaveFromInsProvider implements ResolverProvider {
       mapProviderFailure(payload.status_code ?? "", payload.message ?? payload.msg ?? "");
     }
 
-    const formats: ParsedFormat[] = payload.data.resources
-      .filter((resource) =>
-        resource.type.toLowerCase() === "video" &&
-        resource.format.toLowerCase() === "mp4" &&
-        resource.download_mode.toLowerCase() === "direct"
-      )
-      .map((resource) => ({
-        url: resource.download_url,
-        label: `${resource.quality} MP4`,
+    const formats: ParsedFormat[] = payload.data.resources.flatMap((resource) => {
+      const parsed = ResourceSchema.safeParse(resource);
+      if (!parsed.success) return [];
+      if (
+        parsed.data.type.toLowerCase() !== "video" ||
+        parsed.data.format.toLowerCase() !== "mp4" ||
+        parsed.data.download_mode.toLowerCase() !== "direct"
+      ) return [];
+
+      const quality = parsed.data.quality.trim() || "Original";
+      return [{
+        url: parsed.data.download_url,
+        label: `${quality} MP4`,
         container: "mp4",
-        quality: resource.quality,
+        quality,
         hasVideo: true,
         hasAudio: true
-      }));
+      }];
+    });
+
+    if (formats.length === 0) {
+      throw new ProviderError(
+        "SaveFromIns returned no valid direct MP4 resource.",
+        "invalid_result",
+        true,
+        true
+      );
+    }
 
     try {
       return createRedirectResolution(

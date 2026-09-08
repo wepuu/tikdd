@@ -1,0 +1,29 @@
+{
+  "status": 1,
+  "status_code": "success",
+  "data": {
+    "title": "Empty-quality Instagram fixture",
+    "duration": 0,
+    "thumbnail": "https://api-ak.savefromins.com/media/thumbnail?id=fixture-empty-quality",
+    "resources": [
+      {
+        "quality": "",
+        "format": "mp4",
+        "type": "video",
+        "download_mode": "direct",
+        "download_url": "https://instagram.fayt2-1.fna.fbcdn.net/fixture/video.mp4",
+        "resource_content": "not-public-provider-data"
+      },
+      {
+        "resource_id": "fixture-audio",
+        "quality": "",
+        "format": "MP3",
+        "type": "audio",
+        "size": 0,
+        "resource_content": "not-a-download-url",
+        "download_mode": "",
+        "download_url": ""
+      }
+    ]
+  }
+}

@@ -23,9 +23,12 @@ function jsonResponse(body: string, url: string): Response {
   return response;
 }
 
-async function provider(calls: string[]): Promise<SaveFromInsProvider> {
+async function provider(
+  calls: string[],
+  fixtureName = "savefromins-success.json"
+): Promise<SaveFromInsProvider> {
   const fixture = await readFile(
-    fileURLToPath(new URL("./fixtures/savefromins-success.json", import.meta.url)),
+    fileURLToPath(new URL(`./fixtures/${fixtureName}`, import.meta.url)),
     "utf8"
   );
   return new SaveFromInsProvider({
@@ -67,6 +70,31 @@ describe("production-shaped Instagram routing contract", () => {
       providerId: "savefromins",
       platform: "instagram",
       region: "nl",
+      status: "succeeded"
+    });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("routes an empty-quality MP4 without admitting its malformed audio sibling", async () => {
+    const calls: string[] = [];
+    const routed = await new ProviderRouter([
+      await provider(calls, "savefromins-empty-quality-success.json")
+    ], {
+      region: "nl",
+      production: true,
+      rolloutSource: allow
+    }).resolve(input);
+
+    expect(routed.resolution.result.formats).toHaveLength(1);
+    expect(routed.resolution.result.formats[0]).toMatchObject({
+      container: "mp4",
+      quality: "Original",
+      hasVideo: true
+    });
+    expect(routed.resolution.candidates).toHaveLength(1);
+    expect(routed.attempts).toHaveLength(1);
+    expect(routed.attempts[0]).toMatchObject({
+      providerId: "savefromins",
       status: "succeeded"
     });
     expect(calls).toHaveLength(1);
