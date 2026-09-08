@@ -159,8 +159,8 @@ its exact Provider/platform/region route passes the same delivery and evidence b
 | Public locale routing | Partial | Dynamic locale routes and published content exist, but bundled seed content is only `en`/`zh-CN`; general UI chrome falls back to English except for `zh-CN`. See `apps/web/app/[locale]/[[...slug]]/page.tsx`, Web content loader. |
 | Platform landing pages | Backend only | Code-owned page definitions, CMS fields, route rendering, and eligibility gates exist, but the repository seed publishes only the two homepages and no platform is stable/index-eligible. |
 | Metadata/canonical/robots/hreflang/sitemap | Complete | They are derived from the active snapshot with same-origin and eligibility validation. See Web page metadata, `apps/web/app/robots.ts`, `apps/web/app/sitemap.ts`, Admin SEO validation/tests. |
-| Structured data | Partial | A code-owned structured-data template/passport model exists in Admin, but the public Web does not emit JSON-LD. Arbitrary JSON-LD editing is intentionally prohibited. |
-| GEO-oriented content | Partial | Structured help/FAQ/how-to content fields are reusable, but no explicit GEO product model or rendered structured-data layer exists. |
+| Structured data | Complete for the current foundation | ADR-0025 and the merged Web renderer emit fixed JSON-LD only for eligible published pages; noindex and dynamic pages remain suppressed. Arbitrary JSON-LD editing is prohibited. |
+| GEO-oriented content | In progress | Work Item 25A adds a bounded, optional platform-page GEO object, code-owned source IDs, and a reviewed-content indexability blocker. Broader editorial quality and freshness workflows remain future work. |
 | Stable-before-indexing gate | Complete | Platform pages require stable catalog state, eligible monitored production routing, and locale readiness. With zero stable platforms, none currently qualifies. See ADR-0010 and Admin/Web SEO tests. |
 | Task/result non-indexability | Complete | Private/dynamic prefixes are excluded/disallowed; API responses and Admin use noindex headers, and public task states do not create indexable result URLs. See `robots.ts`, sitemap logic, API response headers, AGENTS.md. |
 | Production deployment and schedules | Missing | Repository Docker Compose provisions PostgreSQL/Redis only; application deployment and recurring service schedules are not represented as deployable infrastructure. |
@@ -242,9 +242,9 @@ fully multilingual experience beyond English and Simplified Chinese.
 Reusable: editable safe SEO fields plus derived canonical, hreflang, robots, sitemap, and eligibility
 logic exist. Structured FAQ/how-to content fields can support future answer-oriented pages.
 
-Gap: the public Web does not emit JSON-LD, and the product has no explicit GEO content domain,
-citation/source model, or quality workflow. Any structured-data addition must remain code-owned and
-derive only from validated published fields.
+Gap: the current foundation does not yet provide the complete GEO editorial quality and freshness
+workflow. The merged structured-data layer and Work Item 25A remain code-owned and derive only from
+validated published fields; broader source and review semantics require follow-up work.
 
 ### Stable-platform eligibility before indexing
 

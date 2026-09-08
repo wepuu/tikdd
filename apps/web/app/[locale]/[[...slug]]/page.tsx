@@ -6,6 +6,7 @@ import { alternatesForPage, copyForPage } from "../../../lib/content-presentatio
 import type { SiteCopy } from "../../../lib/copy";
 import { pageMetadataCopy } from "../../../lib/page-metadata";
 import { findPublishedPage, findPublishedRedirect, getPublishedSnapshot, localizedPath, resolvePublishedLocale } from "../../../lib/published-content";
+import { GEO_SOURCE_LINKS, geoSourceLabel } from "../../../lib/geo-content";
 import { buildStructuredData, serializeStructuredData } from "../../../lib/structured-data";
 
 export const dynamicParams = true;
@@ -37,6 +38,9 @@ function StructuredPage({ page, copy }: { page: NonNullable<ReturnType<typeof fi
   if (content.template === "platform") {
     const howItWorksLabel = page.locale === "zh-CN" ? "\u4f7f\u7528\u65b9\u6cd5" : "How it works";
     const faqLabel = page.locale === "zh-CN" ? "\u5e38\u89c1\u95ee\u9898" : "Frequently asked questions";
+    const answerLabel = page.locale === "zh-CN" ? "直接回答" : "Direct answer";
+    const sourceLabel = page.locale === "zh-CN" ? "参考来源" : "Sources";
+    const reviewedLabel = page.locale === "zh-CN" ? "最近审核" : "Last reviewed";
     return <div className="platform-page">
       <section className="published-document platform-intro">
         <p className="hero-badge">{content.eyebrow}</p>
@@ -45,6 +49,12 @@ function StructuredPage({ page, copy }: { page: NonNullable<ReturnType<typeof fi
       </section>
       <div className="platform-resolver"><ResolveForm copy={copy.form} featureLabel={copy.nav.features} features={copy.features} process={copy.process} supported={copy.supported} /></div>
       <section className="published-document platform-details">
+        {content.geo ? <section className="geo-answer" aria-labelledby="geo-answer-title">
+          <h2 id="geo-answer-title">{answerLabel}</h2>
+          <p>{content.geo.directAnswer}</p>
+          {content.geo.reviewedAt ? <small>{reviewedLabel}: {new Intl.DateTimeFormat(page.locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(content.geo.reviewedAt))}</small> : null}
+          {content.geo.sourceRefs.length ? <div className="geo-sources"><h3>{sourceLabel}</h3><ul>{content.geo.sourceRefs.map((sourceId) => <li key={sourceId}><a href={GEO_SOURCE_LINKS[sourceId].href} target="_blank" rel="noreferrer">{geoSourceLabel(sourceId, page.locale)}</a></li>)}</ul></div> : null}
+        </section> : null}
         <h2>{howItWorksLabel}</h2>
         {content.howToSteps.map((step) => <section key={step.title}><h3>{step.title}</h3><p>{step.description}</p></section>)}
         <p>{content.limitationsMarkdown}</p>

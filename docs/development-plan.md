@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@177775c9193f3699ddfcb96c962b9df23ca193aa`
+- Repository checkpoint: `main@0c097ae1f677028aad09f6b079dacab982e15d9c`
 - Roadmap revision date: 2026-09-08
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -18,7 +18,9 @@ and Instagram remain experimental rather than `stable`. Work Item 23 is merged a
 `main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
 bilingual Instagram landing page for content review; it is deliberately noindex and absent from
 the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 is the next
-focused increment: code-owned structured data for eligible published content.
+focused increment: code-owned structured data for eligible published content. Its implementation is
+merged at `main@0c097ae1f677028aad09f6b079dacab982e15d9c`; production rollout remains a separate
+approved release action.
 
 ## Baseline classification
 
@@ -431,7 +433,7 @@ manually asserted.
 
 Lane: C.
 
-Status: implementation in progress. This increment adds ADR-0025, a bounded template collection
+Status: implemented and merged; production deployment pending. This increment adds ADR-0025, a bounded template collection
 in the SEO passport, and a server-side JSON-LD renderer. It does not change Provider rollout,
 start Admin, or make the Instagram Beta indexable.
 
@@ -460,6 +462,16 @@ The model must prevent mass-generated thin pages, unsupported availability claim
 translations, and structured data that does not match visible content. The citation, review, and
 content-freshness semantics are a new product domain and require an ADR before persistence or public
 rendering changes.
+
+#### Work Item 25A — Bounded GEO content foundation
+
+Status: implementation in progress on `codex/wi25-geo-content-model`.
+
+This first slice adds an optional, backward-compatible `geo` object to platform-page JSONB content,
+with a concise direct answer, review state, review timestamp, and code-owned source references. It
+adds an indexability blocker for unreviewed platform content, renders the answer and approved
+sources visibly, and exposes only fixed source choices in Admin. It does not add a migration, start
+Admin in production, change Provider rollout, or make the Instagram Beta indexable.
 
 ## Reusable platform launch pipeline
 

@@ -10,4 +10,5 @@ export * from "./privacy";
 export * from "./public-content";
 export * from "./routing";
 export * from "./seo-publication";
+export * from "./geo-content";
 export * from "./settings-recovery";
