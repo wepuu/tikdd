@@ -71,7 +71,13 @@ const instagramPageContent = (locale: "en" | "zh-CN") => locale === "en" ? {
     { question: "Which Instagram links are supported?", answerMarkdown: "The current Beta accepts public Instagram Reels and post links." },
     { question: "Do I need an Instagram account?", answerMarkdown: "No. TikDD does not request your account, cookies, or session information." },
     { question: "Why might a recognized link fail?", answerMarkdown: "The upstream post may be private, restricted, removed, or temporarily unavailable." }
-  ]
+  ],
+  geo: {
+    directAnswer: "TikDD's Instagram Beta accepts public Reel and post links and can return a short-lived MP4 download link when the upstream page is accessible.",
+    reviewStatus: "draft" as const,
+    reviewedAt: null,
+    sourceRefs: ["tikdd-workflow", "instagram-public-content"]
+  }
 } : {
   template: "platform" as const,
   eyebrow: "Instagram Beta",
@@ -87,7 +93,13 @@ const instagramPageContent = (locale: "en" | "zh-CN") => locale === "en" ? {
     { question: "\u652f\u6301\u54ea\u4e9b Instagram \u94fe\u63a5\uff1f", answerMarkdown: "\u5f53\u524d Beta \u652f\u6301\u516c\u5f00\u7684 Instagram Reel \u548c\u5e16\u5b50\u94fe\u63a5\u3002" },
     { question: "\u9700\u8981 Instagram \u8d26\u53f7\u5417\uff1f", answerMarkdown: "\u4e0d\u9700\u8981\u3002TikDD \u4e0d\u4f1a\u8981\u6c42\u4f60\u7684\u8d26\u53f7\u3001Cookie \u6216\u4f1a\u8bdd\u4fe1\u606f\u3002" },
     { question: "\u4e3a\u4ec0\u4e48\u8bc6\u522b\u540e\u4ecd\u53ef\u80fd\u5931\u8d25\uff1f", answerMarkdown: "\u4e0a\u6e38\u5e16\u5b50\u53ef\u80fd\u79c1\u5bc6\u3001\u53d7\u9650\u3001\u5df2\u5220\u9664\u6216\u6682\u65f6\u65e0\u6cd5\u8bbf\u95ee\u3002" }
-  ]
+  ],
+  geo: {
+    directAnswer: "TikDD Instagram Beta \u652f\u6301\u516c\u5f00\u7684 Reel \u548c\u5e16\u5b50\u94fe\u63a5\uff1b\u5f53\u4e0a\u6e38\u9875\u9762\u53ef\u8bbf\u95ee\u65f6\uff0c\u53ef\u8fd4\u56de\u77ed\u671f\u6709\u6548\u7684 MP4 \u4e0b\u8f7d\u94fe\u63a5\u3002",
+    reviewStatus: "draft" as const,
+    reviewedAt: null,
+    sourceRefs: ["tikdd-workflow", "instagram-public-content"]
+  }
 };
 
 const instagramSeo = (locale: "en" | "zh-CN") => ({
