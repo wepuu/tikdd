@@ -54,10 +54,10 @@ Do not fill a row until it has actually been observed.
 | Phase A PR CI and immutable images | complete: PR #54 merged as `7ddafbd`; merge CI and Release images succeeded |
 | Production backup and default-off deployment | complete: encrypted backup recorded; six core services deployed healthy from `7ddafbd` |
 | Owner activation authorization | complete: `/etc/tikdd/approvals/savefromins-automated-use-20260906.json` |
-| Real Instagram resolve and MP4 choice | failed: browser task `tsk_d40f090c411340d78fcbee21d0ddf472` recorded three `invalid_result` attempts |
-| Delivery ticket and non-zero browser download | not reached: the failed task created zero Delivery candidates |
-| 15-minute health and circuit watch | not started: immediate rollback took precedence after the first sample failed |
-| Final route state and rollback command recorded | complete: rule revision 6 is disabled with allocation 0; all three SaveFromIns gates are false |
+| Real Instagram resolve and MP4 choice | complete: browser tasks `tsk_d51e536156a0403f85bb85297ad7fe55` and `tsk_a21e3cbfa4974fbab403cf7119031c83` each resolved one 720P MP4 |
+| Delivery ticket and non-zero browser download | complete: both browser downloads completed; each emitted successful ticket creation, redirect validation, and browser handoff outcomes |
+| 15-minute health and circuit watch | complete: 10 one-minute samples plus the final sample recorded zero unhealthy core containers, restarts, API 5xx, Delivery errors, circuit opens, failed SaveFromIns attempts, or failed Delivery outcomes |
+| Final route state and rollback command recorded | complete: rule revision 9 is enabled with allocation 10000; the three SaveFromIns gates are true and the revision 9 rollback script was staged before activation |
 
 ## 2026-09-06 production qualification result
 
@@ -96,5 +96,34 @@ The repair versions the Delivery policy rather than widening version 1. New cand
 immutable GitHub images with all gates false, and receives a new owner authorization for the two
 browser downloads and short observation.
 
-Work Item 22 exits only after current delivery evidence and an operator-approved bounded rollout.
+## 2026-09-07 successful production qualification
+
+The owner granted the follow-up authorization for the exact `savefromins` / `instagram` / `nl`
+route, both supplied Reel samples, all three SaveFromIns gates, and immediate rule-first rollback on
+failure. Production was already running immutable GitHub release
+`9029d1213e62011e8f7c0b502d9461b61006b2e6`. The operator confirmed the safe starting state at rule
+revision 8 with zero allocation, backed up both production environment files, enabled only the
+three SaveFromIns gates, restarted only Worker, and applied the rollout update with revision 8 CAS.
+The resulting rule is revision 9, enabled, with allocation 10000 and no expiry.
+
+Both owner-supplied public Reels completed the real browser path from URL submission through MP4
+selection, ticket creation, and media download. Task `tsk_d51e536156a0403f85bb85297ad7fe55`
+resolved through SaveFromIns in 4946 ms; task `tsk_a21e3cbfa4974fbab403cf7119031c83`
+resolved in 5355 ms. Each produced one 720P MP4 and a completed non-zero browser download. The
+Delivery evidence contains two `ticket_creation=succeeded`, two `redirect_validation=passed`, and
+two `browser_handoff=redirect_issued` outcomes, with no failed outcome.
+
+The observation ran from the 11:12:37 UTC activation through the 11:29:49 UTC final sample. Ten
+one-minute samples and the final independent sample consistently recorded two successful and zero
+failed SaveFromIns attempts, six successful-class and zero failed Delivery outcomes, zero API 5xx,
+zero Delivery errors, zero circuit opens, and six healthy core containers with zero restarts. The
+unrelated failed tasks visible during the window targeted `ok.ru` while that Provider remained
+disabled; no new Instagram task failed. Admin and calibration remained stopped,
+`PROVIDER_PILOT_GUARD_REQUIRED` remained false, and TwitterSaver and DLPanda remained disabled.
+
+The successful qualification leaves Instagram Beta live at rule revision 9. The staged rollback is
+still rule-first: CAS revision 9 to disabled with zero allocation, then restore the backed-up
+environment files and restart Worker. A release rollback is not indicated by this evidence.
+
+Work Item 22 is complete with current Delivery evidence and the operator-approved bounded rollout.
 Work Item 23 owns the separate Instagram landing page and SEO eligibility decision.
