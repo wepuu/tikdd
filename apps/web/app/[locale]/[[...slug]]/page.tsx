@@ -6,6 +6,7 @@ import { alternatesForPage, copyForPage } from "../../../lib/content-presentatio
 import type { SiteCopy } from "../../../lib/copy";
 import { pageMetadataCopy } from "../../../lib/page-metadata";
 import { findPublishedPage, findPublishedRedirect, getPublishedSnapshot, localizedPath, resolvePublishedLocale } from "../../../lib/published-content";
+import { buildStructuredData, serializeStructuredData } from "../../../lib/structured-data";
 
 export const dynamicParams = true;
 export const dynamic = "force-dynamic";
@@ -65,7 +66,9 @@ export default async function PublishedPageRoute({ params }: { params: Promise<R
   if (!page) notFound();
   const copy = copyForPage(page);
   const shared = snapshot.sharedContent.find((item) => item.locale === locale.locale);
+  const structuredData = buildStructuredData({ page, copy, siteName: shared?.siteName ?? "TikDD", siteUrl });
   return <div className="site-stage"><main className="app-canvas"><header className="site-header"><Brand locale={locale.locale} siteName={shared?.siteName} /><nav aria-label="Primary navigation"><a className="is-active" href={`/${locale.locale}`}>{shared?.navigationLabel ?? copy.nav.home}</a>{page.pageType === "homepage" && <><a href="#features">{copy.nav.features}</a><a href="#process">{copy.nav.process}</a><a href="#supported">{copy.nav.supported}</a><a href="#faq">{copy.nav.faq}</a></>}</nav><div className="header-actions"><div className="language-switch" aria-label="Language">{snapshot.locales.map((item) => <a key={item.locale} className={item.locale === locale.locale ? "is-active" : ""} href={localizedPath(item.locale, snapshot.pages.find((candidate) => candidate.pageId === page.pageId && candidate.locale === item.locale)?.seo.localPath ?? "/")} lang={item.locale}>{item.displayName}</a>)}</div>{(page.pageType === "homepage" || page.pageType === "platform") && <a className="header-cta" href="#resolver">{copy.form.action}</a>}</div></header>
+  {structuredData ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeStructuredData(structuredData) }} /> : null}
   {page.content.template === "homepage" ? <section className="hero" id="home" aria-labelledby="hero-title"><div className="hero-copy"><p className="hero-badge"><SparkleIcon size={17} weight="fill" aria-hidden="true" />{copy.hero.badge}</p><h1 id="hero-title">{copy.hero.lead}{copy.hero.accent}{copy.hero.tail}</h1><p className="hero-description">{copy.hero.description}</p></div><ResolveForm copy={copy.form} featureLabel={copy.nav.features} features={copy.features} process={copy.process} supported={copy.supported} /><section className="lower-grid" id="faq"><div className="faq-card"><h2>{copy.faq.title}</h2><div className="faq-list">{copy.faq.items.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div></div><div className="trust-card" id="about"><span className="trust-orb" aria-hidden="true"><ShieldCheckIcon size={42} weight="duotone" /></span><h2>{copy.trust.title}</h2><strong>{copy.trust.labels}</strong><p>{copy.trust.description}</p></div></section></section> : <StructuredPage page={page} copy={copy} />}
   <footer><Brand locale={locale.locale} siteName={shared?.siteName} /><p>{copy.legal}</p><span>{shared?.footerTagline} · © {new Date().getUTCFullYear()} {shared?.siteName ?? "TikDD"}</span></footer></main></div>;
 }

@@ -227,9 +227,16 @@ describe("Admin internal contracts", () => {
   it("derives canonical, hreflang, sitemap, and code-owned structured data from one snapshot",()=>{
     const snapshot={...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE,pages:[ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!,{...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!,locale:"zh-CN",seo:{...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!.seo,localPath:"/",redirectFrom:[]}}]};
     const view=deriveSeoTechnicalView({snapshot,eligiblePlatforms:[],generatedAt:"2026-08-12T00:00:00.000Z"});
-    expect(view.passports[0]).toMatchObject({canonicalPath:"/en",sitemapEligible:true,structuredDataTemplate:"WebSite"});
+    expect(view.passports[0]).toMatchObject({canonicalPath:"/en",sitemapEligible:true,structuredDataTemplates:["SoftwareApplication","FAQPage","HowTo"]});
     expect(view.passports[0]?.hreflang.map(item=>item.locale)).toEqual(["en","zh-CN"]);
     expect(view.sitemapPaths).toEqual(["/en","/zh-CN"]);
+  });
+
+  it("suppresses structured data for noindex experimental pages",()=>{
+    const page=ADMIN_PUBLISHED_SNAPSHOT_FIXTURE.pages[0]!;
+    const instagram={...page,pageId:"page_instagram",pageType:"platform" as const,platform:"instagram",seo:{...page.seo,localPath:"/instagram-downloader",indexable:false,includeInSitemap:false,redirectFrom:[]},content:{template:"platform" as const,eyebrow:"Instagram Beta",title:"Instagram video downloader Beta",introduction:"Resolve public Instagram links through TikDD.",limitationsMarkdown:"Public links only.",howToSteps:[{title:"Paste",description:"Paste a public link."},{title:"Resolve",description:"Resolve available formats."}],faqItems:[]}};
+    const view=deriveSeoTechnicalView({snapshot:PublishedContentSnapshotSchema.parse({...ADMIN_PUBLISHED_SNAPSHOT_FIXTURE,pages:[page,instagram]}),eligiblePlatforms:[],generatedAt:"2026-08-12T00:00:00.000Z"});
+    expect(view.passports.find(item=>item.pageId==="page_instagram")?.structuredDataTemplates).toEqual([]);
   });
 
   it("allows an experimental platform page for noindex editorial review only", () => {

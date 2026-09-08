@@ -135,6 +135,8 @@ The Instagram Beta landing page reuses this boundary: its bundled English and Si
 content is rendered through the platform template and shared resolver, but remains noindex and
 outside sitemap/hreflang while Instagram is experimental. The SEO passport permits that review
 state and still blocks any request to index an ineligible platform.
+ADR-0025 defines the next structured-data increment: fixed JSON-LD templates are generated only
+from eligible published fields and never accepted as raw Admin content.
 
 ## Failure policy
 

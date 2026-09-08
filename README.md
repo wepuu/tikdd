@@ -36,10 +36,12 @@ locale/content modeling, immutable publication, SEO eligibility, bounded setting
 recovery. Snapshot promotion is fail-closed: a candidate becomes active only after Web
 acknowledgement. See the [work item 12 baseline](docs/work-item-12-11-implementation.md).
 
-Work Item 23 prepares the bilingual Instagram Beta landing page at
+Work Item 23 ships the bilingual Instagram Beta landing page at
 `/[locale]/instagram-downloader`. It remains a human-review page: noindex, absent from sitemap and
 hreflang, and separate from Provider rollout until the catalog eligibility gate passes. See the
-[Work Item 23 record](docs/work-item-23-instagram-landing-page.md).
+[Work Item 23 record](docs/work-item-23-instagram-landing-page.md). Work Item 24 adds fixed,
+code-owned JSON-LD only to eligible published pages; it never accepts raw structured data from
+Admin.
 
 ## Platform and provider model
 
