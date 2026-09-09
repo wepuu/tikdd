@@ -1,29 +1,31 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@15e9ed4448cbb29f781c332494c1ae7f3648ca90`
+- Repository checkpoint: `main@9ce4565f1f4afa44733f2a70a0a97b7b61a7150f` (production merge; local
+  Work Item 27 branch also includes the fail-closed guard follow-up)
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The public X Beta is live through SSSTwitter and Delivery. Instagram remains an experimental,
-fail-closed follow-up after the Work Item 26 smoke recorded a Delivery-candidate failure. Work Item
-22 completed the Instagram qualification with two real browser downloads and a clean 15-minute
-watch. Work Item 22.1 shipped reviewed result thumbnails with the existing platform-icon fallback
-from `main@c3fbd217` on 2026-09-08. ADR-0020 replaces elapsed
-calibration and evidence prerequisites with a lightweight release loop: PR CI, GitHub-built
-immutable images, backup, one real browser download, a short health watch, and fast rollback. X
-and Instagram remain experimental rather than `stable`. Work Item 23 is merged and deployed from
+The public X and Instagram Betas are live through SSSTwitter, SaveFromIns, and Delivery. Work Item
+26 is closed after a successful post-CI re-test on the supplied public Reel: GitHub-built images,
+the full-allocation Instagram rule (revision 13), a non-zero MP4 transfer, and a clean 15-minute
+watch are recorded in its closeout. Work Item 22 completed the earlier Instagram qualification with
+two real browser downloads and a clean 15-minute watch. Work Item 22.1 shipped reviewed result
+thumbnails with the existing platform-icon fallback from `main@c3fbd217` on 2026-09-08. ADR-0020
+replaces elapsed calibration and evidence prerequisites with a lightweight release loop: PR CI,
+GitHub-built immutable images, backup, one real browser download, a short health watch, and fast
+rollback. X and Instagram remain experimental rather than `stable`. Work Item 23 is merged and deployed from
 `main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
 bilingual Instagram landing page for content review; it is deliberately noindex and absent from
 the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 and Work Item
 25A are implemented, merged, and deployed in the current production lineage. Work Item 25B is
 implemented and deployed as bounded bilingual GEO seed content; its reviewed Admin publication is
 still a separate on-demand operation. PR #64 (`main@13a56f28`) added SaveFromIns sparse-resource
-compatibility, but the first post-deploy Instagram smoke did not reproduce a valid MP4, so the next
-slice is Work Item 26: close the Instagram reliability loop before any stable or indexable promotion.
+compatibility. Work Item 27 is the next small slice: keep the two Betas observable with actionable,
+provider-neutral failure copy and a read-only aggregate report, without starting Admin or calibration.
 
 ## Baseline classification
 
@@ -43,14 +45,13 @@ slice is Work Item 26: close the Instagram reliability loop before any stable or
 ### Current production baseline
 
 - X Public Beta is live from GitHub-built immutable images.
-- The SaveFromIns/Instagram/NL rule is revision 10, disabled with zero allocation after the
-  2026-09-09 failed Delivery smoke; its three runtime gates are false.
+- The SaveFromIns/Instagram/NL rule is revision 13, enabled at full allocation after the
+  2026-09-09 closeout; its three runtime gates are true and the pilot guard is false.
 - The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
   an emergency deny path.
 - Historical Work Item 22 qualification proved real X and Instagram resolve, delivery-ticket, and
-  non-zero browser transfers. The PR #64 post-deploy smoke must be treated separately: the supplied
-  `DZxoImOOKr` URL was terminal `content_not_found`, while a previously successful Reel returned
-  `invalid_result`; no new successful Instagram transfer was recorded.
+  non-zero browser transfers. The PR #64 smoke and the first Work Item 26 attempt are retained as
+  failure history; they do not describe the current rollout state.
 - The Work Item 22.1 release returned a reviewed Instagram thumbnail as `200 image/jpeg` with a
   non-zero 48,905-byte body and no redirect; all six core containers remained healthy with zero
   restarts during the 15-minute observation.
@@ -62,14 +63,20 @@ slice is Work Item 26: close the Instagram reliability loop before any stable or
 
 ### Work Item 26 current status
 
-The supplied public Reel `DcSBz8UCbTG` reached one-format resolution but failed when secure
-Delivery was prepared. The task was marked succeeded with no live candidate at the later database
-inspection point; because the four-minute candidate lifetime may have elapsed, insertion versus
-cleanup is not yet proven. Production Instagram traffic is therefore denied while the new
-development-only resolution-only guard is reviewed. A post-CI re-test timed out at the Provider's
-15-second ceiling and was rolled back to rule revision 12. A repeat qualification is not permitted
-until a new owner authorization explicitly reopens the exact SaveFromIns/Instagram/NL rule and the
-upstream latency is understood.
+Work Item 26 is complete. The fail-closed Worker guard remains in place, while the exact
+SaveFromIns/Instagram/NL rule is enabled at revision 13 and full allocation after an explicit
+authorization. The closeout records a `video/mp4` response with 4,476,966 non-zero bytes and a
+15-minute healthy observation. The earlier candidate-lifecycle and timeout failures remain useful
+diagnostics, not release blockers.
+
+### Work Item 27 current status
+
+Work Item 27 adds only lightweight operability: provider-neutral retry/unavailable/expired copy in
+Web and a read-only `pnpm beta:report` aggregate over public X/Instagram tasks, attempts, and
+delivery outcomes. It creates no migration, endpoint, telemetry stream, or always-on service. Admin,
+calibration, and other Providers remain off. The next release still follows the fixed loop of
+targeted tests, PR CI, GitHub images, backup, deployment, one real download, short observation, and
+fast rollback.
 
 ## Coordinated future lanes
 

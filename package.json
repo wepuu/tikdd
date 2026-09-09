@@ -46,6 +46,7 @@
     "verify:postgres-backup": "sh scripts/verify-postgres-backup.sh",
     "restore:postgres-drill": "sh scripts/restore-postgres-drill.sh",
     "verify:operational-services": "pnpm --filter @tikdd/persistence db:verify-operational-services",
+    "beta:report": "pnpm --filter @tikdd/persistence db:beta-report",
     "canary:scheduled": "pnpm --filter @tikdd/canary scheduled",
     "evidence:scheduled": "pnpm --filter @tikdd/evidence scheduled",
     "cleanup:scheduled": "pnpm --filter @tikdd/cleanup scheduled",

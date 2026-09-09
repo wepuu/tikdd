@@ -14,8 +14,9 @@
     "db:verify-delivery-transaction": "tsx src/verify-delivery-transaction.ts",
     "db:verify-provider-attempt-region": "tsx src/verify-provider-attempt-region.ts",
     "db:verify-task-admission": "tsx src/verify-task-admission.ts",
-    "db:verify-operational-services": "tsx src/verify-operational-services.ts"
-    ,"db:verify-admin-qualification": "tsx src/verify-admin-qualification.ts"
+    "db:verify-operational-services": "tsx src/verify-operational-services.ts",
+    "db:beta-report": "tsx src/beta-report.ts",
+    "db:verify-admin-qualification": "tsx src/verify-admin-qualification.ts"
   },
   "dependencies": {
     "@tikdd/admin-contracts": "workspace:*",

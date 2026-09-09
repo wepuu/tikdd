@@ -44,9 +44,10 @@ code-owned JSON-LD only to eligible published pages; it never accepts raw struct
 Admin. Work Item 25A adds a bounded GEO answer block with code-owned source references, and Work Item
 25B wires bounded bilingual Instagram inputs into the seed/content flow while keeping experimental
 platform pages noindex. See the [Work Item 25B record](docs/work-item-25b-instagram-geo-content.md).
-The current post-PR-64 reliability follow-up is tracked in the [Work Item 26 record](docs/work-item-26-instagram-reliability.md):
-Instagram stays Beta/noindex until one current public Reel completes a verified non-zero Delivery
-flow; no new Provider, Admin, or calibration traffic is enabled by that work.
+The Work Item 26 reliability closeout is recorded in the [Work Item 26 record](docs/work-item-26-instagram-reliability.md):
+the current SaveFromIns/Instagram Beta has a verified non-zero Delivery transfer and remains
+noindex/experimental. Work Item 27 adds only provider-neutral failure feedback and the read-only
+`pnpm beta:report` aggregate; it does not start Admin or calibration or enable another Provider.
 
 ## Platform and provider model
 
@@ -137,6 +138,11 @@ Pull requests run this command in CI. After a merge to `main`, GitHub publishes 
 Service, and Admin images tagged with the exact commit SHA. Production deployments use those
 registry images and the lightweight checklist in
 [MVP release process](docs/mvp-release-process.md); local Docker images are never production input.
+
+For a bounded post-release view of public Beta health, run `pnpm beta:report` with the production
+`DATABASE_URL` (optionally `--hours 1..168` and `--platforms x,instagram`). It emits only aggregate
+counts, rates, failure classes, and timestamps; it does not print URLs, task IDs, provider details,
+or media data and performs no writes.
 
 The production-shaped X pilot has an additional deterministic Docker gate:
 

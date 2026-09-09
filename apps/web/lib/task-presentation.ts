@@ -12,6 +12,13 @@ const unavailableCodes = new Set([
 
 export type PublicFailureIntent = "retryable" | "unavailable" | "expired";
 
+export interface PublicFailureCopy {
+  retryableDescription: string;
+  unavailableDescription: string;
+  expiredDescription: string;
+  resolveError: string;
+}
+
 export function publicFailureIntent(
   task: ResolveTask | null,
   admissionError: TaskError | null
@@ -22,6 +29,16 @@ export function publicFailureIntent(
   if (!error) return null;
   if (error.retryable) return "retryable";
   return unavailableCodes.has(error.code) ? "unavailable" : "unavailable";
+}
+
+export function publicFailureDescription(
+  intent: PublicFailureIntent | null,
+  copy: PublicFailureCopy
+): string {
+  if (intent === "retryable") return copy.retryableDescription;
+  if (intent === "expired") return copy.expiredDescription;
+  if (intent === "unavailable") return copy.unavailableDescription;
+  return copy.resolveError;
 }
 
 export function isDeliveryExpired(expiresAt: string, nowMs: number): boolean {
