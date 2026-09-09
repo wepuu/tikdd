@@ -174,6 +174,39 @@ describe("resolve job Provider-success retry boundary", () => {
     });
   });
 
+  it("does not automatically retry an Instagram schema failure", async () => {
+    const h = harness();
+    const instagramData: ResolveJobData = {
+      ...data,
+      sourceUrl: "https://www.instagram.com/reel/Fixture/",
+      platform: "instagram"
+    };
+    const failedAttempt = {
+      ...attempt,
+      providerId: "savefromins",
+      platform: "instagram" as const,
+      status: "failed" as const,
+      failureCode: "provider_schema_changed" as const,
+      retryable: true,
+      fallbackAllowed: true
+    };
+    const error = new ProviderRoutingError(
+      "SaveFromIns changed its response schema.",
+      "provider_schema_changed",
+      true,
+      [failedAttempt]
+    );
+    h.resolve.mockRejectedValueOnce(error);
+
+    await expect(processResolveJob(instagramData, h.dependencies)).rejects.toBeInstanceOf(UnrecoverableError);
+    expect(h.tasks.fail).toHaveBeenCalledWith(instagramData.taskId, {
+      code: "PROVIDER_SCHEMA_CHANGED",
+      message: "SaveFromIns changed its response schema.",
+      retryable: true
+    });
+    expect(h.releaseAdmission).toHaveBeenCalledOnce();
+  });
+
   it("does not replay Provider resolution after candidate preparation fails", async () => {
     const h = harness();
     h.prepareCandidates.mockImplementationOnce(() => {

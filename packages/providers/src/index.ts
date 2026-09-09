@@ -32,6 +32,10 @@ import {
 
 export { NoProviderAvailableError, ProviderError, ProviderRoutingError } from "./errors";
 export {
+  resolveJobAttemptsForPlatform,
+  shouldAutomaticallyRetryProviderFailure
+} from "./retry-policy";
+export {
   FailureInjectionProvider,
   type FailureInjectionOutcome,
   type FailureInjectionProviderOptions
