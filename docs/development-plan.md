@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`
-- Roadmap revision date: 2026-09-08
+- Repository checkpoint: `main@13a56f28fd03c9e9cf87966166b467cda6c47e5c`
+- Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -17,12 +17,12 @@ immutable images, backup, one real browser download, a short health watch, and f
 and Instagram remain experimental rather than `stable`. Work Item 23 is merged and deployed from
 `main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
 bilingual Instagram landing page for content review; it is deliberately noindex and absent from
-the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 is the next
-focused increment: code-owned structured data for eligible published content. Its implementation is
-merged at `main@0c097ae1f677028aad09f6b079dacab982e15d9c`; production rollout remains a separate
-approved release action. Work Item 25A is merged at `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`;
-the next small slice is Work Item 25B, which wires bounded bilingual Instagram GEO inputs into the
-reviewable seed/content flow without changing indexability or Provider state.
+the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 and Work Item
+25A are implemented, merged, and deployed in the current production lineage. Work Item 25B is
+implemented and deployed as bounded bilingual GEO seed content; its reviewed Admin publication is
+still a separate on-demand operation. PR #64 (`main@13a56f28`) added SaveFromIns sparse-resource
+compatibility, but the first post-deploy Instagram smoke did not reproduce a valid MP4, so the next
+slice is Work Item 26: close the Instagram reliability loop before any stable or indexable promotion.
 
 ## Baseline classification
 
@@ -46,9 +46,10 @@ reviewable seed/content flow without changing indexability or Provider state.
   runtime gates are true.
 - The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
   an emergency deny path.
-- Real X and Instagram resolve, delivery-ticket, and non-zero browser transfers passed. Instagram
-  recorded two successful SaveFromIns attempts and six successful Delivery outcomes during its
-  clean 15-minute production watch.
+- Historical Work Item 22 qualification proved real X and Instagram resolve, delivery-ticket, and
+  non-zero browser transfers. The PR #64 post-deploy smoke must be treated separately: the supplied
+  `DZxoImOOKr` URL was terminal `content_not_found`, while a previously successful Reel returned
+  `invalid_result`; no new successful Instagram transfer was recorded.
 - The Work Item 22.1 release returned a reviewed Instagram thumbnail as `200 image/jpeg` with a
   non-zero 48,905-byte body and no redirect; all six core containers remained healthy with zero
   restarts during the 15-minute observation.
@@ -435,9 +436,9 @@ manually asserted.
 
 Lane: C.
 
-Status: implemented and merged; production deployment pending. This increment adds ADR-0025, a bounded template collection
-in the SEO passport, and a server-side JSON-LD renderer. It does not change Provider rollout,
-start Admin, or make the Instagram Beta indexable.
+Status: implemented, merged, and deployed in the current production lineage. This increment adds
+ADR-0025, a bounded template collection in the SEO passport, and a server-side JSON-LD renderer. It
+does not change Provider rollout, start Admin, or make the Instagram Beta indexable.
 
 Implement fixed code-owned JSON-LD templates derived only from validated fields in the active
 published snapshot. Initial schema candidates are:
@@ -467,8 +468,9 @@ rendering changes.
 
 #### Work Item 25A — Bounded GEO content foundation
 
-Status: implemented and merged at `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`; production
-deployment remains pending.
+Status: implemented and merged at `main@d8ba331471e1af2f8fcd716e597b0135ba3469a2`; deployed in
+the current production lineage. The content remains subject to the separate on-demand Admin
+publication step.
 
 This first slice adds an optional, backward-compatible `geo` object to platform-page JSONB content,
 with a concise direct answer, review state, review timestamp, and code-owned source references. It
@@ -478,8 +480,8 @@ Admin in production, change Provider rollout, or make the Instagram Beta indexab
 
 #### Work Item 25B — Instagram GEO editorial seed and publication
 
-Status: implemented on `codex/wi25b-instagram-geo-content`; PR and production deployment are
-pending.
+Status: implemented and merged by PR #63; deployed in the current production lineage. The bundled
+seed is available for review, but no permanent Admin process or automatic publication is implied.
 
 Populate the existing bilingual Instagram Beta pages with bounded, non-indexable GEO inputs using
 the 25A contract. Reuse `limitationsMarkdown` for limitations, use only code-owned source IDs, keep
@@ -492,6 +494,37 @@ stopping Admin again.
 Exit: the bundled and reviewed content snapshots validate in both locales, the Instagram pages
 render the direct answer and fixed sources while remaining noindex, and the existing download flow
 is unchanged.
+
+### Work Item 26 — Instagram Beta reliability closure
+
+Lane: A with a bounded Provider decision; no new platform or SEO surface.
+
+Status: planned after the PR #64 deployment. The SaveFromIns adapter now tolerates sparse resources,
+but production smoke on 2026-09-08 did not produce a new successful Instagram transfer: one supplied
+URL was terminal `content_not_found` and a previously successful Reel returned `invalid_result`.
+This is insufficient evidence for a reliability claim and does not justify widening the direct-media
+mode or Delivery Host allowlist.
+
+Scope:
+
+1. Reproduce once with a currently public Reel that is verified in a browser, recording only the
+   sanitized response shape and Provider attempt code.
+2. If a trusted direct MP4 is present, add the exact bounded fixture and adapter/routing regression
+   test. Keep the response count, timeout, retry, SSRF, redirect, and Delivery policies unchanged.
+3. If no trusted direct MP4 is present or the Provider is challenged repeatedly, stop patching the
+   adapter and open a separate Provider replacement feasibility item. Do not accept new download
+   modes, runtime-discovered hosts, cookies, or challenge bypasses.
+4. Release through the MVP loop: targeted tests, `pnpm check`, PR CI, GitHub immutable images,
+   encrypted backup, manual deployment, one real Instagram transfer, and a 15-minute watch.
+
+Failure handling is rule-first: if the real transfer or core health gate fails, set the exact
+SaveFromIns/Instagram/NL rollout rule to `enabled=false` and `allocationBps=0` with CAS, then close
+the three SaveFromIns gates. X remains unchanged. A version-wide failure is the only condition that
+justifies rolling back the application image.
+
+Exit: one current public Reel resolves to a direct MP4, Delivery returns a non-zero video response,
+core services remain healthy with no material 5xx/circuit event, and the production record is updated
+without claiming stable support. Until then, Instagram remains Beta and noindex.
 
 ## Reusable platform launch pipeline
 

@@ -44,6 +44,9 @@ code-owned JSON-LD only to eligible published pages; it never accepts raw struct
 Admin. Work Item 25A adds a bounded GEO answer block with code-owned source references, and Work Item
 25B wires bounded bilingual Instagram inputs into the seed/content flow while keeping experimental
 platform pages noindex. See the [Work Item 25B record](docs/work-item-25b-instagram-geo-content.md).
+The current post-PR-64 reliability follow-up is tracked in the [Work Item 26 record](docs/work-item-26-instagram-reliability.md):
+Instagram stays Beta/noindex until one current public Reel completes a verified non-zero Delivery
+flow; no new Provider, Admin, or calibration traffic is enabled by that work.
 
 ## Platform and provider model
 

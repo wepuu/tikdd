@@ -116,3 +116,22 @@ an empty video quality to `Original`. A successful Provider response with no val
 now `invalid_result`; malformed JSON or a malformed response envelope remains
 `provider_schema_changed`. No request marker, raw Provider response, submitted URL parameters, or
 media URL is retained in this record.
+
+## 2026-09-08 PR #64 production smoke follow-up
+
+PR #64 was merged as `main@13a56f28fd03c9e9cf87966166b467cda6c47e5c` and deployed from the
+GitHub-built images. Database migrations, the six core health checks, and the short post-deploy
+watch completed without a core-service failure. The existing SaveFromIns/Instagram/NL rule and its
+three activation gates remained enabled at full allocation for the owner-approved Beta.
+
+The first post-deploy smoke did not reproduce a valid transfer. The supplied Reel `DZxoImOOKr`
+returned a terminal `content_not_found` attempt. A previously successful Reel then returned
+`invalid_result`; no new Delivery ticket or non-zero Instagram transfer was recorded in this
+smoke. These outcomes are kept as sanitized attempt codes only; no raw Provider response, request
+marker, Cookie, tracking parameter, or media URL is retained.
+
+This evidence does not distinguish a removed/private Reel from an upstream response variant, so it
+does not justify changing the adapter, adding a new download mode, accepting runtime-discovered
+hosts, or widening the Delivery allowlist. Work Item 26 owns the next single bounded reproduction.
+Until a current public Reel produces a verified direct MP4 and non-zero Delivery response,
+Instagram remains Beta/noindex and no stable-support claim is made.
