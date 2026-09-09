@@ -52,9 +52,8 @@ import { BetaHealthDashboard } from "./beta-health";
 type RefreshState = "idle" | "refreshing" | "failed";
 
 const navGroups = [
-  { label: "BETA", items: [{ href: "#beta-health", label: "Beta health", icon: ChartLineUp }] },
   { label: "主页", items: [{ href: "#overview", label: "总览", icon: HouseLine }] },
-  { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
+  { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#beta-health", label: "Beta 健康", icon: ChartLineUp }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
   { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
   { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }] },
   { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }] }
@@ -133,11 +132,12 @@ function RouteInspector({ snapshot, summary }: { snapshot: AdminConsoleSnapshot;
     ? snapshot.selectedRoute.data
     : null;
   if (!summary) return <aside className="route-inspector"><EmptyState icon={<Gauge size={28} />} title="没有可检查的路线" detail="当前 Provider 清单没有生成这个区域的路线投影。" /></aside>;
+  const verificationStatus = String(summary.verificationStatus ?? "unknown");
   return (
     <aside className="route-inspector" aria-label="精确路线详情">
       <header><div><p className="eyebrow">EXACT ROUTE</p><h3>{summary.providerDisplayName}</h3><span>{summary.tuple.platform.toUpperCase()} · {summary.tuple.region} · {summary.tuple.providerId}</span></div><span className={`state-pill state-${summary.state}`}><StatusDot state={summary.state} />{stateLabels[summary.state]}</span></header>
       <div className="inspector-metrics">
-        <article><small>有效分配</small><strong>{formatRate(summary.allocationBps)}</strong><span>{summary.verificationStatus.replaceAll("_", " ")} · rollout r{summary.rolloutRevision ?? "—"}</span></article>
+        <article><small>有效分配</small><strong>{formatRate(summary.allocationBps)}</strong><span>{verificationStatus.replaceAll("_", " ")} · rollout r{summary.rolloutRevision ?? "—"}</span></article>
         <article><small>成功率</small><strong>{formatRate(summary.successRateBps)}</strong><span>{formatCount(summary.sampleCount)} 个样本</span></article>
         <article><small>P95 延迟</small><strong>{formatLatency(summary.p95LatencyMs)}</strong><span>最近聚合窗口</span></article>
         <article><small>熔断</small><strong>{summary.circuitState === "half_open" ? "半开" : summary.circuitState === "closed" ? "闭合" : summary.circuitState === "open" ? "开启" : "未知"}</strong><span>{formatTime(summary.observedAt)}</span></article>
@@ -145,7 +145,7 @@ function RouteInspector({ snapshot, summary }: { snapshot: AdminConsoleSnapshot;
       <section className="next-step"><span><ShieldCheck size={18} /></span><div><strong>建议下一步</strong><p>{routeNextStep(summary)}</p></div></section>
       <section className="failure-list">
         <div className="mini-heading"><strong>失败分类</strong><span>{detail ? `${formatTime(detail.windowStartedAt)} 起` : "详情读取中或不可用"}</span></div>
-        {detail && detail.failures.length > 0 ? detail.failures.map((failure) => <div key={failure.code}><span>{failureLabels[failure.code] ?? failure.code}</span><b>{formatCount(failure.count)}</b></div>) : <p className="quiet-empty">当前窗口没有可展示的失败聚合；这不等于成功率为 100%。</p>}
+        {detail && detail.failures.length > 0 ? detail.failures.map((failure) => { const code = String(failure.code ?? "other"); return <div key={code}><span>{failureLabels[code] ?? code.replaceAll("_", " ")}</span><b>{formatCount(failure.count)}</b></div>; }) : <p className="quiet-empty">当前窗口没有可展示的失败聚合；这不等于成功率为 100%。</p>}
       </section>
       <section className="canary-state"><span><Pulse size={18} /></span><div><strong>预设探测</strong><p>{detail ? ({ fresh: "结果新鲜", stale: "结果过期", running: "正在运行", failed: "最近失败", unavailable: "不可用", not_configured: "尚未配置" })[detail.canary.state] : "详情不可用"}</p></div><small>{detail ? formatTime(detail.canary.observedAt) : "—"}</small></section>
       <footer><span>受保护控制</span><p>策略命令只接受精确范围、确认、CSRF、幂等键和期望版本；未验证传播时不会显示成功。</p></footer>

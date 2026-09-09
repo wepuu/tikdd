@@ -8,8 +8,25 @@ type BetaHealthResource =
   | { status: "ready"; data: AdminBetaHealth }
   | { status: "unavailable"; data: null };
 
+const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram" };
+const failureLabels: Record<string, string> = {
+  timeout: "超时",
+  rate_limited: "限流",
+  challenge: "挑战",
+  schema: "结构变化",
+  availability: "上游不可用",
+  invalid_result: "结果无效",
+  terminal_content: "内容不可处理",
+  other: "其他"
+};
+
 function rate(total: number, value: number | null): string {
   return total === 0 ? "—" : formatRate(value);
+}
+
+function failureLabel(value: string | undefined): string {
+  const code = String(value ?? "other");
+  return failureLabels[code] ?? code.replaceAll("_", " ");
 }
 
 function FailureList({ title, values }: { title: string; values: Record<string, number> }) {
@@ -17,8 +34,8 @@ function FailureList({ title, values }: { title: string; values: Record<string, 
   return (
     <div className="beta-failures">
       <small>{title}</small>
-      {entries.length === 0 ? <span className="beta-empty-line">No classified failures</span> : entries.map(([code, count]) => (
-        <div key={code}><span>{code.replaceAll("_", " ")}</span><b>{formatCount(count)}</b></div>
+      {entries.length === 0 ? <span className="beta-empty-line">暂无已分类失败</span> : entries.map(([code, count]) => (
+        <div key={code}><span>{failureLabel(code)}</span><b>{formatCount(count)}</b></div>
       ))}
     </div>
   );
@@ -27,15 +44,15 @@ function FailureList({ title, values }: { title: string; values: Record<string, 
 function PlatformCard({ platform, bucket }: { platform: string; bucket: AdminBetaHealth["totals"] }) {
   return (
     <article className="beta-platform-card">
-      <header><span className="beta-platform-mark"><ChartLineUp size={18} /></span><div><strong>{platform.toUpperCase()}</strong><small>Public Beta aggregate</small></div></header>
+      <header><span className="beta-platform-mark"><ChartLineUp size={18} /></span><div><strong>{platformLabels[platform] ?? platform}</strong><small>公开 Beta 汇总</small></div></header>
       <div className="beta-metric-grid">
-        <div><small>Tasks</small><strong>{formatCount(bucket.tasks.total)}</strong><span>{formatCount(bucket.tasks.succeeded)} succeeded · {formatCount(bucket.tasks.failed)} failed</span></div>
-        <div><small>Provider attempts</small><strong>{rate(bucket.attempts.total, bucket.attempts.successRateBps)}</strong><span>{formatCount(bucket.attempts.total)} attempts</span></div>
-        <div><small>Delivery handoff</small><strong>{rate(bucket.deliveries.total, bucket.deliveries.successRateBps)}</strong><span>{formatCount(bucket.deliveries.total)} observed</span></div>
+        <div><small>任务</small><strong>{formatCount(bucket.tasks.total)}</strong><span>{formatCount(bucket.tasks.succeeded)} 成功 · {formatCount(bucket.tasks.failed)} 失败</span></div>
+        <div><small>Provider 尝试</small><strong>{rate(bucket.attempts.total, bucket.attempts.successRateBps)}</strong><span>{formatCount(bucket.attempts.total)} 次尝试</span></div>
+        <div><small>交付交接</small><strong>{rate(bucket.deliveries.total, bucket.deliveries.successRateBps)}</strong><span>{formatCount(bucket.deliveries.total)} 次交接</span></div>
       </div>
       <div className="beta-card-failures">
-        <FailureList title="Attempt failures" values={bucket.attempts.failureCounts} />
-        <FailureList title="Task failures" values={bucket.tasks.failureCounts} />
+        <FailureList title="尝试失败" values={bucket.attempts.failureCounts} />
+        <FailureList title="任务失败" values={bucket.tasks.failureCounts} />
       </div>
     </article>
   );
@@ -43,24 +60,24 @@ function PlatformCard({ platform, bucket }: { platform: string; bucket: AdminBet
 
 export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: BetaHealthResource; hours: number; onHoursChange: (hours: number) => void }) {
   if (view.status === "unavailable") {
-    return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta health is temporarily unavailable</strong><p>Aggregate reads failed closed; no traffic or Provider state was changed.</p></div>;
+    return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta 健康暂时不可用</strong><p>汇总读取已安全失败；没有修改流量或 Provider 状态。</p></div>;
   }
   const report = view.data;
   const platforms = ["x", "instagram"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
   return (
     <div className="beta-health-dashboard panel">
       <header className="beta-health-toolbar">
-        <div><small>READ-ONLY AGGREGATES</small><strong>{report.window.hours}-hour Beta window <span>· latest {formatTime(report.latestEventAt)}</span></strong><p>SaveFromIns remains an experimental Instagram Beta route. This view observes outcomes only; it cannot change rollout or gates.</p></div>
-        <label>Window<select value={hours} onChange={(event) => onHoursChange(Number(event.target.value))}><option value={24}>Last 24 hours</option><option value={168}>Last 7 days</option></select></label>
+        <div><small>只读运行汇总</small><strong>最近 {report.window.hours} 小时 Beta 窗口 <span>· 最近 {formatTime(report.latestEventAt)}</span></strong><p>SaveFromIns 仍是实验性的 Instagram Beta 路线。本页只观察结果，不能修改 rollout 或门禁。</p></div>
+        <label>观察窗口<select aria-label="观察窗口" value={hours} onChange={(event) => onHoursChange(Number(event.target.value))}><option value={24}>最近 24 小时</option><option value={168}>最近 7 天</option></select></label>
       </header>
       <div className="beta-health-summary">
-        <article><span><CheckCircle size={17} /></span><div><small>Tasks succeeded</small><strong>{formatCount(report.totals.tasks.succeeded)} / {formatCount(report.totals.tasks.total)}</strong></div></article>
-        <article><span><ChartLineUp size={17} /></span><div><small>Attempt success</small><strong>{rate(report.totals.attempts.total, report.totals.attempts.successRateBps)}</strong></div></article>
-        <article><span><ClockCounterClockwise size={17} /></span><div><small>Delivery success</small><strong>{rate(report.totals.deliveries.total, report.totals.deliveries.successRateBps)}</strong></div></article>
-        <article><span><WarningCircle size={17} /></span><div><small>Expired / active</small><strong>{formatCount(report.totals.tasks.expired)} / {formatCount(report.totals.tasks.active)}</strong></div></article>
+        <article><span><CheckCircle size={17} /></span><div><small>任务成功</small><strong>{formatCount(report.totals.tasks.succeeded)} / {formatCount(report.totals.tasks.total)}</strong></div></article>
+        <article><span><ChartLineUp size={17} /></span><div><small>尝试成功率</small><strong>{rate(report.totals.attempts.total, report.totals.attempts.successRateBps)}</strong></div></article>
+        <article><span><ClockCounterClockwise size={17} /></span><div><small>交付成功率</small><strong>{rate(report.totals.deliveries.total, report.totals.deliveries.successRateBps)}</strong></div></article>
+        <article><span><WarningCircle size={17} /></span><div><small>过期 / 进行中</small><strong>{formatCount(report.totals.tasks.expired)} / {formatCount(report.totals.tasks.active)}</strong></div></article>
       </div>
       <div className="beta-platform-grid">{platforms.map((platform) => <PlatformCard key={platform} platform={platform} bucket={report.byPlatform[platform as keyof typeof report.byPlatform]} />)}</div>
-      <footer className="beta-health-footer">Window: {formatTime(report.window.from)} – {formatTime(report.window.to)} · Values are sanitized aggregates; URLs, task IDs, Provider payloads and media addresses are never returned.</footer>
+      <footer className="beta-health-footer">窗口：{formatTime(report.window.from)} – {formatTime(report.window.to)} · 返回的只有脱敏汇总，不包含 URL、任务 ID、Provider 内容或媒体地址。</footer>
     </div>
   );
 }
