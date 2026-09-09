@@ -61,6 +61,12 @@ task. Because candidates expire after four minutes, this check cannot prove whet
 already removed a previously inserted candidate. The result is therefore treated as an unresolved
 Delivery-candidate lifecycle failure, not as evidence to widen the upstream or media-host policy.
 
+The controlled re-test on 2026-09-09 reached the Provider again after CI passed, but the upstream
+request timed out at the reviewed 15-second ceiling (`provider_timeout`). The exact rule was then
+CAS-disabled at revision 12 and the three runtime gates were closed. Together with the earlier
+Delivery-stage failure, this shows intermittent upstream reliability across both resolution and
+Delivery; no new host policy, cookie, retry, or download mode is justified.
+
 ## Terms and data boundary
 
 The public Terms and Privacy pages were reachable during review and stated a last-updated date of

@@ -66,9 +66,10 @@ The supplied public Reel `DcSBz8UCbTG` reached one-format resolution but failed 
 Delivery was prepared. The task was marked succeeded with no live candidate at the later database
 inspection point; because the four-minute candidate lifetime may have elapsed, insertion versus
 cleanup is not yet proven. Production Instagram traffic is therefore denied while the new
-development-only resolution-only guard and targeted Delivery lifecycle tests are reviewed. A
-repeat qualification is not permitted until a new owner authorization explicitly reopens the exact
-SaveFromIns/Instagram/NL rule.
+development-only resolution-only guard is reviewed. A post-CI re-test timed out at the Provider's
+15-second ceiling and was rolled back to rule revision 12. A repeat qualification is not permitted
+until a new owner authorization explicitly reopens the exact SaveFromIns/Instagram/NL rule and the
+upstream latency is understood.
 
 ## Coordinated future lanes
 

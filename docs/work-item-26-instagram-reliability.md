@@ -79,3 +79,21 @@ authorization after targeted tests and GitHub CI pass.
 The owner also reports successful Instagram downloads for other URLs from desktop and mobile
 clients. That observation supports keeping SaveFromIns as the current candidate, but it is not a
 TikDD production transfer record and does not by itself reopen the disabled rollout rule.
+
+## 2026-09-09 controlled re-test after CI
+
+After PR #66 CI passed, the same canonical Reel was retried once under a fresh backup and a
+temporary enablement of the exact rule. Instagram remained publicly reachable in the browser, but
+the SaveFromIns request exceeded the 15-second Provider timeout. The sanitized task ended as
+`PROVIDER_UNAVAILABLE` with one `provider_timeout` attempt and no public formats, so no Delivery
+ticket or media transfer was attempted.
+
+The rule was immediately CAS-disabled from revision 11 to revision 12 and the three SaveFromIns
+gates were set false in the versioned production environment. The rollback backup was
+`/var/backups/tikdd/p0-dr-01/production.36d967b575d0edcf7cce394c2bfeceaebb75a91f.env.wi26-retest-rollback-20260909T034442Z`
+with SHA-256
+`7d1ac8e117fe6d6335ad437df1ea94917aee40e86e4310f5083ff462689095bb`. The Worker was recreated and
+reported healthy; all six core containers remained healthy. This second failure confirms
+intermittent upstream availability/latency for this sample, not a deterministic Delivery-candidate
+shape defect. SaveFromIns remains experimental and production-disabled pending a provider-side
+reliability decision.
