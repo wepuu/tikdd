@@ -1,7 +1,8 @@
 # Work Item 28 — Client-direct downloads and bounded Instagram recovery
 
-Status: implementation on `codex/wi28-client-direct-beta-hardening`; no production change in this
-work item yet.
+Status: complete and deployed from `main@bdf6543a0e3c7fced09dc7b309616251d5f111f1` on
+2026-09-09. The release preserved the redirect-only Delivery path and did not start Admin,
+calibration, or any additional Provider.
 
 ## Decision
 
@@ -49,3 +50,30 @@ After ten distinct Instagram tasks, retain SaveFromIns as the Beta Provider only
 success is at least 70% and no access-friction pattern is emerging. Otherwise open the next
 Provider-replacement feasibility item; once an alternate Provider qualifies, SaveFromIns may be
 demoted to a low-share fallback.
+
+## Production closeout
+
+The GitHub-built release used the exact immutable image digests below:
+
+- Service/Worker/Delivery: `sha256:d52df4147f9711736b06643bec762157265744dc6686b3249186ad8f99cc1206`
+- Web: `sha256:a3e4be45e712ab09f47faaa64d0eab3535644268bbdca23a3cbdb60970ac8a43`
+- Admin image was built and recorded but the Admin profile remained stopped:
+  `sha256:ef828d7bb4c3be58e04ba3d25f75f29cd5f3283d6827f6264067832bb27d0900`
+
+Before deployment, PostgreSQL was backed up to the encrypted artifact
+`/var/backups/tikdd/p0-dr-01/tikdd-prod-20260909T120940Z.dump.gpg` (SHA-256
+`c099106c2da84fff0ce3cdeddaa2a1736d16b19e7452796dbb7fe42a972fa4c3`). The active release directory
+is `/opt/tikdd/releases/bdf6543a0e3c7fced09dc7b309616251d5f111f1`.
+
+The browser smoke completed one public X download (26,119,225 bytes) and one public Instagram
+download (4,476,966 bytes). Delivery returned the reviewed redirect and the browser fetched the
+non-zero media body directly from the Provider CDN. The CDN chose its own filename instead of the
+best-effort browser hint; this is an accepted cross-origin compatibility outcome.
+
+The 15-minute observation recorded 15/15 healthy samples for all six core containers, zero
+restarts, and HTTP 200 readiness for API and Delivery. The rollout and gate state was unchanged:
+X and Instagram remained enabled, while Admin, calibration, and all other Providers stayed off.
+
+The first seven-day anonymous Beta report after this release is recorded in
+[Work Item 29](work-item-29-instagram-provider-replacement-feasibility.md). It is below the
+Instagram retention threshold, so a bounded Provider decision is now the next work item.
