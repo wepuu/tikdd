@@ -33,7 +33,8 @@ import {
   DLPandaProvider,
   SaveFromInsProvider,
   SSSTwitterProvider,
-  TwitterSaverProvider
+  TwitterSaverProvider,
+  resolveJobAttemptsForPlatform
 } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { Queue } from "bullmq";
@@ -340,7 +341,7 @@ app.post("/v1/resolve-tasks", async (request, reply) => {
   try {
     await resolveQueue.add("resolve", jobData, {
       jobId: task.id,
-      attempts: 3,
+      attempts: resolveJobAttemptsForPlatform(task.platform),
       backoff: { type: "exponential", delay: 1_000 },
       removeOnComplete: 500,
       removeOnFail: 1_000

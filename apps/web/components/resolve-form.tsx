@@ -21,6 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
+import { suggestedDownloadFilename } from "../lib/download-filename";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
@@ -612,8 +613,9 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
                     <a
                       className="download-action"
                       href={delivery.url}
+                      download={selectedFormat ? suggestedDownloadFilename(task!, selectedFormat) : undefined}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noreferrer noopener"
                       onClick={() => {
                         setDeliveryHandedOff(true);
                         setDeliveryExpired(true);

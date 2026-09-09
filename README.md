@@ -10,7 +10,11 @@ delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified I
 redirect capability; DLPanda has multi-platform resolution-only capabilities. All real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
-media hosts. Proxying, temporary files, and media downloads by TikDD remain disabled.
+media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
+so the user's network reaches the Provider CDN and the NL VPS does not carry media bytes. TikDD may
+provide a best-effort `TikDD-Platform-ContentId-Quality.ext` filename hint, but cross-origin CDN
+behavior can still determine the final filename. Proxying, temporary files, and media downloads by
+TikDD remain disabled.
 
 ## Architecture
 
@@ -19,7 +23,7 @@ Web (SEO/UI) -> API -> platform catalog -> Redis queue -> resolver worker
                     |                              |
                     +---- PostgreSQL <--- provider router -> adapters
 
-Selected format -> delivery service -> redirect / controlled proxy / temporary object
+Selected format -> delivery service -> one-use 302 -> user browser -> reviewed media host
 ```
 
 Start with [the architecture guide](docs/architecture/README.md),
@@ -48,6 +52,8 @@ The Work Item 26 reliability closeout is recorded in the [Work Item 26 record](d
 the current SaveFromIns/Instagram Beta has a verified non-zero Delivery transfer and remains
 noindex/experimental. Work Item 27 adds only provider-neutral failure feedback and the read-only
 `pnpm beta:report` aggregate; it does not start Admin or calibration or enable another Provider.
+Work Item 28 keeps this redirect-only delivery path, adds a browser filename hint, and bounds
+SaveFromIns Instagram retries and diagnostics without changing public contracts or media routing.
 
 ## Platform and provider model
 

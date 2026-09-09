@@ -321,6 +321,9 @@ export async function requestText(
   if (response.status === 429) {
     throw new ProviderError("The provider rate limit was reached.", "provider_rate_limited", true, true);
   }
+  if (response.status === 408) {
+    throw new ProviderError("The provider request timed out.", "provider_timeout", true, true);
+  }
   if (response.status === 401) {
     throw new ProviderError("The provider requires authentication.", "authentication_required", false, false);
   }

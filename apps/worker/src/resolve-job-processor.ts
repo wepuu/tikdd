@@ -5,7 +5,11 @@ import type {
   TaskError
 } from "@tikdd/contracts";
 import type { TaskRepository } from "@tikdd/persistence";
-import { ProviderRoutingError, type ProviderRouter } from "@tikdd/providers";
+import {
+  ProviderRoutingError,
+  shouldAutomaticallyRetryProviderFailure,
+  type ProviderRouter
+} from "@tikdd/providers";
 import { UnrecoverableError } from "bullmq";
 import { prepareEncryptedCandidates } from "./candidates";
 import {
@@ -141,11 +145,17 @@ export async function processResolveJob(
   } catch (error) {
     if (!(error instanceof ProviderRoutingError)) throw error;
     await dependencies.tasks.recordProviderAttempts(data.taskId, error.attempts);
-    if (error.retryable) throw error;
+    const lastAttempt = error.attempts.at(-1);
+    const automaticRetry = error.retryable && shouldAutomaticallyRetryProviderFailure({
+      platform: data.platform,
+      providerId: lastAttempt?.providerId ?? null,
+      failureCode: error.failureCode
+    });
+    if (automaticRetry) throw error;
     await dependencies.tasks.fail(data.taskId, {
       code: error.failureCode.toUpperCase(),
       message: error.message,
-      retryable: false
+      retryable: error.retryable
     });
     await releaseAdmissionBestEffort(data, dependencies);
     throw new UnrecoverableError(error.message);

@@ -149,7 +149,8 @@ if (ssstwitterActivation.enabled) {
 if (savefrominsActivation.enabled) {
   providers.push(new SaveFromInsProvider({
     enabled: true,
-    requestAuth: savefrominsActivation.requestAuth
+    requestAuth: savefrominsActivation.requestAuth,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }
 if (enableMockProvider) {

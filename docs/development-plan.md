@@ -1,8 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@9ce4565f1f4afa44733f2a70a0a97b7b61a7150f` (production merge; local
-  Work Item 27 branch also includes the fail-closed guard follow-up)
+- Repository checkpoint: `main@e462914afb0a2b1807604b7c590ce9fcaefba45d` (Work Item 27 production merge)
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -24,8 +23,9 @@ the sitemap/hreflang group until the existing eligibility gate passes. Work Item
 25A are implemented, merged, and deployed in the current production lineage. Work Item 25B is
 implemented and deployed as bounded bilingual GEO seed content; its reviewed Admin publication is
 still a separate on-demand operation. PR #64 (`main@13a56f28`) added SaveFromIns sparse-resource
-compatibility. Work Item 27 is the next small slice: keep the two Betas observable with actionable,
-provider-neutral failure copy and a read-only aggregate report, without starting Admin or calibration.
+compatibility. Work Item 27 is merged and deployed. Work Item 28 is the next small slice: preserve
+client-direct media delivery while bounding SaveFromIns retries and adding a safe browser filename
+hint, without starting Admin or calibration.
 
 ## Baseline classification
 
@@ -76,7 +76,17 @@ Web and a read-only `pnpm beta:report` aggregate over public X/Instagram tasks, 
 delivery outcomes. It creates no migration, endpoint, telemetry stream, or always-on service. Admin,
 calibration, and other Providers remain off. The next release still follows the fixed loop of
 targeted tests, PR CI, GitHub images, backup, deployment, one real download, short observation, and
-fast rollback.
+fast rollback. It is merged and deployed from `main@e462914`.
+
+### Work Item 28 current status
+
+Implementation is in progress on `codex/wi28-client-direct-beta-hardening`. This slice keeps the
+one-use Delivery redirect so media bytes travel from the reviewed Provider CDN to the user's
+browser, adds a best-effort `TikDD-Platform-ContentId-Quality.ext` browser filename hint, and
+limits SaveFromIns/Instagram to two queue attempts. Only network, timeout, and 5xx failures may
+consume the second attempt; rate limits, challenges, schema changes, and invalid results stop
+automatic retry. Internal SaveFromIns diagnostics remain sanitized and no database migration or
+public endpoint is added. Admin, calibration, X behavior, and other Providers remain unchanged.
 
 ## Coordinated future lanes
 
@@ -518,8 +528,10 @@ is unchanged.
 
 Lane: A with a bounded Provider decision; no new platform or SEO surface.
 
-Status: planned after the PR #64 deployment. The SaveFromIns adapter now tolerates sparse resources,
-but production smoke on 2026-09-08 did not produce a new successful Instagram transfer: one supplied
+Status: closed after the post-CI production retest recorded in the Work Item 26 closeout. The
+historical SaveFromIns adapter now tolerates sparse resources, while the later reliability follow-up
+is tracked by Work Item 28. The original production smoke on 2026-09-08 did not produce a new
+successful Instagram transfer: one supplied
 URL was terminal `content_not_found` and a previously successful Reel returned `invalid_result`.
 This is insufficient evidence for a reliability claim and does not justify widening the direct-media
 mode or Delivery Host allowlist.
