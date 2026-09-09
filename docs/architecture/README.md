@@ -43,8 +43,9 @@ flowchart LR
 
 The current repository implements the catalog, provider manifests, deterministic ranking,
 sequential fallback, normalized-result validation, an attempt ledger, transactional encrypted
-delivery candidates, and disabled fixture-tested TwitterSaver/DLPanda adapters. TwitterSaver has a
-reviewed redirect-only delivery path. ADR-0006 defines tuple-keyed health aggregation and
+delivery candidates, and fixture-tested provider adapters. The production Beta currently runs
+SSSTwitter for X and SaveFromIns for Instagram through reviewed redirect-only Delivery paths;
+TwitterSaver and DLPanda remain disabled. ADR-0006 defines tuple-keyed health aggregation and
 distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
 open and half-open decisions. ADR-0007 defines production admission controls; work item 9.1 now
@@ -118,6 +119,8 @@ provider meets the launch threshold.
 See [Platform catalog](../platform-catalog.md) and [Routing policy](../routing-policy.md).
 Operational configuration and protected diagnostics are documented in
 [Provider health operations](../provider-health-operations.md).
+The small post-release Beta view is the read-only `pnpm beta:report` command documented in the
+repository README; it reports only aggregate public X/Instagram counts and failure classes.
 Production admission and runtime rollout decisions are defined in
 [ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
 [ADR-0008](adr/0008-provider-qualification-and-pilot-controls.md) defines provider qualification,

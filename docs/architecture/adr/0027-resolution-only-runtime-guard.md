@@ -32,7 +32,8 @@ exercise resolution-only fixtures by explicitly passing the development setting 
 
 - A mis-bound production Worker fails a task rather than exposing a misleading successful result.
 - Existing production providers are unchanged and must continue returning complete candidates.
-- The Instagram smoke remains an unresolved candidate-lifecycle incident; this guard does not claim
-  to identify whether the candidate was inserted and later expired.
-- Re-enabling SaveFromIns requires the existing owner authorization, exact rollout CAS update, and
-  a fresh real browser Delivery check.
+- The earlier Instagram smoke remains a documented candidate-lifecycle incident; this guard does not
+  claim to identify whether that candidate was inserted and later expired. Work Item 26 subsequently
+  closed with an encrypted candidate and verified non-zero Delivery transfer.
+- Re-enabling any Provider still requires the existing owner authorization, exact rollout CAS update,
+  and a fresh real browser Delivery check. This ADR does not authorize traffic by itself.

@@ -1,6 +1,6 @@
 import type { ResolveTask, TaskError } from "@tikdd/contracts";
 import { describe, expect, it } from "vitest";
-import { isDeliveryExpired, publicFailureIntent } from "../lib/task-presentation";
+import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
 const baseTask: ResolveTask = {
   id: `tsk_${"a".repeat(32)}`,
@@ -34,6 +34,19 @@ describe("public task presentation", () => {
       retryable: true
     };
     expect(publicFailureIntent(null, admissionError)).toBe("retryable");
+  });
+
+  it("maps public intents to actionable, provider-neutral copy", () => {
+    const copy = {
+      retryableDescription: "retry",
+      unavailableDescription: "unavailable",
+      expiredDescription: "expired",
+      resolveError: "generic"
+    };
+    expect(publicFailureDescription("retryable", copy)).toBe("retry");
+    expect(publicFailureDescription("unavailable", copy)).toBe("unavailable");
+    expect(publicFailureDescription("expired", copy)).toBe("expired");
+    expect(publicFailureDescription(null, copy)).toBe("generic");
   });
 
   it("treats invalid or elapsed delivery expiry values as expired", () => {

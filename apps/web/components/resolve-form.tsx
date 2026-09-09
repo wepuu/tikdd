@@ -22,7 +22,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
-import { isDeliveryExpired, publicFailureIntent } from "../lib/task-presentation";
+import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 const deliveryBaseUrl = process.env.NEXT_PUBLIC_DELIVERY_BASE_URL ?? "http://localhost:4002";
@@ -141,6 +141,16 @@ function admissionMessage(code: string, copy: SiteCopy["form"]): string {
     case "ADMISSION_UNAVAILABLE": return copy.admissionUnavailable;
     default: return copy.resolveError;
   }
+}
+
+function submissionFailureMessage(error: Pick<TaskError, "code" | "retryable">, copy: SiteCopy["form"]): string {
+  if (["DUPLICATE_IN_PROGRESS", "RATE_LIMITED", "CONCURRENCY_LIMITED", "IDEMPOTENCY_CONFLICT", "ADMISSION_UNAVAILABLE"].includes(error.code)) {
+    return admissionMessage(error.code, copy);
+  }
+  return publicFailureDescription(
+    error.code === "RESOLUTION_EXPIRED" ? "expired" : error.retryable ? "retryable" : "unavailable",
+    copy
+  );
 }
 
 const platformIcons = [XLogoIcon, InstagramLogoIcon] as const;
@@ -264,12 +274,22 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     for (let attempt = 0; attempt < 40; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 750));
       const response = await fetch(`${apiBaseUrl}/v1/resolve-tasks/${taskId}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(copy.resolveError);
+      if (!response.ok) {
+        throw {
+          code: "RESOLVE_POLL_FAILED",
+          message: copy.retryableDescription,
+          retryable: true
+        } satisfies TaskError;
+      }
       const nextTask = (await response.json()) as ResolveTask;
       setTask(nextTask);
       if (terminalStates.has(nextTask.status)) return;
     }
-    throw new Error(copy.timeout);
+    throw {
+      code: "RESOLUTION_TIMEOUT",
+      message: copy.timeout,
+      retryable: true
+    } satisfies TaskError;
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -300,10 +320,15 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as ApiError | null;
+        const apiErrorCode = typeof payload?.error?.code === "string" ? payload.error.code : "RESOLVE_REQUEST_FAILED";
+        const apiRetryable = typeof payload?.error?.retryable === "boolean" ? payload.error.retryable : true;
         const publicError: TaskError = {
-          code: payload?.error.code ?? "RESOLVE_REQUEST_FAILED",
-          message: admissionMessage(payload?.error.code ?? "", copy),
-          retryable: payload?.error.retryable ?? true
+          code: apiErrorCode,
+          message: submissionFailureMessage({
+            code: apiErrorCode,
+            retryable: apiRetryable
+          }, copy),
+          retryable: apiRetryable
         };
         throw publicError;
       }
@@ -313,10 +338,12 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
       await pollTask(createdTask.id);
     } catch (caught) {
       const taskError = caught as Partial<TaskError>;
+      const code = typeof taskError.code === "string" ? taskError.code : "RESOLVE_REQUEST_FAILED";
+      const retryable = typeof taskError.retryable === "boolean" ? taskError.retryable : true;
       setSubmissionError({
-        code: taskError.code ?? "RESOLVE_REQUEST_FAILED",
-        message: taskError.message ?? copy.resolveError,
-        retryable: taskError.retryable ?? true
+        code,
+        message: submissionFailureMessage({ code, retryable }, copy),
+        retryable
       });
     } finally {
       setIsWorking(false);
@@ -404,12 +431,9 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
       ? copy.expiredTitle
       : copy.unavailableTitle;
   const failureDescription = submissionError
-    ? admissionMessage(submissionError.code, copy)
-    : failureIntent === "retryable"
-      ? copy.retryableDescription
-      : failureIntent === "expired"
-        ? copy.expiredDescription
-        : copy.unavailableDescription;
+    ? submissionFailureMessage(submissionError, copy)
+    : publicFailureDescription(failureIntent, copy);
+  const failureActionLabel = failureIntent === "expired" ? copy.resolveAgainAction : copy.retryAction;
   const isTaskFocused = isWorking || Boolean(task) || Boolean(submissionError);
   const statusText = isWorking
     ? copy.resolving
@@ -545,7 +569,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
               <div className="result-state-panel" role={failureIntent === "unavailable" ? "alert" : "status"}>
                 <p>{failureDescription}</p>
                 {failureIntent !== "unavailable" ? (
-                  <button className="secondary-action" type="submit" form="resolver-form" disabled={isWorking}>{copy.action}</button>
+                  <button className="secondary-action" type="submit" form="resolver-form" disabled={isWorking}>{failureActionLabel}</button>
                 ) : null}
               </div>
             ) : isWorking ? (

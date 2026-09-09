@@ -1,16 +1,16 @@
 # Work Item 26 — Instagram Beta reliability closure
 
-Status: active follow-up after a failed production Delivery smoke; SaveFromIns is fail-closed.
+Status: complete (2026-09-09 closeout); SaveFromIns/Instagram Beta is enabled at full allocation.
 
-The owner-supplied Reel `DcSBz8UCbTG` was tested once through the public browser flow on
-2026-09-09. Instagram served a public Reel, TikDD resolved one MP4 format, and the failure
-occurred when preparing secure Delivery. No successful Instagram transfer was recorded.
+The owner-supplied Reel `DcSBz8UCbTG` was re-tested through the public browser flow on 2026-09-09.
+The closeout completed resolution, secure Delivery, and a non-zero MP4 transfer. Earlier failed
+attempts remain documented below as historical diagnostics.
 
-## Baseline
+## Initial baseline (historical)
 
 - Code checkpoint: `main@15e9ed4448cbb29f781c332494c1ae7f3648ca90`.
 - PR #64 remains deployed from GitHub-built immutable Web, Service, and Admin images.
-- SaveFromIns/Instagram/NL is disabled after the failed smoke. Admin, calibration, and all other
+- SaveFromIns/Instagram/NL was disabled after the failed smoke. Admin, calibration, and all other
   Providers remain disabled; X remains enabled at full allocation.
 - The adapter already handles sparse resource arrays and empty video quality (`Original`).
 - The post-deploy smoke on 2026-09-08 produced one terminal `content_not_found` attempt for
@@ -80,7 +80,7 @@ The owner also reports successful Instagram downloads for other URLs from deskto
 clients. That observation supports keeping SaveFromIns as the current candidate, but it is not a
 TikDD production transfer record and does not by itself reopen the disabled rollout rule.
 
-## 2026-09-09 controlled re-test after CI
+## 2026-09-09 controlled re-test after CI (historical failure)
 
 After PR #66 CI passed, the same canonical Reel was retried once under a fresh backup and a
 temporary enablement of the exact rule. Instagram remained publicly reachable in the browser, but
@@ -97,3 +97,24 @@ reported healthy; all six core containers remained healthy. This second failure 
 intermittent upstream availability/latency for this sample, not a deterministic Delivery-candidate
 shape defect. SaveFromIns remains experimental and production-disabled pending a provider-side
 reliability decision.
+
+## 2026-09-09 production closeout
+
+After the follow-up authorization, production was deployed from the GitHub merge
+`main@9ce4565f1f4afa44733f2a70a0a97b7b61a7150f`. The exact `savefromins / instagram / nl` rule was
+CAS-updated to revision 13, `enabled=true`, and `allocationBps=10000`; the three SaveFromIns gates
+were true, while `PROVIDER_PILOT_GUARD_REQUIRED=false`. X stayed on its existing revision 15 rule.
+Admin, calibration, and all other Providers remained stopped or disabled.
+
+The production release used immutable GitHub images: Service digest
+`sha256:fa045bcc2d5019dc691818dd99c4796391b3b0c9eebc842b697c06d5126cb257` and Web digest
+`sha256:d036493949f8fca32088633782bb28e87bf706fc017edbd8f3016d69a9526f6d`. The encrypted
+PostgreSQL backup was `/var/backups/tikdd/p0-dr-01/tikdd-prod-20260909T040507Z.dump.gpg` with
+SHA-256 `b851088543437e04681f5167da78dae274ace550d6b601f496d358bf7770900d`.
+
+The public Reel `DcSBz8UCbTG` completed the browser journey. Delivery returned HTTP 200 with
+`content-type: video/mp4`, `content-length: 4476966`, and a non-zero ISO MP4 body. The six core
+containers remained healthy with zero restarts and no observed API 5xx during the 15-minute
+observation recorded at `/var/backups/tikdd/p0-dr-01/wi26-instagram-observation-20260909T052000Z.log`
+(SHA-256 `2a0e94878bb94d04a6ceddfd1613d74336fac4eb4a46f5aa55d71d29211fb102`). This closes the
+reliability item without promoting Instagram beyond Beta/noindex.
