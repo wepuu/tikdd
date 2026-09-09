@@ -14,6 +14,7 @@ import {
   AdminRuntimeSchema,
   AdminSettingsRecoveryViewSchema,
   AdminSeoOverviewSchema
+  ,AdminBetaHealthSchema
   ,AdminSeoTechnicalViewSchema
 } from "@tikdd/admin-contracts";
 import { z } from "zod";
@@ -31,6 +32,7 @@ export const AdminConsoleSnapshotSchema = z.strictObject({
   refreshIntervalMs: z.number().int().min(15_000).max(300_000),
   overview: resource(AdminOverviewSchema),
   operationalTruth: resource(AdminOperationalTruthSchema),
+  betaHealth: resource(AdminBetaHealthSchema),
   routes: resource(AdminRouteListSchema),
   selectedRoute: resource(AdminRouteDetailSchema.nullable()),
   qualification: resource(AdminQualificationViewSchema.nullable()),

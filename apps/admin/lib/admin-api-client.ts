@@ -16,6 +16,7 @@ import {
   AdminRoutePolicyViewSchema,
   AdminRuntimeSchema,
   AdminSeoOverviewSchema,
+  AdminBetaHealthSchema,
   assertAdminSafeValue,
   type AdminRouteSummary
 } from "@tikdd/admin-contracts";
@@ -204,22 +205,25 @@ function chooseRoute(routes: readonly AdminRouteSummary[], selection?: AdminRout
 export async function loadAdminConsoleSnapshot(input: {
   requestHeaders: HeaderReader;
   selection?: AdminRouteSelection;
-  policyPlatform?: string;
-  managedPlatform?: string;
+    policyPlatform?: string;
+    managedPlatform?: string;
+    betaHours?: number;
   configuration?: AdminApiConnection;
   transport?: AdminTransport;
 }): Promise<AdminConsoleSnapshot> {
   const configuration = input.configuration ?? loadAdminApiConnection();
   const transport = input.transport ?? nodeTransport;
   const shared = { headers: input.requestHeaders, configuration, transport };
-  const [overview, operationalTruth, routes, providers, platforms, runtime, seo] = await Promise.all([
+  const betaHours = input.betaHours ?? 24;
+  const [overview, operationalTruth, routes, providers, platforms, runtime, seo, betaHealth] = await Promise.all([
     read({ ...shared, schema: AdminOverviewSchema, path: "/admin/v1/overview" }),
     read({ ...shared, schema: AdminOperationalTruthSchema, path: "/admin/v1/operational-truth" }),
     read({ ...shared, schema: AdminRouteListSchema, path: "/admin/v1/routes" }),
     read({ ...shared, schema: AdminProviderListSchema, path: "/admin/v1/providers" }),
     read({ ...shared, schema: AdminPlatformListSchema, path: "/admin/v1/platforms" }),
     read({ ...shared, schema: AdminRuntimeSchema, path: "/admin/v1/runtime" }),
-    read({ ...shared, schema: AdminSeoOverviewSchema, path: "/admin/v1/seo?channel=published" })
+    read({ ...shared, schema: AdminSeoOverviewSchema, path: "/admin/v1/seo?channel=published" }),
+    read({ ...shared, schema: AdminBetaHealthSchema, path: `/admin/v1/beta-health?hours=${encodeURIComponent(String(betaHours))}` })
   ]);
   const selected = routes.status === "ready" ? chooseRoute(routes.data.routes, input.selection) : null;
   const selectedRoute = selected
@@ -258,6 +262,7 @@ export async function loadAdminConsoleSnapshot(input: {
     refreshIntervalMs: configuration.refreshIntervalMs,
     overview,
     operationalTruth,
+    betaHealth,
     routes,
     selectedRoute,
     qualification,

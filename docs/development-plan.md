@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@e462914afb0a2b1807604b7c590ce9fcaefba45d` (Work Item 27 production merge)
+- Repository checkpoint: `main@bdf6543a0e3c7fced09dc7b309616251d5f111f1` (Work Item 28 production merge)
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -23,9 +23,12 @@ the sitemap/hreflang group until the existing eligibility gate passes. Work Item
 25A are implemented, merged, and deployed in the current production lineage. Work Item 25B is
 implemented and deployed as bounded bilingual GEO seed content; its reviewed Admin publication is
 still a separate on-demand operation. PR #64 (`main@13a56f28`) added SaveFromIns sparse-resource
-compatibility. Work Item 27 is merged and deployed. Work Item 28 is the next small slice: preserve
-client-direct media delivery while bounding SaveFromIns retries and adding a safe browser filename
-hint, without starting Admin or calibration.
+compatibility. Work Item 27 is merged and deployed. Work Item 28 is merged and deployed from
+`main@bdf6543a`; it preserves client-direct media delivery while bounding SaveFromIns retries and
+adding a safe browser filename hint without starting Admin or calibration. Work Item 29 retains
+SaveFromIns as the usable Instagram Beta and pauses paid replacement research. The private Admin
+Beta operations view is implemented locally; its UI closeout is recorded as Work Item 31. Admin
+remains an on-demand, stopped production profile until a separate activation approval.
 
 ## Baseline classification
 
@@ -80,13 +83,41 @@ fast rollback. It is merged and deployed from `main@e462914`.
 
 ### Work Item 28 current status
 
-Implementation is in progress on `codex/wi28-client-direct-beta-hardening`. This slice keeps the
-one-use Delivery redirect so media bytes travel from the reviewed Provider CDN to the user's
-browser, adds a best-effort `TikDD-Platform-ContentId-Quality.ext` browser filename hint, and
-limits SaveFromIns/Instagram to two queue attempts. Only network, timeout, and 5xx failures may
-consume the second attempt; rate limits, challenges, schema changes, and invalid results stop
-automatic retry. Internal SaveFromIns diagnostics remain sanitized and no database migration or
-public endpoint is added. Admin, calibration, X behavior, and other Providers remain unchanged.
+Implementation and production proof are complete on `main@bdf6543a0e3c7fced09dc7b309616251d5f111f1`.
+The one-use Delivery redirect keeps media bytes between the reviewed Provider CDN and the user's
+browser. The filename hint is best effort because a cross-origin CDN may choose the final name.
+SaveFromIns/Instagram remains bounded to two queue attempts; only network, timeout, and 5xx failures
+may consume the second attempt. Internal diagnostics remain sanitized and no database migration or
+public endpoint was added. The six core containers were healthy with zero restarts during the
+15-minute post-deploy watch, and one real X plus one real Instagram browser download returned
+non-zero media. Admin, calibration, X behavior, and other Providers remain unchanged.
+
+### Work Item 29 current status
+
+SaveFromIns remains the owner-approved, usable Instagram Beta Provider. The seven-day read-only
+report (15/29 Provider attempts, 51.72%; 37/41 Delivery outcomes, 90.24%) is retained as an
+operational signal, not an automatic release blocker. Paid replacement candidates are paused. Future
+free candidates supplied by the owner will be screened one at a time under the existing public-only,
+no-cookie, no-challenge-bypass and redirect-only rules. See the [Work Item 29 record](work-item-29-instagram-provider-replacement-feasibility.md).
+
+### Work Item 30 current status
+
+Work Item 30 is implemented locally: it adds a sanitized, authenticated Admin Beta health view
+backed by the existing read-only persistence aggregation. It shows bounded X/Instagram task,
+Provider-attempt, and Delivery summaries for 24-hour and 7-day windows without adding a migration,
+public endpoint, Provider capability, or traffic control. See the [Work Item 30 record](work-item-30-admin-beta-operations.md).
+
+### Work Item 31 current status
+
+Work Item 31 closes the local Admin UI pass for the Beta view. `Beta 健康` now sits inside the
+existing 运行 navigation, the panel uses consistent operator-facing Chinese copy, and malformed
+legacy aggregate fields fail safe instead of crashing RouteInspector. Desktop and 390px mobile
+layouts were reviewed against the existing design tokens, and `pnpm check` passed. The change is
+local and unpushed; Admin remains stopped in production. See the [Work Item 31 record](work-item-31-admin-beta-preview.md).
+
+The next step is a separate owner decision to push and merge this local UI closeout, followed by an
+optional on-demand Admin production preview. No Provider, rollout, calibration, or public traffic
+change is implied.
 
 ## Coordinated future lanes
 

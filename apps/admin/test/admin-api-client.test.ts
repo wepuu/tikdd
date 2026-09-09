@@ -1,4 +1,4 @@
-import { ADMIN_OVERVIEW_FIXTURES } from "@tikdd/admin-contracts/fixtures";
+import { ADMIN_BETA_HEALTH_FIXTURE, ADMIN_OVERVIEW_FIXTURES } from "@tikdd/admin-contracts/fixtures";
 import { createServer } from "node:http";
 import { describe, expect, it, vi } from "vitest";
 import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminApiConnection, type AdminTransport } from "../lib/admin-api-client";
@@ -23,6 +23,7 @@ const payloads = new Map<string, unknown>([
   ["/admin/v1/platforms", platforms],
   ["/admin/v1/runtime", runtime],
   ["/admin/v1/seo?channel=published", seo],
+  ["/admin/v1/beta-health?hours=24", ADMIN_BETA_HEALTH_FIXTURE],
   ["/admin/v1/routes/twittersaver/x/nl", routeDetail],
   ["/admin/v1/csrf",csrf],
   ["/admin/v1/route-policies/x/nl",routePolicy]
@@ -55,6 +56,7 @@ describe("Admin console API client", () => {
     });
     expect(snapshot.routes.status).toBe("ready");
     expect(snapshot.selectedRoute.status).toBe("ready");
+    expect(snapshot.betaHealth.status).toBe("ready");
     expect(snapshot.selectedRoute.status === "ready" ? snapshot.selectedRoute.data?.summary.tuple.platform : null).toBe("x");
     expect(calls.map(({ path }) => path)).toContain("/admin/v1/routes/twittersaver/x/nl");
     expect(calls.every(({ path }) => path.startsWith("/admin/v1/"))).toBe(true);
@@ -113,7 +115,7 @@ describe("Admin console API client", () => {
       });
       expect(snapshot.overview.status).toBe("ready");
       expect(snapshot.routes.status).toBe("ready");
-      expect(observedHosts.length).toBe(16);
+      expect(observedHosts.length).toBe(17);
       expect(new Set(observedHosts)).toEqual(new Set(["admin.tikdd.example"]));
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

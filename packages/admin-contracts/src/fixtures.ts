@@ -1,5 +1,5 @@
 import type { AdminLocaleRevision, AdminPageRevision, PublishedContentSnapshot } from "./editorial";
-import type { AdminOverview, AdminRouteSummary } from "./operations";
+import type { AdminBetaHealth, AdminOverview, AdminRouteSummary } from "./operations";
 import type { AdminRoutePolicyRevision } from "./routing";
 
 const now = "2026-08-11T12:00:00.000Z";
@@ -47,6 +47,22 @@ export const ADMIN_OVERVIEW_FIXTURES = {
     queue: { queued: 250_000, active: 12_000, succeeded: 900_000_000, failed: 7_500_000 }
   }
 } satisfies Record<string, AdminOverview>;
+
+const betaBucket: AdminBetaHealth["totals"] = {
+  tasks: { total: 42, succeeded: 31, failed: 7, expired: 3, active: 1, failureCounts: { provider_timeout: 4, provider_schema_changed: 3 } },
+  attempts: { total: 50, succeeded: 38, failed: 12, successRateBps: 7_600, failureCounts: { provider_timeout: 6, provider_unavailable: 6 } },
+  deliveries: { total: 37, succeeded: 35, failed: 2, successRateBps: 9_459, resultCounts: { redirect_issued: 35, invalid_ticket: 2 } }
+};
+
+export const ADMIN_BETA_HEALTH_FIXTURE: AdminBetaHealth = {
+  schemaVersion: "1",
+  generatedAt: now,
+  window: { from: "2026-08-10T12:00:00.000Z", to: now, hours: 24 },
+  platforms: ["x", "instagram"],
+  latestEventAt: "2026-08-11T11:59:00.000Z",
+  totals: betaBucket,
+  byPlatform: { x: betaBucket, instagram: { ...betaBucket, tasks: { ...betaBucket.tasks, total: 20, succeeded: 16 }, attempts: { ...betaBucket.attempts, total: 22, succeeded: 18 }, deliveries: { ...betaBucket.deliveries, total: 18, succeeded: 17 } } }
+};
 
 const routeBase: AdminRouteSummary = {
   schemaVersion: "1",

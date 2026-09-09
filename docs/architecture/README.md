@@ -121,6 +121,10 @@ Operational configuration and protected diagnostics are documented in
 [Provider health operations](../provider-health-operations.md).
 The small post-release Beta view is the read-only `pnpm beta:report` command documented in the
 repository README; it reports only aggregate public X/Instagram counts and failure classes.
+The current production closeout and the next bounded Instagram Provider decision are recorded in
+[Work Item 28](../work-item-28-client-direct-beta-hardening.md) and
+[Work Item 29](../work-item-29-instagram-provider-replacement-feasibility.md). A feasibility review
+does not add a Provider capability, broaden Delivery hosts, or change the redirect-only media path.
 Production admission and runtime rollout decisions are defined in
 [ADR-0007](adr/0007-rollout-admission-and-abuse-controls.md).
 [ADR-0008](adr/0008-provider-qualification-and-pilot-controls.md) defines provider qualification,

@@ -27,6 +27,12 @@ function platformScopeFrom(request: NextRequest): string | undefined {
   return value && value.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ? value : undefined;
 }
 
+function betaHoursFrom(request: NextRequest): number {
+  const value = request.nextUrl.searchParams.get("betaHours");
+  if (value === null) return 24;
+  return /^(?:24|168)$/.test(value) ? Number(value) : 24;
+}
+
 const responseHeaders = {
   "Cache-Control": "no-store",
   Pragma: "no-cache",
@@ -42,7 +48,8 @@ export async function GET(request: NextRequest) {
     requestHeaders: await headers(),
     ...(selection ? { selection } : {}),
     ...(policyPlatform ? { policyPlatform } : {}),
-    ...(request.nextUrl.searchParams.get("managedPlatform") ? { managedPlatform: request.nextUrl.searchParams.get("managedPlatform")! } : {})
+    ...(request.nextUrl.searchParams.get("managedPlatform") ? { managedPlatform: request.nextUrl.searchParams.get("managedPlatform")! } : {}),
+    betaHours: betaHoursFrom(request)
   });
   return NextResponse.json(snapshot, { headers: responseHeaders });
 }

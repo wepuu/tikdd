@@ -1,4 +1,5 @@
 import {
+  ADMIN_BETA_HEALTH_FIXTURE,
   ADMIN_OVERVIEW_FIXTURES,
   ADMIN_ROUTE_FIXTURES
 } from "@tikdd/admin-contracts/fixtures";
@@ -124,6 +125,7 @@ export const consoleSnapshot = AdminConsoleSnapshotSchema.parse({
   refreshIntervalMs: 30_000,
   overview: { status: "ready", data: ADMIN_OVERVIEW_FIXTURES.healthy },
   operationalTruth: { status: "ready", data: operationalTruth },
+  betaHealth: { status: "ready", data: ADMIN_BETA_HEALTH_FIXTURE },
   routes: { status: "ready", data: routeList },
   selectedRoute: { status: "ready", data: routeDetail },
   qualification: { status: "ready", data: null },

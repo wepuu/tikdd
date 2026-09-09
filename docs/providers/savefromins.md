@@ -5,10 +5,10 @@
 - Evaluated platform: Instagram
 - Evaluated region: `nl`
 - Review date: 2026-09-06
-- Production approval: automated-use decision recorded; route qualification failed and traffic is disabled
-- Manifest capability: Instagram in `nl`, disabled by default
+- Production approval: owner-approved Instagram Beta; stability remains best-effort
+- Manifest capability: Instagram in `nl`, enabled only behind the existing runtime gates
 - Delivery policy: new candidates use `savefromins-instagram-media-v2`; version 1 remains registered for compatibility
-- Runtime state: deployed from `main@7ddafbd`; rule revision 6 has zero allocation and all activation gates are false
+- Runtime state: deployed from `main@bdf6543`; rule revision 13 is enabled at full allocation and all three activation gates are true
 
 ## Work Item 21 implementation
 
@@ -155,3 +155,27 @@ does not justify changing the adapter, adding a new download mode, accepting run
 hosts, or widening the Delivery allowlist. Work Item 26 owns the next single bounded reproduction.
 Until a current public Reel produces a verified direct MP4 and non-zero Delivery response,
 Instagram remains Beta/noindex and no stable-support claim is made.
+
+## 2026-09-09 WI28 closeout and WI29 decision trigger
+
+Work Item 28 was deployed from `main@bdf6543a0e3c7fced09dc7b309616251d5f111f1`. A real X download
+and a real Instagram download completed through the existing one-use Delivery redirect, and all six
+core containers stayed healthy with zero restarts during the 15-minute watch. This confirms the
+current Delivery path but does not establish stable SaveFromIns resolution.
+
+The following seven-day anonymous aggregate was generated after the release: Instagram had 32
+tasks (12 succeeded, 14 failed, 6 expired), 29 Provider attempts with 15 successes (51.72%), and
+41 Delivery outcomes with 37 successes (90.24%). Provider failures were `provider_schema_changed`
+(10), `provider_timeout` (2), `invalid_result` (1), and `content_not_found` (1). No raw URL,
+response body, request marker, cookie, header, or CDN address was retained. The low resolution rate
+and concentration of schema-change failures trigger [Work Item 29](../work-item-29-instagram-provider-replacement-feasibility.md): one time-boxed sanitized diagnosis, then a replacement feasibility decision. No new host policy or production retry expansion is justified by this aggregate alone.
+
+## Current owner positioning
+
+The owner has manually re-tested several public Instagram URLs successfully and chooses to keep
+SaveFromIns as the usable Instagram Beta Provider. The historical failures and aggregate rates above
+remain truthful operational evidence, but they no longer block normal Beta use or trigger paid
+Provider replacement. SaveFromIns remains experimental, public-content-only, and protected by its
+existing timeout, retry, circuit, and emergency-stop boundaries. A future free Provider supplied by
+the owner will receive a separate feasibility record; no paid Provider account or secret is part of
+the current route.

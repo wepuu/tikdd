@@ -15,6 +15,7 @@ import {
   AdminPlatformManagementViewSchema,
   AdminQualificationViewSchema,
   AdminRoutePolicyViewSchema,
+  AdminBetaHealthSchema,
   LocaleTagSchema,
   assertAdminSafeValue,
   type AdminLocaleList,
@@ -26,7 +27,8 @@ import {
   type AdminRouteDetail,
   type AdminRouteList,
   type AdminRuntime,
-  type AdminSeoOverview
+  type AdminSeoOverview,
+  type AdminBetaHealth
 } from "@tikdd/admin-contracts";
 import { PlatformIdSchema, RegionIdSchema } from "@tikdd/contracts";
 import Fastify, { type FastifyInstance } from "fastify";
@@ -56,6 +58,7 @@ export interface AdminReadApi {
   listLocales(channel: "draft" | "published"): Promise<AdminLocaleList>;
   listPages(channel: "draft" | "published", locale?: string): Promise<AdminPageList>;
   getSeoOverview(channel: "draft" | "published", locale?: string): Promise<AdminSeoOverview>;
+  getBetaHealth(hours?: number): Promise<AdminBetaHealth>;
 }
 
 export interface BuildAdminApiOptions {
@@ -80,6 +83,10 @@ const RouteFilterQuerySchema = z.strictObject({
   provider: AdminProviderIdSchema.optional(),
   platform: PlatformIdSchema.optional(),
   state: z.enum(["healthy", "warning", "open", "paused", "insufficient_data", "stale", "unavailable", "draft"]).optional()
+});
+
+const BetaHealthQuerySchema = z.strictObject({
+  hours: z.string().regex(/^\d+$/).optional()
 });
 
 function header(value: string | string[] | undefined): string | undefined {
@@ -253,6 +260,16 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
     safeSend(reply, await options.reads.listPlatforms()));
   app.get("/admin/v1/operational-truth", async (_request, reply) =>
     safeSend(reply, await options.reads.getOperationalTruth()));
+
+  app.get<{ Querystring: Record<string, unknown> }>("/admin/v1/beta-health", async (request, reply) => {
+    const query = BetaHealthQuerySchema.safeParse(request.query);
+    if (!query.success) return error(reply, 400, "INVALID_BETA_WINDOW", "Provide a bounded Beta health window.");
+    const hours = query.data.hours === undefined ? 24 : Number(query.data.hours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
+      return error(reply, 400, "INVALID_BETA_WINDOW", "Provide a Beta health window from 1 to 168 hours.");
+    }
+    return safeSend(reply, AdminBetaHealthSchema.parse(await options.reads.getBetaHealth(hours)));
+  });
 
   app.get<{Params:{platform:string;region:string}}>("/admin/v1/platform-presentations/:platform/:region",async(request,reply)=>{
     const platform=PlatformIdSchema.safeParse(request.params.platform);const region=RegionIdSchema.safeParse(request.params.region);

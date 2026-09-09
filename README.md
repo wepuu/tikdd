@@ -54,6 +54,13 @@ noindex/experimental. Work Item 27 adds only provider-neutral failure feedback a
 `pnpm beta:report` aggregate; it does not start Admin or calibration or enable another Provider.
 Work Item 28 keeps this redirect-only delivery path, adds a browser filename hint, and bounds
 SaveFromIns Instagram retries and diagnostics without changing public contracts or media routing.
+The WI28 production closeout is complete on `main@bdf6543a`; Work Item 29 retains SaveFromIns as the
+owner-approved usable Instagram Beta while pausing paid replacement research. Future free Provider
+candidates will be validated individually. Work Item 30 adds a private Admin Beta health view; it does
+not change production traffic or start Admin, calibration, or another Provider. Work Item 31 closes
+the local Admin UI pass by grouping Beta health with the existing operations navigation, localizing
+the operator copy, and hardening malformed aggregate rendering. It remains unpushed; production
+Admin is still stopped and requires separate owner approval.
 
 ## Platform and provider model
 
