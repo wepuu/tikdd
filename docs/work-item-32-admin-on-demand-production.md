@@ -1,0 +1,64 @@
+# Work Item 32 — Admin 按需生产启用准备
+
+Status: implementation in progress on `codex/wi32-admin-on-demand-production`.
+Production has not been changed by this work item yet.
+
+## Baseline
+
+| Item | Current value |
+| --- | --- |
+| Repository | `main@3eedddb8e42ad2589490a081af9772cd975fc663` |
+| Web image | `ghcr.io/wepuu/tikdd-release-web@sha256:abcbe529afb453917bba7365d1c8c34ec5ae75df63a8441ea4d16e07e7cdef50` |
+| Service image | `ghcr.io/wepuu/tikdd-release-service@sha256:97501a88599cf4147c5d72d644f3cfbfdc7c62c3fe74d77f99ca746e612b98ff` |
+| Admin image | `ghcr.io/wepuu/tikdd-release-admin@sha256:4da7f14f51f0cad6a8ca9696d894b36ce4ed59c7ad969fd36540a7821d682629` |
+| NL release | `bdf6543a0e3c7fced09dc7b309616251d5f111f1` |
+| NL core state | six core containers healthy; X/Instagram rollout state unchanged |
+| Admin ingress | `admin.tikdd.cc` has no DNS response; Admin is stopped |
+
+The images were built by the GitHub `Release images` workflow for the merge SHA. The NL host still
+runs the previous release and is not being treated as updated until the release procedure proves
+the new SHA.
+
+## Scope
+
+1. Deploy the exact GitHub images for `main@3eedddb8` using the existing production release script.
+   The deployment includes backup, idempotent migration verification, stage gates, health checks,
+   and one X plus one Instagram browser download. It must not change Provider flags, rollout
+   revisions, calibration, or other Provider state.
+2. Prepare an owner-only `admin.tikdd.cc` route through the existing Tunnel/Nginx boundary. The
+   route must be HTTPS and Host-specific, forward only to loopback Admin UI port `3301`, and never
+   publish Admin API port `4100`. If DNS, Tunnel, or Nginx proof is missing, hold before starting
+   Admin.
+3. Start Admin on demand with the official `admin-start` operation, verify login/session security,
+   inspect the read-only Beta health view for 24-hour and 7-day windows, observe resources and
+   errors briefly, then run `admin-stop`.
+4. Record the exact release, image digests, backup reference, access proof, Admin health result,
+   and stop result. No content publication or route-policy mutation is part of the first session.
+
+## Safety boundaries
+
+- Admin remains a stopped production profile outside the approved owner session.
+- Password authentication, CSRF, origin proof, `no-store`, and `noindex` remain mandatory.
+- The Admin session is read-only for the first production preview; it cannot grant traffic or
+  broaden Provider capability.
+- X/Instagram rollout and gates are captured before deployment and compared afterward; any drift is
+  a release failure.
+- A failed public release rolls back to the previous `bdf6543a` release after the normal rule-first
+  rollback checks. A failed Admin route removes/stops only the Admin path and does not roll back
+  healthy public services.
+
+## Acceptance
+
+- Six core containers remain healthy with no material restart or 5xx regression.
+- Public X and Instagram downloads still complete through the existing client-direct redirect
+  path.
+- `https://admin.tikdd.cc/login` is reachable only after the approved route and Admin profile are
+  active; stopping Admin removes the live Admin process.
+- Admin API is not reachable from the public network.
+- Beta health data renders without URLs, task IDs, Provider payloads, CDN addresses, or credentials.
+- Admin, calibration, and all unapproved Providers are stopped after the session.
+
+## Out of scope
+
+This work item does not promote X or Instagram to stable, publish GEO/landing content, add a new
+Provider, start calibration, add a scheduler, or introduce a second identity or deployment system.
