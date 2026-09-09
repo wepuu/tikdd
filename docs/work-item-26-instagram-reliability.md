@@ -1,14 +1,17 @@
 # Work Item 26 — Instagram Beta reliability closure
 
-Status: planned follow-up to PR #64; no production configuration change is included in this
-record.
+Status: active follow-up after a failed production Delivery smoke; SaveFromIns is fail-closed.
+
+The owner-supplied Reel `DcSBz8UCbTG` was tested once through the public browser flow on
+2026-09-09. Instagram served a public Reel, TikDD resolved one MP4 format, and the failure
+occurred when preparing secure Delivery. No successful Instagram transfer was recorded.
 
 ## Baseline
 
-- Code checkpoint: `main@13a56f28fd03c9e9cf87966166b467cda6c47e5c`.
-- PR #64 is deployed from GitHub-built immutable Web, Service, and Admin images.
-- SaveFromIns/Instagram/NL remains owner-approved at full allocation. Admin, calibration, and all
-  other Providers remain disabled.
+- Code checkpoint: `main@15e9ed4448cbb29f781c332494c1ae7f3648ca90`.
+- PR #64 remains deployed from GitHub-built immutable Web, Service, and Admin images.
+- SaveFromIns/Instagram/NL is disabled after the failed smoke. Admin, calibration, and all other
+  Providers remain disabled; X remains enabled at full allocation.
 - The adapter already handles sparse resource arrays and empty video quality (`Original`).
 - The post-deploy smoke on 2026-09-08 produced one terminal `content_not_found` attempt for
   `DZxoImOOKr` and one `invalid_result` attempt for a previously successful Reel; it produced no
@@ -46,3 +49,33 @@ version-wide failure, using the prior recorded release and backup.
 
 Until all criteria are met, Instagram remains experimental and noindex. This item does not start
 Admin or calibration and does not activate another Provider.
+
+## 2026-09-09 production smoke and fail-closed action
+
+The public Reel shortcode `DcSBz8UCbTG` was confirmed publicly reachable in a browser. The TikDD
+Web flow reached `Formats ready` with one normalized `MP4 Original Video + audio` format. `POST
+/v1/deliveries` then returned the generic `DELIVERY_CANDIDATE_NOT_AVAILABLE` response
+(`This format is not available for secure delivery.`).
+
+The sanitized database record was task `tsk_05ba41228c4249ecab382ebfd06333c4`: one successful
+`savefromins` / `instagram` / `nl` Provider attempt, one public format, and zero delivery tickets
+when inspected. The candidate row may have expired before inspection because the adapter's
+candidate lifetime is four minutes; the evidence therefore does not distinguish an insertion
+followed by expiry from a missing insertion. It does prove that the browser journey did not reach
+Delivery success.
+
+The exact rollout rule was CAS-updated from revision 9 to disabled revision 10 with zero
+allocation. `ENABLE_SAVEFROMINS_PROVIDER`, `SAVEFROMINS_TERMS_APPROVED`, and
+`SAVEFROMINS_DELIVERY_AUDIT_APPROVED` were set false in the versioned production environment and
+the Worker was recreated. The global rollout guard remains true, the SSSTwitter/X rule remains at
+revision 15 and full allocation, and all six core containers stayed healthy.
+
+The follow-up code adds a fail-closed Worker default: resolution-only output is allowed only when
+`NODE_ENV=development`; an unset or unexpected runtime value can no longer silently persist a
+succeeded task without encrypted Delivery candidates. This is a guardrail, not proof that the
+upstream response itself was malformed. A new qualification attempt requires explicit owner
+authorization after targeted tests and GitHub CI pass.
+
+The owner also reports successful Instagram downloads for other URLs from desktop and mobile
+clients. That observation supports keeping SaveFromIns as the current candidate, but it is not a
+TikDD production transfer record and does not by itself reopen the disabled rollout rule.

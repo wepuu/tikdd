@@ -26,6 +26,7 @@
 - [ADR-0024: Reviewed external result thumbnails](0024-reviewed-external-result-thumbnails.md)
 - [ADR-0025: Code-owned structured data from eligible published content](0025-code-owned-structured-data.md)
 - [ADR-0026: Bounded GEO content from reviewed platform pages](0026-bounded-geo-content-model.md)
+- [ADR-0027: Fail-closed resolution-only runtime guard](0027-resolution-only-runtime-guard.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

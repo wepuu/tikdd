@@ -1,14 +1,15 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@13a56f28fd03c9e9cf87966166b467cda6c47e5c`
+- Repository checkpoint: `main@15e9ed4448cbb29f781c332494c1ae7f3648ca90`
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
 SEO architecture. Future work extends or productizes those systems. It does not recreate them.
 
-The public X and Instagram Betas are live through SSSTwitter, SaveFromIns, and Delivery. Work Item
+The public X Beta is live through SSSTwitter and Delivery. Instagram remains an experimental,
+fail-closed follow-up after the Work Item 26 smoke recorded a Delivery-candidate failure. Work Item
 22 completed the Instagram qualification with two real browser downloads and a clean 15-minute
 watch. Work Item 22.1 shipped reviewed result thumbnails with the existing platform-icon fallback
 from `main@c3fbd217` on 2026-09-08. ADR-0020 replaces elapsed
@@ -41,9 +42,9 @@ slice is Work Item 26: close the Instagram reliability loop before any stable or
 
 ### Current production baseline
 
-- X and Instagram Public Beta are live from GitHub-built immutable images.
-- The SaveFromIns/Instagram/NL rule is revision 9, enabled at full allocation; its three reviewed
-  runtime gates are true.
+- X Public Beta is live from GitHub-built immutable images.
+- The SaveFromIns/Instagram/NL rule is revision 10, disabled with zero allocation after the
+  2026-09-09 failed Delivery smoke; its three runtime gates are false.
 - The exact SSSTwitter/X/NL rollout rule is enabled at full allocation with circuit monitoring and
   an emergency deny path.
 - Historical Work Item 22 qualification proved real X and Instagram resolve, delivery-ticket, and
@@ -58,6 +59,16 @@ slice is Work Item 26: close the Instagram reliability loop before any stable or
   post-deploy watch with zero core-container restarts and zero observed API/Delivery 5xx.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
 - Admin and the calibration profile remain intentionally stopped.
+
+### Work Item 26 current status
+
+The supplied public Reel `DcSBz8UCbTG` reached one-format resolution but failed when secure
+Delivery was prepared. The task was marked succeeded with no live candidate at the later database
+inspection point; because the four-minute candidate lifetime may have elapsed, insertion versus
+cleanup is not yet proven. Production Instagram traffic is therefore denied while the new
+development-only resolution-only guard and targeted Delivery lifecycle tests are reviewed. A
+repeat qualification is not permitted until a new owner authorization explicitly reopens the exact
+SaveFromIns/Instagram/NL rule.
 
 ## Coordinated future lanes
 
