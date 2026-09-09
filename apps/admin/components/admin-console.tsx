@@ -47,10 +47,12 @@ import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
+import { BetaHealthDashboard } from "./beta-health";
 
 type RefreshState = "idle" | "refreshing" | "failed";
 
 const navGroups = [
+  { label: "BETA", items: [{ href: "#beta-health", label: "Beta health", icon: ChartLineUp }] },
   { label: "主页", items: [{ href: "#overview", label: "总览", icon: HouseLine }] },
   { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
   { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
@@ -159,6 +161,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
   const [platform, setPlatform] = useState(initialPlatform);
   const [stateFilter, setStateFilter] = useState<AdminRouteSummary["state"] | "all">("all");
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
+  const [betaHours, setBetaHours] = useState(24);
   const alerts = useMemo(() => deriveAlerts(snapshot), [snapshot]);
   const allRoutes = snapshot.routes.status === "ready" ? sortRoutes(snapshot.routes.data.routes) : [];
   const platformOptions = [...new Set([
@@ -172,7 +175,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
   const runwayRoutes = allRoutes.filter((route) => route.tuple.platform === runwayPlatform);
   const managedPlatform = snapshot.controls.status === "ready" ? snapshot.controls.data.platformPresentation?.platform : undefined;
 
-  const refresh = useCallback(async (selection?: AdminRouteSummary, managedPlatform?: string, policyPlatform?: string) => {
+  const refresh = useCallback(async (selection?: AdminRouteSummary, managedPlatform?: string, policyPlatform?: string, nextBetaHours?: number) => {
     setRefreshState("refreshing");
     const parameters = new URLSearchParams();
     if (selection) {
@@ -180,6 +183,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
     }
     if (managedPlatform) parameters.set("managedPlatform", managedPlatform);
     if (policyPlatform) parameters.set("policyPlatform", policyPlatform);
+    parameters.set("betaHours", String(nextBetaHours ?? betaHours));
     try {
       const response = await fetch(`/api/admin/snapshot${parameters.size ? `?${parameters}` : ""}`, { method: "GET", cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (!response.ok) throw new Error("refresh failed");
@@ -189,7 +193,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
     } catch {
       setRefreshState("failed");
     }
-  }, []);
+  }, [betaHours]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -247,6 +251,11 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           <section className="truth-section" id="operational-truth">
             <SectionHeading eyebrow="OPERATE / EXPLAINABLE SUPPORT" title="运营真相" detail="从可识别到可索引逐级核对；任一断点都保留具体原因，不把计划中的平台显示为可下载。" />
             <OperationalTruthDashboard view={snapshot.operationalTruth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
+          </section>
+
+          <section className="beta-health-section" id="beta-health">
+            <SectionHeading eyebrow="OPERATE / BETA HEALTH" title="下载 Beta 运行健康" detail="只读查看 X 与 Instagram 的任务、Provider 尝试和交付聚合；不会修改 rollout、门禁或 Provider 流量。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读聚合</span>} />
+            <BetaHealthDashboard view={snapshot.betaHealth} hours={betaHours} onHoursChange={(next) => { setBetaHours(next); void refresh(selectedSummary ?? undefined, managedPlatform, platform, next); }} />
           </section>
 
           <section className="routing-section" id="routing">

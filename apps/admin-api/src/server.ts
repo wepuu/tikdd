@@ -16,6 +16,7 @@ import {
   PilotControlRepository,
   PilotEvidenceRepository,
   RolloutRuleRepository
+  ,BetaOperabilityRepository
 } from "@tikdd/persistence";
 import { listPlatformDefinitions } from "@tikdd/platform";
 import {
@@ -48,6 +49,7 @@ const editorial = new AdminControlPlaneReadRepository(pool);
 const operations = new OperationalDiagnosticsRepository(pool);
 const operationalServices = new OperationalServiceRepository(pool);
 const evidence = new PilotEvidenceRepository(pool);
+const beta = new BetaOperabilityRepository(pool);
 const rollout = new RolloutRuleRepository(pool);
 const routePolicyWrites = new AdminRoutePolicyRepository(pool, configuration.deployment);
 const guards = new PilotControlRepository(pool);
@@ -97,6 +99,7 @@ const reads = new AdminReadService({
       return typeof run?.finishedAt === "string" ? run.finishedAt : null;
     }
   },
+  beta,
   readTimeoutMs: configuration.readTimeoutMs,
   freshnessMs: configuration.freshnessMs
 });

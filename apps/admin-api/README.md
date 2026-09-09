@@ -3,7 +3,7 @@
 Private, same-origin browser API for the personal owner console defined by
 [ADR-0010](../../docs/architecture/adr/0010-owner-control-plane-routing-and-publication.md).
 
-## Current scope (through work item 12.10)
+## Current scope (through work item 30)
 
 - Loopback-only listener behind the reviewed Cloudflare Tunnel and Nginx boundary.
 - One PostgreSQL-backed administrator account with scrypt password verification.
@@ -16,6 +16,9 @@ Private, same-origin browser API for the personal owner console defined by
 - Sanitized overview, route, Provider, platform, runtime, locale, page, and SEO endpoints.
 - Explicit partial-dependency states and bounded source timeouts.
 - Effective allocation uses the same rollout and Pilot Guard fail-closed semantics as the Worker.
+- Work Item 30 adds the authenticated `GET /admin/v1/beta-health` read. It returns only bounded,
+  sanitized X/Instagram task, Provider-attempt and Delivery aggregates for a requested 1–168 hour
+  window. It does not expose Provider payloads or identifiers and cannot mutate rollout or gates.
 
 Route-policy writes are limited to draft/publish/discard/rollback, narrowing concurrency,
 zero-allocation deny/resume, and one preconfigured bounded probe. They require exact confirmation,

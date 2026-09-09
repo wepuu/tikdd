@@ -13,6 +13,44 @@ import {
 const BoundedCountSchema = z.number().int().nonnegative().max(1_000_000_000);
 const RateBpsSchema = z.number().int().min(0).max(10_000);
 const DurationSchema = z.number().int().nonnegative().max(120_000);
+const BetaPlatformSchema = z.enum(["x", "instagram"]);
+const BetaCodeSchema = z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_.-]*$/);
+const BetaCountsSchema = z.record(BetaCodeSchema, BoundedCountSchema).superRefine((value, context) => {
+  if (Object.keys(value).length > 16) {
+    context.addIssue({ code: "custom", message: "Too many aggregate categories." });
+  }
+});
+
+const AdminBetaTaskSummarySchema = z.strictObject({
+  total: BoundedCountSchema,
+  succeeded: BoundedCountSchema,
+  failed: BoundedCountSchema,
+  expired: BoundedCountSchema,
+  active: BoundedCountSchema,
+  failureCounts: BetaCountsSchema
+});
+
+const AdminBetaAttemptSummarySchema = z.strictObject({
+  total: BoundedCountSchema,
+  succeeded: BoundedCountSchema,
+  failed: BoundedCountSchema,
+  successRateBps: RateBpsSchema.nullable(),
+  failureCounts: BetaCountsSchema
+});
+
+const AdminBetaDeliverySummarySchema = z.strictObject({
+  total: BoundedCountSchema,
+  succeeded: BoundedCountSchema,
+  failed: BoundedCountSchema,
+  successRateBps: RateBpsSchema.nullable(),
+  resultCounts: BetaCountsSchema
+});
+
+const AdminBetaBucketSchema = z.strictObject({
+  tasks: AdminBetaTaskSummarySchema,
+  attempts: AdminBetaAttemptSummarySchema,
+  deliveries: AdminBetaDeliverySummarySchema
+});
 
 export const AdminDegradedSourceSchema = z.enum([
   "postgres",
@@ -60,6 +98,21 @@ export const AdminOverviewSchema = z.strictObject({
     activeSnapshotRevision: AdminRevisionSchema.nullable()
   }),
   dependencies: z.array(AdminDependencyStateSchema).max(12)
+});
+
+/** Sanitized, read-only Beta health aggregates. Never add task, URL, Provider, or media fields. */
+export const AdminBetaHealthSchema = z.strictObject({
+  schemaVersion: AdminSchemaVersionSchema,
+  generatedAt: AdminTimestampSchema,
+  window: z.strictObject({
+    from: AdminTimestampSchema,
+    to: AdminTimestampSchema,
+    hours: z.number().int().min(1).max(168)
+  }),
+  platforms: z.array(BetaPlatformSchema).min(1).max(2),
+  latestEventAt: AdminTimestampSchema.nullable(),
+  totals: AdminBetaBucketSchema,
+  byPlatform: z.record(BetaPlatformSchema, AdminBetaBucketSchema)
 });
 
 export const AdminRouteSummarySchema = z.strictObject({
@@ -208,6 +261,7 @@ export const AdminRuntimeSchema = z.strictObject({
 });
 
 export type AdminOverview = z.infer<typeof AdminOverviewSchema>;
+export type AdminBetaHealth = z.infer<typeof AdminBetaHealthSchema>;
 export type AdminRouteSummary = z.infer<typeof AdminRouteSummarySchema>;
 export type AdminRouteDetail = z.infer<typeof AdminRouteDetailSchema>;
 export type AdminProviderProjection = z.infer<typeof AdminProviderProjectionSchema>;

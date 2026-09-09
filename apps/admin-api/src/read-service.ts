@@ -10,7 +10,9 @@ import {
   AdminRuntimeSchema,
   AdminSeoOverviewSchema,
   AdminDegradedSourceSchema,
+  AdminBetaHealthSchema,
   type AdminLocaleRevision,
+  type AdminBetaHealth,
   type AdminOverview,
   type AdminOperationalTruth,
   type AdminPageRevision,
@@ -29,6 +31,8 @@ import {
 import type { ProviderManifest } from "@tikdd/contracts";
 import type {
   AdminOverviewPersistenceMetrics,
+  BetaHealthReport,
+  BetaPlatform,
   AttemptRouteSummary,
   CanaryHealthSummary,
   OperationalServiceProjection
@@ -81,6 +85,7 @@ export interface AdminReadServiceOptions {
   editorial: AdminEditorialReadSource;
   queue: AdminQueueReadSource;
   health: AdminReadHealthSource;
+  beta: { report(options: { hours: number; platforms?: readonly BetaPlatform[]; now?: Date }): Promise<BetaHealthReport> };
   readTimeoutMs: number;
   freshnessMs: number;
   now?: () => Date;
@@ -220,6 +225,58 @@ function failureCategory(code: string): AdminRouteDetail["failures"][number]["co
 
 function uniqueSources(sources: readonly AdminDegradedSource[]): AdminDegradedSource[] {
   return [...new Set(sources)].sort();
+}
+
+const betaCodePattern = /^[a-z0-9][a-z0-9_.-]{0,79}$/;
+
+function safeBetaCounts(values: Record<string, number>): Record<string, number> {
+  const output: Record<string, number> = {};
+  for (const [rawCode, rawCount] of Object.entries(values)) {
+    const code = betaCodePattern.test(rawCode) ? rawCode : "other";
+    const count = Number.isFinite(rawCount) && rawCount > 0 ? Math.trunc(rawCount) : 0;
+    output[code] = (output[code] ?? 0) + count;
+  }
+  return output;
+}
+
+function rateBps(total: number, rate: number): number | null {
+  return total > 0 && Number.isFinite(rate) ? Math.max(0, Math.min(10_000, Math.round(rate * 10_000))) : null;
+}
+
+function mapBetaReport(report: BetaHealthReport): AdminBetaHealth {
+  const mapBucket = (bucket: BetaHealthReport["totals"]): AdminBetaHealth["totals"] => ({
+    tasks: {
+      total: bucket.tasks.total,
+      succeeded: bucket.tasks.succeeded,
+      failed: bucket.tasks.failed,
+      expired: bucket.tasks.expired,
+      active: bucket.tasks.active,
+      failureCounts: safeBetaCounts(bucket.tasks.failureCounts)
+    },
+    attempts: {
+      total: bucket.attempts.total,
+      succeeded: bucket.attempts.succeeded,
+      failed: bucket.attempts.failed,
+      successRateBps: rateBps(bucket.attempts.total, bucket.attempts.successRate),
+      failureCounts: safeBetaCounts(bucket.attempts.failureCounts)
+    },
+    deliveries: {
+      total: bucket.deliveries.total,
+      succeeded: bucket.deliveries.succeeded,
+      failed: bucket.deliveries.failed,
+      successRateBps: rateBps(bucket.deliveries.total, bucket.deliveries.successRate),
+      resultCounts: safeBetaCounts(bucket.deliveries.resultCounts)
+    }
+  });
+  return AdminBetaHealthSchema.parse({
+    schemaVersion: "1",
+    generatedAt: report.generatedAt,
+    window: report.window,
+    platforms: report.platforms,
+    latestEventAt: report.latestEventAt,
+    totals: mapBucket(report.totals),
+    byPlatform: Object.fromEntries(Object.entries(report.byPlatform).map(([platform, bucket]) => [platform, mapBucket(bucket)]))
+  });
 }
 
 export class AdminReadService {
@@ -711,6 +768,18 @@ export class AdminReadService {
       scheduler: { state: schedulerState, observedAt: schedulerObservedAt },
       activeSnapshotRevision: snapshot.value?.revision ?? null
     });
+  }
+
+  async getBetaHealth(hours = 24): Promise<AdminBetaHealth> {
+    if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
+      throw new Error("Admin Beta health window is out of bounds.");
+    }
+    const report = await withTimeout(this.options.beta.report({
+      hours,
+      platforms: ["x", "instagram"],
+      now: this.now()
+    }), this.options.readTimeoutMs * 2);
+    return mapBetaReport(report);
   }
 
   async getOverview(): Promise<AdminOverview> {

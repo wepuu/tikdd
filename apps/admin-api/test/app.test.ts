@@ -1,6 +1,7 @@
 import {
   ADMIN_HOMEPAGE_FIXTURE,
   ADMIN_LOCALE_FIXTURES,
+  ADMIN_BETA_HEALTH_FIXTURE,
   ADMIN_OVERVIEW_FIXTURES,
   ADMIN_ROUTE_FIXTURES
 } from "@tikdd/admin-contracts/fixtures";
@@ -43,6 +44,7 @@ const production: AdminApiConfiguration = {
 function reads(): AdminReadApi {
   return {
     async getOverview() { return ADMIN_OVERVIEW_FIXTURES.partial; },
+    async getBetaHealth(hours = 24) { return { ...ADMIN_BETA_HEALTH_FIXTURE, window: { ...ADMIN_BETA_HEALTH_FIXTURE.window, hours } }; },
     async getOperationalTruth() {
       return {
         schemaVersion: "1",
@@ -155,6 +157,10 @@ describe("Admin API browser boundary", () => {
       expect(response.headers["x-robots-tag"]).toBe("noindex, nofollow, noarchive");
       expect(response.headers["content-security-policy"]).toContain("default-src 'none'");
       expect(response.headers["x-frame-options"]).toBe("DENY");
+      const beta = await app.inject({ method: "GET", url: "/admin/v1/beta-health?hours=168", headers: { host: "localhost:3001" } });
+      expect(beta.statusCode).toBe(200);
+      expect(beta.json().window.hours).toBe(168);
+      expect((await app.inject({ method: "GET", url: "/admin/v1/beta-health?hours=169", headers: { host: "localhost:3001" } })).statusCode).toBe(400);
     } finally {
       await app.close();
     }

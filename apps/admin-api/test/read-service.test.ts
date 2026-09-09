@@ -1,4 +1,5 @@
 import {
+  ADMIN_BETA_HEALTH_FIXTURE,
   ADMIN_HOMEPAGE_FIXTURE,
   ADMIN_LOCALE_FIXTURES,
   ADMIN_PUBLISHED_SNAPSHOT_FIXTURE
@@ -119,6 +120,9 @@ function options(overrides: Partial<AdminReadServiceOptions> = {}): AdminReadSer
       async queue() {},
       async schedulerObservedAt() { return now.toISOString(); }
     },
+    beta: {
+      async report({ hours }) { return { ...ADMIN_BETA_HEALTH_FIXTURE, window: { ...ADMIN_BETA_HEALTH_FIXTURE.window, hours } }; }
+    },
     readTimeoutMs: 1_000,
     freshnessMs: 300_000,
     now: () => now,
@@ -137,6 +141,24 @@ describe("Admin read composition", () => {
     const overview = await service.getOverview();
     expect(overview).toMatchObject({ state: "healthy", queue: { queued: 1 }, delivery: { handoffCount: 10, failureCount: 1 } });
     expect(() => assertAdminSafeValue({ routes, overview })).not.toThrow();
+  });
+
+  it("returns only bounded Beta aggregates and rejects unsafe category names", async () => {
+    const service = new AdminReadService(options({
+      beta: {
+        async report({ hours }) {
+          return {
+            ...ADMIN_BETA_HEALTH_FIXTURE,
+            window: { ...ADMIN_BETA_HEALTH_FIXTURE.window, hours },
+            totals: { ...ADMIN_BETA_HEALTH_FIXTURE.totals, attempts: { ...ADMIN_BETA_HEALTH_FIXTURE.totals.attempts, failureCounts: { "provider_timeout": 2, "https://secret.example": 1 } } }
+          };
+        }
+      }
+    }));
+    const report = await service.getBetaHealth(168);
+    expect(report.window.hours).toBe(168);
+    expect(report.totals.attempts.failureCounts).toEqual({ provider_timeout: 2, other: 1 });
+    expect(() => assertAdminSafeValue(report)).not.toThrow();
   });
 
   it("explains support as a seven-stage ladder without confusing catalog recognition with availability", async () => {

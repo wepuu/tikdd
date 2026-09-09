@@ -9,6 +9,7 @@ import {
   AdminLocaleDraftCommandSchema,
   AdminPageDraftCommandSchema,
   AdminOverviewSchema,
+  AdminBetaHealthSchema,
   AdminOperationalTruthSchema,
   AdminPageRevisionSchema,
   AdminPlatformDraftCommandSchema,
@@ -26,6 +27,7 @@ import {
 } from "../src/index";
 import {
   ADMIN_HOMEPAGE_FIXTURE,
+  ADMIN_BETA_HEALTH_FIXTURE,
   ADMIN_LOCALE_FIXTURES,
   ADMIN_OVERVIEW_FIXTURES,
   ADMIN_PUBLISHED_SNAPSHOT_FIXTURE,
@@ -72,6 +74,7 @@ describe("Admin internal contracts", () => {
     }
     expect(AdminPageRevisionSchema.parse(ADMIN_HOMEPAGE_FIXTURE)).toEqual(ADMIN_HOMEPAGE_FIXTURE);
     expect(PublishedContentSnapshotSchema.parse(ADMIN_PUBLISHED_SNAPSHOT_FIXTURE)).toEqual(ADMIN_PUBLISHED_SNAPSHOT_FIXTURE);
+    expect(AdminBetaHealthSchema.parse(ADMIN_BETA_HEALTH_FIXTURE)).toEqual(ADMIN_BETA_HEALTH_FIXTURE);
     expect(() => assertAdminSafeValue(ADMIN_PUBLISHED_SNAPSHOT_FIXTURE)).not.toThrow();
   });
 
