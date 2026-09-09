@@ -63,7 +63,10 @@ const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
 const workerRegion = RegionIdSchema.parse(process.env.WORKER_REGION ?? "global");
 const candidateCipher = createCandidateCipherFromEnvironment();
-const allowResolutionOnly = process.env.NODE_ENV !== "production";
+// Resolution-only results are a deliberate development-only escape hatch. Fail closed when
+// NODE_ENV is missing or has an unexpected value so a mis-bound production container cannot mark
+// a task succeeded without encrypted Delivery candidates.
+const allowResolutionOnly = process.env.NODE_ENV === "development";
 const providerHealth = loadProviderHealthConfiguration();
 const rolloutConfiguration = loadRolloutConfiguration();
 const admissionConfiguration = loadAdmissionControlConfiguration();

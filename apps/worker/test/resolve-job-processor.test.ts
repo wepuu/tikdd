@@ -131,6 +131,24 @@ describe("resolve job Provider-success retry boundary", () => {
     expect(h.tasks.failAfterProviderResolution).not.toHaveBeenCalled();
   });
 
+  it("fails closed when a non-development runtime receives a resolution-only result", async () => {
+    const h = harness();
+    const { prepareCandidates: _prepareCandidates, ...baseDependencies } = h.dependencies;
+    const dependencies = {
+      ...baseDependencies,
+      allowResolutionOnly: false,
+    };
+
+    await expect(processResolveJob(data, dependencies)).rejects.toBeInstanceOf(UnrecoverableError);
+    expect(h.resolve).toHaveBeenCalledTimes(1);
+    expect(h.tasks.completeWithResolution).not.toHaveBeenCalled();
+    expect(h.tasks.failAfterProviderResolution).toHaveBeenCalledWith(
+      taskId,
+      [attempt],
+      taskCompletionFailedError
+    );
+  });
+
   it("propagates a retryable Provider failure before success", async () => {
     const h = harness();
     const error = new ProviderRoutingError("temporary", "provider_timeout", true, []);

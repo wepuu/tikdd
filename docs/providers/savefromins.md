@@ -47,6 +47,26 @@ or required request headers.
 No media URL, opaque resource content, raw Provider response, request marker, Cookie, or submitted
 tracking parameter is committed to the repository.
 
+## 2026-09-09 production smoke follow-up
+
+The public Reel shortcode `DcSBz8UCbTG` resolved through SaveFromIns in NL with one normalized MP4
+format, but the browser failed at secure Delivery with `DELIVERY_CANDIDATE_NOT_AVAILABLE`. The
+sanitized task ledger recorded one successful Provider attempt and no successful transfer. The
+exact `savefromins / instagram / nl` rollout rule was disabled by CAS (revision 10, allocation
+zero) and all three SaveFromIns gates were closed. X, Admin, calibration, and other Providers were
+left unchanged.
+
+The database was inspected after the failure and contained no live candidate or ticket for the
+task. Because candidates expire after four minutes, this check cannot prove whether cleanup had
+already removed a previously inserted candidate. The result is therefore treated as an unresolved
+Delivery-candidate lifecycle failure, not as evidence to widen the upstream or media-host policy.
+
+The controlled re-test on 2026-09-09 reached the Provider again after CI passed, but the upstream
+request timed out at the reviewed 15-second ceiling (`provider_timeout`). The exact rule was then
+CAS-disabled at revision 12 and the three runtime gates were closed. Together with the earlier
+Delivery-stage failure, this shows intermittent upstream reliability across both resolution and
+Delivery; no new host policy, cookie, retry, or download mode is justified.
+
 ## Terms and data boundary
 
 The public Terms and Privacy pages were reachable during review and stated a last-updated date of
