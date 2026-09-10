@@ -1,7 +1,10 @@
 # Work Item 32 — Admin 按需生产启用准备
 
-Status: implementation in progress on `codex/wi32-admin-on-demand-production`.
-Production has not been changed by this work item yet.
+Status: public release deployment complete; owner-only Admin preview remains pending on
+`codex/wi32-admin-on-demand-production`.
+
+The public release portion of this work item was deployed before the Admin preview. No Admin
+profile, calibration profile, or additional Provider traffic was started.
 
 ## Baseline
 
@@ -11,13 +14,27 @@ Production has not been changed by this work item yet.
 | Web image | `ghcr.io/wepuu/tikdd-release-web@sha256:abcbe529afb453917bba7365d1c8c34ec5ae75df63a8441ea4d16e07e7cdef50` |
 | Service image | `ghcr.io/wepuu/tikdd-release-service@sha256:97501a88599cf4147c5d72d644f3cfbfdc7c62c3fe74d77f99ca746e612b98ff` |
 | Admin image | `ghcr.io/wepuu/tikdd-release-admin@sha256:4da7f14f51f0cad6a8ca9696d894b36ce4ed59c7ad969fd36540a7821d682629` |
-| NL release | `bdf6543a0e3c7fced09dc7b309616251d5f111f1` |
+| NL release | `3eedddb8e42ad2589490a081af9772cd975fc663` |
 | NL core state | six core containers healthy; X/Instagram rollout state unchanged |
 | Admin ingress | `admin.tikdd.cc` has no DNS response; Admin is stopped |
 
-The images were built by the GitHub `Release images` workflow for the merge SHA. The NL host still
-runs the previous release and is not being treated as updated until the release procedure proves
-the new SHA.
+The images were built by the GitHub `Release images` workflow for the merge SHA and deployed by
+digest to the NL host. The previous `bdf6543a0e3c7fced09dc7b309616251d5f111f1` release remains the
+rollback target.
+
+Deployed image digests:
+
+- Web: `ghcr.io/wepuu/tikdd-release-web@sha256:abcbe529afb453917bba7365d1c8c34ec5ae75df63a8441ea4d16e07e7cdef50`
+- Service: `ghcr.io/wepuu/tikdd-release-service@sha256:97501a88599cf4147c5d72d644f3cfbfdc7c62c3fe74d77f99ca746e612b98ff`
+- Admin (verified in GHCR; not started): `ghcr.io/wepuu/tikdd-release-admin@sha256:4da7f14f51f0cad6a8ca9696d894b36ce4ed59c7ad969fd36540a7821d682629`
+
+The release backup is `/var/backups/tikdd/p0-dr-01/tikdd-prod-20260910T041023Z.dump.gpg` with
+SHA-256 `8ac1fc3d08981513da491c020fe0bff0b9f5a76153fc07c830b19429f7159c00`. The release manifest
+is `/opt/tikdd/releases/3eedddb8e42ad2589490a081af9772cd975fc663/release-manifest.json`.
+
+Post-deploy proof recorded zero core-container restarts and zero observed API/Delivery 5xx during
+the short watch. One X and one Instagram resolve → Delivery-ticket → client-direct media transfer
+also completed successfully; a browser save-dialog was not automated.
 
 ## Scope
 
