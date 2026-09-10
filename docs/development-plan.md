@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@bdf6543a0e3c7fced09dc7b309616251d5f111f1` (Work Item 28 production merge)
+- Repository checkpoint: `main@3eedddb8e42ad2589490a081af9772cd975fc663` (Work Item 31 merge)
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -27,8 +27,8 @@ compatibility. Work Item 27 is merged and deployed. Work Item 28 is merged and d
 `main@bdf6543a`; it preserves client-direct media delivery while bounding SaveFromIns retries and
 adding a safe browser filename hint without starting Admin or calibration. Work Item 29 retains
 SaveFromIns as the usable Instagram Beta and pauses paid replacement research. The private Admin
-Beta operations view is implemented locally; its UI closeout is recorded as Work Item 31. Admin
-remains an on-demand, stopped production profile until a separate activation approval.
+Beta operations view and its UI closeout are merged in Work Item 31. Admin remains an on-demand,
+stopped production profile until a separate activation approval.
 
 ## Baseline classification
 
@@ -102,22 +102,22 @@ no-cookie, no-challenge-bypass and redirect-only rules. See the [Work Item 29 re
 
 ### Work Item 30 current status
 
-Work Item 30 is implemented locally: it adds a sanitized, authenticated Admin Beta health view
+Work Item 30 is merged in the current main lineage: it adds a sanitized, authenticated Admin Beta health view
 backed by the existing read-only persistence aggregation. It shows bounded X/Instagram task,
 Provider-attempt, and Delivery summaries for 24-hour and 7-day windows without adding a migration,
 public endpoint, Provider capability, or traffic control. See the [Work Item 30 record](work-item-30-admin-beta-operations.md).
 
 ### Work Item 31 current status
 
-Work Item 31 closes the local Admin UI pass for the Beta view. `Beta 健康` now sits inside the
-existing 运行 navigation, the panel uses consistent operator-facing Chinese copy, and malformed
-legacy aggregate fields fail safe instead of crashing RouteInspector. Desktop and 390px mobile
-layouts were reviewed against the existing design tokens, and `pnpm check` passed. The change is
-local and unpushed; Admin remains stopped in production. See the [Work Item 31 record](work-item-31-admin-beta-preview.md).
+Work Item 31 closes the Admin UI pass for the Beta view and is merged by PR #69 in
+`main@3eedddb8`. `Beta 健康` now sits inside the existing 运行 navigation, the panel uses
+consistent operator-facing Chinese copy, and malformed legacy aggregate fields fail safe instead
+of crashing RouteInspector. Desktop and 390px mobile layouts were reviewed against the existing
+design tokens, and CI passed. Admin remains stopped in production. See the [Work Item 31 record](work-item-31-admin-beta-preview.md).
 
-The next step is a separate owner decision to push and merge this local UI closeout, followed by an
-optional on-demand Admin production preview. No Provider, rollout, calibration, or public traffic
-change is implied.
+The next step is the Work Item 32 on-demand Admin production preview. It requires the normal
+immutable-image deployment plus a separately approved `admin.tikdd.cc` DNS/Nginx/Tunnel route;
+starting Admin alone must not imply Provider, rollout, calibration, or public traffic changes.
 
 ## Coordinated future lanes
 

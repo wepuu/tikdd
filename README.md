@@ -57,10 +57,10 @@ SaveFromIns Instagram retries and diagnostics without changing public contracts 
 The WI28 production closeout is complete on `main@bdf6543a`; Work Item 29 retains SaveFromIns as the
 owner-approved usable Instagram Beta while pausing paid replacement research. Future free Provider
 candidates will be validated individually. Work Item 30 adds a private Admin Beta health view; it does
-not change production traffic or start Admin, calibration, or another Provider. Work Item 31 closes
-the local Admin UI pass by grouping Beta health with the existing operations navigation, localizing
-the operator copy, and hardening malformed aggregate rendering. It remains unpushed; production
-Admin is still stopped and requires separate owner approval.
+not change production traffic or start Admin, calibration, or another Provider. Work Item 31 merged
+the Admin UI closeout in PR #69 by grouping Beta health with the existing operations navigation,
+localizing the operator copy, and hardening malformed aggregate rendering. Production Admin is still
+stopped and requires separate owner approval and an approved owner-only ingress.
 
 ## Platform and provider model
 

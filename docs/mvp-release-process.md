@@ -19,6 +19,12 @@ runs immutable images.
 8. Complete one real browser resolve-and-download journey and observe service health for 15
    minutes.
 
+Admin is a separate owner-on-demand operation after the public release has passed. Starting Admin
+requires an approved HTTPS owner route (`admin.tikdd.cc`) through the existing Tunnel/Nginx
+boundary; a loopback port alone is not a production access path. The first session is read-only:
+verify login/session behavior and the Beta health view, do not publish content or change routing,
+then run `admin-stop`. Admin API port 4100 remains private and is never published.
+
 ## Rollback
 
 First disable the rollout rule and set its allocation to zero. Then turn off the process-level

@@ -1,6 +1,6 @@
 # Work Item 31 — Admin Beta preview closeout
 
-Status: implemented locally on `codex/wi29-instagram-provider-replacement-feasibility`.
+Status: merged in PR #69 as `main@3eedddb8e42ad2589490a081af9772cd975fc663`.
 This is a small UI closeout for the private Admin Beta operations view; it does not change the
 public resolver, Provider routing, rollout, gates, persistence schema, or production state.
 
@@ -16,7 +16,7 @@ public resolver, Provider routing, rollout, gates, persistence schema, or produc
 
 ## Verification
 
-The local Admin/API stack was started against the Docker-backed local PostgreSQL and Redis only.
+The Admin/API stack was started against the Docker-backed local PostgreSQL and Redis only.
 The owner console was checked at desktop and 390px mobile widths, including the Beta 24-hour/7-day
 window control. The stack was stopped after review; Admin remains stopped in production.
 
@@ -26,6 +26,5 @@ preserved and is not part of this change.
 
 ## Release boundary
 
-This commit is intentionally unpushed. Push, PR merge, and any on-demand production Admin
-activation require separate owner approval. No Admin, calibration, or additional Provider process
-was started as part of this work item.
+The merge completed after CI. No production Admin activation was performed as part of this work
+item; Admin, calibration, and additional Provider processes remain stopped.
