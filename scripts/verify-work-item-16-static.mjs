@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
@@ -31,6 +31,7 @@ export function verifyWorkItem16Static() {
   const workerCompletionGrant = read("infra/migrations/0020_worker_delivery_candidate_delete_grant.sql");
   const rootPackage = JSON.parse(read("package.json"));
   const persistencePackage = JSON.parse(read("packages/persistence/package.json"));
+  const releaseScriptPath = resolve(root, "scripts/production-release.sh");
 
   const allServices = [
     "postgres", "redis", "web", "api", "worker", "delivery", "admin-api", "admin",
@@ -147,7 +148,11 @@ export function verifyWorkItem16Static() {
   assert(/^      DATABASE_URL_FILE: \/run\/secrets\/database_url$/m.test(blocks.api), "Public API database secret-file binding is missing.");
   assert(/^      REDIS_URL_FILE: \/run\/secrets\/redis_url$/m.test(blocks.api), "Public API Redis secret-file binding is missing.");
   assert(!/docker\s+system\s+prune|-a\s+--volumes/.test(releaseScript), "The release script contains destructive generic Docker cleanup.");
+  assert(process.platform === "win32" || (statSync(releaseScriptPath).mode & 0o111) !== 0, "The production release script must be executable on the host.");
   assert(/TIKDD_STAGE_VERIFY_COMMAND/.test(releaseScript), "Shared-host stage verification is not mandatory.");
+  assert(/TIKDD_STAGE_EXPECTED_ADMIN_STATUS/.test(releaseScript), "Admin stage expectations must be explicit for the shared-host gate.");
+  assert(/expected_admin_status=404/.test(releaseScript) && /expected_admin_status=200/.test(releaseScript), "Admin stage expectations must default to stopped and switch to 200 only on demand.");
+  assert(/stop_admin_after_failure/.test(releaseScript), "Admin startup failures must clean up the on-demand pair.");
   assert(
     /compose\(\) \{\s+TIKDD_PRODUCTION_ENV_FILE="\$release_env"[\s\\]+docker compose --env-file "\$release_env"/.test(releaseScript),
     "Compose must bind service env_file loading to the exact release environment."

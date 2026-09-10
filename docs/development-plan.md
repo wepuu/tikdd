@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@3eedddb8e42ad2589490a081af9772cd975fc663` (Work Item 31 merge)
+- Repository checkpoint: `main@db94b0efe72c94b487421d188fd09038cca16a5a` (Work Item 32 merge)
 - Roadmap revision date: 2026-09-09
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -27,8 +27,10 @@ compatibility. Work Item 27 is merged and deployed. Work Item 28 is merged and d
 `main@bdf6543a`; it preserves client-direct media delivery while bounding SaveFromIns retries and
 adding a safe browser filename hint without starting Admin or calibration. Work Item 29 retains
 SaveFromIns as the usable Instagram Beta and pauses paid replacement research. The private Admin
-Beta operations view and its UI closeout are merged in Work Item 31. Admin remains an on-demand,
-stopped production profile until a separate activation approval.
+Beta operations view and its UI closeout are merged in Work Item 31. Work Item 32 completed the approved
+on-demand NL preview: the owner logged in through `admin.tikdd.cc`, inspected the read-only Beta view,
+and Admin was stopped afterward. Admin remains an on-demand, stopped production profile. Work Item 33
+addresses the release-script executable bit and stage-gate false positives found during that preview.
 
 ## Baseline classification
 
@@ -115,9 +117,25 @@ consistent operator-facing Chinese copy, and malformed legacy aggregate fields f
 of crashing RouteInspector. Desktop and 390px mobile layouts were reviewed against the existing
 design tokens, and CI passed. Admin remains stopped in production. See the [Work Item 31 record](work-item-31-admin-beta-preview.md).
 
-The next step is the Work Item 32 on-demand Admin production preview. It requires the normal
-immutable-image deployment plus a separately approved `admin.tikdd.cc` DNS/Nginx/Tunnel route;
-starting Admin alone must not imply Provider, rollout, calibration, or public traffic changes.
+### Work Item 32 current status
+
+Work Item 32 is complete after the approved owner-only preview on 2026-09-10. The GitHub-built Admin
+image `ghcr.io/wepuu/tikdd-release-admin@sha256:4da7f14f51f0cad6a8ca9696d894b36ce4ed59c7ad969fd36540a7821d682629`
+started alongside the Admin API; `https://admin.tikdd.cc/login` returned 200 with no-store/noindex
+security headers, the `solo` account authenticated, and the read-only Beta health view rendered.
+Admin API remained loopback-only (`127.0.0.1:3301` publication for the shared UI namespace; internal
+4100 was not published). After the preview, both Admin containers were stopped and the public route
+returned 404; the six core containers remained healthy and X/Instagram rollout state was unchanged.
+
+The first `admin-start` command exposed a stage-gate contract mismatch (the host gate still expected
+Admin 404 while on demand) and the stop check exposed that stopped Admin health state must be ignored.
+These are recorded for Work Item 33 and are not Provider or application failures.
+
+### Work Item 33 current status
+
+Implementation is in progress on `codex/wi33-admin-lifecycle-gate-fix`. It makes the release script
+executable, passes an explicit Admin expected-status contract to the host gate, and cleans up the
+Admin pair when startup or the on-demand gate fails. See the [Work Item 33 record](work-item-33-admin-lifecycle-gate-fix.md).
 
 ## Coordinated future lanes
 

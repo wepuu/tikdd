@@ -281,7 +281,10 @@ granted.
 The host stage gate had been rebaselined after stable observation to a swap baseline of
 1,238,460 KiB while retaining the 262,144 KiB maximum-growth bound and 716,800 KiB available-memory
 floor. After cutover its obsolete TikDD WordPress checks were replaced with local checks for the
-canonical Web, apex redirect, API, Delivery failure boundary, staging noindex and Admin 404. It now
+canonical Web, apex redirect, API, Delivery failure boundary, staging noindex and the Admin origin.
+The Admin status is stage-aware: ordinary deployment and `admin-stopped` expect 404, while
+`admin-on-demand` expects 200. Container health assertions apply only to running containers; a
+stopped on-demand Admin pair is expected and must not be classified as unhealthy. It now
 also requires an active zero-restart `cloudflared` service with at least two HA connections. The
 two unrelated PHP sites, shared MySQL, host Redis, Nginx/PHP-FPM and all six TikDD containers remain
 in the same fail-closed gate. The installed script SHA-256 is

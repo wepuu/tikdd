@@ -67,7 +67,17 @@ run_stage_gate() {
     echo "TIKDD_STAGE_VERIFY_COMMAND is required for staged shared-host deployment." >&2
     exit 78
   }
-  TIKDD_STAGE="$stage" sh -c "$stage_gate_command"
+  expected_admin_status=404
+  if [ "$stage" = "admin-on-demand" ]; then
+    expected_admin_status=200
+  fi
+  TIKDD_STAGE="$stage" \
+    TIKDD_STAGE_EXPECTED_ADMIN_STATUS="$expected_admin_status" \
+    sh -c "$stage_gate_command"
+}
+
+stop_admin_after_failure() {
+  compose --profile admin stop admin admin-api >/dev/null 2>&1 || true
 }
 
 verify_migration_safety() {
@@ -189,8 +199,20 @@ case "$action" in
     acquire_lock
     validate
     compose --profile admin pull admin-api admin
-    compose --profile admin up -d --wait admin-api admin
-    run_stage_gate admin-on-demand
+    if compose --profile admin up -d --wait admin-api admin; then
+      :
+    else
+      status="$?"
+      stop_admin_after_failure
+      exit "$status"
+    fi
+    if run_stage_gate admin-on-demand; then
+      :
+    else
+      status="$?"
+      stop_admin_after_failure
+      exit "$status"
+    fi
     ;;
   admin-stop)
     acquire_lock
