@@ -45,6 +45,7 @@ import { SeoWorkbench } from "./seo-workbench";
 import { AccountSecurity } from "./account-security";
 import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
+import { SiteIntegrationsSettings } from "./site-integrations-settings";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
@@ -56,7 +57,7 @@ const navGroups = [
   { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#beta-health", label: "Beta 健康", icon: ChartLineUp }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
   { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
   { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }] },
-  { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }] }
+  { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }, { href: "#site-integrations", label: "Google 集成", icon: ChartLineUp }] }
 ] as const;
 
 const failureLabels: Record<string, string> = {
@@ -321,7 +322,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           {contentDraftsAllowed ? <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="SEO 草稿已关闭" detail="SEO 字段与内容草稿一起受内容草稿模式保护，公共索引状态不会在只读模式下变化。" />}
 
           <section className="publishing-section" id="publishing-readiness">
-            <SectionHeading eyebrow="PUBLISH / READINESS" title="页面、语言与 SEO 准备度" detail="当前只读地展示已发布内容和阻塞；草稿编辑与发布将在后续工作项开放。" />
+            <SectionHeading eyebrow="PUBLISH / READINESS" title="页面、语言与 SEO 准备度" detail="展示已发布内容和当前阻塞；草稿可在内容草稿模式编辑，发布与回滚需要完整维护模式。" />
             <div className="publishing-grid panel">
               <article><small>活动快照</small><strong>{runtime?.activeSnapshotRevision ? `r${runtime.activeSnapshotRevision}` : "未激活"}</strong><span>公共 Web 不依赖 Admin API 可用性</span></article>
               <article><small>可索引页面</small><strong>{snapshot.seo.status === "ready" ? formatCount(snapshot.seo.data.indexablePageCount) : "—"}</strong><span>仅来自已发布且合格的页面</span></article>
@@ -331,6 +332,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </section>
 
           {fullWritesAllowed ? <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="设置与恢复已关闭" detail="站点设置、快照恢复和缓存操作需要完整维护模式，当前不会执行写入。" />}
+          {contentDraftsAllowed ? <SiteIntegrationsSettings view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : null}
           <AccountSecurity />
           <footer className="console-build-footer" aria-label="后台构建信息">
             <span>TikDD Owner Console</span><code>{buildId}</code>

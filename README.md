@@ -73,6 +73,11 @@ deliberate local or maintenance operations. The UI displays the active scope and
 commands outside it; this does not start Admin or change Provider traffic. See the [Work Item 35
 record](docs/work-item-35-admin-content-draft-mode.md).
 
+Stage 1 adds bounded Google Analytics and Google AdSense site integrations to Admin settings. Only
+validated `G-...` and `ca-pub-...` identifiers are accepted; Web renders fixed code-owned tags
+after a published snapshot, never arbitrary Admin JavaScript. See the [Stage 1 record](docs/stage-1-admin-integrations.md)
+and [ADR-0028](docs/architecture/adr/0028-code-owned-google-site-integrations.md).
+
 ## Platform and provider model
 
 The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,

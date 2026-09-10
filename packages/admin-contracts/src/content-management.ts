@@ -11,6 +11,7 @@ import {
   AdminRevisionSchema,
   AdminSchemaVersionSchema
 } from "./common";
+import { SiteIntegrationsSchema } from "./site-integrations";
 
 const IdempotencyKeySchema = z.string().min(16).max(128).regex(/^[A-Za-z0-9_-]+$/);
 export const AdminPageIdSchema = z.string().regex(/^page_[a-z0-9]+(?:[._-][a-z0-9]+)*$/);
@@ -94,7 +95,8 @@ export const AdminSharedContentSchema = z.strictObject({
   legalNoticeMarkdown: z.string().trim().min(1).max(2_000).refine((value) => !/[<>]/.test(value), "Raw HTML is not allowed."),
   defaultSocialTitle: z.string().trim().min(1).max(100).nullable().default(null),
   defaultSocialDescription: z.string().trim().min(1).max(240).nullable().default(null),
-  defaultSocialImageAssetId: z.string().min(7).max(100).regex(/^asset_[a-z0-9]+(?:[._-][a-z0-9]+)*$/).nullable().default(null)
+  defaultSocialImageAssetId: z.string().min(7).max(100).regex(/^asset_[a-z0-9]+(?:[._-][a-z0-9]+)*$/).nullable().default(null),
+  siteIntegrations: SiteIntegrationsSchema.default({ googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null })
 });
 
 export const AdminSharedContentRevisionSchema = z.strictObject({

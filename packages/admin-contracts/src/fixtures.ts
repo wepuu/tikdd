@@ -229,5 +229,6 @@ export const ADMIN_PUBLISHED_SNAPSHOT_FIXTURE: PublishedContentSnapshot = {
     }
   ],
   sharedContent: [],
+  siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null },
   generatedAt: now
 };
