@@ -59,8 +59,10 @@ owner-approved usable Instagram Beta while pausing paid replacement research. Fu
 candidates will be validated individually. Work Item 30 adds a private Admin Beta health view; it does
 not change production traffic or start Admin, calibration, or another Provider. Work Item 31 merged
 the Admin UI closeout in PR #69 by grouping Beta health with the existing operations navigation,
-localizing the operator copy, and hardening malformed aggregate rendering. Production Admin is still
-stopped and requires separate owner approval and an approved owner-only ingress.
+localizing the operator copy, and hardening malformed aggregate rendering. Work Item 32 completed
+the approved owner-only Admin preview through `admin.tikdd.cc`; Admin remains an on-demand profile
+and is stopped outside an explicitly approved session. Work Item 33 hardens the release script and
+stage-gate contract exposed by that preview. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md).
 
 ## Platform and provider model
 

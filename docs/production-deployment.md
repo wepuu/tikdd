@@ -242,8 +242,11 @@ existing readiness endpoints. Worker uses `probe:production`, which performs bou
 private readiness endpoint; Admin checks both BFF and loopback API liveness. No health check calls a
 Provider.
 
-`TIKDD_STAGE_VERIFY_COMMAND` is mandatory for `scripts/production-release.sh deploy`. It receives
-the current step through `TIKDD_STAGE` and must be a reviewed read-only executable. It checks
+`TIKDD_STAGE_VERIFY_COMMAND` is mandatory for `scripts/production-release.sh deploy` and the
+on-demand Admin operations. It receives the current step through `TIKDD_STAGE` and the expected
+Admin origin status through `TIKDD_STAGE_EXPECTED_ADMIN_STATUS` (`404` for ordinary releases and
+`admin-stopped`, `200` only for `admin-on-demand`). The command must be a reviewed read-only
+executable. It checks
 available RAM, swap level and growth, load/CPU pressure, OOM events, container restarts, disk,
 PostgreSQL/TikDD Redis and the existing PHP/MySQL/host-Redis regression boundary. After Gate C it
 also checks loopback-only TikDD Web/API/Delivery/staging/Admin host behavior and requires a healthy,
@@ -261,6 +264,10 @@ export TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true
 export TIKDD_INTERNAL_PREFLIGHT_REQUIRED=false
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh deploy
 ```
+
+The release script is tracked with the executable bit. A release checkout must retain that mode
+(`test -x scripts/production-release.sh`) before the command is invoked; `bash
+scripts/production-release.sh <action>` remains a compatible recovery form for older checkouts.
 
 These release-control variables belong to the root operator environment or the root-readable
 release environment. Subsequent releases leave the empty-database confirmation unset/false and
@@ -280,7 +287,8 @@ Missing/malformed signals, crashes and any decision/status mismatch stop that ca
 This keeps ordinary application deployment separate from Provider traffic qualification without
 bypassing the fail-closed gate. Host MySQL,
 host Redis, shared PHP-FPM, Nginx and all existing sites remain online. Admin is excluded from the
-continuous deploy path and is started only when needed:
+continuous deploy path and is started only when needed; startup or on-demand gate failure cleans up
+the Admin pair:
 
 ```sh
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-start
