@@ -62,7 +62,10 @@ the Admin UI closeout in PR #69 by grouping Beta health with the existing operat
 localizing the operator copy, and hardening malformed aggregate rendering. Work Item 32 completed
 the approved owner-only Admin preview through `admin.tikdd.cc`; Admin remains an on-demand profile
 and is stopped outside an explicitly approved session. Work Item 33 hardens the release script and
-stage-gate contract exposed by that preview. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md).
+stage-gate contract exposed by that preview. Work Item 34 adds read-only request-cadence guidance
+and per-platform activity freshness to the Admin Beta view; it does not probe Providers or change
+traffic. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md) and [Work Item 34
+record](docs/work-item-34-admin-provider-cadence.md).
 
 ## Platform and provider model
 

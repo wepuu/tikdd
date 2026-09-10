@@ -108,4 +108,29 @@ describe("SaveFromIns diagnostics", () => {
     await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_timeout" });
     expect(events[0]).toMatchObject({ httpStatus: 408, failureCode: "provider_timeout" });
   });
+
+  it("classifies an aborted request as a timeout without changing the thrown error", async () => {
+    const events: unknown[] = [];
+    const controller = new AbortController();
+    controller.abort();
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async () => {
+        throw new DOMException("request aborted", "AbortError");
+      }
+    });
+
+    await expect(provider.resolve({ ...input, signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+    expect(events[0]).toMatchObject({
+      phase: "request",
+      outcome: "failure",
+      httpStatus: null,
+      contentType: "missing",
+      resourceCount: null,
+      validDirectMp4Count: 0,
+      failureCode: "provider_timeout"
+    });
+  });
 });

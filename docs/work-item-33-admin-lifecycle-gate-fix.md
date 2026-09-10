@@ -1,6 +1,6 @@
 # Work Item 33 — Admin 按需运行闭环与发布门禁修复
 
-Status: implementation in progress on `codex/wi33-admin-lifecycle-gate-fix`.
+Status: merged by PR #71 and deployed from `main@8218b56881f847e6b3abd9acbd846bbc5dc55e6b`.
 
 ## Trigger
 
@@ -46,6 +46,16 @@ health failure. The installed gate must be backed up, syntax-checked and hashed 
 - Linux shellcheck 等价语法检查或 `sh -n scripts/production-release.sh`。
 - 经独立发布授权后，使用 GitHub 精确 SHA 镜像进行一次 Admin start/login/read-only/stop 验证；
   同时回归一次 X 和一次 Instagram 下载，并观察 10–15 分钟。
+
+## Production closeout (2026-09-10)
+
+The approved release used the GitHub-built images for `main@8218b56881f847e6b3abd9acbd846bbc5dc55e6b`
+and an encrypted PostgreSQL backup before the symlink switch. The installed host gate was backed up,
+syntax-checked, and hashed after the expected-Admin-status and stopped-container checks were corrected.
+Six public core containers stayed healthy with zero restarts during the 15-minute observation; public
+Web/API probes returned 200 and the Delivery invalid-ticket probe returned 410. The owner-only Admin
+preview completed login and read-only Beta rendering, then both Admin containers were stopped and the
+Admin origin returned 404 again. X/Instagram rollout rules and gates were unchanged.
 
 ## Release boundary
 

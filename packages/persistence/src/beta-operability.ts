@@ -39,6 +39,7 @@ export interface BetaDeliverySummary {
 }
 
 export interface BetaReportBucket {
+  latestEventAt: string | null;
   tasks: BetaTaskSummary;
   attempts: BetaAttemptSummary;
   deliveries: BetaDeliverySummary;
@@ -101,7 +102,7 @@ function emptyDeliveries(): BetaDeliverySummary {
 }
 
 function emptyBucket(): BetaReportBucket {
-  return { tasks: emptyTasks(), attempts: emptyAttempts(), deliveries: emptyDeliveries() };
+  return { latestEventAt: null, tasks: emptyTasks(), attempts: emptyAttempts(), deliveries: emptyDeliveries() };
 }
 
 function increment(target: Record<string, number>, key: string, count: number): void {
@@ -181,6 +182,11 @@ function bucketFromRows(rows: BetaReportRows): BetaReportBucket {
   addTaskFailures(bucket, rows.taskFailures);
   addAttemptRows(bucket, rows.attempts);
   addDeliveryRows(bucket, rows.deliveries);
+  bucket.latestEventAt = latestDate([
+    ...rows.taskStatuses.map((row) => row.latestAt),
+    ...rows.attempts.map((row) => row.latestAt),
+    ...rows.deliveries.map((row) => row.latestAt)
+  ]);
   return bucket;
 }
 

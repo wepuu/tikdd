@@ -245,6 +245,7 @@ function rateBps(total: number, rate: number): number | null {
 
 function mapBetaReport(report: BetaHealthReport): AdminBetaHealth {
   const mapBucket = (bucket: BetaHealthReport["totals"]): AdminBetaHealth["totals"] => ({
+    latestEventAt: bucket.latestEventAt,
     tasks: {
       total: bucket.tasks.total,
       succeeded: bucket.tasks.succeeded,

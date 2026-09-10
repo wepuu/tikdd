@@ -47,6 +47,7 @@ const AdminBetaDeliverySummarySchema = z.strictObject({
 });
 
 const AdminBetaBucketSchema = z.strictObject({
+  latestEventAt: AdminTimestampSchema.nullable(),
   tasks: AdminBetaTaskSummarySchema,
   attempts: AdminBetaAttemptSummarySchema,
   deliveries: AdminBetaDeliverySummarySchema
