@@ -151,6 +151,17 @@ errors as `provider_timeout` while preserving the existing Router retry policy. 
 rollout, gate, Provider capability, or production profile change is included. See the [Work Item 34
 record](work-item-34-admin-provider-cadence.md).
 
+### Work Item 35 current status
+
+Implementation is in progress on `codex/wi34-admin-provider-cadence` as a follow-up to the
+read-only cadence view. Admin now has an explicit server-enforced write scope: `readonly` (the
+default, including when production configuration omits the setting), `content-draft` (locale/page/
+shared-content drafts only), and `full` (the existing route, platform, qualification, publication,
+and recovery commands). The Admin UI mirrors the scope, keeps safe content proofing available in
+`content-draft`, and disables publication/retry/rollback until `full` is explicitly selected. This
+slice adds no migration, Provider request, rollout/gate change, or production profile start. See the
+[Work Item 35 record](work-item-35-admin-content-draft-mode.md).
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

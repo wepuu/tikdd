@@ -73,6 +73,7 @@ export interface AdminReadServiceOptions {
   deployment: string;
   region: string;
   authMode: "password";
+  writeMode?: AdminRuntime["writeMode"];
   manifests: readonly ProviderManifest[];
   platforms: readonly PlatformDefinition[];
   circuits: { listSnapshots(): Promise<CircuitSnapshot[]> };
@@ -763,6 +764,7 @@ export class AdminReadService {
       deployment: this.options.deployment,
       region: this.options.region,
       authMode: this.options.authMode,
+      writeMode: this.options.writeMode ?? "readonly",
       generatedAt: now.toISOString(),
       state,
       dependencies,

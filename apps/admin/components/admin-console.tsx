@@ -1,6 +1,6 @@
 "use client";
 
-import type { AdminRouteSummary } from "@tikdd/admin-contracts";
+import type { AdminRouteSummary, AdminRuntime } from "@tikdd/admin-contracts";
 import {
   ArrowClockwise,
   ArrowRight,
@@ -80,6 +80,16 @@ function StatusDot({ state }: { state: AdminRouteSummary["state"] | "ready" | "d
 
 function EmptyState({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
   return <div className="empty-state">{icon}<strong>{title}</strong><p>{detail}</p></div>;
+}
+
+const writeModeLabels: Record<AdminRuntime["writeMode"], string> = {
+  readonly: "只读模式",
+  "content-draft": "内容草稿模式",
+  full: "完整维护模式"
+};
+
+function WriteScopeNotice({ title, detail }: { title: string; detail: string }) {
+  return <div className="panel write-scope-notice"><ShieldCheck size={22} /><div><strong>{title}</strong><p>{detail}</p></div></div>;
 }
 
 function SectionHeading({ eyebrow, title, detail, aside }: { eyebrow: string; title: string; detail: string; aside?: ReactNode }) {
@@ -214,6 +224,9 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
   const deployment = runtime?.deployment ?? (snapshot.overview.status === "ready" ? snapshot.overview.data.deployment : "tikdd");
   const region = runtime?.region ?? (snapshot.overview.status === "ready" ? snapshot.overview.data.region : "nl");
   const overallState = runtime?.state ?? "unavailable";
+  const writeMode = runtime?.writeMode ?? "readonly";
+  const contentDraftsAllowed = writeMode === "content-draft" || writeMode === "full";
+  const fullWritesAllowed = writeMode === "full";
 
   return (
     <main className="console-shell">
@@ -230,6 +243,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
             <span className="freshness"><ClockCounterClockwise size={16} /><span>快照 {formatTime(snapshot.generatedAt)}</span></span>
             <button type="button" className="refresh-button" onClick={() => void refresh(selectedSummary ?? undefined, managedPlatform, platform)} disabled={refreshState === "refreshing"}><ArrowClockwise className={refreshState === "refreshing" ? "spinning" : ""} size={17} />{refreshState === "refreshing" ? "刷新中" : refreshState === "failed" ? "重试刷新" : "刷新"}</button>
             <span className={`runtime-badge state-${overallState}`}><StatusDot state={overallState} />{overallState === "ready" ? "运行就绪" : overallState === "degraded" ? "部分降级" : "状态不可用"}</span>
+            <span className={`write-mode-badge mode-${writeMode}`} title="由 Admin API 服务端强制执行的写入范围"><ShieldCheck size={14} />{writeModeLabels[writeMode]}</span>
           </div>
         </header>
 
@@ -283,8 +297,8 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
                 <RouteInspector snapshot={snapshot} summary={selectedSummary} />
               </div>
             )}
-            <RoutePolicyControl snapshot={snapshot} summary={selectedSummary} onComplete={()=>refresh(selectedSummary??undefined, managedPlatform, platform)} />
-            <QualificationWorkbench view={snapshot.qualification.status==="ready"?snapshot.qualification.data:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onComplete={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} />
+            {fullWritesAllowed ? <RoutePolicyControl snapshot={snapshot} summary={selectedSummary} onComplete={()=>refresh(selectedSummary??undefined, managedPlatform, platform)} /> : <WriteScopeNotice title="路由写入已关闭" detail="当前 Admin 模式只允许查看；切换到完整维护模式才会开放路由、分流和探测命令。" />}
+            {fullWritesAllowed ? <QualificationWorkbench view={snapshot.qualification.status==="ready"?snapshot.qualification.data:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onComplete={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="资格操作已关闭" detail="资格审核和策略锁定需要完整维护模式，当前页面不会发起任何 Provider 请求。" />}
           </section>
 
           <section className="alerts-section" id="alerts">
@@ -300,11 +314,11 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
             </div>
           </section>
 
-          <PlatformManagement snapshot={snapshot} onReload={(managedPlatform) => refresh(selectedSummary ?? undefined, managedPlatform)} />
+          {fullWritesAllowed ? <PlatformManagement snapshot={snapshot} onReload={(managedPlatform) => refresh(selectedSummary ?? undefined, managedPlatform)} /> : <WriteScopeNotice title="平台展示写入已关闭" detail="平台名称、可见性和关联页面保持只读；当前模式不会修改公共内容。" />}
 
-          <ContentManagement view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} />
+          {contentDraftsAllowed ? <ContentManagement writeMode={writeMode} view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="内容编辑已关闭" detail="当前是只读模式；切换到内容草稿模式后，才可保存不影响公共快照的草稿。" />}
 
-          <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} />
+          {contentDraftsAllowed ? <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="SEO 草稿已关闭" detail="SEO 字段与内容草稿一起受内容草稿模式保护，公共索引状态不会在只读模式下变化。" />}
 
           <section className="publishing-section" id="publishing-readiness">
             <SectionHeading eyebrow="PUBLISH / READINESS" title="页面、语言与 SEO 准备度" detail="当前只读地展示已发布内容和阻塞；草稿编辑与发布将在后续工作项开放。" />
@@ -316,7 +330,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
             </div>
           </section>
 
-          <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} />
+          {fullWritesAllowed ? <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="设置与恢复已关闭" detail="站点设置、快照恢复和缓存操作需要完整维护模式，当前不会执行写入。" />}
           <AccountSecurity />
           <footer className="console-build-footer" aria-label="后台构建信息">
             <span>TikDD Owner Console</span><code>{buildId}</code>

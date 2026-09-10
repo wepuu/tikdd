@@ -67,6 +67,12 @@ and per-platform activity freshness to the Admin Beta view; it does not probe Pr
 traffic. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md) and [Work Item 34
 record](docs/work-item-34-admin-provider-cadence.md).
 
+Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
+explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
+deliberate local or maintenance operations. The UI displays the active scope and hides or disables
+commands outside it; this does not start Admin or change Provider traffic. See the [Work Item 35
+record](docs/work-item-35-admin-content-draft-mode.md).
+
 ## Platform and provider model
 
 The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,

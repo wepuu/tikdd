@@ -296,9 +296,11 @@ describe("Admin read composition", () => {
     }));
     const runtime = await service.getRuntime();
     expect(runtime.state).toBe("degraded");
+    expect(runtime.writeMode).toBe("readonly");
     expect(runtime.dependencies).toContainEqual(expect.objectContaining({ id: "redis", state: "unavailable" }));
     const overview = await service.getOverview();
     expect(overview.state).toBe("warning");
     expect(overview.queue).toEqual({ queued: 0, active: 0, succeeded: 0, failed: 0 });
+    expect((await new AdminReadService(options({ writeMode: "content-draft" })).getRuntime()).writeMode).toBe("content-draft");
   });
 });
