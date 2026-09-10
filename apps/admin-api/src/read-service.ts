@@ -73,6 +73,7 @@ export interface AdminReadServiceOptions {
   deployment: string;
   region: string;
   authMode: "password";
+  writeMode?: AdminRuntime["writeMode"];
   manifests: readonly ProviderManifest[];
   platforms: readonly PlatformDefinition[];
   circuits: { listSnapshots(): Promise<CircuitSnapshot[]> };
@@ -245,6 +246,7 @@ function rateBps(total: number, rate: number): number | null {
 
 function mapBetaReport(report: BetaHealthReport): AdminBetaHealth {
   const mapBucket = (bucket: BetaHealthReport["totals"]): AdminBetaHealth["totals"] => ({
+    latestEventAt: bucket.latestEventAt,
     tasks: {
       total: bucket.tasks.total,
       succeeded: bucket.tasks.succeeded,
@@ -762,6 +764,7 @@ export class AdminReadService {
       deployment: this.options.deployment,
       region: this.options.region,
       authMode: this.options.authMode,
+      writeMode: this.options.writeMode ?? "readonly",
       generatedAt: now.toISOString(),
       state,
       dependencies,

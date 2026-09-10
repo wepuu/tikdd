@@ -157,6 +157,7 @@ describe("Admin read composition", () => {
     }));
     const report = await service.getBetaHealth(168);
     expect(report.window.hours).toBe(168);
+    expect(report.byPlatform.x.latestEventAt).toBe("2026-08-11T11:59:00.000Z");
     expect(report.totals.attempts.failureCounts).toEqual({ provider_timeout: 2, other: 1 });
     expect(() => assertAdminSafeValue(report)).not.toThrow();
   });
@@ -295,9 +296,11 @@ describe("Admin read composition", () => {
     }));
     const runtime = await service.getRuntime();
     expect(runtime.state).toBe("degraded");
+    expect(runtime.writeMode).toBe("readonly");
     expect(runtime.dependencies).toContainEqual(expect.objectContaining({ id: "redis", state: "unavailable" }));
     const overview = await service.getOverview();
     expect(overview.state).toBe("warning");
     expect(overview.queue).toEqual({ queued: 0, active: 0, succeeded: 0, failed: 0 });
+    expect((await new AdminReadService(options({ writeMode: "content-draft" })).getRuntime()).writeMode).toBe("content-draft");
   });
 });

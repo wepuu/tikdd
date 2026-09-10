@@ -62,7 +62,16 @@ the Admin UI closeout in PR #69 by grouping Beta health with the existing operat
 localizing the operator copy, and hardening malformed aggregate rendering. Work Item 32 completed
 the approved owner-only Admin preview through `admin.tikdd.cc`; Admin remains an on-demand profile
 and is stopped outside an explicitly approved session. Work Item 33 hardens the release script and
-stage-gate contract exposed by that preview. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md).
+stage-gate contract exposed by that preview. Work Item 34 adds read-only request-cadence guidance
+and per-platform activity freshness to the Admin Beta view; it does not probe Providers or change
+traffic. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md) and [Work Item 34
+record](docs/work-item-34-admin-provider-cadence.md).
+
+Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
+explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
+deliberate local or maintenance operations. The UI displays the active scope and hides or disables
+commands outside it; this does not start Admin or change Provider traffic. See the [Work Item 35
+record](docs/work-item-35-admin-content-draft-mode.md).
 
 ## Platform and provider model
 

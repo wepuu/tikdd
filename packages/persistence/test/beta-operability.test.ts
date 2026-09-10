@@ -30,6 +30,8 @@ describe("beta operability aggregation", () => {
     expect(report.totals.attempts).toMatchObject({ total: 3, succeeded: 2, failed: 1, successRate: 0.6667 });
     expect(report.totals.deliveries).toMatchObject({ total: 3, succeeded: 2, failed: 1, successRate: 0.6667 });
     expect(report.byPlatform.instagram.tasks.failureCounts).toEqual({ provider_timeout: 1 });
+    expect(report.byPlatform.x.latestEventAt).toBe("2026-09-09T12:03:00.000Z");
+    expect(report.byPlatform.instagram.latestEventAt).toBe("2026-09-09T12:04:00.000Z");
     expect(report.latestEventAt).toBe("2026-09-09T12:04:00.000Z");
 
     const serialized = JSON.stringify(report);
@@ -52,6 +54,7 @@ describe("beta operability aggregation", () => {
     expect(report.platforms).toEqual(["x"]);
     expect(report.totals.tasks.total).toBe(0);
     expect(report.byPlatform.x.tasks.total).toBe(0);
+    expect(report.byPlatform.x.latestEventAt).toBeNull();
     expect(report.latestEventAt).toBeNull();
   });
 });

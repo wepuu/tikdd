@@ -73,6 +73,7 @@ export const runtime: AdminRuntime = {
   deployment: "tikdd",
   region: "nl",
   authMode: "password",
+  writeMode: "readonly",
   generatedAt,
   state: "degraded",
   dependencies: [

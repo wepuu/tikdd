@@ -62,6 +62,14 @@ export interface SaveFromInsDiagnosticEvent {
   durationMs: number;
 }
 
+function diagnosticFailureCode(error: unknown): ProviderFailureCode {
+  if (error instanceof ProviderError) return error.failureCode;
+  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
+    return "provider_timeout";
+  }
+  return "internal_error";
+}
+
 function contentTypeCategory(headers: Headers): SaveFromInsContentType {
   const contentType = headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
   if (!contentType) return "missing";
@@ -273,8 +281,7 @@ export class SaveFromInsProvider implements ResolverProvider {
         );
       }
     } catch (error) {
-      const failureCode = error instanceof ProviderError ? error.failureCode : "internal_error";
-      emit("failure", failureCode);
+      emit("failure", diagnosticFailureCode(error));
       throw error;
     }
   }

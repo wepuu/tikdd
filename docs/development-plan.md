@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@db94b0efe72c94b487421d188fd09038cca16a5a` (Work Item 32 merge)
-- Roadmap revision date: 2026-09-09
+- Repository checkpoint: `main@8218b56881f847e6b3abd9acbd846bbc5dc55e6b` (Work Item 33 merge)
+- Roadmap revision date: 2026-09-10
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -133,9 +133,34 @@ These are recorded for Work Item 33 and are not Provider or application failures
 
 ### Work Item 33 current status
 
-Implementation is in progress on `codex/wi33-admin-lifecycle-gate-fix`. It makes the release script
-executable, passes an explicit Admin expected-status contract to the host gate, and cleans up the
-Admin pair when startup or the on-demand gate fails. See the [Work Item 33 record](work-item-33-admin-lifecycle-gate-fix.md).
+Work Item 33 is merged and deployed from `main@8218b56881f847e6b3abd9acbd846bbc5dc55e6b`. The
+production release script is executable, passes an explicit Admin expected-status contract to the
+host gate, and cleans up the Admin pair when startup or the on-demand gate fails. The release used
+GitHub-built immutable images, an encrypted PostgreSQL backup, a host-gate hash update, and a clean
+15-minute health observation; Admin was stopped again after the approved preview. See the [Work Item
+33 record](work-item-33-admin-lifecycle-gate-fix.md).
+
+### Work Item 34 current status
+
+Implementation is in progress on `codex/wi34-admin-provider-cadence`. This is a read-only Admin
+operability slice: the Beta view adds a 1-hour window, per-platform latest activity timestamps, and
+a cadence signal derived only from persisted aggregates. The signal distinguishes normal, observe,
+cooldown-suggested, insufficient-data, and no-recent-event states; it never claims an exact upstream
+cooldown and never sends a Provider request. SaveFromIns diagnostics now classify raw abort/timeout
+errors as `provider_timeout` while preserving the existing Router retry policy. No migration,
+rollout, gate, Provider capability, or production profile change is included. See the [Work Item 34
+record](work-item-34-admin-provider-cadence.md).
+
+### Work Item 35 current status
+
+Implementation is in progress on `codex/wi34-admin-provider-cadence` as a follow-up to the
+read-only cadence view. Admin now has an explicit server-enforced write scope: `readonly` (the
+default, including when production configuration omits the setting), `content-draft` (locale/page/
+shared-content drafts only), and `full` (the existing route, platform, qualification, publication,
+and recovery commands). The Admin UI mirrors the scope, keeps safe content proofing available in
+`content-draft`, and disables publication/retry/rollback until `full` is explicitly selected. This
+slice adds no migration, Provider request, rollout/gate change, or production profile start. See the
+[Work Item 35 record](work-item-35-admin-content-draft-mode.md).
 
 ## Coordinated future lanes
 

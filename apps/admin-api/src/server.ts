@@ -69,6 +69,7 @@ const reads = new AdminReadService({
   deployment: configuration.deployment,
   region: configuration.region,
   authMode: "password",
+  writeMode: configuration.writeMode,
   manifests,
   platforms: listPlatformDefinitions(),
   circuits,

@@ -1,4 +1,4 @@
-import type { AdminRouteSummary } from "@tikdd/admin-contracts";
+import type { AdminBetaHealth, AdminRouteSummary } from "@tikdd/admin-contracts";
 import type { AdminConsoleSnapshot } from "./console-contract";
 
 export type AlertSeverity = "critical" | "warning" | "notice";
@@ -10,6 +10,74 @@ export interface ConsoleAlert {
   detail: string;
   target: "routing" | "coverage" | "publishing" | "runtime";
   actionLabel: string;
+}
+
+export type BetaCadenceState = "normal" | "observe" | "cooldown_suggested" | "insufficient_data" | "stale";
+
+export interface BetaCadenceSignal {
+  state: BetaCadenceState;
+  label: string;
+  advice: string;
+  transientFailureCount: number;
+}
+
+const betaCadenceLabels: Record<BetaCadenceState, string> = {
+  normal: "正常",
+  observe: "观察",
+  cooldown_suggested: "建议冷却",
+  insufficient_data: "数据不足",
+  stale: "最近无新事件"
+};
+
+/**
+ * Derive a low-noise operator hint from persisted aggregates only. This function never probes a
+ * Provider and deliberately avoids pretending that an exact upstream cooldown is known.
+ */
+export function deriveBetaCadenceSignal(report: AdminBetaHealth, bucket: AdminBetaHealth["totals"]): BetaCadenceSignal {
+  const attempts = bucket.attempts.total;
+  const transientFailureCount = ["provider_rate_limited", "rate_limited", "provider_timeout", "timeout", "provider_unavailable", "availability"]
+    .reduce((total, code) => total + (bucket.attempts.failureCounts[code] ?? 0), 0);
+  if (attempts === 0) {
+    return {
+      state: "insufficient_data",
+      label: betaCadenceLabels.insufficient_data,
+      advice: "暂无 Provider 尝试；等待自然流量，不要用重复手工请求补样。",
+      transientFailureCount
+    };
+  }
+  if (attempts >= 2 && transientFailureCount * 2 >= attempts) {
+    return {
+      state: "cooldown_suggested",
+      label: betaCadenceLabels.cooldown_suggested,
+      advice: "窗口内瞬时失败偏多；建议暂停重复手工测试，稍后再复查。",
+      transientFailureCount
+    };
+  }
+  const latestAt = bucket.latestEventAt ? Date.parse(bucket.latestEventAt) : Number.NaN;
+  const windowEnd = Date.parse(report.window.to);
+  const freshnessLimitMs = Math.min(6 * 60 * 60 * 1_000, report.window.hours * 60 * 60 * 1_000);
+  if (Number.isFinite(latestAt) && Number.isFinite(windowEnd) && windowEnd - latestAt > freshnessLimitMs) {
+    return {
+      state: "stale",
+      label: betaCadenceLabels.stale,
+      advice: "最近没有新事件；不要根据旧样本提高流量，等待下一次自然请求。",
+      transientFailureCount
+    };
+  }
+  if (bucket.attempts.failed > 0 || (bucket.attempts.successRateBps !== null && bucket.attempts.successRateBps < 9_500)) {
+    return {
+      state: "observe",
+      label: betaCadenceLabels.observe,
+      advice: "窗口内有失败但未达到冷却提示阈值；保留现有分流并观察下一窗口。",
+      transientFailureCount
+    };
+  }
+  return {
+    state: "normal",
+    label: betaCadenceLabels.normal,
+    advice: "当前窗口未见需要降速的瞬时失败；继续观察即可。",
+    transientFailureCount
+  };
 }
 
 const stateOrder: Record<AdminRouteSummary["state"], number> = {

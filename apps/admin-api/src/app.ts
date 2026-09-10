@@ -74,6 +74,14 @@ export interface BuildAdminApiOptions {
   logger?: boolean;
 }
 
+const contentDraftWritePaths = new Set([
+  "/admin/v1/content/locales/draft",
+  "/admin/v1/content/locales/discard",
+  "/admin/v1/content/pages/draft",
+  "/admin/v1/content/pages/discard",
+  "/admin/v1/content/shared/draft"
+]);
+
 const ChannelQuerySchema = z.strictObject({
   channel: z.enum(["draft", "published"]).default("published"),
   locale: LocaleTagSchema.optional()
@@ -182,8 +190,16 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
         ,"/admin/v1/settings/recovery/rebuild-snapshot", "/admin/v1/settings/recovery/invalidate-content-cache"
         ,"/admin/v1/qualification/review", "/admin/v1/qualification/lock-policy"
       ]);
-      if (request.method !== "POST" || !allowed.has(request.url.split("?")[0] ?? "")) {
+      const path = request.url.split("?")[0] ?? "";
+      if (request.method !== "POST" || !allowed.has(path)) {
         return error(reply, 405, "METHOD_NOT_ALLOWED", "This Admin API command is not available.");
+      }
+      const writeMode = options.configuration.writeMode ?? "readonly";
+      if (writeMode === "readonly") {
+        return error(reply, 403, "ADMIN_WRITE_DISABLED", "Admin writes are disabled in the current mode.");
+      }
+      if (writeMode === "content-draft" && !contentDraftWritePaths.has(path)) {
+        return error(reply, 403, "ADMIN_WRITE_SCOPE_REJECTED", "The current Admin mode permits content drafts only.");
       }
       const identity=identities.get(request);
       if(!identity||!options.csrfProtector?.verify({token:header(request.headers["x-tikdd-csrf"]),subject:identity.subject,

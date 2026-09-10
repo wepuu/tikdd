@@ -3,7 +3,7 @@
 TikDD Admin is the private, non-indexable owner console. It stays outside `apps/web`, so public SEO
 pages never depend on Admin authentication, monitoring, or control-plane availability.
 
-## Current scope (through work item 30)
+## Current scope (through work item 35)
 
 - Server-rendered initial data from the dedicated authenticated Admin API.
 - One fixed same-origin `/api/admin/snapshot` route for bounded browser refreshes.
@@ -21,10 +21,16 @@ task IDs, delivery candidates, upstream headers, or raw Provider responses. The 
 the opaque administrator token in an HttpOnly cookie and forwards it with its server-side origin
 proof only to fixed Admin API routes over a loopback-only connection.
 
+The Admin shell displays the API's write scope. Production is `readonly` by default; `content-draft`
+keeps structured locale/page/shared-content proofing available but blocks publication, routing,
+platform, qualification, and recovery commands; `full` is an explicit maintenance mode. The
+server-side Admin API enforces this boundary even if a browser sends a hidden command directly.
+
 ## Local development
 
 Start PostgreSQL and Redis, apply migrations, initialize the account once, and use the controlled
-preview launcher:
+preview launcher. Set `ADMIN_WRITE_MODE=full` explicitly when local command testing is intended;
+otherwise the API stays safely read-only:
 
 ```bash
 pnpm infra:up

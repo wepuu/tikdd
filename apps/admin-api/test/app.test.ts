@@ -18,6 +18,7 @@ const development: AdminApiConfiguration = {
   region: "nl",
   adminOrigin: "http://localhost:3001",
   expectedHost: "localhost:3001",
+  writeMode: "full",
   readTimeoutMs: 2_000,
   freshnessMs: 300_000,
   csrfSecret: "development-only-admin-csrf-secret",
@@ -161,6 +162,74 @@ describe("Admin API browser boundary", () => {
       expect(beta.statusCode).toBe(200);
       expect(beta.json().window.hours).toBe(168);
       expect((await app.inject({ method: "GET", url: "/admin/v1/beta-health?hours=169", headers: { host: "localhost:3001" } })).statusCode).toBe(400);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("allows only content drafts in the content-draft write mode", async () => {
+    const contentDraft: AdminApiConfiguration = { ...development, writeMode: "content-draft" };
+    const receipt = {
+      schemaVersion: "1" as const,
+      commandId: `cmd_${"e".repeat(32)}`,
+      aggregate: "page" as const,
+      targetId: "page_home/en",
+      expectedRevision: null,
+      acceptedRevision: 1,
+      currentRevision: 1,
+      propagatedRevision: null,
+      state: "accepted" as const,
+      acceptedAt: "2026-08-11T12:00:00.000Z",
+      completedAt: "2026-08-11T12:00:00.000Z"
+    };
+    const content = {
+      saveLocale: async () => receipt,
+      discardLocale: async () => receipt,
+      savePage: async () => receipt,
+      discardPage: async () => receipt,
+      saveShared: async () => receipt
+    } as never;
+    const routePolicies = { saveDraft: async () => receipt } as never;
+    const app = buildAdminApi({
+      configuration: contentDraft,
+      identityVerifier: new DevelopmentAdminIdentityVerifier("development_owner"),
+      reads: reads(),
+      routePolicies,
+      contentManagement: content,
+      csrfProtector: new AdminCsrfProtector(contentDraft.csrfSecret)
+    });
+    try {
+      const csrf = new AdminCsrfProtector(contentDraft.csrfSecret).issue("development_owner", contentDraft.adminOrigin);
+      const headers = { host: "localhost:3001", origin: "http://localhost:3001", "content-type": "application/json", "sec-fetch-site": "same-origin", "x-tikdd-csrf": csrf };
+      expect((await app.inject({ method: "POST", url: "/admin/v1/route-policies/draft", headers, payload: {} })).json()).toMatchObject({ error: { code: "ADMIN_WRITE_SCOPE_REJECTED" } });
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/locales/draft", headers, payload: {} })).statusCode).toBe(200);
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/locales/discard", headers, payload: {} })).statusCode).toBe(200);
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/pages/draft", headers, payload: {} })).statusCode).toBe(200);
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/pages/discard", headers, payload: {} })).statusCode).toBe(200);
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/shared/draft", headers, payload: {} })).statusCode).toBe(200);
+      expect((await app.inject({ method: "POST", url: "/admin/v1/content/publish", headers, payload: {} })).json()).toMatchObject({ error: { code: "ADMIN_WRITE_SCOPE_REJECTED" } });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("rejects every control-plane write in readonly mode before CSRF dispatch", async () => {
+    const app = buildAdminApi({
+      configuration: { ...development, writeMode: "readonly" },
+      identityVerifier: new DevelopmentAdminIdentityVerifier("development_owner"),
+      reads: reads(),
+      routePolicies: { saveDraft: async () => { throw new Error("must not dispatch"); } } as never,
+      csrfProtector: new AdminCsrfProtector(development.csrfSecret)
+    });
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/admin/v1/route-policies/draft",
+        headers: { host: "localhost:3001", origin: "http://localhost:3001", "content-type": "application/json", "sec-fetch-site": "same-origin", "x-tikdd-admin-session": "development_owner" },
+        payload: {}
+      });
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ error: { code: "ADMIN_WRITE_DISABLED" } });
     } finally {
       await app.close();
     }

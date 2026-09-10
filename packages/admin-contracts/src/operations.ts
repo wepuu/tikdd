@@ -47,6 +47,7 @@ const AdminBetaDeliverySummarySchema = z.strictObject({
 });
 
 const AdminBetaBucketSchema = z.strictObject({
+  latestEventAt: AdminTimestampSchema.nullable(),
   tasks: AdminBetaTaskSummarySchema,
   attempts: AdminBetaAttemptSummarySchema,
   deliveries: AdminBetaDeliverySummarySchema
@@ -250,6 +251,7 @@ export const AdminRuntimeSchema = z.strictObject({
   deployment: AdminDeploymentIdSchema,
   region: RegionIdSchema,
   authMode: z.literal("password"),
+  writeMode: z.enum(["readonly", "content-draft", "full"]),
   generatedAt: AdminTimestampSchema,
   state: z.enum(["ready", "degraded", "unavailable"]),
   dependencies: z.array(AdminDependencyStateSchema).max(12),
