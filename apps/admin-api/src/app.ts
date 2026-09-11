@@ -12,6 +12,8 @@ import {
   AdminSettingsRecoveryViewSchema,
   AdminSeoTechnicalViewSchema,
   AdminMutationReceiptSchema,
+  AdminStarterContentPreviewSchema,
+  AdminStarterContentBootstrapResultSchema,
   AdminPlatformManagementViewSchema,
   AdminQualificationViewSchema,
   AdminRoutePolicyViewSchema,
@@ -68,7 +70,7 @@ export interface BuildAdminApiOptions {
   reads: AdminReadApi;
   routePolicies?: Pick<AdminRoutePolicyService, "getView" | "saveDraft" | "publish" | "discard" | "rollback" | "safety" | "probe">;
   platformManagement?: Pick<AdminPlatformManagementService, "getView" | "saveDraft" | "publish" | "discard" | "rollback">;
-  contentManagement?: Pick<AdminContentManagementService, "getView" | "saveLocale" | "discardLocale" | "savePage" | "discardPage" | "saveShared" | "getPublicationView" | "getSeoTechnicalView" | "getSettingsRecoveryView" | "publish" | "rollback" | "retryPropagation" | "rebuildSnapshot" | "invalidateContentCache">;
+  contentManagement?: Pick<AdminContentManagementService, "getView" | "saveLocale" | "discardLocale" | "savePage" | "discardPage" | "saveShared" | "getPublicationView" | "getSeoTechnicalView" | "getSettingsRecoveryView" | "getStarterPreview" | "bootstrapStarterContent" | "publish" | "rollback" | "retryPropagation" | "rebuildSnapshot" | "invalidateContentCache">;
   qualification?: Pick<AdminQualificationService,"getView"|"review"|"lockPolicy">;
   csrfProtector?: AdminCsrfProtector;
   logger?: boolean;
@@ -79,7 +81,8 @@ const contentDraftWritePaths = new Set([
   "/admin/v1/content/locales/discard",
   "/admin/v1/content/pages/draft",
   "/admin/v1/content/pages/discard",
-  "/admin/v1/content/shared/draft"
+  "/admin/v1/content/shared/draft",
+  "/admin/v1/content/starter/apply"
 ]);
 
 const ChannelQuerySchema = z.strictObject({
@@ -185,7 +188,7 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
         "/admin/v1/platform-presentations/discard", "/admin/v1/platform-presentations/rollback"
         ,"/admin/v1/content/locales/draft", "/admin/v1/content/locales/discard"
         ,"/admin/v1/content/pages/draft", "/admin/v1/content/pages/discard"
-        ,"/admin/v1/content/shared/draft"
+        ,"/admin/v1/content/shared/draft", "/admin/v1/content/starter/apply"
         ,"/admin/v1/content/publish", "/admin/v1/content/rollback", "/admin/v1/content/retry-propagation"
         ,"/admin/v1/settings/recovery/rebuild-snapshot", "/admin/v1/settings/recovery/invalidate-content-cache"
         ,"/admin/v1/qualification/review", "/admin/v1/qualification/lock-policy"
@@ -345,12 +348,14 @@ export function buildAdminApi(options: BuildAdminApiOptions): FastifyInstance {
   app.get("/admin/v1/content",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Content controls are unavailable.");return safeSend(reply,AdminContentManagementViewSchema.parse(await options.contentManagement.getView()));});
   app.get("/admin/v1/content/publication",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Content publication is unavailable.");return safeSend(reply,AdminContentPublicationViewSchema.parse(await options.contentManagement.getPublicationView()));});
   app.get("/admin/v1/content/seo",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","SEO publication rules are unavailable.");return safeSend(reply,AdminSeoTechnicalViewSchema.parse(await options.contentManagement.getSeoTechnicalView()));});
+  app.get("/admin/v1/content/starter",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Starter content controls are unavailable.");return safeSend(reply,AdminStarterContentPreviewSchema.parse(await options.contentManagement.getStarterPreview()));});
   app.get("/admin/v1/settings",async(_request,reply)=>{if(!options.contentManagement)return error(reply,503,"CONTROL_UNAVAILABLE","Settings and recovery readiness are unavailable.");return safeSend(reply,AdminSettingsRecoveryViewSchema.parse(await options.contentManagement.getSettingsRecoveryView()));});
   app.post("/admin/v1/content/locales/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.saveLocale(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/locales/discard",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.discardLocale(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/pages/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.savePage(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/pages/discard",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.discardPage(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/shared/draft",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.saveShared(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
+  app.post("/admin/v1/content/starter/apply",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminStarterContentBootstrapResultSchema.parse(await options.contentManagement.bootstrapStarterContent(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/publish",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.publish(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/rollback",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.rollback(request.body,subject)));}catch(cause){return commandError(reply,cause);}});
   app.post("/admin/v1/content/retry-propagation",async(request,reply)=>{try{const subject=actor(request);if(!subject||!options.contentManagement)throw new Error();return safeSend(reply,AdminMutationReceiptSchema.parse(await options.contentManagement.retryPropagation(request.body,subject)));}catch(cause){return commandError(reply,cause);}});

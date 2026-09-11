@@ -13,3 +13,4 @@ export * from "./seo-publication";
 export * from "./geo-content";
 export * from "./settings-recovery";
 export * from "./site-integrations";
+export * from "./starter-content";

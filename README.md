@@ -89,6 +89,13 @@ an Admin growth-readiness view, and fixed privacy-safe GA funnel events. It does
 account reports, store user-level analytics, add Provider traffic, or make Beta pages indexable. See
 the [Stage 3 record](docs/stage-3-growth-content-measurement.md).
 
+Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
+first-run bootstrap. The action creates only `ready` drafts before the first immutable snapshot;
+the owner still reviews and publishes through the existing `full` maintenance mode. Web fallback
+and Admin bootstrap share the same contracts, with no new migration, Provider traffic, or permanent
+Admin process. See the [Work Item 38 record](docs/work-item-38-content-bootstrap.md) and
+[ADR-0029](docs/architecture/adr/0029-starter-content-bootstrap.md).
+
 ## Platform and provider model
 
 The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,

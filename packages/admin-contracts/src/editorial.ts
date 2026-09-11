@@ -345,6 +345,7 @@ export function validateLocaleRegistry(input: readonly unknown[]): AdminLocaleRe
 export type AdminLocaleRevision = z.infer<typeof AdminLocaleRevisionSchema>;
 export type AdminPageRevision = z.infer<typeof AdminPageRevisionSchema>;
 export type AdminPageContent = z.infer<typeof AdminPageContentSchema>;
+export type AdminSeoFields = z.infer<typeof AdminSeoFieldsSchema>;
 export type AdminPlatformPresentationRevision = z.infer<typeof AdminPlatformPresentationRevisionSchema>;
 export type PublishedContentSnapshot = z.infer<typeof PublishedContentSnapshotSchema>;
 export type AdminLocaleList = z.infer<typeof AdminLocaleListSchema>;
