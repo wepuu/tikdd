@@ -46,6 +46,7 @@ import { AccountSecurity } from "./account-security";
 import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
 import { SiteIntegrationsSettings } from "./site-integrations-settings";
+import { PublicationCenter } from "./publication-center";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
@@ -320,6 +321,8 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           {contentDraftsAllowed ? <ContentManagement writeMode={writeMode} view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="内容编辑已关闭" detail="当前是只读模式；切换到内容草稿模式后，才可保存不影响公共快照的草稿。" />}
 
           {contentDraftsAllowed ? <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="SEO 草稿已关闭" detail="SEO 字段与内容草稿一起受内容草稿模式保护，公共索引状态不会在只读模式下变化。" />}
+
+          <PublicationCenter content={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} seo={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} settings={snapshot.controls.status === "ready" ? snapshot.controls.data.settingsRecovery : null} />
 
           <section className="publishing-section" id="publishing-readiness">
             <SectionHeading eyebrow="PUBLISH / READINESS" title="页面、语言与 SEO 准备度" detail="展示已发布内容和当前阻塞；草稿可在内容草稿模式编辑，发布与回滚需要完整维护模式。" />

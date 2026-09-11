@@ -75,8 +75,14 @@ record](docs/work-item-35-admin-content-draft-mode.md).
 
 Stage 1 adds bounded Google Analytics and Google AdSense site integrations to Admin settings. Only
 validated `G-...` and `ca-pub-...` identifiers are accepted; Web renders fixed code-owned tags
-after a published snapshot, never arbitrary Admin JavaScript. See the [Stage 1 record](docs/stage-1-admin-integrations.md)
+after a published snapshot, never arbitrary Admin JavaScript. The stage is deployed from the current
+production lineage; values remain disabled until an owner publishes them. See the [Stage 1 record](docs/stage-1-admin-integrations.md)
 and [ADR-0028](docs/architecture/adr/0028-code-owned-google-site-integrations.md).
+
+Stage 2 groups the Admin publishing work into one control-room release: a read-only publication
+overview combines content coverage, SEO blockers, snapshot propagation, and integration readiness,
+while the existing structured editors and immutable publication commands remain the source of truth.
+See the [Stage 2 record](docs/stage-2-admin-publishing-center.md).
 
 ## Platform and provider model
 

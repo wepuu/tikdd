@@ -39,6 +39,7 @@ product areas grouped by the owner's operating loop.
 | Operate | Alerts | Which current condition needs an owner action? |
 | Configure | Provider routing | Which eligible Provider should receive traffic for a platform and region? |
 | Configure | Platforms | Which platforms are technically recognized and publicly presented as supported? |
+| Publish | Publication center | Is the next content snapshot ready, blocked, or still propagating? |
 | Publish | Pages and locales | What localized content is drafted, missing, or published? |
 | Publish | SEO | Which indexable pages are valid for canonical, hreflang, sitemap, and search snippets? |
 | System | Settings | Is the site, deployment, authentication, and publication pipeline configured correctly? |
@@ -213,6 +214,14 @@ Uses a page-by-locale coverage matrix, filterable by type and status. The editor
 fields, preview, draft/published comparison, validation, and an affected-path summary. Fallback copy
 is visibly marked and never silently published as a completed translation.
 
+### Publication center
+
+Provides one read-only release preflight assembled from the existing content, SEO, settings, and
+immutable-publication read models. It summarizes draft count, coverage gaps, SEO blockers, affected
+paths, integration readiness, current revision, pending snapshot, and propagation state. Each blocker
+links to the owning editor; the center never introduces a second mutation path or infers readiness
+when one of its sources is unavailable.
+
 ### SEO
 
 Provides an issue-first overview and a page editor. Checks include title/description completeness,
@@ -259,6 +268,12 @@ verification, rollback, and the Platforms overview.
 
 Locale registry, structured page revisions, preview, publication snapshots, rollback, and public
 Web content loading.
+
+### Stage 2 control-room release
+
+The publication center groups the existing publishing and SEO workflows into one operator view. It
+does not add a new persistence model or public endpoint; existing structured editors and immutable
+publication commands remain authoritative.
 
 ### SEO release
 
