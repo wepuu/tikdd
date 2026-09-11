@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@4256ca5f6358e8825d9dd6fec611287dce9935a9` (Work Item 35 merge)
-- Roadmap revision date: 2026-09-10
+- Repository checkpoint: `main@96a4ad63792cba274387c4d2558a68f447083f09` (Stage 1 deployment lineage)
+- Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -165,13 +165,22 @@ slice adds no migration, Provider request, rollout/gate change, or production pr
 
 ### Stage 1 current status
 
-Stage 1 is implemented and committed locally on `codex/stage1-admin-integrations` at `10ff503`,
-pending PR/CI and separate production approval. It adds code-owned Google Analytics and Google AdSense
-identifiers to the existing shared-content draft and immutable publication flow. The values are
-disabled by default, editable in `content-draft`, and rendered by Web only after publication. This
-stage does not add a public endpoint, arbitrary script editor, Provider request, rollout change,
-calibration profile, or permanent Admin process. See the [Stage 1 record](stage-1-admin-integrations.md) and
-[ADR-0028](architecture/adr/0028-code-owned-google-site-integrations.md).
+Stage 1 is merged through PR #73 and deployed in the current production lineage at
+`main@96a4ad63792cba274387c4d2558a68f447083f09`. It adds code-owned Google Analytics and Google
+AdSense identifiers to the existing shared-content draft and immutable publication flow. The values
+are disabled by default, editable in `content-draft`, and rendered by Web only after publication.
+This stage does not add a public endpoint, arbitrary script editor, Provider request, rollout change,
+calibration profile, or permanent Admin process. See the [Stage 1 record](stage-1-admin-integrations.md)
+and [ADR-0028](architecture/adr/0028-code-owned-google-site-integrations.md).
+
+### Stage 2 current status
+
+Stage 2 / Work Item 36 is in implementation on `codex/stage2-admin-publishing-center`. It adds a
+read-only Admin publication control room that derives its state from the existing content, SEO,
+settings, and immutable-publication read models. It does not add a new persistence model, public
+endpoint, Provider capability, rollout change, or production profile. Content and SEO remain edited
+through the existing structured workbenches; publication still requires `full` mode, revision
+confirmation, Web acknowledgement, and the existing recovery commands. See the [Stage 2 record](stage-2-admin-publishing-center.md).
 
 ## Coordinated future lanes
 

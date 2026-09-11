@@ -1,7 +1,9 @@
 # Stage 1 — Admin owner console and site integrations
 
-Status: implemented and committed locally on `codex/stage1-admin-integrations` at `10ff503`;
-pending PR/CI and separate production approval.
+Status: implemented, merged through PR #73, and deployed in the current production lineage
+(`main@96a4ad6`). The implementation was originally developed on `codex/stage1-admin-integrations`;
+the deployment used GitHub-built immutable images. The integration values remain disabled until an
+owner enters valid IDs and publishes a content snapshot through Admin.
 
 This stage groups the first Admin productization work into one review and release. It adds a
 bounded Google Analytics / Google AdSense configuration surface to Admin settings while keeping
@@ -31,6 +33,7 @@ the existing draft → preview → immutable publication flow.
 
 ## Release cadence
 
-This stage is one integration branch and one PR. Targeted tests may run during development, but
-there is no per-commit production deployment or repeated SaveFromIns testing. At the stage boundary
-run the full check once, perform one Admin preview, and publish or roll back as a single unit.
+This stage was one integration branch and one PR. Targeted tests ran during development, followed by
+one full check, GitHub image build, encrypted production backup, and manual deployment. There was no
+per-commit production deployment or repeated SaveFromIns testing. Future Admin/content changes are
+grouped into Stage 2 instead of reopening this stage.
