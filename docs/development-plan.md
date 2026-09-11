@@ -203,11 +203,29 @@ rollout, calibration, or permanent Admin process changed. See the [Work Item 38 
 
 ### Stage 5 current status
 
-Stage 5 / Work Item 39 is the next owner-authorized operational phase: commission the first content
-snapshot through an on-demand Admin session. It has two explicit gates: `content-draft` creates and
-reviews the bilingual starter drafts, while `full` publishes one immutable snapshot and waits for Web
-acknowledgement. Neither gate changes Provider traffic, rollout rules, calibration, or the Delivery
-path. Admin returns to `readonly` and is stopped after the session. See the [Work Item 39 record](work-item-39-first-content-publication.md).
+Stage 5 / Work Item 39 is complete. The owner-authorized on-demand session created and reviewed the
+bilingual starter drafts, published the first immutable snapshot at `r1`, and received Web
+acknowledgement for 16 changes across 14 paths. PostgreSQL/configuration backups were captured before
+the session, the six core containers remained healthy with zero restarts, and Admin returned to
+`readonly` and was stopped (public Admin route 404). Provider traffic, rollout, calibration, and
+Delivery remained unchanged. See the [Work Item 39 record](work-item-39-first-content-publication.md).
+
+### Stage 6 current status
+
+Stage 6 / Work Item 40 is the next implementation batch: harden the Admin publication control room and
+its production lifecycle without adding a new persistence or delivery path. The Admin UI will use the
+authoritative content/publication/SEO read models for blocker counts, make the sequence
+`内容就绪 → 发布前检查 → 部署确认 → 快照传播 → 公共读取` explicit, and show a clear disabled reason
+for every unavailable publish action. Published `r1` with zero diff is shown as complete rather than as
+an outstanding first-publication alert.
+
+The official release script will accept an explicit expected Admin write mode, verify the running
+container matches it, fail closed and stop Admin on mismatch, and provide a release-env-bound one-shot
+account operation. `admin-stop` continues to verify the 404 route while leaving the six core services
+untouched. Tests cover authoritative-versus-legacy status, idle/propagating/propagated/failed UI
+states, mode mismatch cleanup, Compose validation, and the existing `pnpm check` gate. This batch does
+not call SaveFromIns, change any Provider or rollout state, run calibration, alter indexability, or
+start Admin in the production deployment path. See the [Work Item 40 record](work-item-40-admin-publication-ops.md).
 
 ## Coordinated future lanes
 

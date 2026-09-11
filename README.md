@@ -92,10 +92,13 @@ the [Stage 3 record](docs/stage-3-growth-content-measurement.md).
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
 drafts before the first immutable snapshot, while the owner still reviews and publishes through the
-existing `full` maintenance mode. Web fallback and Admin bootstrap share the same contracts, with no
-new migration, Provider traffic, or permanent Admin process. Stage 5 / Work Item 39 is the separate
-owner-authorized content-draft and first-snapshot publication session. See the [Work Item 38 record](docs/work-item-38-content-bootstrap.md),
-[Work Item 39 record](docs/work-item-39-first-content-publication.md), and
+existing `full` maintenance mode. Stage 5 / Work Item 39 is complete: the first immutable snapshot
+was published at `r1`, acknowledged by Web, and Admin was returned to `readonly` and stopped. Web
+fallback and Admin bootstrap share the same contracts, with no Provider or rollout change. Stage 6 /
+Work Item 40 now hardens the publication control room and release-script Admin lifecycle as one
+bounded batch; it does not start Admin during normal deployment. See the [Work Item 38 record](docs/work-item-38-content-bootstrap.md),
+[Work Item 39 record](docs/work-item-39-first-content-publication.md),
+[Work Item 40 record](docs/work-item-40-admin-publication-ops.md), and
 [ADR-0029](docs/architecture/adr/0029-starter-content-bootstrap.md).
 
 ## Platform and provider model

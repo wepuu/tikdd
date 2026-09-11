@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { AdminConsoleSnapshotSchema, type AdminConsoleSnapshot } from "../lib/console-contract";
 import {
   deriveAlerts,
+  derivePublicationSummary,
   formatCount,
   formatLatency,
   formatRate,
@@ -118,7 +119,8 @@ function SummaryBand({ snapshot }: { snapshot: AdminConsoleSnapshot }) {
   if (snapshot.overview.status === "unavailable") {
     return <EmptyState icon={<WarningCircle size={28} />} title="运行摘要暂不可用" detail="队列、交付、路线和发布数字均未被解释为零。" />;
   }
-  const { queue, delivery, routes, publishing } = snapshot.overview.data;
+  const { queue, delivery, routes } = snapshot.overview.data;
+  const publishing = derivePublicationSummary(snapshot);
   return (
     <div className="summary-band">
       <article><span className="metric-icon"><Stack size={19} /></span><span><small>队列</small><strong>{formatCount(queue.queued)}</strong><em>{formatCount(queue.active)} 正在处理</em></span></article>

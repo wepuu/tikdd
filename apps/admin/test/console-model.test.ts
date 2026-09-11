@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveAlerts, deriveBetaCadenceSignal, routeNextStep, sortRoutes } from "../lib/console-model";
+import { deriveAlerts, deriveBetaCadenceSignal, derivePublicationSummary, routeNextStep, sortRoutes } from "../lib/console-model";
 import { consoleSnapshot } from "./fixture";
 
 describe("Admin console attention model", () => {
@@ -28,6 +28,33 @@ describe("Admin console attention model", () => {
     };
     const alerts = deriveAlerts(unavailable);
     expect(alerts.filter(({ severity }) => severity === "critical").length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("uses the authoritative publication read model after a snapshot is propagated", () => {
+    const controls = consoleSnapshot.controls.status === "ready" ? consoleSnapshot.controls.data : null;
+    const published = {
+      ...consoleSnapshot,
+      controls: {
+        status: "ready" as const,
+        data: {
+          ...controls!,
+          contentManagement: { readiness: { missingCellCount: 0 } } as never,
+          contentPublication: {
+            blockers: [],
+            propagationState: "propagated",
+            draftCount: 0,
+            diff: [],
+            affectedPaths: [],
+            currentRevision: 1,
+            pendingSnapshotId: null
+          } as never,
+          seoTechnical: { blockerCount: 0 } as never
+        }
+      }
+    } as typeof consoleSnapshot;
+
+    expect(derivePublicationSummary(published)).toMatchObject({ pendingDrafts: 0, localeGaps: 0, seoBlockers: 0, diffCount: 0, currentRevision: 1 });
+    expect(deriveAlerts(published).some(({ id }) => id === "publishing")).toBe(false);
   });
 
   it("suggests cooling only when transient failures dominate the window", () => {

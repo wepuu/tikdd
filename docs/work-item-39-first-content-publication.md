@@ -1,6 +1,6 @@
 # Work Item 39 — First content publication and Admin commissioning
 
-Status: planned operational phase after the Work Item 38 deployment at
+Status: completed on 2026-09-11 after the Work Item 38 deployment at
 `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf`.
 
 ## Objective
@@ -50,6 +50,24 @@ retry or snapshot recovery command. Do not create a second snapshot to mask a fa
   calibration state is unchanged.
 - The release record contains snapshot revision, command receipts, acknowledgement result, backup
   reference, and any content defects discovered for the next batched Admin improvement stage.
+
+## Actual completion record
+
+- Gate A and Gate B were completed in one owner-authorized on-demand session. The starter content
+  command produced 14 page drafts and 2 shared-content drafts; the reviewed publication created the
+  first immutable snapshot at revision `r1`.
+- Web acknowledgement and public reads passed for the bilingual homepage, X Beta, and Instagram Beta
+  routes. The Admin publication view reported `propagated`, `r1`, and zero pending differences.
+- The publication changed 16 records across 14 affected paths. PostgreSQL and configuration backups
+  were captured before the session (`/var/backups/tikdd/pre-migration-75f76b20.dump` and
+  `/var/backups/tikdd/pre-content-publication-20260911T142428Z.env`).
+- The six core containers remained healthy with zero restarts. Admin was restored to `readonly`, both
+  Admin containers were stopped, and the public Admin route returned 404.
+- Provider flags, rollout revisions, calibration evidence, and Delivery behavior were unchanged. No
+  Provider request or database migration was performed during this content operation.
+
+This closes the first-publication gate. Future editorial changes use the bounded Admin publication
+loop; the two-gate commissioning steps above remain historical evidence rather than a release blocker.
 
 ## Explicit non-goals
 
