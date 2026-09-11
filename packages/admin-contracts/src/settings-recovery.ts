@@ -2,6 +2,7 @@ import { z } from "zod";
 import { AdminDependencyStateSchema } from "./operations";
 import { AdminRevisionSchema, AdminSchemaVersionSchema, AdminTimestampSchema } from "./common";
 import { ApprovedAssetIdSchema, LocaleTagSchema } from "./editorial";
+import { SiteIntegrationsSchema } from "./site-integrations";
 
 const ReadinessSchema = z.enum(["ready", "degraded", "unavailable"]);
 const PresenceSchema = z.enum(["configured", "missing"]);
@@ -43,6 +44,7 @@ export const AdminSettingsRecoveryViewSchema = z.strictObject({
     fallbackMaySatisfyPublication: z.literal(false),
     requiredPagePolicy: z.literal("complete_code_owned_set")
   }),
+  siteIntegrations: SiteIntegrationsSchema.default({ googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }),
   infrastructure: z.strictObject({
     deployment: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     region: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

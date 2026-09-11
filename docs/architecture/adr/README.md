@@ -27,6 +27,7 @@
 - [ADR-0025: Code-owned structured data from eligible published content](0025-code-owned-structured-data.md)
 - [ADR-0026: Bounded GEO content from reviewed platform pages](0026-bounded-geo-content-model.md)
 - [ADR-0027: Fail-closed resolution-only runtime guard](0027-resolution-only-runtime-guard.md)
+- [ADR-0028: Code-owned Google site integrations](0028-code-owned-google-site-integrations.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

@@ -149,5 +149,6 @@ export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = Publish
     { locale: "en", siteName:"TikDD", navigationLabel: "Home", footerTagline: "Clear formats. Controlled delivery.", legalNoticeMarkdown: "TikDD is an independent tool and is not affiliated with X or Instagram.",defaultSocialTitle:"TikDD X and Instagram video downloader Beta",defaultSocialDescription:"Resolve public X and Instagram posts with TikDD.",defaultSocialImageAssetId:null },
     { locale: "zh-CN", siteName:"TikDD", navigationLabel: "首页", footerTagline: "格式清晰，交付受控。", legalNoticeMarkdown: "TikDD 是独立工具，与 X 或 Instagram 不存在隶属关系。",defaultSocialTitle:"TikDD X 与 Instagram 视频下载 Beta",defaultSocialDescription:"使用 TikDD 解析公开的 X 与 Instagram 帖子。",defaultSocialImageAssetId:null }
   ],
+  siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null },
   generatedAt: "2026-08-12T00:00:00.000Z"
 });

@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@8218b56881f847e6b3abd9acbd846bbc5dc55e6b` (Work Item 33 merge)
+- Repository checkpoint: `main@4256ca5f6358e8825d9dd6fec611287dce9935a9` (Work Item 35 merge)
 - Roadmap revision date: 2026-09-10
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -142,7 +142,8 @@ GitHub-built immutable images, an encrypted PostgreSQL backup, a host-gate hash 
 
 ### Work Item 34 current status
 
-Implementation is in progress on `codex/wi34-admin-provider-cadence`. This is a read-only Admin
+Work Item 34 is merged in `main@4256ca5f6358e8825d9dd6fec611287dce9935a9` and deployed with the
+current production lineage. This is a read-only Admin
 operability slice: the Beta view adds a 1-hour window, per-platform latest activity timestamps, and
 a cadence signal derived only from persisted aggregates. The signal distinguishes normal, observe,
 cooldown-suggested, insufficient-data, and no-recent-event states; it never claims an exact upstream
@@ -153,7 +154,7 @@ record](work-item-34-admin-provider-cadence.md).
 
 ### Work Item 35 current status
 
-Implementation is in progress on `codex/wi34-admin-provider-cadence` as a follow-up to the
+Work Item 35 is merged in `main@4256ca5f6358e8825d9dd6fec611287dce9935a9` and deployed as a follow-up to the
 read-only cadence view. Admin now has an explicit server-enforced write scope: `readonly` (the
 default, including when production configuration omits the setting), `content-draft` (locale/page/
 shared-content drafts only), and `full` (the existing route, platform, qualification, publication,
@@ -161,6 +162,16 @@ and recovery commands). The Admin UI mirrors the scope, keeps safe content proof
 `content-draft`, and disables publication/retry/rollback until `full` is explicitly selected. This
 slice adds no migration, Provider request, rollout/gate change, or production profile start. See the
 [Work Item 35 record](work-item-35-admin-content-draft-mode.md).
+
+### Stage 1 current status
+
+Stage 1 is implemented and committed locally on `codex/stage1-admin-integrations` at `10ff503`,
+pending PR/CI and separate production approval. It adds code-owned Google Analytics and Google AdSense
+identifiers to the existing shared-content draft and immutable publication flow. The values are
+disabled by default, editable in `content-draft`, and rendered by Web only after publication. This
+stage does not add a public endpoint, arbitrary script editor, Provider request, rollout change,
+calibration profile, or permanent Admin process. See the [Stage 1 record](stage-1-admin-integrations.md) and
+[ADR-0028](architecture/adr/0028-code-owned-google-site-integrations.md).
 
 ## Coordinated future lanes
 

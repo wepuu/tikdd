@@ -9,6 +9,7 @@ import {
   AdminTimestampSchema
 } from "./common";
 import { GeoContentSchema } from "./geo-content";
+import { SiteIntegrationsSchema } from "./site-integrations";
 
 function isCanonicalLocale(value: string): boolean {
   try {
@@ -235,6 +236,7 @@ export const PublishedContentSnapshotSchema = z
     locales: z.array(PublishedLocaleSchema).min(1).max(100),
     pages: z.array(PublishedPageSchema).min(1).max(10_000),
     sharedContent: z.array(PublishedSharedContentSchema).max(100).default([]),
+    siteIntegrations: SiteIntegrationsSchema.default({ googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }),
     generatedAt: AdminTimestampSchema
   })
   .superRefine((snapshot, context) => {
