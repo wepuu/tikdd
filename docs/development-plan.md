@@ -212,8 +212,9 @@ Delivery remained unchanged. See the [Work Item 39 record](work-item-39-first-co
 
 ### Stage 6 current status
 
-Stage 6 / Work Item 40 is the next implementation batch: harden the Admin publication control room and
-its production lifecycle without adding a new persistence or delivery path. The Admin UI will use the
+Stage 6 / Work Item 40 is implemented locally on the current release line; its external release closure
+is still handled through the normal approval flow. It hardens the Admin publication control room and
+its production lifecycle without adding a new persistence or delivery path. The Admin UI uses the
 authoritative content/publication/SEO read models for blocker counts, make the sequence
 `内容就绪 → 发布前检查 → 部署确认 → 快照传播 → 公共读取` explicit, and show a clear disabled reason
 for every unavailable publish action. Published `r1` with zero diff is shown as complete rather than as
@@ -226,6 +227,21 @@ untouched. Tests cover authoritative-versus-legacy status, idle/propagating/prop
 states, mode mismatch cleanup, Compose validation, and the existing `pnpm check` gate. This batch does
 not call SaveFromIns, change any Provider or rollout state, run calibration, alter indexability, or
 start Admin in the production deployment path. See the [Work Item 40 record](work-item-40-admin-publication-ops.md).
+
+### Stage 7 current status
+
+Stage 7 / Work Item 41 is the next batched Admin editorial workflow. The implementation branch adds a
+lossless structured page editor for all five code-owned templates (homepage, platform, guide, FAQ and
+legal), keeps nested steps/FAQ/sections editable, and adds an explicit draft-discard action. Existing
+SEO paths, noindex/sitemap policy, redirects and social metadata are preserved when a page is edited;
+new pages still use the safe noindex defaults. The live preview follows the in-progress form values so
+an owner can review the exact template shape before saving.
+
+This batch changes no Provider, rollout, calibration, Delivery or persistence schema. It is verified with
+pure editor-model tests and the Admin typecheck before joining the normal Stage 6 release closure. The
+remaining release sequence is intentionally batched: push/PR and CI, merge, verify GitHub-built images,
+then separately authorize backup/deploy and one read-only Admin content edit followed by a publish or
+discard decision. See the [Work Item 41 record](work-item-41-admin-editorial-workflow.md).
 
 ## Coordinated future lanes
 
