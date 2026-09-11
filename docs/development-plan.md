@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@96a4ad63792cba274387c4d2558a68f447083f09` (Stage 1 deployment lineage)
+- Repository checkpoint: `main@ac6bbee66e1bcb9b1cf6dd9ea27510198108b506` (Stage 2 deployment lineage)
 - Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -175,12 +175,22 @@ and [ADR-0028](architecture/adr/0028-code-owned-google-site-integrations.md).
 
 ### Stage 2 current status
 
-Stage 2 / Work Item 36 is in implementation on `codex/stage2-admin-publishing-center`. It adds a
-read-only Admin publication control room that derives its state from the existing content, SEO,
-settings, and immutable-publication read models. It does not add a new persistence model, public
-endpoint, Provider capability, rollout change, or production profile. Content and SEO remain edited
-through the existing structured workbenches; publication still requires `full` mode, revision
-confirmation, Web acknowledgement, and the existing recovery commands. See the [Stage 2 record](stage-2-admin-publishing-center.md).
+Stage 2 / Work Item 36 is implemented, merged in PR #74, and deployed from
+`main@ac6bbee66e1bcb9b1cf6dd9ea27510198108b506`. The read-only Admin publication control room
+derives its state from the existing content, SEO, settings, and immutable-publication read models.
+It adds no new persistence model, public endpoint, Provider capability, rollout change, or permanent
+Admin process. The GitHub-built Web, Service, and Admin images were verified against the merge SHA;
+the six public core containers are healthy and Admin remains stopped. See the [Stage 2 record](stage-2-admin-publishing-center.md).
+
+### Stage 3 current status
+
+Stage 3 / Work Item 37 is in implementation on `codex/stage3-growth-content-measurement`. It groups
+content expansion and privacy-bounded growth instrumentation into one release. The scope adds a
+bilingual X Beta landing page, a read-only Admin growth-readiness view, and a fixed GA event catalog
+for anonymous funnel states. It does not add a Google reporting API, analytics database, Provider,
+rollout change, calibration profile, media delivery mode, or permanent Admin process. X and Instagram
+remain Beta/noindex; AdSense and GA identifiers remain disabled until an owner publishes a validated
+snapshot. See the [Stage 3 record](stage-3-growth-content-measurement.md).
 
 ## Coordinated future lanes
 

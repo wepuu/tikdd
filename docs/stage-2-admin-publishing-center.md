@@ -1,6 +1,6 @@
 # Stage 2 — Admin 内容与增长发布中心
 
-状态：实施中，基于 `main@96a4ad6` 创建阶段分支 `codex/stage2-admin-publishing-center`。
+状态：已实施、合并并部署；生产基线为 `main@ac6bbee`，实现基于 `codex/stage2-admin-publishing-center`。
 
 Stage 2 将现有的结构化 CMS、SEO 技术护照、不可变快照和 Google 集成整合为一个 Admin
 发布闭环。它不引入新的 Provider、媒体传输方式、公开接口或数据库迁移，也不改变 X/Instagram
@@ -22,12 +22,13 @@ acknowledgement 流程处理。任一数据源不可用时显示“不可用”�
 
 ## 验收与发布
 
-本阶段使用一个分支、一个 PR 和一次生产发布。最终执行 Admin 定向测试、`pnpm check`、Compose
-校验和 PR CI；合并后只使用 GitHub 构建的精确 SHA 镜像。生产发布前备份 PostgreSQL，部署后
-按需启动 Admin 完成一次只读/内容草稿检查，确认六个核心容器健康后停止 Admin。不会因此启动
-Provider、calibration 或其他新增流量。
+本阶段使用一个分支、一个 PR 和一次生产发布。Admin 定向测试、`pnpm check`、Compose
+校验和 PR CI 均通过；合并后使用 GitHub 构建的精确 SHA 镜像部署。生产发布前已完成
+PostgreSQL 加密备份，六个核心容器健康且零重启；Admin 镜像已构建但仍保持 stopped，未启动
+Provider、calibration 或其他新增流量。Admin 只读验收在下一次获批的 on-demand 会话中执行。
 
 ## 后续判断
 
-本阶段完成后再进入内容扩充与增长数据阶段。新的免费 Provider 继续单独验证，不与 Admin 发布
-中心混合；X 和 Instagram 仍保持 Beta/noindex，除非后续拥有独立的稳定性和索引资格证据。
+本阶段完成后进入 Stage 3 内容扩充与增长测量阶段。新的免费 Provider 继续单独验证，不与
+Admin 发布中心混合；X 和 Instagram 仍保持 Beta/noindex，除非后续拥有独立的稳定性和索引
+资格证据。

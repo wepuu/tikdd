@@ -47,6 +47,7 @@ import { ProviderCapabilityMatrix } from "./provider-capability-matrix";
 import { SettingsRecovery } from "./settings-recovery";
 import { SiteIntegrationsSettings } from "./site-integrations-settings";
 import { PublicationCenter } from "./publication-center";
+import { GrowthReadiness } from "./growth-readiness";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
@@ -57,7 +58,7 @@ const navGroups = [
   { label: "主页", items: [{ href: "#overview", label: "总览", icon: HouseLine }] },
   { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#beta-health", label: "Beta 健康", icon: ChartLineUp }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
   { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
-  { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }] },
+  { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }, { href: "#growth", label: "增长准备度", icon: ChartLineUp }] },
   { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }, { href: "#site-integrations", label: "Google 集成", icon: ChartLineUp }] }
 ] as const;
 
@@ -323,6 +324,8 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           {contentDraftsAllowed ? <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="SEO 草稿已关闭" detail="SEO 字段与内容草稿一起受内容草稿模式保护，公共索引状态不会在只读模式下变化。" />}
 
           <PublicationCenter content={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} seo={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} settings={snapshot.controls.status === "ready" ? snapshot.controls.data.settingsRecovery : null} />
+
+          <GrowthReadiness content={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} seo={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} settings={snapshot.controls.status === "ready" ? snapshot.controls.data.settingsRecovery : null} />
 
           <section className="publishing-section" id="publishing-readiness">
             <SectionHeading eyebrow="PUBLISH / READINESS" title="页面、语言与 SEO 准备度" detail="展示已发布内容和当前阻塞；草稿可在内容草稿模式编辑，发布与回滚需要完整维护模式。" />

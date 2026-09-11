@@ -21,6 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
+import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/analytics";
 import { suggestedDownloadFilename } from "../lib/download-filename";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
@@ -46,6 +47,8 @@ interface ResolveFormProps {
   features: SiteCopy["features"];
   process: SiteCopy["process"];
   supported: SiteCopy["supported"];
+  locale?: string;
+  pageType?: "homepage" | "platform";
 }
 
 function platformName(value: ResolveTask["platform"]): string {
@@ -158,7 +161,7 @@ const platformIcons = [XLogoIcon, InstagramLogoIcon] as const;
 const processIcons = [LinkSimpleIcon, ScanIcon, DownloadSimpleIcon] as const;
 const featureIcons = [GlobeHemisphereWestIcon, SlidersHorizontalIcon, ShieldCheckIcon] as const;
 
-export function ResolveForm({ copy, featureLabel, features, process, supported }: ResolveFormProps) {
+export function ResolveForm({ copy, featureLabel, features, process, supported, locale = "en", pageType = "homepage" }: ResolveFormProps) {
   const [url, setUrl] = useState("");
   const [task, setTask] = useState<ResolveTask | null>(null);
   const [selectedFormatId, setSelectedFormatId] = useState<string | null>(null);
@@ -176,6 +179,11 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   const submissionKeyRef = useRef<{ url: string; key: string } | null>(null);
   const qaScenarioRef = useRef<QaScenario | null>(null);
   const formatButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const analyticsTaskRef = useRef<string | null>(null);
+  const analyticsFailureRef = useRef<string | null>(null);
+
+  const analyticsLocale = locale === "zh-CN" ? "zh-CN" : "en";
+  const analyticsPageType = pageType === "platform" ? "platform" : "homepage";
 
   const detectedPlatform = useMemo(() => {
     if (!url.trim()) return null;
@@ -229,6 +237,37 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
     setSelectedFormatId(firstFormatId ?? null);
     setFailedThumbnailUrl(null);
   }, [task?.id, task?.status]);
+
+  useEffect(() => {
+    const platform = analyticsPlatform(task?.platform);
+    if (!task || !platform || !terminalStates.has(task.status)) return;
+    const key = `${task.id}:${task.status}`;
+    if (analyticsTaskRef.current === key) return;
+    analyticsTaskRef.current = key;
+    const common = { platform, locale: analyticsLocale, page_type: analyticsPageType } as const;
+    if (task.status === "succeeded") {
+      trackWebEvent("resolve_ready", common);
+    } else {
+      trackWebEvent("resolve_failed", {
+        ...common,
+        failure_class: analyticsFailureClass(task.error?.code, task.error?.retryable === true)
+      });
+    }
+  }, [analyticsLocale, analyticsPageType, task]);
+
+  useEffect(() => {
+    const platform = analyticsPlatform(detectedPlatform);
+    if (!submissionError || !platform) return;
+    const key = `${platform}:${submissionError.code}:${submissionError.retryable}`;
+    if (analyticsFailureRef.current === key) return;
+    analyticsFailureRef.current = key;
+    trackWebEvent("resolve_failed", {
+      platform,
+      locale: analyticsLocale,
+      page_type: analyticsPageType,
+      failure_class: analyticsFailureClass(submissionError.code, submissionError.retryable)
+    });
+  }, [analyticsLocale, analyticsPageType, detectedPlatform, submissionError]);
 
   useEffect(() => {
     if (!isWorking) {
@@ -296,6 +335,16 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (!detectedPlatform || isWorking) return;
+    const analyticsSubmitPlatform = analyticsPlatform(detectedPlatform);
+    if (analyticsSubmitPlatform) {
+      trackWebEvent("resolve_submit", {
+        platform: analyticsSubmitPlatform,
+        locale: analyticsLocale,
+        page_type: analyticsPageType
+      });
+    }
+    analyticsTaskRef.current = null;
+    analyticsFailureRef.current = null;
     setIsWorking(true);
     setSubmissionError(null);
     setTask(null);
@@ -617,6 +666,14 @@ export function ResolveForm({ copy, featureLabel, features, process, supported }
                       target="_blank"
                       rel="noreferrer noopener"
                       onClick={() => {
+                        const platform = analyticsPlatform(task?.platform);
+                        if (platform) {
+                          trackWebEvent("download_handoff", {
+                            platform,
+                            locale: analyticsLocale,
+                            page_type: analyticsPageType
+                          });
+                        }
                         setDeliveryHandedOff(true);
                         setDeliveryExpired(true);
                       }}
