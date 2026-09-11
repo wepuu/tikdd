@@ -13,6 +13,14 @@ describe("public published-content loader", () => {
     expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(2);
   });
 
+  it("bundles the X Beta landing page with the same noindex boundary", () => {
+    const xPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "x");
+    expect(xPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+    expect(xPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(xPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
+    expect(xPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+  });
+
   it("uses only a runtime-validated active snapshot", async () => {
     resetPublishedContentStateForTest();
     const source: PublicContentSource = { loadActive: async () => BUNDLED_PUBLIC_CONTENT_SNAPSHOT, loadCandidate: async () => null };

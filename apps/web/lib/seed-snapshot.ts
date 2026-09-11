@@ -116,6 +116,66 @@ const instagramSeo = (locale: "en" | "zh-CN") => ({
   redirectFrom: []
 });
 
+const xPageContent = (locale: "en" | "zh-CN") => locale === "en" ? {
+  template: "platform" as const,
+  eyebrow: "X Beta",
+  title: "X video downloader Beta",
+  introduction: "Paste a public X post link. TikDD checks the available formats and hands a short-lived download link to your browser.",
+  limitationsMarkdown: "Public posts only. Private, restricted, deleted, or recently changed posts may not resolve.",
+  howToSteps: [
+    { title: "Paste an X link", description: "Copy a public x.com or twitter.com post link into the resolver." },
+    { title: "Resolve the post", description: "TikDD checks the public page and normalizes the formats available for delivery." },
+    { title: "Choose a format", description: "Select an MP4 option and request a short-lived browser download link." }
+  ],
+  faqItems: [
+    { question: "Which X links are supported?", answerMarkdown: "The current Beta accepts public x.com and twitter.com post links." },
+    { question: "Does TikDD need my X account?", answerMarkdown: "No. TikDD does not request an account, cookies, session information, or private access." },
+    { question: "Why might a recognized post fail?", answerMarkdown: "The post may be private, restricted, removed, or temporarily unavailable upstream." }
+  ],
+  geo: {
+    directAnswer: "TikDD's X Beta accepts public x.com and twitter.com post links and can return a short-lived MP4 download link when the public post is accessible.",
+    reviewStatus: "draft" as const,
+    reviewedAt: null,
+    sourceRefs: ["tikdd-workflow", "x-public-content"]
+  }
+} : {
+  template: "platform" as const,
+  eyebrow: "X Beta",
+  title: "X 视频下载 Beta",
+  introduction: "粘贴公开的 X 帖子链接。TikDD 会检查可用格式，并将短期下载链接交给浏览器。",
+  limitationsMarkdown: "仅支持公开帖子。私密、受限、已删除或近期结构变化的帖子可能无法解析。",
+  howToSteps: [
+    { title: "粘贴 X 链接", description: "将公开的 x.com 或 twitter.com 帖子链接粘贴到解析器。" },
+    { title: "解析帖子", description: "TikDD 检查公开页面，并整理可交付的格式。" },
+    { title: "选择格式", description: "选择 MP4 格式并申请短期有效的浏览器下载链接。" }
+  ],
+  faqItems: [
+    { question: "支持哪些 X 链接？", answerMarkdown: "当前 Beta 支持公开的 x.com 和 twitter.com 帖子链接。" },
+    { question: "需要 X 账号吗？", answerMarkdown: "不需要。TikDD 不会索取账号、Cookie、会话信息，也不会访问私密内容。" },
+    { question: "为什么识别后的帖子仍可能失败？", answerMarkdown: "帖子可能是私密、受限、已删除，或上游暂时无法访问。" }
+  ],
+  geo: {
+    directAnswer: "TikDD X Beta 支持公开的 x.com 和 twitter.com 帖子链接；当公开帖子可以访问时，可返回短期有效的 MP4 下载链接。",
+    reviewStatus: "draft" as const,
+    reviewedAt: null,
+    sourceRefs: ["tikdd-workflow", "x-public-content"]
+  }
+};
+
+const xSeo = (locale: "en" | "zh-CN") => ({
+  localPath: "/x-downloader",
+  searchTitle: locale === "en" ? "TikDD X video downloader Beta" : "TikDD X 视频下载 Beta",
+  searchDescription: locale === "en"
+    ? "Resolve public X posts through TikDD's reviewed Beta download workflow."
+    : "使用 TikDD 的 Beta 下载流程解析公开的 X 帖子，并选择当前可用的短期下载格式。",
+  socialTitle: null,
+  socialDescription: null,
+  socialImageAssetId: null,
+  indexable: false,
+  includeInSitemap: false,
+  redirectFrom: []
+});
+
 export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = PublishedContentSnapshotSchema.parse({
   schemaVersion: "1",
   snapshotId: "snap_00000000000000000000000000000001",
@@ -143,6 +203,14 @@ export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = Publish
       platform: "instagram",
       content: instagramPageContent(locale),
       seo: instagramSeo(locale)
+    })),
+    ...(["en", "zh-CN"] as const).map((locale) => ({
+      pageId: "page_x",
+      locale,
+      pageType: "platform" as const,
+      platform: "x",
+      content: xPageContent(locale),
+      seo: xSeo(locale)
     }))
   ],
   sharedContent: [

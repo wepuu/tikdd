@@ -84,6 +84,11 @@ overview combines content coverage, SEO blockers, snapshot propagation, and inte
 while the existing structured editors and immutable publication commands remain the source of truth.
 See the [Stage 2 record](docs/stage-2-admin-publishing-center.md).
 
+Stage 3 groups the next content and growth work into one release: bilingual X/Instagram Beta content,
+an Admin growth-readiness view, and fixed privacy-safe GA funnel events. It does not read Google
+account reports, store user-level analytics, add Provider traffic, or make Beta pages indexable. See
+the [Stage 3 record](docs/stage-3-growth-content-measurement.md).
+
 ## Platform and provider model
 
 The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,
