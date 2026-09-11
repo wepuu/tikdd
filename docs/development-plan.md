@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@f25c516c8dbdefc90a4f1cc72044e1360ab68003` (Stage 3 deployment lineage)
+- Repository checkpoint: `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf` (Stage 4 production deployment)
 - Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -193,12 +193,21 @@ snapshot. See the [Stage 3 record](stage-3-growth-content-measurement.md).
 
 ### Stage 4 current status
 
-Stage 4 / Work Item 38 is being implemented on `codex/work-item-38-content-bootstrap`. It creates the
-first bilingual structured content set (homepage, FAQ, help, privacy, terms, X, and Instagram) as
-code-owned starter data, exposes a read-only preview and idempotent Admin action that creates only
-`ready` drafts before the first snapshot, and keeps publication behind the existing `full` mode.
-Web fallback and Admin bootstrap share the same contracts; no migration, Provider request, rollout
-change, calibration profile, or permanent Admin process is included. See the [Work Item 38 record](work-item-38-content-bootstrap.md).
+Stage 4 / Work Item 38 is merged and deployed from `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf`.
+It creates the first bilingual structured content set (homepage, FAQ, help, privacy, terms, X, and
+Instagram) as code-owned starter data, exposes a read-only preview and idempotent Admin action that
+creates only `ready` drafts before the first snapshot, and keeps publication behind the existing
+`full` mode. Web fallback and Admin bootstrap share the same contracts. The release used GitHub-built
+immutable images, an encrypted PostgreSQL backup, and a successful staged health gate; no Provider,
+rollout, calibration, or permanent Admin process changed. See the [Work Item 38 record](work-item-38-content-bootstrap.md).
+
+### Stage 5 current status
+
+Stage 5 / Work Item 39 is the next owner-authorized operational phase: commission the first content
+snapshot through an on-demand Admin session. It has two explicit gates: `content-draft` creates and
+reviews the bilingual starter drafts, while `full` publishes one immutable snapshot and waits for Web
+acknowledgement. Neither gate changes Provider traffic, rollout rules, calibration, or the Delivery
+path. Admin returns to `readonly` and is stopped after the session. See the [Work Item 39 record](work-item-39-first-content-publication.md).
 
 ## Coordinated future lanes
 

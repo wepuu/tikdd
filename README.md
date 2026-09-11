@@ -90,10 +90,12 @@ account reports, store user-level analytics, add Provider traffic, or make Beta 
 the [Stage 3 record](docs/stage-3-growth-content-measurement.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
-first-run bootstrap. The action creates only `ready` drafts before the first immutable snapshot;
-the owner still reviews and publishes through the existing `full` maintenance mode. Web fallback
-and Admin bootstrap share the same contracts, with no new migration, Provider traffic, or permanent
-Admin process. See the [Work Item 38 record](docs/work-item-38-content-bootstrap.md) and
+first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
+drafts before the first immutable snapshot, while the owner still reviews and publishes through the
+existing `full` maintenance mode. Web fallback and Admin bootstrap share the same contracts, with no
+new migration, Provider traffic, or permanent Admin process. Stage 5 / Work Item 39 is the separate
+owner-authorized content-draft and first-snapshot publication session. See the [Work Item 38 record](docs/work-item-38-content-bootstrap.md),
+[Work Item 39 record](docs/work-item-39-first-content-publication.md), and
 [ADR-0029](docs/architecture/adr/0029-starter-content-bootstrap.md).
 
 ## Platform and provider model
