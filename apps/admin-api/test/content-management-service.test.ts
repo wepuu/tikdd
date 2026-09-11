@@ -1,5 +1,6 @@
 import { describe,expect,it,vi } from "vitest";
 import { AdminContentManagementService } from "../src/content-management-service";
+import { starterPageRecords } from "@tikdd/admin-contracts";
 
 const now="2026-08-12T12:00:00.000Z";
 const published=(locale:string,isDefault:boolean,fallbackLocale:string|null)=>({schemaVersion:"1" as const,locale,revision:1,displayName:locale==="en"?"English":"简体中文",direction:"ltr" as const,fallbackLocale,enabled:true,isDefault,state:"published" as const,reason:"Seed locale.",actorSubject:"system_seed",createdAt:now});
@@ -10,4 +11,25 @@ describe("Admin content management",()=>{
   it("rejects changing the protected default locale into a fallback locale",async()=>{const {instance}=setup();await expect(instance.saveLocale({locale:"en",displayName:"English",direction:"ltr",fallbackLocale:"zh-CN",enabled:true,isDefault:false,state:"ready",expectedRevision:1,reason:"Unsafe default change.",confirmation:"en",idempotencyKey:"abcdefghijklmnop"},"owner_tikdd")).rejects.toThrow(/default locale/i);});
   it("keeps publication blocked until every required locale artifact is ready",async()=>{const {instance}=setup();const publication=await instance.getPublicationView();expect(publication.currentRevision).toBeNull();expect(publication.pendingSnapshotId).toBeNull();expect(publication.blockers).toEqual(expect.arrayContaining(["default_homepage_not_ready","required_page_missing","shared_content_missing"]));await expect(instance.publish({deployment:"tikdd",expectedRevision:null,reason:"Attempt an incomplete snapshot.",confirmation:"tikdd",idempotencyKey:"abcdefghijklmnop"},"owner_tikdd")).rejects.toThrow(/not ready/i);});
   it("rejects recovery outside the configured deployment before any write",async()=>{const {instance,publication}=setup();await expect(instance.rebuildSnapshot({deployment:"other",expectedRevision:1,sourceSnapshotId:`snap_${"a".repeat(32)}`,reason:"Invalid deployment scope.",confirmation:"other",idempotencyKey:"abcdefghijklmnop"},"owner_tikdd")).rejects.toThrow(/outside/i);expect(publication.rebuild).not.toHaveBeenCalled();});
+
+  it("previews and idempotently creates the bilingual starter set", async () => {
+    const states=new Map([['en',{headRevision:1,draft:null,published:published('en',true,null)}],['zh-CN',{headRevision:1,draft:null,published:published('zh-CN',false,'en')}]]) as any;
+    const pages:any[]=[];const shared:any[]=[];
+    const receipt=(targetId:string)=>({schemaVersion:'1',commandId:`cmd_${'b'.repeat(32)}`,aggregate:'page',targetId,expectedRevision:null,acceptedRevision:1,currentRevision:1,propagatedRevision:1,state:'propagated',acceptedAt:now,completedAt:now});
+    const writes:any={
+      listLocaleStates:vi.fn(async()=>states),listAllPages:vi.fn(async()=>pages),listSharedContent:vi.fn(async()=>shared),
+      savePageDraft:vi.fn(async(command:any)=>{const key=`${command.pageId}/${command.locale}`;const previous=pages.find((item:any)=>`${item.pageId}/${item.locale}`===key);const next=(previous?.revision??0)+1;const row={schemaVersion:'1',pageId:command.pageId,locale:command.locale,revision:next,pageType:command.pageType,platform:command.platform,state:command.state,content:command.content,seo:command.seo,reason:command.reason,actorSubject:'owner_tikdd',createdAt:now};if(previous)pages.splice(pages.indexOf(previous),1,row);else pages.push(row);return {...receipt(key),acceptedRevision:next,currentRevision:next,targetId:key};}),
+      saveSharedDraft:vi.fn(async(command:any)=>{const previous=shared.find((item:any)=>item.locale===command.locale);const next=(previous?.revision??0)+1;const row={schemaVersion:'1',locale:command.locale,revision:next,state:command.state,content:command.content,reason:command.reason,actorSubject:'owner_tikdd',createdAt:now};if(previous)shared.splice(shared.indexOf(previous),1,row);else shared.push(row);return {...receipt(`shared/${command.locale}`),acceptedRevision:next,currentRevision:next,targetId:`shared/${command.locale}`};}),
+      discardLocale:vi.fn(),discardPage:vi.fn()
+    };
+    const publication:any={getActive:vi.fn(async()=>null),getLatest:vi.fn(async()=>null),listRecent:vi.fn(async()=>[])};
+    const instance=new AdminContentManagementService({commandSecret:'command-secret-with-at-least-32-characters',platforms:[{id:'x',displayName:'X',status:'experimental',source:'yt-dlp',hosts:[{hostname:'x.com',allowSubdomains:true}],extractorKeys:['twitter']},{id:'instagram',displayName:'Instagram',status:'experimental',source:'yt-dlp',hosts:[{hostname:'instagram.com',allowSubdomains:true}],extractorKeys:['instagram']}],writes,publication,deployment:'tikdd',now:()=>new Date(now)});
+    const initial=await instance.getStarterPreview();
+    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:14,expectedSharedCount:2});
+    const result=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0001'},'owner_tikdd');
+    expect(result).toMatchObject({createdPageCount:14,createdSharedCount:2,preview:{state:'ready',readyPageCount:14,readySharedCount:2}});
+    expect(writes.savePageDraft).toHaveBeenCalledTimes(starterPageRecords().length);
+    const repeat=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0002'},'owner_tikdd');
+    expect(repeat).toMatchObject({createdPageCount:0,createdSharedCount:0,preview:{state:'ready'}});
+  });
 });

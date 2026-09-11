@@ -11,6 +11,7 @@ import {
   AdminRevisionSchema,
   AdminSchemaVersionSchema
 } from "./common";
+import { AdminMutationReceiptSchema } from "./routing";
 import { SiteIntegrationsSchema } from "./site-integrations";
 
 const IdempotencyKeySchema = z.string().min(16).max(128).regex(/^[A-Za-z0-9_-]+$/);
@@ -117,6 +118,41 @@ export const AdminSharedContentDraftCommandSchema = CommandBaseSchema.extend({
   confirmation: LocaleTagSchema
 }).superRefine((command, context) => {
   if (command.confirmation !== command.locale) context.addIssue({ code: "custom", message: "Shared-content confirmation must match the exact locale.", path: ["confirmation"] });
+});
+
+/** Read-only readiness for the one-time code-owned content bootstrap. */
+export const AdminStarterContentPreviewSchema = z.strictObject({
+  schemaVersion: AdminSchemaVersionSchema,
+  generatedAt: z.iso.datetime({ offset: true }),
+  state: z.enum(["empty", "partial", "ready", "blocked", "published"]),
+  eligible: z.boolean(),
+  expectedPageCount: z.number().int().nonnegative().max(10_000),
+  expectedSharedCount: z.number().int().nonnegative().max(100),
+  existingPageCount: z.number().int().nonnegative().max(10_000),
+  existingSharedCount: z.number().int().nonnegative().max(100),
+  readyPageCount: z.number().int().nonnegative().max(10_000),
+  readySharedCount: z.number().int().nonnegative().max(100),
+  pendingPageCount: z.number().int().nonnegative().max(10_000),
+  pendingSharedCount: z.number().int().nonnegative().max(100),
+  missingLocales: z.array(LocaleTagSchema).max(100),
+  conflicts: z.array(z.string().min(3).max(160).regex(/^[A-Za-z0-9._/-]+$/)).max(100),
+  blockReason: z.enum(["published_snapshot_exists", "content_conflict", "missing_locale", "unsupported_page_definition"]).nullable()
+});
+
+export const AdminStarterContentPreviewRequestSchema = z.strictObject({});
+
+export const AdminStarterContentBootstrapCommandSchema = z.strictObject({
+  reason: AdminReasonSchema,
+  idempotencyKey: IdempotencyKeySchema,
+  confirmation: z.literal("starter-content")
+});
+
+export const AdminStarterContentBootstrapResultSchema = z.strictObject({
+  schemaVersion: AdminSchemaVersionSchema,
+  preview: AdminStarterContentPreviewSchema,
+  createdPageCount: z.number().int().nonnegative().max(10_000),
+  createdSharedCount: z.number().int().nonnegative().max(100),
+  receipts: z.array(AdminMutationReceiptSchema).max(10_000)
 });
 
 export const AdminContentCoverageCellSchema = z.strictObject({
@@ -228,7 +264,12 @@ export type AdminLocaleDraftCommand = z.infer<typeof AdminLocaleDraftCommandSche
 export type AdminLocaleDiscardCommand = z.infer<typeof AdminLocaleDiscardCommandSchema>;
 export type AdminPageDraftCommand = z.infer<typeof AdminPageDraftCommandSchema>;
 export type AdminPageDiscardCommand = z.infer<typeof AdminPageDiscardCommandSchema>;
+export type AdminSharedContent = z.infer<typeof AdminSharedContentSchema>;
 export type AdminSharedContentDraftCommand = z.infer<typeof AdminSharedContentDraftCommandSchema>;
+export type AdminStarterContentPreview = z.infer<typeof AdminStarterContentPreviewSchema>;
+export type AdminStarterContentPreviewRequest = z.infer<typeof AdminStarterContentPreviewRequestSchema>;
+export type AdminStarterContentBootstrapCommand = z.infer<typeof AdminStarterContentBootstrapCommandSchema>;
+export type AdminStarterContentBootstrapResult = z.infer<typeof AdminStarterContentBootstrapResultSchema>;
 export type AdminContentManagementView = z.infer<typeof AdminContentManagementViewSchema>;
 export type AdminContentPublicationView = z.infer<typeof AdminContentPublicationViewSchema>;
 export type AdminContentPublishCommand = z.infer<typeof AdminContentPublishCommandSchema>;

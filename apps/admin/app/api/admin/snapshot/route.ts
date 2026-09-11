@@ -1,10 +1,11 @@
-import { loadAdminApiConnection, loadAdminConsoleSnapshot, sendAdminContentCommand, sendAdminPlatformCommand, sendAdminQualificationCommand, sendAdminRecoveryCommand, sendAdminRouteCommand, type AdminRouteSelection } from "../../../../lib/admin-api-client";
+import { loadAdminApiConnection, loadAdminConsoleSnapshot, loadAdminStarterContentPreview, sendAdminContentCommand, sendAdminPlatformCommand, sendAdminQualificationCommand, sendAdminRecoveryCommand, sendAdminRouteCommand, sendAdminStarterContentCommand, type AdminRouteSelection } from "../../../../lib/admin-api-client";
 import { AdminRoutePolicyDiscardCommandSchema,AdminRoutePolicyDraftCommandSchema,AdminRoutePolicyPublishCommandSchema,AdminRoutePolicyRollbackCommandSchema } from "@tikdd/admin-contracts";
 import { AdminRouteProbeCommandSchema,AdminRouteSafetyCommandSchema } from "@tikdd/admin-contracts";
 import { AdminPlatformDiscardCommandSchema,AdminPlatformDraftCommandSchema,AdminPlatformPublishCommandSchema,AdminPlatformRollbackCommandSchema } from "@tikdd/admin-contracts";
 import { AdminLocaleDiscardCommandSchema,AdminLocaleDraftCommandSchema,AdminPageDiscardCommandSchema,AdminPageDraftCommandSchema,AdminSharedContentDraftCommandSchema } from "@tikdd/admin-contracts";
 import { AdminContentPublishCommandSchema,AdminContentRollbackCommandSchema,AdminContentRetryPropagationCommandSchema } from "@tikdd/admin-contracts";
 import { AdminContentInvalidateCacheCommandSchema,AdminContentRebuildSnapshotCommandSchema } from "@tikdd/admin-contracts";
+import { AdminStarterContentBootstrapCommandSchema,AdminStarterContentPreviewRequestSchema } from "@tikdd/admin-contracts";
 import { AdminQualificationLockCommandSchema,AdminQualificationReviewCommandSchema } from "@tikdd/admin-contracts";
 import { z } from "zod";
 import { headers } from "next/headers";
@@ -75,6 +76,8 @@ const CommandRequestSchema=z.discriminatedUnion("action",[
   ,z.strictObject({action:z.literal("content_retry"),csrfToken:z.string(),command:AdminContentRetryPropagationCommandSchema})
   ,z.strictObject({action:z.literal("recovery_rebuild"),csrfToken:z.string(),command:AdminContentRebuildSnapshotCommandSchema})
   ,z.strictObject({action:z.literal("recovery_invalidate"),csrfToken:z.string(),command:AdminContentInvalidateCacheCommandSchema})
+  ,z.strictObject({action:z.literal("starter_preview"),csrfToken:z.string(),command:AdminStarterContentPreviewRequestSchema})
+  ,z.strictObject({action:z.literal("starter_apply"),csrfToken:z.string(),command:AdminStarterContentBootstrapCommandSchema})
   ,z.strictObject({action:z.literal("qualification_review"),csrfToken:z.string(),command:AdminQualificationReviewCommandSchema})
   ,z.strictObject({action:z.literal("qualification_lock"),csrfToken:z.string(),command:AdminQualificationLockCommandSchema})
 ]);
@@ -90,6 +93,14 @@ export async function POST(request:NextRequest) {
     return NextResponse.json({error:{code:"INVALID_COMMAND",message:"Provide one bounded route-policy command."}},{status:400,headers:responseHeaders});
   }
   try{
+    if(parsed.action==="starter_preview"){
+      const preview=await loadAdminStarterContentPreview({requestHeaders:await headers(),configuration});
+      return NextResponse.json(preview,{headers:responseHeaders});
+    }
+    if(parsed.action==="starter_apply"){
+      const result=await sendAdminStarterContentCommand({requestHeaders:await headers(),csrfToken:parsed.csrfToken,command:parsed.command,configuration});
+      return NextResponse.json(result,{headers:responseHeaders});
+    }
     if(parsed.action.startsWith("qualification_")){
       const path=parsed.action==="qualification_review"?"review":"lock-policy";
       const receipt=await sendAdminQualificationCommand({requestHeaders:await headers(),path,csrfToken:parsed.csrfToken,command:parsed.command,configuration});

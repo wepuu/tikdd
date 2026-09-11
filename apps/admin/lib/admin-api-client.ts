@@ -17,6 +17,8 @@ import {
   AdminRuntimeSchema,
   AdminSeoOverviewSchema,
   AdminBetaHealthSchema,
+  AdminStarterContentPreviewSchema,
+  AdminStarterContentBootstrapResultSchema,
   assertAdminSafeValue,
   type AdminRouteSummary
 } from "@tikdd/admin-contracts";
@@ -311,6 +313,22 @@ export async function sendAdminContentCommand(input:{requestHeaders:HeaderReader
   if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
   const response=await transport({url:new URL(`/admin/v1/content/${input.path}`,configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
   if(!response.ok)throw new Error("Admin content command was rejected.");const receipt=AdminMutationReceiptSchema.parse(response.body);assertAdminSafeValue(receipt);return receipt;
+}
+
+export async function loadAdminStarterContentPreview(input:{requestHeaders:HeaderReader;configuration?:AdminApiConnection;transport?:AdminTransport}){
+  const configuration=input.configuration??loadAdminApiConnection();
+  const result=await read({schema:AdminStarterContentPreviewSchema,path:"/admin/v1/content/starter",headers:input.requestHeaders,configuration,transport:input.transport??nodeTransport});
+  if(result.status!=="ready")throw new Error("Starter content preview is unavailable.");
+  return result.data;
+}
+
+export async function sendAdminStarterContentCommand(input:{requestHeaders:HeaderReader;csrfToken:string;command:unknown;configuration?:AdminApiConnection;transport?:AdminTransport}){
+  const configuration=input.configuration??loadAdminApiConnection();const transport=input.transport??nodeTransport;const assertion=sessionToken(input.requestHeaders);const body=JSON.stringify(input.command);
+  const outgoing:Record<string,string>={accept:"application/json","content-type":"application/json","content-length":String(Buffer.byteLength(body)),host:new URL(configuration.adminOrigin).host,origin:configuration.adminOrigin,"sec-fetch-site":"same-origin","x-tikdd-csrf":input.csrfToken};
+  if(assertion)outgoing["x-tikdd-admin-session"]=assertion;if(configuration.originProof)outgoing["x-tikdd-origin-proof"]=configuration.originProof;
+  const response=await transport({url:new URL("/admin/v1/content/starter/apply",configuration.internalOrigin),headers:outgoing,timeoutMs:configuration.timeoutMs,method:"POST",body});
+  if(!response.ok)throw new Error("Starter content bootstrap was rejected.");
+  const result=AdminStarterContentBootstrapResultSchema.parse(response.body);assertAdminSafeValue(result);return result;
 }
 
 export async function sendAdminRecoveryCommand(input:{requestHeaders:HeaderReader;path:"rebuild-snapshot"|"invalidate-content-cache";csrfToken:string;command:unknown;configuration?:AdminApiConnection;transport?:AdminTransport}){

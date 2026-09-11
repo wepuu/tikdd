@@ -7,6 +7,10 @@ import {
   AdminContentRetryPropagationCommandSchema,
   AdminContentRebuildSnapshotCommandSchema,
   AdminContentInvalidateCacheCommandSchema,
+  AdminStarterContentPreviewSchema,
+  AdminStarterContentBootstrapCommandSchema,
+  AdminStarterContentBootstrapResultSchema,
+  AdminMutationReceiptSchema,
   AdminSettingsRecoveryViewSchema,
   AdminSeoTechnicalViewSchema,
   deriveSeoTechnicalView,
@@ -21,6 +25,12 @@ import {
   type AdminLocaleRevision,
   type AdminPageDefinition
   ,type AdminRuntime
+  ,starterPageRecords
+  ,starterSharedRecords
+  ,STARTER_LOCALES
+  ,type AdminPageRevision
+  ,type AdminSharedContent
+  ,type StarterPageRecord
 } from "@tikdd/admin-contracts";
 import { AdminContentManagementRepository, AdminContentPublicationRepository } from "@tikdd/persistence";
 import type { PlatformDefinition } from "@tikdd/platform";
@@ -43,6 +53,16 @@ export interface AdminContentManagementServiceOptions {
 
 export class AdminContentBoundaryError extends Error { constructor(message:string){super(message);this.name="AdminContentBoundaryError";} }
 
+function samePageContent(current:AdminPageRevision,starter:StarterPageRecord):boolean{
+  return current.pageType===starter.pageType&&current.platform===starter.platform&&JSON.stringify(current.content)===JSON.stringify(starter.content)&&JSON.stringify(current.seo)===JSON.stringify(starter.seo);
+}
+
+function sameSharedContent(current:AdminSharedContent,starter:AdminSharedContent):boolean{
+  const {siteIntegrations:_currentIntegrations,...currentLocalized}=current;
+  const {siteIntegrations:_starterIntegrations,...starterLocalized}=starter;
+  return JSON.stringify(currentLocalized)===JSON.stringify(starterLocalized);
+}
+
 export class AdminContentManagementService {
   private readonly now:()=>Date;
   constructor(private readonly options:AdminContentManagementServiceOptions){if(options.commandSecret.length<32)throw new Error("Admin command secret is invalid.");this.now=options.now??(()=>new Date());}
@@ -62,6 +82,64 @@ export class AdminContentManagementService {
   async savePage(raw:unknown,actor:string){const command=AdminPageDraftCommandSchema.parse(raw);const definition=this.definitions().find(({pageId})=>pageId===command.pageId);if(!definition||definition.pageType!==command.pageType||definition.platform!==command.platform)throw new AdminContentBoundaryError("The page does not match a code-owned definition.");const view=await this.getView();if(!view.locales.some(({locale})=>locale===command.locale))throw new AdminContentBoundaryError("The page locale is not registered.");return this.options.writes.savePageDraft(command,this.identity(command.idempotencyKey,command,actor));}
   async discardPage(raw:unknown,actor:string){const command=AdminPageDiscardCommandSchema.parse(raw);return this.options.writes.discardPage(command,this.identity(command.idempotencyKey,command,actor));}
   async saveShared(raw:unknown,actor:string){const command=AdminSharedContentDraftCommandSchema.parse(raw);const view=await this.getView();if(!view.locales.some(({locale})=>locale===command.locale))throw new AdminContentBoundaryError("The shared-content locale is not registered.");return this.options.writes.saveSharedDraft(command,this.identity(command.idempotencyKey,command,actor));}
+  async getStarterPreview(){
+    const [view,latest]=await Promise.all([this.getView(),this.options.publication.getLatest(this.options.deployment)]);
+    const definitions=new Set(this.definitions().map(({pageId,pageType,platform})=>`${pageId}:${pageType}:${platform??""}`));
+    const records=starterPageRecords();
+    const missingLocales=STARTER_LOCALES.filter((locale)=>!view.locales.some((item)=>item.locale===locale));
+    const conflicts:string[]=[];let unsupportedPageDefinition=false;
+    let existingPageCount=0;let readyPageCount=0;let pendingPageCount=0;
+    for(const record of records){
+      if(!definitions.has(`${record.pageId}:${record.pageType}:${record.platform??""}`)){conflicts.push(`${record.pageId}/${record.locale}`);unsupportedPageDefinition=true;continue;}
+      const current=view.pages.find((page)=>page.pageId===record.pageId&&page.locale===record.locale);
+      if(!current)continue;
+      existingPageCount++;
+      if(!samePageContent(current,record))conflicts.push(`${record.pageId}/${record.locale}`);
+      else if(current.state==="ready"||current.state==="published")readyPageCount++;
+      else pendingPageCount++;
+    }
+    let existingSharedCount=0;let readySharedCount=0;let pendingSharedCount=0;
+    for(const record of starterSharedRecords()){
+      const current=view.sharedContent.find((item)=>item.locale===record.locale);
+      if(!current)continue;
+      existingSharedCount++;
+      if(!sameSharedContent(current.content,record.content))conflicts.push(`shared/${record.locale}`);
+      else if(current.state==="ready"||current.state==="published")readySharedCount++;
+      else pendingSharedCount++;
+    }
+    const uniqueConflicts=[...new Set(conflicts)].sort();
+    const blockReason=latest?"published_snapshot_exists":missingLocales.length>0?"missing_locale":unsupportedPageDefinition?"unsupported_page_definition":uniqueConflicts.length>0?"content_conflict":null;
+    const eligible=!latest&&missingLocales.length===0&&uniqueConflicts.length===0;
+    const complete=readyPageCount===records.length&&readySharedCount===starterSharedRecords().length;
+    const anyExisting=existingPageCount>0||existingSharedCount>0;
+    const state=latest?"published":!eligible?"blocked":complete?"ready":anyExisting?"partial":"empty";
+    return AdminStarterContentPreviewSchema.parse({schemaVersion:"1",generatedAt:this.now().toISOString(),state,eligible,expectedPageCount:records.length,expectedSharedCount:starterSharedRecords().length,existingPageCount,existingSharedCount,readyPageCount,readySharedCount,pendingPageCount,pendingSharedCount,missingLocales,conflicts:uniqueConflicts,blockReason});
+  }
+  async bootstrapStarterContent(raw:unknown,actor:string){
+    const command=AdminStarterContentBootstrapCommandSchema.parse(raw);
+    const before=await this.getStarterPreview();
+    if(!before.eligible)throw new AdminContentBoundaryError("Starter content can only be created before the first published snapshot and without content conflicts.");
+    const view=await this.getView();
+    const receipts=[];
+    let createdPageCount=0;let createdSharedCount=0;let index=0;
+    for(const record of starterPageRecords()){
+      const current=view.pages.find((page)=>page.pageId===record.pageId&&page.locale===record.locale);
+      if(current&&samePageContent(current,record)&&(current.state==="ready"||current.state==="published"))continue;
+      const commandValue=AdminPageDraftCommandSchema.parse({pageId:record.pageId,locale:record.locale,pageType:record.pageType,platform:record.platform,state:"ready",content:record.content,seo:record.seo,expectedRevision:current?.revision??null,reason:command.reason,confirmation:`${record.pageId}/${record.locale}`,idempotencyKey:`${command.idempotencyKey}_p${index++}`});
+      const receipt=AdminMutationReceiptSchema.parse(await this.options.writes.savePageDraft(commandValue,this.identity(commandValue.idempotencyKey,commandValue,actor)));
+      receipts.push(receipt);createdPageCount++;
+    }
+    for(const record of starterSharedRecords()){
+      const current=view.sharedContent.find((item)=>item.locale===record.locale);
+      if(current&&sameSharedContent(current.content,record.content)&&(current.state==="ready"||current.state==="published"))continue;
+      const siteIntegrations=current?.content.siteIntegrations??record.content.siteIntegrations;
+      const commandValue=AdminSharedContentDraftCommandSchema.parse({locale:record.locale,state:"ready",content:{...record.content,siteIntegrations},expectedRevision:current?.revision??null,reason:command.reason,confirmation:record.locale,idempotencyKey:`${command.idempotencyKey}_s${index++}`});
+      const receipt=AdminMutationReceiptSchema.parse(await this.options.writes.saveSharedDraft(commandValue,this.identity(commandValue.idempotencyKey,commandValue,actor)));
+      receipts.push(receipt);createdSharedCount++;
+    }
+    const preview=await this.getStarterPreview();
+    return AdminStarterContentBootstrapResultSchema.parse({schemaVersion:"1",preview,createdPageCount,createdSharedCount,receipts});
+  }
   async getSeoTechnicalView(){const [view,active,eligiblePlatforms]=await Promise.all([this.getView(),this.options.publication.getActive(this.options.deployment),this.options.seoEligibility?.()??Promise.resolve([])]);if(view.pages.length===0)return AdminSeoTechnicalViewSchema.parse({schemaVersion:"1",generatedAt:this.now().toISOString(),privateRoutePrefixes:["/admin","/api","/tasks","/results","/delivery","/internal","/tickets","/candidates","/objects"],passports:[],sitemapPaths:[],blockerCount:0});const locales=view.locales.map(({effective})=>effective).filter(item=>item.enabled).map(item=>({locale:item.locale,displayName:item.displayName,direction:item.direction,fallbackLocale:item.fallbackLocale,isDefault:item.isDefault}));const pages=view.pages.filter(page=>["draft","ready","published"].includes(page.state)).map(page=>({pageId:page.pageId,locale:page.locale,pageType:page.pageType,platform:page.platform,content:page.content,seo:page.seo}));const candidate={schemaVersion:"1",snapshotId:`snap_${"0".repeat(32)}`,deployment:this.options.deployment,revision:1,previousSnapshotId:null,contentHash:"0".repeat(64),locales,pages,sharedContent:[],siteIntegrations:{googleAnalyticsMeasurementId:null,googleAdsensePublisherId:null},generatedAt:this.now().toISOString()} as Parameters<typeof deriveSeoTechnicalView>[0]["snapshot"];return deriveSeoTechnicalView({snapshot:candidate,activeSnapshot:active?PublishedContentSnapshotSchema.parse(active.payload):null,eligiblePlatforms,generatedAt:this.now().toISOString()});}
   async getPublicationView(){const [view,active,recent]=await Promise.all([this.getView(),this.options.publication.getActive(this.options.deployment),this.options.publication.listRecent(this.options.deployment)]);const latest=recent[0]??null;const required=new Set(view.definitions.filter(({required})=>required).map(({pageId})=>pageId));const enabled=view.locales.filter(({effective})=>effective.enabled);const readyPages=view.pages.filter(page=>page.state==="ready");const blockers: string[]=[];const defaultLocale=enabled.find(({effective})=>effective.isDefault);if(!defaultLocale||defaultLocale.effective.state!=="ready"&&defaultLocale.effective.state!=="published")blockers.push("default_locale_not_ready");if(!readyPages.some(page=>page.pageId==="page_home"&&page.locale===defaultLocale?.locale)&&!view.pages.some(page=>page.pageId==="page_home"&&page.locale===defaultLocale?.locale&&page.state==="published"))blockers.push("default_homepage_not_ready");if(enabled.some(({effective})=>!["ready","published"].includes(effective.state)))blockers.push("locale_not_ready");if(view.coverage.some(cell=>required.has(cell.pageId)&&!["ready","published"].includes(cell.status)))blockers.push("required_page_missing");if(enabled.some(item=>!view.sharedContent.some(shared=>shared.locale===item.locale&&["ready","published"].includes(shared.state))))blockers.push("shared_content_missing");if(latest?.propagation_state==="propagating")blockers.push("publication_in_progress");const current=active?PublishedContentSnapshotSchema.parse(active.payload):null;const paths=[...new Set(readyPages.map(page=>`/${page.locale}${page.seo.localPath==="/"?"":page.seo.localPath}`))].sort();const diff=[...readyPages.map(page=>({scope:"page" as const,targetId:`${page.pageId}/${page.locale}`,change:current?.pages.some(item=>item.pageId===page.pageId&&item.locale===page.locale)?"changed" as const:"added" as const,beforeRevision:null,afterRevision:page.revision,affectedPaths:[`/${page.locale}${page.seo.localPath==="/"?"":page.seo.localPath}`]})),...view.locales.filter(({draft})=>draft?.state==="ready").map(item=>({scope:"locale" as const,targetId:item.locale,change:item.published?"changed" as const:"added" as const,beforeRevision:item.published?.revision??null,afterRevision:item.draft?.revision??null,affectedPaths:paths.filter(path=>path.startsWith(`/${item.locale}`))})),...view.sharedContent.filter(item=>item.state==="ready").map(item=>({scope:"shared" as const,targetId:item.locale,change:current?.sharedContent.some(shared=>shared.locale===item.locale)?"changed" as const:"added" as const,beforeRevision:null,afterRevision:item.revision,affectedPaths:paths.filter(path=>path.startsWith(`/${item.locale}`))}))];return AdminContentPublicationViewSchema.parse({schemaVersion:"1",deployment:this.options.deployment,currentRevision:latest?Number(latest.revision):null,activeSnapshotId:active?.snapshot_id??null,pendingSnapshotId:latest&&latest.propagation_state!=="propagated"?latest.snapshot_id:null,propagationState:latest?latest.propagation_state==="propagation_failed"?"propagation_failed":latest.propagation_state==="propagating"?"propagating":"propagated":"idle",draftCount:view.pages.filter(page=>["draft","ready"].includes(page.state)).length+view.locales.filter(({draft})=>draft).length,readyPageCount:readyPages.length,blockers:[...new Set(blockers)],affectedPaths:paths,diff,rollbackCandidates:recent.filter(row=>row.propagation_state==="propagated").map(row=>({revision:Number(row.revision),snapshotId:row.snapshot_id,generatedAt:row.created_at.toISOString()}))});}
   async publish(raw:unknown,actor:string){

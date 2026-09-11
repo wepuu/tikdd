@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@ac6bbee66e1bcb9b1cf6dd9ea27510198108b506` (Stage 2 deployment lineage)
+- Repository checkpoint: `main@f25c516c8dbdefc90a4f1cc72044e1360ab68003` (Stage 3 deployment lineage)
 - Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -184,13 +184,21 @@ the six public core containers are healthy and Admin remains stopped. See the [S
 
 ### Stage 3 current status
 
-Stage 3 / Work Item 37 is in implementation on `codex/stage3-growth-content-measurement`. It groups
-content expansion and privacy-bounded growth instrumentation into one release. The scope adds a
-bilingual X Beta landing page, a read-only Admin growth-readiness view, and a fixed GA event catalog
-for anonymous funnel states. It does not add a Google reporting API, analytics database, Provider,
+Stage 3 / Work Item 37 is merged and deployed from `main@f25c516c8dbdefc90a4f1cc72044e1360ab68003`.
+It groups bilingual X/Instagram Beta content, a read-only Admin growth-readiness view, and a fixed
+privacy-safe GA event catalog. It adds no Google reporting API, analytics database, Provider,
 rollout change, calibration profile, media delivery mode, or permanent Admin process. X and Instagram
-remain Beta/noindex; AdSense and GA identifiers remain disabled until an owner publishes a validated
+remain Beta/noindex and integration identifiers remain disabled until an owner publishes a validated
 snapshot. See the [Stage 3 record](stage-3-growth-content-measurement.md).
+
+### Stage 4 current status
+
+Stage 4 / Work Item 38 is being implemented on `codex/work-item-38-content-bootstrap`. It creates the
+first bilingual structured content set (homepage, FAQ, help, privacy, terms, X, and Instagram) as
+code-owned starter data, exposes a read-only preview and idempotent Admin action that creates only
+`ready` drafts before the first snapshot, and keeps publication behind the existing `full` mode.
+Web fallback and Admin bootstrap share the same contracts; no migration, Provider request, rollout
+change, calibration profile, or permanent Admin process is included. See the [Work Item 38 record](work-item-38-content-bootstrap.md).
 
 ## Coordinated future lanes
 
