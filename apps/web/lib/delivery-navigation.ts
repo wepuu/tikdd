@@ -16,6 +16,10 @@ export function navigateToDelivery(
     return false;
   }
   if (target.protocol !== "https:" && target.protocol !== "http:") return false;
-  navigate(target.toString());
-  return true;
+  try {
+    navigate(target.toString());
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -336,8 +336,8 @@ the tickets expired unused before the browser reached `/d/{ticket}`. Work Item 4
 flow to create the one-use ticket and navigate the current tab in one user action. It was merged in
 PR #82 and deployed from `main@5008685f2f50528ac1861e5b95c14d549013d1c1` using GitHub-built immutable
 images. Delivery remains redirect-only, keeps its exact Host/DNS policy and 60-second ticket
-boundary, and never transfers media bytes. A manual fallback link retains the best-effort filename
-hint if navigation does not start. SnapTik, Admin, calibration, and other Providers remain
+boundary, and never transfers media bytes. The Web UI reports the handoff and requests a fresh
+ticket for “download again” rather than reopening a consumed ticket. SnapTik, Admin, calibration, and other Providers remain
 disabled pending the separate TikTok activation decision.
 
 The change added SnapTik to the Delivery redirect matrix, tests opaque browser navigation, and
@@ -350,23 +350,18 @@ See the [Work Item 48 record](work-item-48-snaptik-delivery-handoff.md).
 
 ### Work Item 49 — TikTok Beta closure and free-Provider expansion gate
 
-Work Item 49 is the next stage-level decision batch. Production currently has the unique
-`snaptik-monster / tiktok / nl` rule at revision 3 with allocation 0, all three SnapTik gates
-disabled, and no public TikTok content snapshot (`/en/tiktok-downloader` and
-`/zh-CN/tiktok-downloader` return 404). X and Instagram remain unchanged.
+Work Item 49 is complete. It published the bilingual, non-indexable TikTok snapshot and enabled
+the unique `snaptik-monster / tiktok / nl` rule at revision 4 with `allocationBps=10000` after one
+approved browser acceptance. Production records show successful task creation, Provider attempt,
+ticket creation, redirect validation, and browser handoff; X and Instagram remain unchanged.
 
-The first step is one on-demand Admin publication session: create or review the bilingual TikTok
-starter pages, publish one immutable snapshot, verify the exact noindex/non-sitemap boundary, and
-stop Admin. The second step requires a separate production approval to enable the three SnapTik
-gates, CAS-update the existing rule, and perform one public TikTok download. Verification must
-trace ticket creation, `/d/{ticket}` redemption, reviewed 302 issuance, and a non-zero browser
-download. A failure disables the rule before the gates and leaves X/Instagram unchanged.
-
-If the single acceptance succeeds, SnapTik remains an experimental TikTok Beta route and is judged
-only from the first ten natural tasks. If it fails, do not repeat synthetic tests; record the failed
-layer and open the next free-Provider batch. That batch will evaluate owner-supplied candidates in
-one bounded portfolio, keeping every new adapter disabled until its fixtures, Host policy, Delivery
-verification, CI, and one deployment are complete.
+The Web flow now performs the Delivery handoff in one browser action. After handoff it shows a
+status message and a “download again” action that creates a fresh one-use ticket; it does not
+render or reopen the consumed ticket. The current stage is natural-traffic evaluation only. If
+the first ten tasks fall below 70% or show recurring 403/429/challenge responses, disable the
+SnapTik rule before its gates and open the next free-Provider batch. That batch evaluates
+owner-supplied candidates together behind disabled manifests until each passes fixtures, Host
+policy, Delivery verification, CI, deployment, and one acceptance request.
 
 ## Coordinated future lanes
 

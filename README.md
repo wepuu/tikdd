@@ -105,12 +105,14 @@ the bilingual, non-indexable TikTok landing page and updates the public copy to 
 experimental. Provider gates and rollout remain disabled until the separate production approval
 loop; no new Provider traffic is implied by the code or content change. See the [Work Item 45
 record](docs/work-item-45-tiktok-provider-batch.md) and [Work Item 46 record](docs/work-item-46-tiktok-beta-launch.md).
-Work Item 47 keeps SnapTik disabled while preparing the Admin three-platform health view and the
-on-demand publication workflow for the missing TikTok landing pages. See the [Work Item 47
+Work Item 47 prepared the Admin three-platform health view and the on-demand publication workflow
+for the TikTok landing pages. See the [Work Item 47
 record](docs/work-item-47-tiktok-beta-launch-readiness.md). Work Item 48 is merged and deployed
 from `main@5008685f2f50528ac1861e5b95c14d549013d1c1`; it makes the SnapTik Delivery handoff a
-single browser action while keeping SnapTik disabled. The next stage is the one-time TikTok Beta
-closure and free-Provider expansion gate described in the [Work Item 49 record](docs/work-item-49-tiktok-beta-closure.md).
+single browser action. Work Item 49 then published the TikTok Beta snapshot and enabled the
+approved SnapTik route for natural-traffic evaluation. The Web flow reports the browser handoff
+and requests a fresh one-use ticket for “download again”; it never reopens a consumed ticket. See
+the [Work Item 49 record](docs/work-item-49-tiktok-beta-closure.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`

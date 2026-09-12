@@ -22,9 +22,9 @@ the existing 60-second TTL.
   tab to the opaque Delivery URL in the same user flow.
 - The browser never receives or inspects the SnapTik CDN URL; Delivery still performs the exact
   Host/DNS validation and returns the reviewed 302 without transferring media bytes.
-- Cross-origin `download` and new-tab behavior are no longer required for the primary delivery. A
-  rendered fallback link retains the best-effort filename hint if navigation does not start; the
-  final CDN response may still choose its own filename.
+- Cross-origin `download` and new-tab behavior are no longer required for delivery. The UI reports
+  that the browser handoff started and offers a fresh-ticket “download again” action when needed;
+  it never reopens a consumed ticket. The final CDN response may still choose its own filename.
 - Invalid navigation URLs fail closed in the Web helper; local HTTP remains available for development
   QA while production Delivery URLs remain HTTPS.
 - SnapTik, Admin, calibration, and all unrelated Provider flags remain disabled. No migration or

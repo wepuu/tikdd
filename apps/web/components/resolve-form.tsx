@@ -23,7 +23,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
 import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/analytics";
 import { navigateToDelivery } from "../lib/delivery-navigation";
-import { suggestedDownloadFilename } from "../lib/download-filename";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
@@ -170,6 +169,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [deliveryExpired, setDeliveryExpired] = useState(false);
+  const [handoffStarted, setHandoffStarted] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [workingLonger, setWorkingLonger] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
@@ -236,6 +236,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     const firstFormatId = task?.status === "succeeded" ? task.result?.formats[0]?.id : null;
     setSelectedFormatId(firstFormatId ?? null);
     setFailedThumbnailUrl(null);
+    setHandoffStarted(false);
   }, [task?.id, task?.status]);
 
   useEffect(() => {
@@ -405,6 +406,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setDeliveryError(null);
     setDelivery(null);
     setDeliveryExpired(false);
+    setHandoffStarted(false);
     try {
       if (qaScenarioRef.current) {
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -424,8 +426,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
       });
       if (!response.ok) throw new Error(copy.deliveryError);
       const nextDelivery = (await response.json()) as Delivery;
-      setDelivery(nextDelivery);
-      setDeliveryExpired(isDeliveryExpired(nextDelivery.expiresAt, Date.now()));
       return nextDelivery;
     } catch {
       setDeliveryError(copy.deliveryError);
@@ -437,7 +437,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
 
   async function startDownload(formatId: string): Promise<void> {
     const nextDelivery = await requestDelivery(formatId);
-    if (!nextDelivery || isDeliveryExpired(nextDelivery.expiresAt, Date.now())) {
+    if (!nextDelivery) return;
+    if (isDeliveryExpired(nextDelivery.expiresAt, Date.now())) {
       setDeliveryExpired(true);
       return;
     }
@@ -455,7 +456,11 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
       });
     }
     const navigated = navigateToDelivery(nextDelivery.url, (url) => window.location.assign(url));
-    if (!navigated) setDeliveryError(copy.deliveryError);
+    if (!navigated) {
+      setDeliveryError(copy.deliveryError);
+      return;
+    }
+    setHandoffStarted(true);
   }
 
   function clearLink(): void {
@@ -467,6 +472,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setSubmissionError(null);
     setDelivery(null);
     setDeliveryExpired(false);
+    setHandoffStarted(false);
     setDeliveryError(null);
   }
 
@@ -475,6 +481,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setDelivery(null);
     setDeliveryExpired(false);
     setDeliveryError(null);
+    setHandoffStarted(false);
   }
 
   function moveFormatSelection(formatId: string, key: string): void {
@@ -677,17 +684,9 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                     <div className={`compact-format ${index === 0 ? "is-selected" : ""}`} key={quality}><span className="radio-dot" /><strong>MP4</strong><span>{quality}</span><small>{index === 0 ? "120 MB" : "—"}</small></div>
                   ))}
                 </div>
-                {delivery && !deliveryExpired ? (
-                  <div className="delivery-ready" role="status">
+                {((delivery && !deliveryExpired) || handoffStarted) ? (
+                  <div className="delivery-handoff" role="status">
                     <p>{copy.deliveryHandedOff}</p>
-                    <a
-                      className="download-action"
-                      href={delivery.url}
-                      download={selectedFormat ? suggestedDownloadFilename(task!, selectedFormat) : undefined}
-                      rel="noreferrer noopener"
-                    >
-                      <DownloadSimpleIcon size={20} weight="bold" /><span>{copy.deliveryFallback}</span>
-                    </a>
                   </div>
                 ) : null}
                 {deliveryExpired ? <p className="delivery-note" role="status">{copy.deliveryExpired}</p> : null}
@@ -699,7 +698,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                   onClick={() => selectedFormat && void startDownload(selectedFormat.id)}
                 >
                   {deliveringFormatId ? <CircleNotchIcon className="spin" size={20} weight="bold" /> : <DownloadSimpleIcon size={20} weight="bold" />}
-                  <span>{deliveringFormatId ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : copy.download}</span>
+                  <span>{deliveringFormatId ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : handoffStarted ? copy.downloadAgain : copy.download}</span>
                 </button>
               </>
             )}

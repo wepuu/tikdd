@@ -4,18 +4,18 @@ import { copyForPage } from "../lib/content-presentation";
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("delivery handoff copy", () => {
-  it("describes a direct browser handoff in both locales", () => {
+  it("describes a direct browser handoff and one meaningful retry action", () => {
     const english = getCopy("en").form;
     const chinese = getCopy("zh-CN").form;
 
-    expect(english.deliveryReady).toContain("Click once");
     expect(english.deliveryHandedOff).toContain("browser");
-    expect(english.deliveryFallback).toContain("Open download");
-    expect(chinese.deliveryReady).toContain("点击一次");
+    expect(english.download).toBe("Download");
+    expect(english.downloadAgain).toBe("Download again");
+    expect(chinese.download).toBe("下载");
+    expect(chinese.downloadAgain).toBe("再次下载");
     expect(chinese.deliveryHandedOff).toContain("浏览器");
-    expect(chinese.deliveryFallback).toContain("再次打开");
-    expect(english.deliveryReady).not.toContain("new tab");
-    expect(chinese.deliveryReady).not.toContain("新标签页");
+    expect(english.deliveryHandedOff).not.toContain("new tab");
+    expect(chinese.deliveryHandedOff).not.toContain("新标签页");
   });
 
   it("does not expose provider or routing details in handoff copy", () => {

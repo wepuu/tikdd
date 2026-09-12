@@ -20,4 +20,11 @@ describe("Delivery browser navigation", () => {
     expect(navigateToDelivery("javascript:alert(1)", navigate)).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  it("fails closed when browser navigation throws", () => {
+    const navigate = vi.fn(() => {
+      throw new Error("navigation blocked");
+    });
+    expect(navigateToDelivery("https://dl.tikdd.test/d/dlt_ticket", navigate)).toBe(false);
+  });
 });

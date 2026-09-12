@@ -244,10 +244,9 @@ button.compact-format { cursor: pointer; }
 .radio-dot { width: 14px; height: 14px; display: block; background: #fff; border: 1px solid #a9b6ce; border-radius: 50%; }
 .compact-format.is-selected .radio-dot { border: 4px solid var(--blue); }
 .download-action { width: 100%; min-height: 48px; color: #fff; background: linear-gradient(112deg, #34a9ff, #3e77ff 52%, #9854ee); border: 2px solid rgba(255, 255, 255, 0.7); border-radius: 12px; box-shadow: 0 0 0 1px rgba(67, 115, 255, 0.5), 0 9px 22px rgba(80, 88, 222, 0.22); font-size: 0.75rem; font-weight: 720; }
-.delivery-ready { padding: 10px; background: rgba(238, 249, 247, 0.82); border: 1px solid rgba(46, 191, 152, 0.28); border-radius: 12px; }
-.delivery-ready p, .delivery-note { margin: 0 0 9px; color: #3f5f59; font-size: 0.72rem; line-height: 1.45; text-align: center; }
+.delivery-handoff { margin-bottom: 10px; padding: 10px; background: rgba(238, 249, 247, 0.82); border: 1px solid rgba(46, 191, 152, 0.28); border-radius: 12px; }
+.delivery-handoff p, .delivery-note { margin: 0; color: #3f5f59; font-size: 0.72rem; line-height: 1.45; text-align: center; }
 .delivery-note.is-error { color: var(--danger); }
-.delivery-ready .download-action { text-decoration: none; }
 .result-state-panel { min-height: 164px; padding: 18px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; color: #4f5f7a; background: rgba(247, 249, 255, 0.76); border: 1px solid var(--line); border-radius: 12px; }
 .result-state-panel p { margin: 0; font-size: 0.76rem; line-height: 1.6; }
 .secondary-action { min-height: 44px; padding: 0 18px; color: var(--blue-dark); background: rgba(242, 247, 255, 0.94); border: 1px solid rgba(52, 124, 255, 0.32); border-radius: 10px; cursor: pointer; font-size: 0.74rem; font-weight: 720; }
