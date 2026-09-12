@@ -23,11 +23,11 @@ describe("Admin content management",()=>{
       discardLocale:vi.fn(),discardPage:vi.fn()
     };
     const publication:any={getActive:vi.fn(async()=>null),getLatest:vi.fn(async()=>null),listRecent:vi.fn(async()=>[])};
-    const instance=new AdminContentManagementService({commandSecret:'command-secret-with-at-least-32-characters',platforms:[{id:'x',displayName:'X',status:'experimental',source:'yt-dlp',hosts:[{hostname:'x.com',allowSubdomains:true}],extractorKeys:['twitter']},{id:'instagram',displayName:'Instagram',status:'experimental',source:'yt-dlp',hosts:[{hostname:'instagram.com',allowSubdomains:true}],extractorKeys:['instagram']}],writes,publication,deployment:'tikdd',now:()=>new Date(now)});
+    const instance=new AdminContentManagementService({commandSecret:'command-secret-with-at-least-32-characters',platforms:[{id:'x',displayName:'X',status:'experimental',source:'yt-dlp',hosts:[{hostname:'x.com',allowSubdomains:true}],extractorKeys:['twitter']},{id:'instagram',displayName:'Instagram',status:'experimental',source:'yt-dlp',hosts:[{hostname:'instagram.com',allowSubdomains:true}],extractorKeys:['instagram']},{id:'tiktok',displayName:'TikTok',status:'experimental',source:'yt-dlp',hosts:[{hostname:'tiktok.com',allowSubdomains:true}],extractorKeys:['TikTok']}],writes,publication,deployment:'tikdd',now:()=>new Date(now)});
     const initial=await instance.getStarterPreview();
-    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:14,expectedSharedCount:2});
+    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:16,expectedSharedCount:2});
     const result=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0001'},'owner_tikdd');
-    expect(result).toMatchObject({createdPageCount:14,createdSharedCount:2,preview:{state:'ready',readyPageCount:14,readySharedCount:2}});
+    expect(result).toMatchObject({createdPageCount:16,createdSharedCount:2,preview:{state:'ready',readyPageCount:16,readySharedCount:2}});
     expect(writes.savePageDraft).toHaveBeenCalledTimes(starterPageRecords().length);
     const repeat=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0002'},'owner_tikdd');
     expect(repeat).toMatchObject({createdPageCount:0,createdSharedCount:0,preview:{state:'ready'}});

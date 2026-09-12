@@ -7,6 +7,7 @@ describe("Web GEO source registry", () => {
     expect(Object.keys(GEO_SOURCE_LINKS).sort()).toEqual([
       "instagram-public-content",
       "tikdd-workflow",
+      "tiktok-public-content",
       "x-public-content"
     ]);
     for (const source of Object.values(GEO_SOURCE_LINKS)) {
@@ -16,6 +17,7 @@ describe("Web GEO source registry", () => {
 
   it("localizes source labels without accepting caller-supplied URLs", () => {
     expect(geoSourceLabel("instagram-public-content", "zh-CN")).toBe("Instagram 公开内容说明");
+    expect(geoSourceLabel("tiktok-public-content", "zh-CN")).toBe("TikTok 公开内容说明");
     expect(geoSourceLabel("tikdd-workflow", "en")).toBe("TikDD workflow");
   });
 
@@ -32,6 +34,22 @@ describe("Web GEO source registry", () => {
       });
       expect(page.content.geo?.directAnswer.length).toBeGreaterThanOrEqual(20);
       expect(page.content.geo?.directAnswer).not.toMatch(/https?:\/\//i);
+    }
+  });
+
+  it("ships a bilingual TikTok Beta page without claiming editorial review", () => {
+    const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "tiktok");
+    expect(pages).toHaveLength(2);
+    expect(pages.every((page) => page.seo.localPath === "/tiktok-downloader")).toBe(true);
+    expect(pages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    for (const page of pages) {
+      expect(page.content.template).toBe("platform");
+      if (page.content.template !== "platform") continue;
+      expect(page.content.geo).toMatchObject({
+        reviewStatus: "draft",
+        reviewedAt: null,
+        sourceRefs: ["tikdd-workflow", "tiktok-public-content"]
+      });
     }
   });
 });

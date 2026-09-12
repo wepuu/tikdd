@@ -89,4 +89,21 @@ describe("free Provider qualification", () => {
     expect(result.eligibleForImplementation).toBe(true);
     expect(result.productionRouteEligible).toBe(false);
   });
+
+  it("qualifies the reviewed SnapTik Monster batch candidate for disabled implementation", () => {
+    const result = qualifyFreeProviderCandidate(candidate({
+      id: "snaptik-monster",
+      displayName: "SnapTik Monster",
+      platforms: ["tiktok"],
+      successFixtureCount: 1,
+      failureFixtureCount: 6
+    }));
+    expect(result).toEqual({
+      providerId: "snaptik-monster",
+      status: "accepted",
+      eligibleForImplementation: true,
+      productionRouteEligible: true,
+      reasons: []
+    });
+  });
 });

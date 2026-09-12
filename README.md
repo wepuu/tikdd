@@ -7,7 +7,8 @@ delivery service turns reviewed internal candidates into controlled browser deli
 
 The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
 delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified Instagram Beta
-redirect capability; DLPanda has multi-platform resolution-only capabilities. All real adapters
+redirect capability; DLPanda has multi-platform resolution-only capabilities; SnapTik Monster has
+a disabled, fixture-verified TikTok redirect adapter. All real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
 media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
@@ -95,6 +96,15 @@ Provider or generate live third-party traffic. SaveFromIns remains the Instagram
 future free candidates must pass the same public/no-cookie/no-challenge and delivery review before
 they can be implemented. See the [Work Item 44 record](docs/work-item-44-free-provider-portfolio.md)
 and [ADR-0031](docs/architecture/adr/0031-free-provider-intake-and-bounded-routing.md).
+
+Work Item 45 implements the first accepted candidate from that lane as a disabled SnapTik Monster
+TikTok adapter. It uses the existing resolver-to-redirect path, exact page/media host allowlists,
+sanitized fixtures, and independent activation gates. SSSTik and TTSave remain deferred, while
+Collabstr is rejected as a non-resolution service. The follow-up TikTok Beta launch batch also adds
+the bilingual, non-indexable TikTok landing page and updates the public copy to identify TikTok as
+experimental. Provider gates and rollout remain disabled until the separate production approval
+loop; no new Provider traffic is implied by the code or content change. See the [Work Item 45
+record](docs/work-item-45-tiktok-provider-batch.md) and [Work Item 46 record](docs/work-item-46-tiktok-beta-launch.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -264,7 +274,8 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`; neither platform is promoted as stable support.
+  and `savefromins` in `nl`. TikTok is prepared as a separate SnapTik Monster Beta and remains
+  disabled until its explicit production enablement; no platform is promoted as stable support.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

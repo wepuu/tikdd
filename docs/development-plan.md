@@ -276,6 +276,38 @@ explicit Host/redirect review, delivery verification (when applicable), and the 
 GitHub-image, backup, deployment, and short-observation loop. Until then the current X/Instagram
 production routes are unchanged.
 
+### Work Item 45 current status
+
+Work Item 45 adds the first disabled TikTok free-Provider adapter in the portfolio lane. The
+accepted candidate is SnapTik Monster: one bounded probe returned a public, no-login/no-challenge
+HTML result with an MP4 link on the exact reviewed `tikcdn.beubagah.com` host. The adapter is
+fixture-tested, redirect-only, and guarded by independent terms and Delivery-audit flags. SSSTik is
+deferred after an empty parse response; TTSave is deferred because its current flow starts a
+server-side MP4 job; Collabstr is rejected as a non-resolution marketplace. No rollout rule,
+production traffic, migration, X/Instagram change, or frequent live test is included. See the
+[Work Item 45 record](work-item-45-tiktok-provider-batch.md) and
+[SnapTik Monster Provider record](providers/snaptik-monster.md).
+
+### Work Item 46 — TikTok Beta launch batch
+
+Work Item 46 closes the current TikTok implementation as one stage-level release batch. It adds
+the bilingual `/[locale]/tiktok-downloader` platform page, updates homepage/FAQ/help/legal copy and
+metadata to identify TikTok as experimental, and extends the fixed GEO source registry. The page
+remains `noindex`, outside sitemap/hreflang, and does not promote TikTok to `stable`.
+
+The implementation is intentionally combined with the unpushed Work Item 45 branch so the owner
+can authorize one PR, one GitHub-image build, and one production deployment instead of a sequence of
+small releases. The SnapTik Monster adapter, exact Delivery Host policy, and independent gates stay
+disabled until that deployment's explicit enablement step. X and Instagram rollout/gates remain
+unchanged; Admin and calibration remain off.
+
+Release proof is one currently public TikTok browser download followed by a 15-minute health watch.
+No scheduled canary or repeated live probing is added because the free Provider may rate-limit
+requests. After ten natural tasks, Admin aggregates determine whether SnapTik remains the TikTok
+primary or a later free-Provider validation batch is needed.
+
+See the [Work Item 46 record](work-item-46-tiktok-beta-launch.md).
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

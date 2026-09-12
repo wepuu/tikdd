@@ -43,6 +43,10 @@ export {
 } from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
 export { SaveFromInsProvider, type SaveFromInsProviderOptions } from "./adapters/savefromins";
+export {
+  SnapTikMonsterProvider,
+  type SnapTikMonsterProviderOptions
+} from "./adapters/snaptik-monster";
 export { ProviderCanaryConfigSchema, selectProviderCanaries, selectScheduledProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,

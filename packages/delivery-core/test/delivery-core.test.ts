@@ -297,4 +297,29 @@ describe("reviewed delivery network policy", () => {
       ).toThrow(/not allowed/);
     }
   });
+
+  it("allows only the exact reviewed SnapTik Monster media host", () => {
+    expect(
+      assertDeliveryTargetPolicy({
+        providerId: "snaptik-monster",
+        mode: "redirect",
+        hostPolicyId: "snaptik-monster-tiktok-media-v1",
+        targetUrl: "https://tikcdn.beubagah.com/fixture/video.mp4"
+      }).hostname
+    ).toBe("tikcdn.beubagah.com");
+
+    for (const targetUrl of [
+      "https://media.tikcdn.beubagah.com/fixture/video.mp4",
+      "https://tikcdn.beubagah.com.example.test/fixture/video.mp4"
+    ]) {
+      expect(() =>
+        assertDeliveryTargetPolicy({
+          providerId: "snaptik-monster",
+          mode: "redirect",
+          hostPolicyId: "snaptik-monster-tiktok-media-v1",
+          targetUrl
+        })
+      ).toThrow(/not allowed/);
+    }
+  });
 });

@@ -22,6 +22,7 @@ import { listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
   SaveFromInsProvider,
+  SnapTikMonsterProvider,
   SSSTwitterProvider,
   TwitterSaverProvider
 } from "@tikdd/providers";
@@ -60,7 +61,8 @@ const providerAdapters = [
   new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }),
   new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }),
   new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }),
-  new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" })
+  new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }),
+  new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();
