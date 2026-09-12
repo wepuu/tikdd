@@ -105,6 +105,9 @@ the bilingual, non-indexable TikTok landing page and updates the public copy to 
 experimental. Provider gates and rollout remain disabled until the separate production approval
 loop; no new Provider traffic is implied by the code or content change. See the [Work Item 45
 record](docs/work-item-45-tiktok-provider-batch.md) and [Work Item 46 record](docs/work-item-46-tiktok-beta-launch.md).
+Work Item 47 keeps SnapTik disabled while preparing the Admin three-platform health view and the
+on-demand publication workflow for the missing TikTok landing pages. See the [Work Item 47
+record](docs/work-item-47-tiktok-beta-launch-readiness.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -217,7 +220,7 @@ registry images and the lightweight checklist in
 [MVP release process](docs/mvp-release-process.md); local Docker images are never production input.
 
 For a bounded post-release view of public Beta health, run `pnpm beta:report` with the production
-`DATABASE_URL` (optionally `--hours 1..168` and `--platforms x,instagram`). It emits only aggregate
+`DATABASE_URL` (optionally `--hours 1..168` and `--platforms x,instagram,tiktok`). It emits only aggregate
 counts, rates, failure classes, and timestamps; it does not print URLs, task IDs, provider details,
 or media data and performs no writes.
 

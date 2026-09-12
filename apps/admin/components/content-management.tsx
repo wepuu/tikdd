@@ -5,7 +5,7 @@ import { AdminPageDiscardCommandSchema, AdminPageDraftCommandSchema, GEO_SOURCE_
 import { useEffect, useMemo, useState } from "react";
 import { StarterContentBootstrap } from "./starter-content-bootstrap";
 import { canPublishSnapshot, publicationGuidance, publicationStepLabel } from "../lib/publication-ui-model";
-import { emptyPageEditorFields, editorFieldsFromContent, mergePageContent, preserveOrCreateSeo, type EditorFaqItem, type EditorSection, type EditorStep, type PageEditorFields } from "../lib/page-editor-model";
+import { emptyPageEditorFields, editorFieldsFromContent, mergePageContent, preserveOrCreateSeo, starterPageFor, type EditorFaqItem, type EditorSection, type EditorStep, type PageEditorFields } from "../lib/page-editor-model";
 
 const stateLabel: Record<string, string> = { missing: "缺失", fallback: "回退", draft: "草稿", ready: "就绪", published: "已发布", archived: "已归档" };
 
@@ -67,6 +67,7 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
   const selected = view?.locales.find((item) => item.locale === selectedLocale) ?? view?.locales[0];
   const definition = view?.definitions.find((item) => item.pageId === selectedPage) ?? view?.definitions[0];
   const revision = view?.pages.find((page) => page.pageId === definition?.pageId && page.locale === selected?.locale);
+  const starter = starterPageFor(definition?.pageId, selected?.locale);
   const chain = useMemo(() => view && selected ? fallbackChain(view, selected.locale) : [], [view, selected]);
   const canPublish = writeMode === "full";
   const publicationBlockers = publication?.blockers ?? [];
@@ -81,16 +82,17 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
   const dirty = Boolean(savedFingerprint && currentFingerprint !== savedFingerprint);
 
   useEffect(() => {
-    const nextFields = editorFieldsFromContent(revision?.content);
-    const nextTitle = contentTitle(revision?.content);
-    const nextSummary = contentSummary(revision?.content);
-    const geo = revision?.content.template === "platform" ? revision.content.geo : null;
+    const sourceContent = revision?.content ?? starter?.content;
+    const nextFields = editorFieldsFromContent(sourceContent);
+    const nextTitle = contentTitle(sourceContent);
+    const nextSummary = contentSummary(sourceContent);
+    const geo = sourceContent?.template === "platform" ? sourceContent.geo : null;
     const nextGeo = { directAnswer: geo?.directAnswer ?? "", reviewStatus: geo?.reviewStatus ?? "draft" as const, reviewedAt: geo?.reviewedAt ?? "", sourceRefs: geo?.sourceRefs ? [...geo.sourceRefs] : [] };
     setTitle(nextTitle); setSummary(nextSummary); setEditorFields(nextFields); setDirectAnswer(nextGeo.directAnswer); setReviewStatus(nextGeo.reviewStatus); setReviewedAt(nextGeo.reviewedAt); setSourceRefs(nextGeo.sourceRefs); setFieldErrors([]); setMessage("");
     setSavedFingerprint(JSON.stringify({ title: nextTitle, summary: nextSummary, editorFields: nextFields, geoFingerprint: nextGeo }));
   // The revision key intentionally resets the editor only when the authoritative record changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [revision?.revision, definition?.pageId, selected?.locale]);
+  }, [revision?.revision, definition?.pageId, selected?.locale, starter?.pageId, starter?.locale]);
 
   if (!view) return <section className="content-management panel" id="publishing"><WarningCircle size={26}/><h2>内容模型暂不可用</h2><p>恢复 Admin API 后再编辑或发布；不会使用缓存草稿推断成功。</p></section>;
 
@@ -114,9 +116,9 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
 
   const savePage = async (state: "draft" | "ready") => {
     if (!csrfToken || !definition || !selected) return;
-    const localPath = revision?.seo.localPath ?? (definition.pageType === "homepage" ? "/" : `/${definition.pageId.replace("page_", "").replaceAll("_", "-")}`);
+    const localPath = revision?.seo.localPath ?? starter?.seo.localPath ?? (definition.pageType === "homepage" ? "/" : `/${definition.pageId.replace("page_", "").replaceAll("_", "-")}`);
     const searchDescription = summary.length >= 40 ? summary : `${summary} TikDD 仅解析公开媒体页面，并以统一结果展示经过验证的可用格式与受控交付选项。`;
-    const fallbackSeo = { localPath, searchTitle: (title.length >= 10 ? title : `${title} | TikDD`).slice(0, 70), searchDescription: searchDescription.slice(0, 180), socialTitle: null, socialDescription: null, socialImageAssetId: null, indexable: false, includeInSitemap: false, redirectFrom: [] };
+    const fallbackSeo = starter?.seo ?? { localPath, searchTitle: (title.length >= 10 ? title : `${title} | TikDD`).slice(0, 70), searchDescription: searchDescription.slice(0, 180), socialTitle: null, socialDescription: null, socialImageAssetId: null, indexable: false, includeInSitemap: false, redirectFrom: [] };
     const content = mergePageContent(revision?.content, { template: definition.pageType, title, summary, geo: definition.pageType === "platform" ? geoDraft() : null, fields: editorFields });
     const parsed = AdminPageDraftCommandSchema.safeParse({ pageId: definition.pageId, locale: selected.locale, pageType: definition.pageType, platform: definition.platform, state, content, seo: preserveOrCreateSeo(revision?.seo, fallbackSeo), expectedRevision: revision?.revision ?? null, reason: "Update structured page content from the proofing desk.", confirmation: `${definition.pageId}/${selected.locale}`, idempotencyKey: crypto.randomUUID().replaceAll("-", "") });
     if (!parsed.success) { setFieldErrors(parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`)); setMessage("请先修正字段错误。"); return; }
@@ -150,17 +152,17 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
       <aside className="proofing-index"><div className="mini-heading"><Translate size={16}/><strong>Locale / 页面</strong></div><select value={selected?.locale} onChange={(event) => setSelectedLocale(event.target.value)}>{view.locales.map((item) => <option key={item.locale} value={item.locale}>{item.effective.displayName} · {item.locale}</option>)}</select>{view.definitions.map((item) => <button type="button" className={item.pageId === definition?.pageId ? "selected" : ""} key={item.pageId} onClick={() => setSelectedPage(item.pageId)}><FileText size={15}/><span><strong>{item.label}</strong><small>{item.pageType} · v{item.templateVersion}</small></span><b>{stateLabel[view.coverage.find((cell) => cell.pageId === item.pageId && cell.locale === selected?.locale)?.status ?? "missing"]}</b></button>)}</aside>
       <div className="proofing-workbench">
         <div className="fallback-ribbon"><span><GitBranch size={18}/></span><div><small>当前回退链</small><div>{chain.map((tag, index) => <span key={tag}><b>{tag}</b>{index < chain.length - 1 ? <ArrowRight size={13}/> : null}</span>)}</div></div><em>{selected?.effective.direction.toUpperCase()}</em></div>
-        <div className="editor-preview-grid"><section className="structured-editor"><header><div><small>STRUCTURED FIELDS</small><strong>{definition?.label}</strong></div><span>{revision ? "已保存" : "新页面"}</span></header>
+        <div className="editor-preview-grid"><section className="structured-editor"><header><div><small>STRUCTURED FIELDS</small><strong>{definition?.label}</strong></div><span>{revision ? "已保存" : starter ? "代码初始内容" : "新页面"}</span></header>
           <div className="editor-state-line" role="status"><span className={dirty ? "dirty-dot" : "saved-dot"} />{dirty ? "有未保存修改" : "与当前权威版本一致"}</div>
           <label>主标题<input aria-invalid={fieldErrors.some((error) => /content\.(heroTitle|title)/.test(error))} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>摘要<textarea aria-invalid={fieldErrors.some((error) => /content\.(heroSubtitle|introduction|summary)/.test(error))} value={summary} onChange={(event) => setSummary(event.target.value)} /></label>
-          <div className="field-grid"><label>页面类型<input value={definition?.pageType ?? ""} readOnly /></label><label>本地路径<input value={revision?.seo.localPath ?? (definition?.pageType === "homepage" ? "/" : "将按定义生成")} readOnly /></label></div>
+          <div className="field-grid"><label>页面类型<input value={definition?.pageType ?? ""} readOnly /></label><label>本地路径<input value={revision?.seo.localPath ?? starter?.seo.localPath ?? (definition?.pageType === "homepage" ? "/" : "将按定义生成")} readOnly /></label></div>
           {definition?.pageType === "homepage" ? <><div className="field-grid"><label>输入标签<input value={editorFields.inputLabel} onChange={(event) => updateFields(setEditorFields, "inputLabel", event.target.value)} /></label><label>输入占位<input value={editorFields.inputPlaceholder} onChange={(event) => updateFields(setEditorFields, "inputPlaceholder", event.target.value)} /></label></div><label>主操作按钮<input value={editorFields.primaryActionLabel} onChange={(event) => updateFields(setEditorFields, "primaryActionLabel", event.target.value)} /></label><label>平台标题<input value={editorFields.supportedPlatformsTitle} onChange={(event) => updateFields(setEditorFields, "supportedPlatformsTitle", event.target.value)} /></label><label>使用步骤标题<input value={editorFields.howItWorksTitle} onChange={(event) => updateFields(setEditorFields, "howItWorksTitle", event.target.value)} /></label><StepListEditor label="使用步骤" items={editorFields.howItWorksSteps} onChange={(items) => updateSteps("howItWorksSteps", items)} min={2} max={6} /><label>FAQ 标题<input value={editorFields.faqTitle} onChange={(event) => updateFields(setEditorFields, "faqTitle", event.target.value)} /></label><FaqListEditor label="FAQ 条目" items={editorFields.faqItems} onChange={(items) => updateFaq("faqItems", items)} min={1} max={20} /></> : null}
           {definition?.pageType === "platform" ? <><label>平台眉题<input value={editorFields.eyebrow} onChange={(event) => updateFields(setEditorFields, "eyebrow", event.target.value)} /></label><label>限制说明<textarea value={editorFields.limitationsMarkdown} onChange={(event) => updateFields(setEditorFields, "limitationsMarkdown", event.target.value)} /></label><StepListEditor label="平台使用步骤" items={editorFields.howToSteps} onChange={(items) => updateSteps("howToSteps", items)} min={2} max={8} /><FaqListEditor label="平台 FAQ" items={editorFields.platformFaqItems} onChange={(items) => updateFaq("platformFaqItems", items)} min={0} max={20} /><div className="geo-editor"><label>GEO 直接回答<textarea aria-invalid={fieldErrors.some((error) => error.includes("content.geo.directAnswer"))} value={directAnswer} onChange={(event) => setDirectAnswer(event.target.value)} placeholder="用一两句话回答用户最关心的问题。" /></label><div className="field-grid"><label>审核状态<select value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value as "draft" | "reviewed")}><option value="draft">草稿</option><option value="reviewed">已审核</option></select></label><label>审核时间<input type="datetime-local" value={reviewedAt ? reviewedAt.slice(0, 16) : ""} onChange={(event) => setReviewedAt(event.target.value)} /></label></div><fieldset><legend>审核来源（只能选择代码目录）</legend>{(Object.entries(GEO_SOURCE_LABELS) as [GeoSourceId, string][]).map(([sourceId, label]) => <label key={sourceId}><input type="checkbox" checked={sourceRefs.includes(sourceId)} onChange={(event) => setSourceRefs((current) => event.target.checked ? [...current, sourceId] : current.filter((item) => item !== sourceId))} />{label}</label>)}</fieldset></div></> : null}
           {definition?.pageType === "faq" ? <FaqListEditor label="FAQ 条目" items={editorFields.faqItems} onChange={(items) => updateFaq("faqItems", items)} min={1} max={50} /> : null}
           {definition?.pageType === "guide" ? <SectionListEditor label="指南章节" items={editorFields.sections} onChange={updateSections} max={30} /> : null}
           {definition?.pageType === "legal" ? <SectionListEditor label="法律章节" items={editorFields.sections} onChange={updateSections} max={40} /> : null}
           {fieldErrors.length ? <div className="validation-summary" role="alert"><strong>请修正 {fieldErrors.length} 个字段问题</strong><ul>{fieldErrors.slice(0, 5).map((error) => <li key={error}>{error}</li>)}</ul></div> : null}
-          <div className="editor-note"><FloppyDisk size={17}/><p>字段由代码模板约束，不接受任意 HTML、远程 URL 或任意 JSON-LD。当前 SEO 路径、noindex 与社交字段会在已有页面编辑时原样保留。</p></div>
+          <div className="editor-note"><FloppyDisk size={17}/><p>字段由代码模板约束，不接受任意 HTML、远程 URL 或任意 JSON-LD。缺失页面会预填代码初始内容，保存时沿用其 SEO 路径与 noindex 设置；已有页面的 SEO 与社交字段原样保留。</p></div>
           <div className="editor-actions"><button type="button" onClick={() => void savePage("draft")}>保存草稿</button><button type="button" className="primary" onClick={() => void savePage("ready")}>保存并标记就绪</button>{revision && ["draft", "ready"].includes(revision.state) ? <button type="button" className="quiet" onClick={() => void discardPage()}><Trash size={14}/>放弃草稿</button> : null}</div>
         </section>
           <section className={`template-preview preview-${preview}`} dir={selected?.effective.direction}><header><div><small>REAL TEMPLATE PREVIEW</small><strong>{selected?.locale} · {definition?.pageType}</strong></div><div><button type="button" className={preview === "desktop" ? "active" : ""} onClick={() => setPreview("desktop")} aria-label="桌面预览"><Desktop size={16}/></button><button type="button" className={preview === "mobile" ? "active" : ""} onClick={() => setPreview("mobile")} aria-label="移动预览"><DeviceMobile size={16}/></button></div></header><div className="preview-canvas"><nav><b>Tik<span>DD</span></b><i>{selected?.effective.displayName}</i></nav><main><small>{definition?.pageType?.toUpperCase()}</small><h3>{title}</h3><p>{summary}</p>{definition?.pageType === "platform" && directAnswer.trim() ? <blockquote>{directAnswer}</blockquote> : null}<div className="preview-input"><span>{definition?.pageType === "homepage" ? editorFields.inputPlaceholder : "Structured page content"}</span><b>{definition?.pageType === "homepage" ? editorFields.primaryActionLabel : "TikDD"}</b></div></main></div></section></div>

@@ -13,7 +13,7 @@ import {
 const BoundedCountSchema = z.number().int().nonnegative().max(1_000_000_000);
 const RateBpsSchema = z.number().int().min(0).max(10_000);
 const DurationSchema = z.number().int().nonnegative().max(120_000);
-const BetaPlatformSchema = z.enum(["x", "instagram"]);
+const BetaPlatformSchema = z.enum(["x", "instagram", "tiktok"]);
 const BetaCodeSchema = z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_.-]*$/);
 const BetaCountsSchema = z.record(BetaCodeSchema, BoundedCountSchema).superRefine((value, context) => {
   if (Object.keys(value).length > 16) {
@@ -110,7 +110,7 @@ export const AdminBetaHealthSchema = z.strictObject({
     to: AdminTimestampSchema,
     hours: z.number().int().min(1).max(168)
   }),
-  platforms: z.array(BetaPlatformSchema).min(1).max(2),
+  platforms: z.array(BetaPlatformSchema).min(1).max(3),
   latestEventAt: AdminTimestampSchema.nullable(),
   totals: AdminBetaBucketSchema,
   byPlatform: z.record(BetaPlatformSchema, AdminBetaBucketSchema)

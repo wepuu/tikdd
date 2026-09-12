@@ -8,7 +8,7 @@ type BetaHealthResource =
   | { status: "ready"; data: AdminBetaHealth }
   | { status: "unavailable"; data: null };
 
-const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram" };
+const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram", tiktok: "TikTok" };
 const failureLabels: Record<string, string> = {
   timeout: "超时",
   provider_timeout: "超时",
@@ -70,11 +70,11 @@ export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: Beta
     return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta 健康暂时不可用</strong><p>汇总读取已安全失败；没有修改流量或 Provider 状态。</p></div>;
   }
   const report = view.data;
-  const platforms = ["x", "instagram"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
+  const platforms = ["x", "instagram", "tiktok"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
   return (
     <div className="beta-health-dashboard panel">
       <header className="beta-health-toolbar">
-        <div><small>只读运行汇总</small><strong>最近 {report.window.hours} 小时 Beta 窗口 <span>· 最近 {formatTime(report.latestEventAt)}</span></strong><p>SaveFromIns 仍是实验性的 Instagram Beta 路线。本页只观察结果，不能修改 rollout 或门禁。</p></div>
+        <div><small>只读运行汇总</small><strong>最近 {report.window.hours} 小时 Beta 窗口 <span>· 最近 {formatTime(report.latestEventAt)}</span></strong><p>本页汇总 X、Instagram 与 TikTok 的公开 Beta 结果，只读观察，不能修改 rollout 或门禁。</p></div>
         <label>观察窗口<select aria-label="观察窗口" value={hours} onChange={(event) => onHoursChange(Number(event.target.value))}><option value={1}>最近 1 小时</option><option value={24}>最近 24 小时</option><option value={168}>最近 7 天</option></select></label>
       </header>
       <div className="beta-health-summary">

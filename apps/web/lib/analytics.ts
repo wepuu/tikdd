@@ -14,7 +14,7 @@ export const WEB_ANALYTICS_EVENTS = [
 ] as const;
 
 export type WebAnalyticsEvent = (typeof WEB_ANALYTICS_EVENTS)[number];
-export type WebAnalyticsPlatform = "x" | "instagram";
+export type WebAnalyticsPlatform = "x" | "instagram" | "tiktok";
 export type WebAnalyticsLocale = "en" | "zh-CN";
 export type WebAnalyticsPageType = "homepage" | "platform";
 export type WebAnalyticsFailureClass = "retryable" | "unavailable" | "rate_limited" | "expired";
@@ -37,7 +37,7 @@ const failureKeys = new Set([...commonKeys, "failure_class"]);
 function isCommonParameters(value: unknown): value is CommonParameters {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
-  const platformValid = candidate.platform === "x" || candidate.platform === "instagram";
+  const platformValid = candidate.platform === "x" || candidate.platform === "instagram" || candidate.platform === "tiktok";
   const localeValid = candidate.locale === "en" || candidate.locale === "zh-CN";
   const pageTypeValid = candidate.page_type === "homepage" || candidate.page_type === "platform";
   return platformValid && localeValid && pageTypeValid;
@@ -69,7 +69,7 @@ export function trackWebEvent(event: WebAnalyticsEvent, parameters: WebAnalytics
 }
 
 export function analyticsPlatform(value: string | null | undefined): WebAnalyticsPlatform | null {
-  return value === "x" || value === "instagram" ? value : null;
+  return value === "x" || value === "instagram" || value === "tiktok" ? value : null;
 }
 
 export function analyticsFailureClass(code: string | null | undefined, retryable: boolean): WebAnalyticsFailureClass {

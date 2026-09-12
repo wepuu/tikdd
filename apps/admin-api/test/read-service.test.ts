@@ -162,6 +162,21 @@ describe("Admin read composition", () => {
     expect(() => assertAdminSafeValue(report)).not.toThrow();
   });
 
+  it("requests the three supported public Beta platforms", async () => {
+    let requestedPlatforms: readonly string[] | undefined;
+    const service = new AdminReadService(options({
+      beta: {
+        async report({ platforms }) {
+          requestedPlatforms = platforms;
+          return ADMIN_BETA_HEALTH_FIXTURE;
+        }
+      }
+    }));
+
+    await service.getBetaHealth();
+    expect(requestedPlatforms).toEqual(["x", "instagram", "tiktok"]);
+  });
+
   it("explains support as a seven-stage ladder without confusing catalog recognition with availability", async () => {
     const service = new AdminReadService(options({
       manifests: [{ ...manifest, enabled: false }],

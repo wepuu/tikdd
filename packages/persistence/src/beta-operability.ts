@@ -1,7 +1,7 @@
 import type { ResolveTask } from "@tikdd/contracts";
 import type { Pool, QueryResultRow } from "pg";
 
-const betaPlatforms = ["x", "instagram"] as const;
+const betaPlatforms = ["x", "instagram", "tiktok"] as const;
 export type BetaPlatform = (typeof betaPlatforms)[number];
 export const BETA_PLATFORMS: readonly BetaPlatform[] = betaPlatforms;
 
