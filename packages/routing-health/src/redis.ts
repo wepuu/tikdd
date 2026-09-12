@@ -214,16 +214,21 @@ export class RedisProviderRoutingHealthSource implements ProviderRoutingHealthSo
         latencyP95Ms: 0,
         insufficientData: true,
         openUntil: null,
-        calculatedAt: now.toISOString()
+        calculatedAt: now.toISOString(),
+        accessFrictionRate: null
       };
     }
+    const accessFrictionRate = snapshot.sampleCount > 0
+      ? snapshot.counts.accessFriction / snapshot.sampleCount
+      : null;
     return {
       state: snapshot.state,
       successRate: snapshot.insufficientData ? 0 : snapshot.successRate,
       latencyP95Ms: snapshot.insufficientData ? 0 : snapshot.latencyP95Ms,
       insufficientData: snapshot.insufficientData,
       openUntil: snapshot.openUntil,
-      calculatedAt: snapshot.calculatedAt
+      calculatedAt: snapshot.calculatedAt,
+      accessFrictionRate: snapshot.insufficientData ? null : accessFrictionRate
     };
   }
 

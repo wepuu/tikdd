@@ -29,6 +29,8 @@
 - [ADR-0027: Fail-closed resolution-only runtime guard](0027-resolution-only-runtime-guard.md)
 - [ADR-0028: Code-owned Google site integrations](0028-code-owned-google-site-integrations.md)
 - [ADR-0029: First-run code-owned content bootstrap](0029-starter-content-bootstrap.md)
+- [ADR-0030: Effective Provider route plan](0030-effective-provider-route-plan.md)
+- [ADR-0031: Free Provider intake and bounded access-friction routing](0031-free-provider-intake-and-bounded-routing.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

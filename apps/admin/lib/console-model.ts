@@ -229,6 +229,9 @@ export function deriveEffectiveRoutePlans(
       manualOrderSize: ordered.length,
       successRateBps: route.successRateBps,
       p95LatencyMs: route.p95LatencyMs,
+      ...(route.accessFrictionRateBps === undefined
+        ? {}
+        : { accessFrictionRateBps: route.accessFrictionRateBps }),
       manifestEnabled: route.manifestEnabled,
       capabilityDeclared: true,
       regionEligible: true,

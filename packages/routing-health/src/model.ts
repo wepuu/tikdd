@@ -134,6 +134,8 @@ export interface ProviderRoutingHealthSnapshot {
   insufficientData: boolean;
   openUntil: string | null;
   calculatedAt: string;
+  /** Recent access-friction ratio (rate limits/challenges), or null when there is no sample. */
+  accessFrictionRate?: number | null;
 }
 
 export interface ProviderRoutingHealthSource {

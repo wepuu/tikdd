@@ -89,6 +89,13 @@ an Admin growth-readiness view, and fixed privacy-safe GA funnel events. It does
 account reports, store user-level analytics, add Provider traffic, or make Beta pages indexable. See
 the [Stage 3 record](docs/stage-3-growth-content-measurement.md).
 
+Stage 2 of the Provider expansion lane is tracked as Work Item 44. It adds an offline free-Provider
+intake and a bounded access-friction adjustment to the shared route score; it does not add a new
+Provider or generate live third-party traffic. SaveFromIns remains the Instagram Beta route, and
+future free candidates must pass the same public/no-cookie/no-challenge and delivery review before
+they can be implemented. See the [Work Item 44 record](docs/work-item-44-free-provider-portfolio.md)
+and [ADR-0031](docs/architecture/adr/0031-free-provider-intake-and-bounded-routing.md).
+
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
 drafts before the first immutable snapshot, while the owner still reviews and publishes through the

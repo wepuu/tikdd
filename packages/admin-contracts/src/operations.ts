@@ -134,6 +134,8 @@ export const AdminRouteSummarySchema = z.strictObject({
   policyRevision: AdminRevisionSchema.nullable(),
   circuitState: z.enum(["closed", "open", "half_open", "unknown"]),
   successRateBps: RateBpsSchema.nullable(),
+  /** Optional for compatibility with older Admin snapshots. */
+  accessFrictionRateBps: RateBpsSchema.nullable().optional(),
   p50LatencyMs: DurationSchema.nullable(),
   p95LatencyMs: DurationSchema.nullable(),
   activeConcurrency: BoundedCountSchema.nullable(),

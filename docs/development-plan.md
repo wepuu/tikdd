@@ -257,6 +257,25 @@ no paid replacement is planned. See [ADR-0030](architecture/adr/0030-effective-p
 the [Work Item 43 record](work-item-43-provider-routing-foundation.md), and the
 [Provider onboarding checklist](provider-onboarding-checklist.md).
 
+### Stage 2 Provider expansion / Work Item 44: Free Provider portfolio and routing optimization
+
+Work Item 44 is implemented locally on `codex/wi44-free-provider-portfolio`. It adds a code-owned,
+offline qualification contract for free candidates and a bounded access-friction adjustment to the
+shared effective route score. The adjustment is neutral without a health sample, cannot override a
+deliberate Admin order or a large priority gap, and leaves sequential fallback, circuit breakers,
+attempt limits, and rollout gates unchanged.
+
+No new Provider was added because no new owner-supplied candidate passed review in this batch.
+DLPanda remains resolution-only; SaveFromIns remains the current Instagram Beta and must not be
+probed repeatedly. There is no live third-party request, database migration, public API, Host-policy
+change, rollout change, calibration start, or permanent Admin process. See [Work Item 44 record](work-item-44-free-provider-portfolio.md)
+and [ADR-0031](architecture/adr/0031-free-provider-intake-and-bounded-routing.md).
+
+Exit requires an owner-supplied free candidate to pass the offline intake, deterministic fixtures,
+explicit Host/redirect review, delivery verification (when applicable), and the existing CI,
+GitHub-image, backup, deployment, and short-observation loop. Until then the current X/Instagram
+production routes are unchanged.
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

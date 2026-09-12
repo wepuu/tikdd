@@ -28,6 +28,8 @@ export interface EffectiveRouteRankInput {
   manualOrderSize?: number;
   successRateBps?: number | null;
   p95LatencyMs?: number | null;
+  /** Bounded access-friction signal; missing data is neutral. */
+  accessFrictionRateBps?: number | null;
 }
 
 export interface RankedEffectiveRoute<T extends EffectiveRouteRankInput> {
@@ -42,7 +44,12 @@ export interface RankedEffectiveRoute<T extends EffectiveRouteRankInput> {
 export function effectiveRouteScore(input: EffectiveRouteRankInput): number {
   const successRate = Math.min(Math.max(input.successRateBps ?? 0, 0), 10_000) / 10_000;
   const latencyPenalty = Math.min(Math.max(input.p95LatencyMs ?? 0, 0) / 1_000, 50);
-  const baseScore = input.basePriority * 1_000 + successRate * 100 - latencyPenalty - Math.max(input.costWeight, 0);
+  // Access friction (429/challenge) should gently move a provider behind an equivalent healthy
+  // candidate, but must never overturn a deliberate manual order or a large priority gap.
+  const accessFrictionPenalty =
+    Math.min(Math.max(input.accessFrictionRateBps ?? 0, 0), 10_000) / 10_000 * 80;
+  const baseScore = input.basePriority * 1_000 + successRate * 100 - latencyPenalty -
+    accessFrictionPenalty - Math.max(input.costWeight, 0);
   if (input.preferencePosition === null) return baseScore;
   const orderSize = Math.max(input.manualOrderSize ?? input.preferencePosition, input.preferencePosition);
   return (orderSize - input.preferencePosition + 1) * 1_000_000_000 + baseScore;
