@@ -57,4 +57,15 @@ describe("beta operability aggregation", () => {
     expect(report.byPlatform.x.latestEventAt).toBeNull();
     expect(report.latestEventAt).toBeNull();
   });
+
+  it("includes TikTok in the selected Beta platform report", () => {
+    const report = aggregateBetaHealth({
+      taskStatuses: [{ platform: "tiktok", status: "succeeded", count: 3, latestAt: "2026-09-09T03:00:00.000Z" }],
+      taskFailures: [], attempts: [], deliveries: []
+    }, window, ["x", "instagram", "tiktok"]);
+
+    expect(report.platforms).toEqual(["x", "instagram", "tiktok"]);
+    expect(report.byPlatform.tiktok.tasks).toMatchObject({ total: 3, succeeded: 3 });
+    expect(report.byPlatform.tiktok.latestEventAt).toBe("2026-09-09T03:00:00.000Z");
+  });
 });

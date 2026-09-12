@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AdminPageContent, AdminSeoFields } from "@tikdd/admin-contracts";
-import { editorFieldsFromContent, emptyPageEditorFields, mergePageContent, preserveOrCreateSeo } from "../lib/page-editor-model";
+import { starterPages, type AdminPageContent, type AdminSeoFields } from "@tikdd/admin-contracts";
+import { editorFieldsFromContent, emptyPageEditorFields, mergePageContent, preserveOrCreateSeo, starterPageFor } from "../lib/page-editor-model";
 
 const fields = emptyPageEditorFields();
 const updates = { template: "guide" as const, title: "新标题", summary: "新的摘要内容", geo: null, fields };
@@ -42,5 +42,22 @@ describe("page editor model", () => {
     const result = preserveOrCreateSeo(existing, { ...existing, redirectFrom: [] });
     expect(result).toEqual(existing);
     expect(result.redirectFrom).not.toBe(existing.redirectFrom);
+  });
+
+  it("provides the exact code-owned starter path for a missing TikTok page", () => {
+    const starter = starterPageFor("page_tiktok", "en");
+    expect(starter).toEqual(starterPages("en").find((page) => page.pageId === "page_tiktok"));
+    expect(starter?.seo).toMatchObject({ localPath: "/tiktok-downloader", indexable: false, includeInSitemap: false });
+
+    const fields = editorFieldsFromContent(starter?.content);
+    const content = mergePageContent(undefined, {
+      template: "platform",
+      title: starter?.content.template === "platform" ? starter.content.title : "",
+      summary: starter?.content.template === "platform" ? starter.content.introduction : "",
+      geo: starter?.content.template === "platform" ? starter.content.geo : null,
+      fields
+    });
+    expect(content).toEqual(starter?.content);
+    expect(preserveOrCreateSeo(undefined, starter!.seo)).toEqual(starter!.seo);
   });
 });

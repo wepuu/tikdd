@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@c01da20954e398eb9f01e69808bcc8c5b72b49db` (Stage 7 production deployment)
-- Roadmap revision date: 2026-09-11
+- Repository checkpoint: `main@cae65866c6391d7e703007481060d3d6f941bcc5` (Stage 7 production deployment)
+- Roadmap revision date: 2026-09-12
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -307,6 +307,27 @@ requests. After ten natural tasks, Admin aggregates determine whether SnapTik re
 primary or a later free-Provider validation batch is needed.
 
 See the [Work Item 46 record](work-item-46-tiktok-beta-launch.md).
+
+### Work Item 47 — TikTok Beta launch readiness
+
+The current production image is `main@cae65866c6391d7e703007481060d3d6f941bcc5`. X and
+Instagram rollout/gates are unchanged, while SnapTik Monster and all TikTok provider gates remain
+disabled. The deployed content snapshot predates the TikTok landing pages, so `/tiktok-downloader`
+is currently a controlled Admin publication task rather than a live public route.
+
+This stage-level batch makes the Admin read model include X, Instagram, and TikTok, accepts TikTok
+as a privacy-bounded Web analytics platform, and lets the proofing desk prefill a missing code-owned
+page from the reviewed starter record. The starter SEO contract is exact (`/tiktok-downloader`,
+`noindex`, no sitemap/hreflang); existing revisions remain the write base and are never overwritten.
+No migration, public upstream URL, provider activation, or new media path is introduced.
+
+After PR CI and GitHub-image deployment, the owner may use Admin on demand to create the TikTok
+`content-draft`, mark it ready, and publish one full snapshot. A separate production approval is
+required before creating or enabling the unique `snaptik-monster / tiktok / nl` rule. Activation
+proof is one real public TikTok download and a short health watch, followed by natural-task
+observation in the Admin Beta aggregate. Repeated synthetic probing is intentionally avoided.
+
+See the [Work Item 47 record](work-item-47-tiktok-beta-launch-readiness.md).
 
 ## Coordinated future lanes
 

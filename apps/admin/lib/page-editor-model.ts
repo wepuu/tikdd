@@ -1,4 +1,4 @@
-import type { AdminPageContent, AdminSeoFields, GeoContent } from "@tikdd/admin-contracts";
+import { starterPageRecords, type AdminPageContent, type AdminSeoFields, type GeoContent } from "@tikdd/admin-contracts";
 
 export type EditorStep = { title: string; description: string };
 export type EditorFaqItem = { question: string; answerMarkdown: string };
@@ -23,6 +23,17 @@ export type PageEditorFields = {
 const defaultStep: EditorStep = { title: "开始", description: "补充这一步的说明。" };
 const defaultFaq: EditorFaqItem = { question: "常见问题", answerMarkdown: "补充回答。" };
 const defaultSection: EditorSection = { id: "overview", heading: "说明", bodyMarkdown: "补充正文。" };
+const STARTER_PAGE_RECORDS = starterPageRecords();
+
+/**
+ * Returns the reviewed code-owned content for a page that has not been saved in the
+ * editorial store yet. The caller must keep the existing revision as the write base;
+ * starter content is only a safe editing aid and never overwrites an existing page.
+ */
+export function starterPageFor(pageId: string | undefined, locale: string | undefined) {
+  if (!pageId || !locale) return null;
+  return STARTER_PAGE_RECORDS.find((record) => record.pageId === pageId && record.locale === locale) ?? null;
+}
 
 function cloneSteps(items: readonly EditorStep[]): EditorStep[] {
   return items.map((item) => ({ title: item.title, description: item.description }));

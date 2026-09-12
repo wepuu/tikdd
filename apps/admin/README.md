@@ -3,7 +3,7 @@
 TikDD Admin is the private, non-indexable owner console. It stays outside `apps/web`, so public SEO
 pages never depend on Admin authentication, monitoring, or control-plane availability.
 
-## Current scope (through work item 35)
+## Current scope (through Work Item 47 preparation)
 
 - Server-rendered initial data from the dedicated authenticated Admin API.
 - One fixed same-origin `/api/admin/snapshot` route for bounded browser refreshes.
@@ -12,9 +12,13 @@ pages never depend on Admin authentication, monitoring, or control-plane availab
 - Exact route selection and detail with honest healthy, paused, open, warning, stale,
   insufficient-data, unavailable, and empty states.
 - Read-only navigation for the complete owner-console information architecture.
-- Work Item 30 adds a private, read-only Beta health panel for X and Instagram with bounded 24-hour
-  or seven-day aggregate windows. It observes task, attempt and Delivery outcomes only; it cannot
-  change rollout, gates, calibration or Provider traffic. SaveFromIns remains experimental Beta.
+- Work Item 30 adds a private, read-only Beta health panel for X and Instagram; Work Item 47 extends
+  the same bounded aggregate view to TikTok. It observes task, attempt and Delivery outcomes only;
+  it cannot change rollout, gates, calibration or Provider traffic. SaveFromIns remains experimental
+  Beta and SnapTik Monster remains disabled until a separate activation approval.
+- Work Item 47 also lets the proofing desk preview reviewed code-owned starter content when a page is
+  missing from the editorial store. Saving uses the exact starter SEO path and technical noindex
+  policy while preserving existing revisions.
 
 The browser never receives the Nginx origin proof, internal diagnostics tokens, submitted URLs,
 task IDs, delivery candidates, upstream headers, or raw Provider responses. The Next server keeps

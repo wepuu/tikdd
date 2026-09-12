@@ -59,10 +59,10 @@ export const ADMIN_BETA_HEALTH_FIXTURE: AdminBetaHealth = {
   schemaVersion: "1",
   generatedAt: now,
   window: { from: "2026-08-10T12:00:00.000Z", to: now, hours: 24 },
-  platforms: ["x", "instagram"],
+  platforms: ["x", "instagram", "tiktok"],
   latestEventAt: "2026-08-11T11:59:00.000Z",
   totals: betaBucket,
-  byPlatform: { x: betaBucket, instagram: { ...betaBucket, latestEventAt: "2026-08-11T11:48:00.000Z", tasks: { ...betaBucket.tasks, total: 20, succeeded: 16 }, attempts: { ...betaBucket.attempts, total: 22, succeeded: 18 }, deliveries: { ...betaBucket.deliveries, total: 18, succeeded: 17 } } }
+  byPlatform: { x: betaBucket, instagram: { ...betaBucket, latestEventAt: "2026-08-11T11:48:00.000Z", tasks: { ...betaBucket.tasks, total: 20, succeeded: 16 }, attempts: { ...betaBucket.attempts, total: 22, succeeded: 18 }, deliveries: { ...betaBucket.deliveries, total: 18, succeeded: 17 } }, tiktok: { ...betaBucket, latestEventAt: "2026-08-11T11:42:00.000Z", tasks: { ...betaBucket.tasks, total: 12, succeeded: 9 }, attempts: { ...betaBucket.attempts, total: 14, succeeded: 10 }, deliveries: { ...betaBucket.deliveries, total: 10, succeeded: 9 } } }
 };
 
 const routeBase: AdminRouteSummary = {
