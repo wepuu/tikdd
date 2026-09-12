@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf` (Stage 4 production deployment)
+- Repository checkpoint: `main@c01da20954e398eb9f01e69808bcc8c5b72b49db` (Stage 7 production deployment)
 - Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -230,18 +230,31 @@ start Admin in the production deployment path. See the [Work Item 40 record](wor
 
 ### Stage 7 current status
 
-Stage 7 / Work Item 41 is the next batched Admin editorial workflow. The implementation branch adds a
-lossless structured page editor for all five code-owned templates (homepage, platform, guide, FAQ and
-legal), keeps nested steps/FAQ/sections editable, and adds an explicit draft-discard action. Existing
-SEO paths, noindex/sitemap policy, redirects and social metadata are preserved when a page is edited;
-new pages still use the safe noindex defaults. The live preview follows the in-progress form values so
-an owner can review the exact template shape before saving.
+Stage 7 / Work Item 41 is merged and deployed from
+`main@c01da20954e398eb9f01e69808bcc8c5b72b49db`. It adds the lossless structured page editor for all
+five code-owned templates (homepage, platform, guide, FAQ and legal), nested steps/FAQ/sections,
+explicit draft discard, and a live preview. Existing SEO paths, noindex/sitemap policy, redirects and
+social metadata remain protected. The owner-only Admin preview remains on-demand and production
+Admin is stopped outside approved sessions.
 
-This batch changes no Provider, rollout, calibration, Delivery or persistence schema. It is verified with
-pure editor-model tests and the Admin typecheck before joining the normal Stage 6 release closure. The
-remaining release sequence is intentionally batched: push/PR and CI, merge, verify GitHub-built images,
-then separately authorize backup/deploy and one read-only Admin content edit followed by a publish or
-discard decision. See the [Work Item 41 record](work-item-41-admin-editorial-workflow.md).
+### Stage 8 current status
+
+Stage 8 / Work Item 42 is implemented locally on branch `codex/stage8-admin-simplification`. The Admin
+console is reorganized into four focused workspaces—概览、内容、Providers、设置—while legacy anchors
+continue to map to the correct workspace. Routine content, site settings and Google integration forms no
+longer expose deployment/reason audit fields; the server command contracts still receive internal
+reason, confirmation, revision and idempotency values. Provider route and qualification controls keep
+their explicit safety confirmations. No persistence schema, Provider traffic, rollout rule, calibration
+profile or production Admin lifecycle is changed in this batch. See the [Work Item 42 record](work-item-42-admin-workspace-simplification.md).
+
+### Stage 9 planned: Provider capability and routing batch
+
+After Stage 8 is released, the next batched lane improves Provider capability coverage and routing
+observability: review the existing manifests and host rules, add bounded free-provider adapters only
+when a candidate passes the public/no-cookie/no-challenge contract, and make route selection explainable
+without widening Delivery or SSRF boundaries. Each candidate is validated in isolation before any
+rollout change; SaveFromIns remains the current Instagram Beta provider and no paid replacement is
+planned.
 
 ## Coordinated future lanes
 

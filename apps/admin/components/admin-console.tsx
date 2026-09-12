@@ -4,7 +4,6 @@ import type { AdminRouteSummary, AdminRuntime } from "@tikdd/admin-contracts";
 import {
   ArrowClockwise,
   ArrowRight,
-  Bell,
   BookOpenText,
   CaretRight,
   ChartLineUp,
@@ -16,7 +15,6 @@ import {
   Gear,
   GlobeHemisphereWest,
   HouseLine,
-  MagnifyingGlass,
   PlugsConnected,
   Pulse,
   ShieldCheck,
@@ -52,16 +50,9 @@ import { GrowthReadiness } from "./growth-readiness";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
+import { ADMIN_WORKSPACES, workspaceFromHash, type AdminWorkspace } from "../lib/workspace-model";
 
 type RefreshState = "idle" | "refreshing" | "failed";
-
-const navGroups = [
-  { label: "主页", items: [{ href: "#overview", label: "总览", icon: HouseLine }] },
-  { label: "运行", items: [{ href: "#operational-truth", label: "运营真相", icon: Gauge }, { href: "#beta-health", label: "Beta 健康", icon: ChartLineUp }, { href: "#routing", label: "路由观测", icon: ChartLineUp }, { href: "#alerts", label: "告警", icon: Bell }] },
-  { label: "配置", items: [{ href: "#routing", label: "Provider 路由", icon: CirclesThreePlus }, { href: "#platforms", label: "平台", icon: PlugsConnected }] },
-  { label: "发布", items: [{ href: "#publishing", label: "页面与语言", icon: Translate }, { href: "#publishing", label: "SEO", icon: MagnifyingGlass }, { href: "#growth", label: "增长准备度", icon: ChartLineUp }] },
-  { label: "系统", items: [{ href: "#runtime", label: "设置", icon: Gear }, { href: "#site-integrations", label: "Google 集成", icon: ChartLineUp }] }
-] as const;
 
 const failureLabels: Record<string, string> = {
   timeout: "超时",
@@ -177,6 +168,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
   const [stateFilter, setStateFilter] = useState<AdminRouteSummary["state"] | "all">("all");
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
   const [betaHours, setBetaHours] = useState(24);
+  const [workspace, setWorkspace] = useState<AdminWorkspace>("overview");
   const alerts = useMemo(() => deriveAlerts(snapshot), [snapshot]);
   const allRoutes = snapshot.routes.status === "ready" ? sortRoutes(snapshot.routes.data.routes) : [];
   const platformOptions = [...new Set([
@@ -217,6 +209,22 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
     return () => window.clearInterval(timer);
   }, [refresh, managedPlatform, platform, selectedSummary, snapshot.refreshIntervalMs]);
 
+  useEffect(() => {
+    const syncWorkspace = () => setWorkspace(workspaceFromHash(window.location.hash));
+    syncWorkspace();
+    window.addEventListener("hashchange", syncWorkspace);
+    return () => window.removeEventListener("hashchange", syncWorkspace);
+  }, []);
+
+  useEffect(() => {
+    const requestedTarget = window.location.hash.replace(/^#/, "");
+    if (!requestedTarget || workspaceFromHash(requestedTarget) !== workspace) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(requestedTarget)?.scrollIntoView({ block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [workspace]);
+
   function selectRoute(route: AdminRouteSummary) {
     setSelectedKey(routeKey(route));
     setPlatform(route.tuple.platform);
@@ -237,7 +245,13 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
     <main className="console-shell">
       <aside className="console-nav" aria-label="后台主导航">
         <a className="console-brand" href="#overview" aria-label="TikDD Admin 总览"><span><DownloadSimple size={20} weight="bold" /></span><b>TikDD</b></a>
-        <nav>{navGroups.map((group) => <section key={group.label}><p>{group.label}</p>{group.items.map(({ href, label, icon: Icon }, index) => <a aria-label={label} className={group.label === "主页" && index === 0 ? "active" : ""} href={href} key={`${group.label}-${label}`}><Icon size={19} /><span>{label}</span></a>)}</section>)}</nav>
+        <nav className="workspace-nav" aria-label="工作区">
+          <p className="workspace-nav-label">工作区</p>
+          {ADMIN_WORKSPACES.map(({ id, label, detail, icon }) => {
+            const Icon = icon === "home" ? HouseLine : icon === "content" ? Translate : icon === "providers" ? PlugsConnected : Gear;
+            return <a aria-current={workspace === id ? "page" : undefined} aria-label={`${label}：${detail}`} className={workspace === id ? "active" : ""} href={`#${id}`} key={id}><Icon size={19} /><span><b>{label}</b><small>{detail}</small></span></a>;
+          })}
+        </nav>
         <div className="nav-boundary"><ShieldCheck size={17} /><span>Owner only<br /><small>受保护控制面</small></span></div>
       </aside>
 
@@ -253,7 +267,8 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
         </header>
 
         <div className="console-content">
-          <section className="overview-section" id="overview">
+          {workspace === "overview" ? <div className="workspace-view" id="overview">
+          <section className="overview-section" id="overview-brief">
             <SectionHeading eyebrow="OWNER BRIEF / TODAY" title="今天需要处理什么" detail="从真实运行聚合中提取需要站长判断的事项；缺失数据不会被显示为零或健康。" aside={<span className="read-only-label"><ShieldCheck size={15} />已认证 · 受保护</span>} />
             <div className="overview-layout">
               <div className="operating-brief">
@@ -267,6 +282,13 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
             </div>
           </section>
 
+          <section className="alerts-section" id="alerts">
+            <SectionHeading eyebrow="OPERATE / ATTENTION QUEUE" title="告警与下一步" detail="告警从路线、队列、交付、发布与依赖状态派生，不读取原始任务或媒体数据。" />
+            <div className="alerts-panel panel">{alerts.length > 0 ? alerts.map((alert) => <AttentionItem alert={alert} key={`full-${alert.id}`} />) : <EmptyState icon={<CheckCircle size={30} weight="fill" />} title="没有活动告警" detail="所有已返回的聚合状态均在可接受范围内。" />}</div>
+          </section>
+          </div> : null}
+
+          {workspace === "providers" ? <div className="workspace-view" id="providers">
           <section className="truth-section" id="operational-truth">
             <SectionHeading eyebrow="OPERATE / EXPLAINABLE SUPPORT" title="运营真相" detail="从可识别到可索引逐级核对；任一断点都保留具体原因，不把计划中的平台显示为可下载。" />
             <OperationalTruthDashboard view={snapshot.operationalTruth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
@@ -320,7 +342,9 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </section>
 
           {fullWritesAllowed ? <PlatformManagement snapshot={snapshot} onReload={(managedPlatform) => refresh(selectedSummary ?? undefined, managedPlatform)} /> : <WriteScopeNotice title="平台展示写入已关闭" detail="平台名称、可见性和关联页面保持只读；当前模式不会修改公共内容。" />}
+          </div> : null}
 
+          {workspace === "content" ? <div className="workspace-view" id="content">
           {contentDraftsAllowed ? <ContentManagement writeMode={writeMode} view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} publication={snapshot.controls.status === "ready" ? snapshot.controls.data.contentPublication : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="内容编辑已关闭" detail="当前是只读模式；切换到内容草稿模式后，才可保存不影响公共快照的草稿。" />}
 
           {contentDraftsAllowed ? <SeoWorkbench view={snapshot.controls.status === "ready" ? snapshot.controls.data.contentManagement : null} technical={snapshot.controls.status === "ready" ? snapshot.controls.data.seoTechnical : null} csrfToken={snapshot.controls.status === "ready" ? snapshot.controls.data.csrf.csrfToken : null} onReload={()=>refresh(selectedSummary??undefined)} /> : <WriteScopeNotice title="SEO 草稿已关闭" detail="SEO 字段与内容草稿一起受内容草稿模式保护，公共索引状态不会在只读模式下变化。" />}
@@ -338,10 +362,13 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
               <article className={(snapshot.seo.status === "ready" ? snapshot.seo.data.blockerCount : 1) > 0 ? "has-warning" : ""}><small>SEO 阻塞</small><strong>{snapshot.seo.status === "ready" ? formatCount(snapshot.seo.data.blockerCount) : "不可用"}</strong><span>私有与动态路由始终不可索引</span></article>
             </div>
           </section>
+          </div> : null}
 
+          {workspace === "settings" ? <div className="workspace-view" id="settings">
           {fullWritesAllowed ? <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="设置与恢复已关闭" detail="站点设置、快照恢复和缓存操作需要完整维护模式，当前不会执行写入。" />}
           {contentDraftsAllowed ? <SiteIntegrationsSettings view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : null}
           <AccountSecurity />
+          </div> : null}
           <footer className="console-build-footer" aria-label="后台构建信息">
             <span>TikDD Owner Console</span><code>{buildId}</code>
           </footer>

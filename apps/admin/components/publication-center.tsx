@@ -46,8 +46,8 @@ export function PublicationCenter({ content, publication, seo, settings }: Props
   const status = statusCopy(overview.status, published);
   const configured = overview.configuredIntegrationCount;
   const clearDetail = published
-    ? `当前 r${overview.currentRevision} 已由 Web 确认，暂无待发布差异。`
-    : "完整性检查通过；在完整维护模式输入部署确认后发布。";
+    ? "当前快照已由 Web 确认，暂无待发布差异。"
+    : "完整性检查通过；切换到完整维护模式即可发布。";
 
   return <section className="publication-center" id="publication-center">
     <header className="publication-center-header">
@@ -64,7 +64,7 @@ export function PublicationCenter({ content, publication, seo, settings }: Props
 
     <div className="publication-center-grid">
       <section className="panel publication-blockers"><header><div><small>RELEASE PREFLIGHT</small><h3>发布前检查</h3></div><span className={`state-pill state-${status.tone}`}>{status.label}</span></header>{overview.blockers.length ? <ul>{overview.blockers.map((blocker) => <li key={blocker}><WarningCircle size={16} /><span>{blockerLabels[blocker] ?? blocker}</span><a href={blocker === "seo_blockers" ? "#seo-readiness" : "#publishing"}>处理<ArrowUpRight size={13} /></a></li>)}</ul> : <div className="publication-clear"><CheckCircle size={22} weight="fill" /><div><strong>没有发现发布阻塞</strong><p>{clearDetail}</p></div></div>}</section>
-      <section className="panel publication-snapshot"><header><div><small>IMMUTABLE SNAPSHOT</small><h3>快照传播</h3></div><span className={`state-pill state-${publication?.propagationState ?? "unavailable"}`}>{publication?.propagationState ?? "unavailable"}</span></header><dl><div><dt>当前 revision</dt><dd>{overview.currentRevision === null ? "—" : `r${overview.currentRevision}`}</dd></div><div><dt>待确认快照</dt><dd>{overview.pendingSnapshotId ? overview.pendingSnapshotId.slice(0, 14) + "…" : "无"}</dd></div><div><dt>待发布差异</dt><dd>{overview.diffCount} 项</dd></div></dl><a className="publication-link" href="#publishing">打开内容校样台 <ArrowUpRight size={14} /></a></section>
+      <section className="panel publication-snapshot"><header><div><small>IMMUTABLE SNAPSHOT</small><h3>快照传播</h3></div><span className={`state-pill state-${publication?.propagationState ?? "unavailable"}`}>{publication?.propagationState ?? "unavailable"}</span></header><dl><div><dt>当前状态</dt><dd>{published ? "已确认" : publication?.propagationState === "propagating" ? "确认中" : "待处理"}</dd></div><div><dt>待发布差异</dt><dd>{overview.diffCount} 项</dd></div><div><dt>受影响路径</dt><dd>{overview.affectedPathCount} 条</dd></div></dl><a className="publication-link" href="#publishing">打开内容校样台 <ArrowUpRight size={14} /></a></section>
     </div>
   </section>;
 }
