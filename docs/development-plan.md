@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@cae65866c6391d7e703007481060d3d6f941bcc5` (Stage 7 production deployment)
+- Repository checkpoint: `main@5008685f2f50528ac1861e5b95c14d549013d1c1` (Work Item 48 production deployment)
 - Roadmap revision date: 2026-09-12
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -332,19 +332,41 @@ See the [Work Item 47 record](work-item-47-tiktok-beta-launch-readiness.md).
 ### Work Item 48 — SnapTik Delivery browser handoff
 
 The failed TikTok activation produced successful Delivery ticket creation but no ticket redemption;
-the tickets expired unused before the browser reached `/d/{ticket}`. Work Item 48 keeps SnapTik,
-Admin, calibration, and other Providers disabled while changing the Web flow to create the one-use
-ticket and navigate the current tab in one user action. Delivery remains redirect-only, keeps its
-exact Host/DNS policy and 60-second ticket boundary, and never transfers media bytes. A manual
-fallback link retains the best-effort filename hint if navigation does not start.
+the tickets expired unused before the browser reached `/d/{ticket}`. Work Item 48 changed the Web
+flow to create the one-use ticket and navigate the current tab in one user action. It was merged in
+PR #82 and deployed from `main@5008685f2f50528ac1861e5b95c14d549013d1c1` using GitHub-built immutable
+images. Delivery remains redirect-only, keeps its exact Host/DNS policy and 60-second ticket
+boundary, and never transfers media bytes. A manual fallback link retains the best-effort filename
+hint if navigation does not start. SnapTik, Admin, calibration, and other Providers remain
+disabled pending the separate TikTok activation decision.
 
-The branch adds SnapTik to the Delivery redirect matrix, tests opaque browser navigation, and
-documents layered production acceptance. It must pass PR CI and the GitHub-image/backup deployment
-loop before one separately approved TikTok browser test; no repeated Provider probes are planned.
-If the Delivery GET and 302 succeed but the CDN transfer fails, SnapTik remains disabled and the
-next free-Provider feasibility item is opened.
+The change added SnapTik to the Delivery redirect matrix, tests opaque browser navigation, and
+documents layered production acceptance. CI, the GitHub-image/backup deployment loop, and the
+post-deploy health checks passed. The next action is one separately approved TikTok browser test;
+no repeated Provider probes are planned. If the Delivery GET and 302 succeed but the CDN transfer
+fails, SnapTik remains disabled and the next free-Provider feasibility item is opened.
 
 See the [Work Item 48 record](work-item-48-snaptik-delivery-handoff.md).
+
+### Work Item 49 — TikTok Beta closure and free-Provider expansion gate
+
+Work Item 49 is the next stage-level decision batch. Production currently has the unique
+`snaptik-monster / tiktok / nl` rule at revision 3 with allocation 0, all three SnapTik gates
+disabled, and no public TikTok content snapshot (`/en/tiktok-downloader` and
+`/zh-CN/tiktok-downloader` return 404). X and Instagram remain unchanged.
+
+The first step is one on-demand Admin publication session: create or review the bilingual TikTok
+starter pages, publish one immutable snapshot, verify the exact noindex/non-sitemap boundary, and
+stop Admin. The second step requires a separate production approval to enable the three SnapTik
+gates, CAS-update the existing rule, and perform one public TikTok download. Verification must
+trace ticket creation, `/d/{ticket}` redemption, reviewed 302 issuance, and a non-zero browser
+download. A failure disables the rule before the gates and leaves X/Instagram unchanged.
+
+If the single acceptance succeeds, SnapTik remains an experimental TikTok Beta route and is judged
+only from the first ten natural tasks. If it fails, do not repeat synthetic tests; record the failed
+layer and open the next free-Provider batch. That batch will evaluate owner-supplied candidates in
+one bounded portfolio, keeping every new adapter disabled until its fixtures, Host policy, Delivery
+verification, CI, and one deployment are complete.
 
 ## Coordinated future lanes
 

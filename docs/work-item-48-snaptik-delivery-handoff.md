@@ -1,7 +1,7 @@
 # Work Item 48 — SnapTik Delivery browser handoff
 
-Status: implementation complete locally on `codex/wi48-snaptik-delivery-handoff`; awaiting CI,
-merge, and separate TikTok activation approval.
+Status: merged in PR #82 and deployed from `main@5008685f2f50528ac1861e5b95c14d549013d1c1`;
+separate TikTok activation approval remains pending.
 
 ## Diagnosis
 
@@ -39,7 +39,9 @@ the existing 60-second TTL.
 - Updated English and Chinese handoff copy to describe a direct browser download rather than a new
   tab.
 - Local verification: 108 test files / 597 tests passed; Web and Delivery type checks passed.
-- The full `pnpm check` remains the release gate and must pass in CI before merge.
+- `pnpm check` passed locally and in PR CI. The production release used GitHub-built Web, Service,
+  and Admin images, an encrypted PostgreSQL backup, idempotent migrations, and clean post-deploy
+  health checks. Admin remains stopped.
 
 ## Release and rollback
 
