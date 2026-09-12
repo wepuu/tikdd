@@ -247,14 +247,15 @@ reason, confirmation, revision and idempotency values. Provider route and qualif
 their explicit safety confirmations. No persistence schema, Provider traffic, rollout rule, calibration
 profile or production Admin lifecycle is changed in this batch. See the [Work Item 42 record](work-item-42-admin-workspace-simplification.md).
 
-### Stage 9 planned: Provider capability and routing batch
+### Stage 9 / Work Item 43: Provider capability and routing foundation
 
-After Stage 8 is released, the next batched lane improves Provider capability coverage and routing
-observability: review the existing manifests and host rules, add bounded free-provider adapters only
-when a candidate passes the public/no-cookie/no-challenge contract, and make route selection explainable
-without widening Delivery or SSRF boundaries. Each candidate is validated in isolation before any
-rollout change; SaveFromIns remains the current Instagram Beta provider and no paid replacement is
-planned.
+The local Stage 9 batch adds a shared effective-route score/plan projection and a focused Admin
+Providers view. It shows the bounded primary/fallback order and sanitised exclusion reasons without
+probing a Provider or changing traffic. Future free-provider adapters still require isolated public,
+no-cookie and no-challenge validation; SaveFromIns remains the current Instagram Beta provider and
+no paid replacement is planned. See [ADR-0030](architecture/adr/0030-effective-provider-route-plan.md),
+the [Work Item 43 record](work-item-43-provider-routing-foundation.md), and the
+[Provider onboarding checklist](provider-onboarding-checklist.md).
 
 ## Coordinated future lanes
 

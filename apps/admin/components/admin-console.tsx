@@ -35,6 +35,7 @@ import {
   routeNextStep,
   sortRoutes,
   stateLabels,
+  deriveEffectiveRoutePlans,
   type ConsoleAlert
 } from "../lib/console-model";
 import { RoutePolicyControl } from "./route-policy-control";
@@ -50,6 +51,7 @@ import { GrowthReadiness } from "./growth-readiness";
 import { QualificationWorkbench } from "./qualification-workbench";
 import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
+import { ProviderRoutePlan } from "./provider-route-plan";
 import { ADMIN_WORKSPACES, workspaceFromHash, type AdminWorkspace } from "../lib/workspace-model";
 
 type RefreshState = "idle" | "refreshing" | "failed";
@@ -171,6 +173,10 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
   const [workspace, setWorkspace] = useState<AdminWorkspace>("overview");
   const alerts = useMemo(() => deriveAlerts(snapshot), [snapshot]);
   const allRoutes = snapshot.routes.status === "ready" ? sortRoutes(snapshot.routes.data.routes) : [];
+  const effectiveRoutePlans = useMemo(() => deriveEffectiveRoutePlans(
+    allRoutes,
+    snapshot.providers.status === "ready" ? snapshot.providers.data.providers : []
+  ), [allRoutes, snapshot.providers]);
   const platformOptions = [...new Set([
     ...allRoutes.map(({ tuple }) => tuple.platform),
     ...(snapshot.platforms.status === "ready" ? snapshot.platforms.data.platforms.map(({id})=>id) : []),
@@ -289,6 +295,11 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </div> : null}
 
           {workspace === "providers" ? <div className="workspace-view" id="providers">
+          <section className="route-plan-section" id="effective-route-plan">
+            <SectionHeading eyebrow="OPERATE / EFFECTIVE ROUTE PLAN" title="有效路由计划" detail="把平台、区域、Manifest、rollout、熔断和 Admin 顺序收敛为一次可读的尝试计划；不会主动请求 Provider，也不会把未配置的路线称为回退。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读投影</span>} />
+            <ProviderRoutePlan plans={effectiveRoutePlans} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
+          </section>
+
           <section className="truth-section" id="operational-truth">
             <SectionHeading eyebrow="OPERATE / EXPLAINABLE SUPPORT" title="运营真相" detail="从可识别到可索引逐级核对；任一断点都保留具体原因，不把计划中的平台显示为可下载。" />
             <OperationalTruthDashboard view={snapshot.operationalTruth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
@@ -324,8 +335,13 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
                 <RouteInspector snapshot={snapshot} summary={selectedSummary} />
               </div>
             )}
-            {fullWritesAllowed ? <RoutePolicyControl snapshot={snapshot} summary={selectedSummary} onComplete={()=>refresh(selectedSummary??undefined, managedPlatform, platform)} /> : <WriteScopeNotice title="路由写入已关闭" detail="当前 Admin 模式只允许查看；切换到完整维护模式才会开放路由、分流和探测命令。" />}
-            {fullWritesAllowed ? <QualificationWorkbench view={snapshot.qualification.status==="ready"?snapshot.qualification.data:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onComplete={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="资格操作已关闭" detail="资格审核和策略锁定需要完整维护模式，当前页面不会发起任何 Provider 请求。" />}
+            <details className="advanced-routing-controls">
+              <summary>高级路由控制（影响流量）</summary>
+              <div className="advanced-routing-controls-body">
+                {fullWritesAllowed ? <RoutePolicyControl snapshot={snapshot} summary={selectedSummary} onComplete={()=>refresh(selectedSummary??undefined, managedPlatform, platform)} /> : <WriteScopeNotice title="路由写入已关闭" detail="当前 Admin 模式只允许查看；切换到完整维护模式才会开放路由、分流和探测命令。" />}
+                {fullWritesAllowed ? <QualificationWorkbench view={snapshot.qualification.status==="ready"?snapshot.qualification.data:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onComplete={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="资格操作已关闭" detail="资格审核和策略锁定需要完整维护模式，当前页面不会发起任何 Provider 请求。" />}
+              </div>
+            </details>
           </section>
 
           <section className="alerts-section" id="alerts">

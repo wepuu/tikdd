@@ -137,6 +137,8 @@ Anonymous quotas and provider concurrency are documented in
 [Admission control operations](../admission-control-operations.md).
 [ADR-0010](adr/0010-owner-control-plane-routing-and-publication.md) defines Admin authentication,
 route-policy overlays, structured multilingual publishing, and derived SEO boundaries.
+[ADR-0030](adr/0030-effective-provider-route-plan.md) defines the shared, read-only effective route
+projection used to explain bounded Provider order without changing production admission.
 
 The owner console is intentionally a single authenticated control plane, but its daily surface is
 organized into four client-side workspaces: overview, content, providers, and settings. Only one

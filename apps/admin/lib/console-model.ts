@@ -1,4 +1,5 @@
-import type { AdminBetaHealth, AdminRouteSummary } from "@tikdd/admin-contracts";
+import type { AdminBetaHealth, AdminProviderProjection, AdminRouteSummary } from "@tikdd/admin-contracts";
+import { buildEffectiveRoutePlan, type EffectiveRoutePlan, type EffectiveRoutePlanEntry } from "@tikdd/route-policy";
 import type { AdminConsoleSnapshot } from "./console-contract";
 import { derivePublicationCenter } from "./publication-model";
 
@@ -182,6 +183,89 @@ export function sortRoutes(routes: readonly AdminRouteSummary[]): AdminRouteSumm
     (left.preferencePosition ?? 1_000) - (right.preferencePosition ?? 1_000) ||
     right.basePriority - left.basePriority ||
     left.tuple.providerId.localeCompare(right.tuple.providerId));
+}
+
+export type AdminEffectiveRouteRole = "primary" | "fallback" | "eligible" | "excluded";
+
+export interface AdminEffectiveRoutePlanEntry extends EffectiveRoutePlanEntry {
+  providerDisplayName: string;
+  state: AdminRouteSummary["state"] | "paused";
+  role: AdminEffectiveRouteRole;
+}
+
+export interface AdminEffectiveRoutePlanView extends Omit<EffectiveRoutePlan, "entries"> {
+  entries: AdminEffectiveRoutePlanEntry[];
+}
+
+/**
+ * Projects the same bounded route semantics used by the Worker into a compact owner view.
+ * The input is already sanitized by Admin API; this function never probes a Provider.
+ */
+export function deriveEffectiveRoutePlans(
+  routes: readonly AdminRouteSummary[],
+  providers: readonly AdminProviderProjection[],
+  maxAttempts = 4
+): AdminEffectiveRoutePlanView[] {
+  const providerCosts = new Map(providers.map((provider) => [provider.id, provider.costWeight]));
+  const byPlatform = new Map<string, AdminRouteSummary[]>();
+  for (const route of routes) {
+    const current = byPlatform.get(route.tuple.platform) ?? [];
+    current.push(route);
+    byPlatform.set(route.tuple.platform, current);
+  }
+
+  return [...byPlatform.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([platform, platformRoutes]) => {
+    const ordered = platformRoutes
+      .filter((route) => route.preferencePosition !== null)
+      .sort((left, right) => (left.preferencePosition ?? 1_000) - (right.preferencePosition ?? 1_000));
+    const routeById = new Map(platformRoutes.map((route) => [route.tuple.providerId, route]));
+    const plan = buildEffectiveRoutePlan(platformRoutes.map((route) => ({
+      providerId: route.tuple.providerId,
+      platform: route.tuple.platform,
+      region: route.tuple.region,
+      basePriority: route.basePriority,
+      costWeight: providerCosts.get(route.tuple.providerId) ?? 0,
+      preferencePosition: route.preferencePosition,
+      manualOrderSize: ordered.length,
+      successRateBps: route.successRateBps,
+      p95LatencyMs: route.p95LatencyMs,
+      manifestEnabled: route.manifestEnabled,
+      capabilityDeclared: true,
+      regionEligible: true,
+      deliveryModes: route.deliveryModes,
+      productionEligible: route.productionEligible,
+      rollout: route.state === "unavailable" ? "unavailable" as const : route.allocationBps > 0 ? "allowed" as const : "denied" as const,
+      allocationBps: route.allocationBps,
+      circuitState: route.circuitState === "half_open" ? "half-open" as const : route.circuitState,
+      ...(route.activeConcurrency !== null && route.concurrencyLimit !== null
+        ? { concurrencyAvailable: route.activeConcurrency < route.concurrencyLimit }
+        : {})
+    })), {
+      platform,
+      region: platformRoutes[0]?.tuple.region ?? "global",
+      orderedProviderIds: ordered.map((route) => route.tuple.providerId),
+      maxAttempts
+    });
+    const attemptPosition = new Map(plan.attemptProviderIds.map((providerId, index) => [providerId, index]));
+    const entries = plan.entries.map((entry) => {
+      const route = routeById.get(entry.providerId);
+      const index = attemptPosition.get(entry.providerId);
+      const role: AdminEffectiveRouteRole = index === 0
+        ? "primary"
+        : index !== undefined
+          ? "fallback"
+          : entry.exclusionReason === "max_attempts"
+            ? "eligible"
+            : "excluded";
+      return {
+        ...entry,
+        providerDisplayName: route?.providerDisplayName ?? entry.providerId,
+        state: route?.state ?? "paused",
+        role
+      };
+    });
+    return { ...plan, entries };
+  });
 }
 
 export function routeNextStep(route: AdminRouteSummary): string {

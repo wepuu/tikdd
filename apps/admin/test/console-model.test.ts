@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { deriveAlerts, deriveBetaCadenceSignal, derivePublicationSummary, routeNextStep, sortRoutes } from "../lib/console-model";
+import { deriveAlerts, deriveBetaCadenceSignal, deriveEffectiveRoutePlans, derivePublicationSummary, routeNextStep, sortRoutes } from "../lib/console-model";
 import { consoleSnapshot } from "./fixture";
+import { ADMIN_ROUTE_FIXTURES } from "@tikdd/admin-contracts/fixtures";
 
 describe("Admin console attention model", () => {
   it("prioritizes exact open routes and stale dependencies", () => {
@@ -17,6 +18,22 @@ describe("Admin console attention model", () => {
     expect(sorted[0]?.state).toBe("open");
     expect(routeNextStep(sorted[0]!)).toContain("熔断");
     expect(routeNextStep(sorted[0]!)).toContain("不能手动关闭熔断");
+  });
+
+  it("projects a bounded primary and fallback order without inventing a route", () => {
+    const primary = ADMIN_ROUTE_FIXTURES.healthy;
+    const fallback = {
+      ...primary,
+      tuple: { ...primary.tuple, providerId: "ssstwitter" },
+      providerDisplayName: "SSSTwitter",
+      preferencePosition: 2,
+      basePriority: 800,
+      trafficShareBps: 0
+    };
+    const plans = deriveEffectiveRoutePlans([primary, fallback], consoleSnapshot.providers.status === "ready" ? consoleSnapshot.providers.data.providers : []);
+    expect(plans).toHaveLength(1);
+    expect(plans[0]?.attemptProviderIds).toEqual(["twittersaver", "ssstwitter"]);
+    expect(plans[0]?.entries.map(({ role }) => role)).toEqual(["primary", "fallback"]);
   });
 
   it("does not invent healthy state when core resources are unavailable", () => {

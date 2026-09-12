@@ -36,6 +36,9 @@ importers:
       '@tikdd/admin-contracts':
         specifier: workspace:*
         version: link:../../packages/admin-contracts
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../../packages/route-policy
       next:
         specifier: 16.2.12
         version: 16.2.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -55,6 +58,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.2.4(@types/react@19.2.18)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   apps/admin-api:
     dependencies:
@@ -396,6 +402,9 @@ importers:
       '@tikdd/rollout-control':
         specifier: workspace:*
         version: link:../rollout-control
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../route-policy
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../routing-health
@@ -1562,6 +1571,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
 
@@ -2579,6 +2593,8 @@ snapshots:
       fsevents: 2.3.3
 
   typescript@5.9.3: {}
+
+  typescript@6.0.3: {}
 
   undici-types@7.18.2: {}
 
