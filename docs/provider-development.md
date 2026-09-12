@@ -87,6 +87,10 @@ retry after all candidates reject it.
 Pull-request tests use fixtures and never depend on a live third-party site. Scheduled canaries are an
 operations signal outside deterministic CI.
 
+For a new candidate, use the compact [Provider onboarding checklist](provider-onboarding-checklist.md)
+and verify the Admin effective route plan before requesting any rollout allocation. A candidate that
+is not in the bounded effective attempt order is not advertised as a fallback.
+
 ## Rollout
 
 Ship disabled, pass fixtures, pass scheduled canaries, enable internal traffic, then ramp by

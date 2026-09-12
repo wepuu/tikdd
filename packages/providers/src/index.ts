@@ -24,6 +24,7 @@ import {
   StaticRolloutSource,
   type ProviderRolloutSource
 } from "@tikdd/rollout-control";
+import { effectiveRouteScore, rankEffectiveRoutes } from "@tikdd/route-policy";
 import {
   NoProviderAvailableError,
   ProviderError,
@@ -136,6 +137,8 @@ interface RankedProvider {
   provider: ResolverProvider;
   capability: ProviderPlatformCapability;
   score: number;
+  successRate: number;
+  p95LatencyMs: number;
   circuitKey: ProviderCircuitKey;
   requiresProbe: boolean;
   concurrencyLimitOverride: number | undefined;
@@ -312,18 +315,31 @@ export class ProviderRouter {
       }
 
       const successRate = clamp(health.successRate, 0, 1);
-      const latencyPenalty = Math.min(Math.max(health.latencyP95Ms, 0) / 1000, 50);
-      const baseScore = capability.priority * 1000 + successRate * 100 - latencyPenalty - manifest.costWeight;
       const position=preferencePositions.get(manifest.id);
-      const score = position === undefined ? baseScore : (preferencePositions.size-position+1)*1_000_000_000+baseScore;
+      const p95LatencyMs = Math.max(health.latencyP95Ms, 0);
+      const score = effectiveRouteScore({
+        providerId: manifest.id,
+        basePriority: capability.priority,
+        costWeight: manifest.costWeight,
+        preferencePosition: position ?? null,
+        manualOrderSize: preferencePositions.size,
+        successRateBps: successRate * 10_000,
+        p95LatencyMs
+      });
       const concurrencyLimitOverride=preference?.concurrencyCaps.find(({providerId})=>providerId===manifest.id)?.limit;
-      ranked.push({ provider, capability, score, circuitKey, requiresProbe, concurrencyLimitOverride });
+      ranked.push({ provider, capability, score, successRate, p95LatencyMs, circuitKey, requiresProbe, concurrencyLimitOverride });
     }
 
-    const ordered = ranked.sort(
-        (left, right) =>
-          right.score - left.score || left.provider.manifest.id.localeCompare(right.provider.manifest.id)
-      );
+    const ordered = rankEffectiveRoutes(ranked.map((candidate) => ({
+      providerId: candidate.provider.manifest.id,
+      basePriority: candidate.capability.priority,
+      costWeight: candidate.provider.manifest.costWeight,
+      preferencePosition: preferencePositions.get(candidate.provider.manifest.id) ?? null,
+      manualOrderSize: preferencePositions.size,
+      successRateBps: candidate.successRate * 10_000,
+      p95LatencyMs: candidate.p95LatencyMs,
+      candidate
+    }))).map(({ input }) => input.candidate);
     return {
       ranked: distributeFirstChoice(ordered, preference, taskId, platform, this.region),
       manifestEligibleCount,

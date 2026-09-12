@@ -36,6 +36,9 @@ importers:
       '@tikdd/admin-contracts':
         specifier: workspace:*
         version: link:../../packages/admin-contracts
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../../packages/route-policy
       next:
         specifier: 16.2.12
         version: 16.2.12(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -396,6 +399,9 @@ importers:
       '@tikdd/rollout-control':
         specifier: workspace:*
         version: link:../rollout-control
+      '@tikdd/route-policy':
+        specifier: workspace:*
+        version: link:../route-policy
       '@tikdd/routing-health':
         specifier: workspace:*
         version: link:../routing-health

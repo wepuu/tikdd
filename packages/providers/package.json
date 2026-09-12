@@ -15,6 +15,7 @@
     "@tikdd/contracts": "workspace:*",
     "@tikdd/delivery-core": "workspace:*",
     "@tikdd/platform": "workspace:*",
+    "@tikdd/route-policy": "workspace:*",
     "@tikdd/rollout-control": "workspace:*",
     "@tikdd/routing-health": "workspace:*",
     "zod": "^4.0.0"

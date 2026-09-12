@@ -101,6 +101,14 @@ bounded batch; it does not start Admin during normal deployment. See the [Work I
 [Work Item 40 record](docs/work-item-40-admin-publication-ops.md), and
 [ADR-0029](docs/architecture/adr/0029-starter-content-bootstrap.md).
 
+Stage 7 / Work Item 41 adds the structured editorial workflow used by the owner to edit and preview
+code-owned page templates. Stage 8 / Work Item 42 reorganizes the Admin shell into four focused
+workspaces—概览、内容、Providers、设置—so daily editing does not require entering audit fields such
+as an operator, reason or deployment ID. Those values remain internal to the existing Admin API
+commands for concurrency and replay protection; Provider routing and recovery actions keep their
+explicit confirmations. Admin remains an on-demand, non-indexable control plane. See the [Work Item 42
+record](docs/work-item-42-admin-workspace-simplification.md).
+
 ## Platform and provider model
 
 The catalog recognizes 44 explicit platform families, including TikTok, YouTube, X, Instagram,

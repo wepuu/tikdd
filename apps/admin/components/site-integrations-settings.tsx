@@ -19,7 +19,6 @@ export function SiteIntegrationsSettings({ view, content, csrfToken, onReload }:
   const shared = content?.sharedContent.find((item) => item.locale === defaultLocale);
   const [analyticsId, setAnalyticsId] = useState(view?.siteIntegrations.googleAnalyticsMeasurementId ?? "");
   const [adsenseId, setAdsenseId] = useState(view?.siteIntegrations.googleAdsensePublisherId ?? "");
-  const [reason, setReason] = useState("Configure bounded Google site integrations.");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -59,7 +58,7 @@ export function SiteIntegrationsSettings({ view, content, csrfToken, onReload }:
             }
           },
           expectedRevision: shared?.revision ?? null,
-          reason,
+          reason: "Owner Google integrations update",
           confirmation: defaultLocale,
           idempotencyKey: crypto.randomUUID().replaceAll("-", "")
         }
@@ -76,7 +75,7 @@ export function SiteIntegrationsSettings({ view, content, csrfToken, onReload }:
       <label>Google Analytics 衡量 ID<input value={analyticsId} onChange={(event) => setAnalyticsId(event.target.value)} maxLength={40} placeholder="G-XXXXXXXXXX" aria-invalid={!analyticsValid} />{!analyticsValid ? <small role="alert">请输入 G- 开头的衡量 ID。</small> : null}</label>
       <label>Google AdSense 发布者 ID<input value={adsenseId} onChange={(event) => setAdsenseId(event.target.value)} maxLength={45} placeholder="ca-pub-1234567890123456" aria-invalid={!adsenseValid} />{!adsenseValid ? <small role="alert">请输入 ca-pub- 开头的发布者 ID。</small> : null}</label>
     </div>
-    <footer><label>变更理由<input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} /></label><button onClick={() => void save()} disabled={!csrfToken || !analyticsValid || !adsenseValid}>保存集成草稿</button></footer>
+    <footer><span className="settings-owner-note">单人运营：保存后发布快照即可生效。</span><button onClick={() => void save()} disabled={!csrfToken || !analyticsValid || !adsenseValid}>保存集成草稿</button></footer>
     {message ? <p className="command-message" role="status">{message}</p> : null}
   </section>;
 }

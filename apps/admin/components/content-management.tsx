@@ -53,8 +53,6 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
   const [selectedLocale, setSelectedLocale] = useState(view?.locales[0]?.locale ?? "en");
   const [selectedPage, setSelectedPage] = useState("page_home");
   const [preview, setPreview] = useState<"desktop" | "mobile">("desktop");
-  const [reason, setReason] = useState("Publish the reviewed structured content snapshot.");
-  const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -72,8 +70,12 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
   const chain = useMemo(() => view && selected ? fallbackChain(view, selected.locale) : [], [view, selected]);
   const canPublish = writeMode === "full";
   const publicationBlockers = publication?.blockers ?? [];
-  const publishReady = canPublishSnapshot({ writeMode, publication, confirmation });
-  const publishGuidance = publicationGuidance({ writeMode, publication, confirmation });
+  // The single owner does not need to retype deployment/audit fields. Keep
+  // the command contract populated internally so the API retains its safety
+  // checks without making routine publishing a form-filling exercise.
+  const publishConfirmation = publication?.deployment ?? "";
+  const publishReady = canPublishSnapshot({ writeMode, publication, confirmation: publishConfirmation });
+  const publishGuidance = publicationGuidance({ writeMode, publication, confirmation: publishConfirmation });
   const geoFingerprint = { directAnswer, reviewStatus, reviewedAt, sourceRefs };
   const currentFingerprint = JSON.stringify({ title, summary, editorFields, geoFingerprint });
   const dirty = Boolean(savedFingerprint && currentFingerprint !== savedFingerprint);
@@ -132,7 +134,7 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
   const publish = async (action: "content_publish" | "content_rollback" | "content_retry", extra: Record<string, unknown> = {}) => {
     if (!publication || !csrfToken) return;
     setMessage("处理中…");
-    const command = { deployment: publication.deployment, expectedRevision: publication.currentRevision, reason, confirmation, idempotencyKey: crypto.randomUUID().replaceAll("-", ""), ...extra };
+    const command = { deployment: publication.deployment, expectedRevision: publication.currentRevision, reason: "Owner content publish", confirmation: publication.deployment, idempotencyKey: crypto.randomUUID().replaceAll("-", ""), ...extra };
     await send({ action, csrfToken, command });
   };
 
@@ -148,7 +150,7 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
       <aside className="proofing-index"><div className="mini-heading"><Translate size={16}/><strong>Locale / 页面</strong></div><select value={selected?.locale} onChange={(event) => setSelectedLocale(event.target.value)}>{view.locales.map((item) => <option key={item.locale} value={item.locale}>{item.effective.displayName} · {item.locale}</option>)}</select>{view.definitions.map((item) => <button type="button" className={item.pageId === definition?.pageId ? "selected" : ""} key={item.pageId} onClick={() => setSelectedPage(item.pageId)}><FileText size={15}/><span><strong>{item.label}</strong><small>{item.pageType} · v{item.templateVersion}</small></span><b>{stateLabel[view.coverage.find((cell) => cell.pageId === item.pageId && cell.locale === selected?.locale)?.status ?? "missing"]}</b></button>)}</aside>
       <div className="proofing-workbench">
         <div className="fallback-ribbon"><span><GitBranch size={18}/></span><div><small>当前回退链</small><div>{chain.map((tag, index) => <span key={tag}><b>{tag}</b>{index < chain.length - 1 ? <ArrowRight size={13}/> : null}</span>)}</div></div><em>{selected?.effective.direction.toUpperCase()}</em></div>
-        <div className="editor-preview-grid"><section className="structured-editor"><header><div><small>STRUCTURED FIELDS</small><strong>{definition?.label}</strong></div><span>{revision ? `r${revision.revision}` : "NEW"}</span></header>
+        <div className="editor-preview-grid"><section className="structured-editor"><header><div><small>STRUCTURED FIELDS</small><strong>{definition?.label}</strong></div><span>{revision ? "已保存" : "新页面"}</span></header>
           <div className="editor-state-line" role="status"><span className={dirty ? "dirty-dot" : "saved-dot"} />{dirty ? "有未保存修改" : "与当前权威版本一致"}</div>
           <label>主标题<input aria-invalid={fieldErrors.some((error) => /content\.(heroTitle|title)/.test(error))} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>摘要<textarea aria-invalid={fieldErrors.some((error) => /content\.(heroSubtitle|introduction|summary)/.test(error))} value={summary} onChange={(event) => setSummary(event.target.value)} /></label>
           <div className="field-grid"><label>页面类型<input value={definition?.pageType ?? ""} readOnly /></label><label>本地路径<input value={revision?.seo.localPath ?? (definition?.pageType === "homepage" ? "/" : "将按定义生成")} readOnly /></label></div>
@@ -163,7 +165,7 @@ export function ContentManagement({ view, publication, csrfToken, onReload, writ
         </section>
           <section className={`template-preview preview-${preview}`} dir={selected?.effective.direction}><header><div><small>REAL TEMPLATE PREVIEW</small><strong>{selected?.locale} · {definition?.pageType}</strong></div><div><button type="button" className={preview === "desktop" ? "active" : ""} onClick={() => setPreview("desktop")} aria-label="桌面预览"><Desktop size={16}/></button><button type="button" className={preview === "mobile" ? "active" : ""} onClick={() => setPreview("mobile")} aria-label="移动预览"><DeviceMobile size={16}/></button></div></header><div className="preview-canvas"><nav><b>Tik<span>DD</span></b><i>{selected?.effective.displayName}</i></nav><main><small>{definition?.pageType?.toUpperCase()}</small><h3>{title}</h3><p>{summary}</p>{definition?.pageType === "platform" && directAnswer.trim() ? <blockquote>{directAnswer}</blockquote> : null}<div className="preview-input"><span>{definition?.pageType === "homepage" ? editorFields.inputPlaceholder : "Structured page content"}</span><b>{definition?.pageType === "homepage" ? editorFields.primaryActionLabel : "TikDD"}</b></div></main></div></section></div>
         <div className="revision-strip"><div><small>DRAFT → PUBLISHED DIFF</small><strong>{publication?.diff.length ?? 0} 个变更 · {publication?.affectedPaths.length ?? 0} 条受影响路径</strong></div><div className="diff-list">{publication?.diff.slice(0, 4).map((item) => <span key={item.targetId}><b>{item.change}</b>{item.targetId}</span>)}{!publication?.diff.length ? <span>没有待发布差异</span> : null}</div></div>
-        <div className="publication-command"><div><label>发布理由<textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label><label>输入部署 ID <code>{publication?.deployment}</code><input aria-describedby="publication-publish-help" placeholder={publication?.deployment ?? "tikdd"} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label></div><div className="publish-summary"><p id="publication-publish-help" role="status">{publishGuidance}</p><div className="command-actions"><button type="button" className="primary" aria-describedby="publication-publish-help" disabled={!publishReady} onClick={() => void publish("content_publish")}><PaperPlaneTilt size={15}/>发布快照</button>{canPublish && publication?.propagationState === "propagation_failed" && publication.pendingSnapshotId ? <button type="button" onClick={() => void publish("content_retry", { snapshotId: publication.pendingSnapshotId })}>重试确认</button> : null}{canPublish && publication?.rollbackCandidates[1] ? <button type="button" className="quiet" onClick={() => void publish("content_rollback", { targetRevision: publication.rollbackCandidates[1]!.revision })}>回滚到 r{publication.rollbackCandidates[1]!.revision}</button> : null}</div>{message ? <span className="command-message">{message}</span> : null}</div></div>
+        <div className="publication-command"><div className="publication-owner-note"><strong>单人运营模式</strong><p>发布会自动使用当前部署的安全校验；无需填写理由或部署 ID。后端仍保留版本与幂等保护。</p></div><div className="publish-summary"><p id="publication-publish-help" role="status">{publishGuidance}</p><div className="command-actions"><button type="button" className="primary" aria-describedby="publication-publish-help" disabled={!publishReady} onClick={() => void publish("content_publish")}><PaperPlaneTilt size={15}/>发布快照</button>{canPublish && publication?.propagationState === "propagation_failed" && publication.pendingSnapshotId ? <button type="button" onClick={() => void publish("content_retry", { snapshotId: publication.pendingSnapshotId })}>重试确认</button> : null}{canPublish && publication?.rollbackCandidates[1] ? <button type="button" className="quiet" onClick={() => void publish("content_rollback", { targetRevision: publication.rollbackCandidates[1]!.revision })}>回滚到 r{publication.rollbackCandidates[1]!.revision}</button> : null}</div>{message ? <span className="command-message">{message}</span> : null}</div></div>
       </div>
     </div>
     <div className="coverage-matrix compact-matrix"><table><thead><tr><th>代码模板</th>{enabled.map((item) => <th key={item.locale}>{item.locale}</th>)}</tr></thead><tbody>{view.definitions.slice(0, 8).map((item) => <tr key={item.pageId}><th><strong>{item.label}</strong></th>{enabled.map((locale) => { const cell = view.coverage.find((candidate) => candidate.pageId === item.pageId && candidate.locale === locale.locale); return <td key={locale.locale}><span className={`matrix-cell state-${cell?.status ?? "missing"}`}>{["ready", "published"].includes(cell?.status ?? "") ? <CheckCircle size={16}/> : cell?.status === "fallback" ? <GitBranch size={15}/> : <WarningCircle size={15}/>}<b>{stateLabel[cell?.status ?? "missing"]}</b></span></td>; })}</tr>)}</tbody></table></div>

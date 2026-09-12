@@ -137,6 +137,14 @@ Anonymous quotas and provider concurrency are documented in
 [Admission control operations](../admission-control-operations.md).
 [ADR-0010](adr/0010-owner-control-plane-routing-and-publication.md) defines Admin authentication,
 route-policy overlays, structured multilingual publishing, and derived SEO boundaries.
+[ADR-0030](adr/0030-effective-provider-route-plan.md) defines the shared, read-only effective route
+projection used to explain bounded Provider order without changing production admission.
+
+The owner console is intentionally a single authenticated control plane, but its daily surface is
+organized into four client-side workspaces: overview, content, providers, and settings. Only one
+workspace is rendered at a time; legacy section anchors map to the appropriate workspace for
+backward-compatible links. This is an information-architecture change only: Admin API contracts,
+optimistic revision checks, idempotency keys, and guarded Provider/recovery commands remain unchanged.
 
 The Instagram Beta landing page reuses this boundary: its bundled English and Simplified Chinese
 content is rendered through the platform template and shared resolver, but remains noindex and
