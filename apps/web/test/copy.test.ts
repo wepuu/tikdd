@@ -25,18 +25,18 @@ describe("delivery handoff copy", () => {
     expect(handoffCopy).not.toContain("fallback");
   });
 
-  it("keeps the release-owned X and Instagram Beta surface when an older homepage snapshot is active", () => {
+  it("keeps the release-owned X, Instagram, and TikTok Beta surface when an older homepage snapshot is active", () => {
     const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(({ locale }) => locale === "en");
     expect(homepage).toBeDefined();
     const current = copyForPage(homepage!);
 
     expect(current.hero.badge).toContain("Public Beta");
-    expect(current.supported.platforms).toEqual(["X", "Instagram"]);
+    expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok"]);
     expect(current.faq.items[0]?.[1]).toContain("x.com");
     expect(current.faq.items[0]?.[1]).toContain("Instagram");
     expect(current.form.label).toBe("Public video page URL");
     expect(current.trust.description).toContain("third-party processing service");
-    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X or Instagram.");
+    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X, Instagram, or TikTok.");
   });
 
   it("states the public-only and credential-free Instagram boundary in both locales", () => {

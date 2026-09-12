@@ -8,7 +8,8 @@ import { AdminTimestampSchema } from "./common";
 export const GeoSourceIdSchema = z.enum([
   "tikdd-workflow",
   "x-public-content",
-  "instagram-public-content"
+  "instagram-public-content",
+  "tiktok-public-content"
 ]);
 
 export const GeoContentSchema = z
@@ -43,7 +44,8 @@ export type GeoContent = z.infer<typeof GeoContentSchema>;
 export const GEO_SOURCE_LABELS: Record<GeoSourceId, string> = {
   "tikdd-workflow": "TikDD workflow",
   "x-public-content": "X public content guidance",
-  "instagram-public-content": "Instagram public content guidance"
+  "instagram-public-content": "Instagram public content guidance",
+  "tiktok-public-content": "TikTok public content guidance"
 };
 
 export function isGeoContentReady(content: unknown): boolean {

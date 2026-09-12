@@ -5,13 +5,13 @@ const copy = {
   en: {
     nav: { home: "Home", features: "Features", process: "How it works", supported: "Beta platforms", faq: "FAQ", language: "中文" },
     hero: {
-      badge: "X & Instagram downloader · Public Beta",
-      lead: "Download ", accent: "public videos", tail: " from X & Instagram",
-      description: "Paste a public X post, Instagram Reel, or Instagram post URL. TikDD resolves the available formats and creates a short-lived download link."
+      badge: "X, Instagram & TikTok downloader · Public Beta",
+      lead: "Download ", accent: "public videos", tail: " from X, Instagram & TikTok",
+      description: "Paste a public X post, Instagram Reel, Instagram post, or TikTok video URL. TikDD resolves the available formats and creates a short-lived download link."
     },
     form: {
       label: "Public video page URL",
-      placeholder: "Paste an x.com, twitter.com, or instagram.com URL",
+      placeholder: "Paste an x.com, instagram.com, or tiktok.com URL",
       action: "Resolve", working: "Resolving", waiting: "Waiting for a supported public link",
       recognized: "link recognized.",
       resolving: "Resolving available formats", ready: "Formats ready",
@@ -42,11 +42,11 @@ const copy = {
       expired: "This task expired. Resolve the link again."
     },
     features: [
-      ["X & Instagram Public Beta", "Recognizes public x.com, twitter.com, and instagram.com post URLs."],
+      ["X, Instagram & TikTok Public Beta", "Recognizes public x.com, instagram.com, and tiktok.com video URLs."],
       ["Clear formats", "Normalizes quality and media details into one consistent view."],
       ["Controlled delivery", "Uses short-lived delivery links instead of exposing upstream URLs."]
     ],
-    supported: { label: "Public Beta:", platforms: ["X", "Instagram"] },
+    supported: { label: "Public Beta:", platforms: ["X", "Instagram", "TikTok"] },
     process: {
       title: "How it works",
       steps: [
@@ -58,7 +58,7 @@ const copy = {
     faq: {
       title: "Frequently asked questions",
       items: [
-        ["Which links can I use?", "The current Beta accepts public x.com and twitter.com posts, plus public Instagram Reels and posts."],
+        ["Which links can I use?", "The current Beta accepts public x.com and twitter.com posts, plus public Instagram Reels or posts, and public TikTok video pages."],
         ["Do I need an account?", "No. TikDD does not request your account, cookies, session ID, or access to private content."],
         ["Why can a recognized link fail?", "Private, paid, restricted, or recently changed pages may not resolve."]
       ]
@@ -67,17 +67,17 @@ const copy = {
       title: "Designed around safe delivery", labels: "Scoped · Expiring · One use",
       description: "TikDD sends the public page URL to a third-party processing service. When available, the preview image loads from a reviewed third-party image host. Public results never include provider download URLs or secret headers."
     },
-    legal: "TikDD is an independent tool and is not affiliated with X or Instagram."
+    legal: "TikDD is an independent tool and is not affiliated with X, Instagram, or TikTok."
   },
   "zh-CN": {
     nav: { home: "首页", features: "功能", process: "工作方式", supported: "测试平台", faq: "常见问题", language: "English" },
     hero: {
-      badge: "X 与 Instagram 下载工具 · 公开测试版",
-      lead: "从 X 与 Instagram 下载", accent: "公开视频", tail: "",
-      description: "粘贴公开的 X 帖子、Instagram Reel 或帖子链接，TikDD 会解析可用格式并生成短期下载链接。"
+      badge: "X、Instagram 与 TikTok 下载工具 · 公开测试版",
+      lead: "从 X、Instagram 与 TikTok 下载", accent: "公开视频", tail: "",
+      description: "粘贴公开的 X 帖子、Instagram Reel、Instagram 帖子或 TikTok 视频链接，TikDD 会解析可用格式并生成短期下载链接。"
     },
     form: {
-      label: "公开视频页面链接", placeholder: "粘贴 x.com、twitter.com 或 instagram.com 链接",
+      label: "公开视频页面链接", placeholder: "粘贴 x.com、instagram.com 或 tiktok.com 链接",
       action: "解析", working: "解析中",
       waiting: "等待受支持的公开链接", recognized: "链接已识别。",
       resolving: "正在解析可用格式", ready: "格式已就绪",
@@ -106,11 +106,11 @@ const copy = {
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
     },
     features: [
-      ["X 与 Instagram 公开测试", "识别公开的 x.com、twitter.com 和 instagram.com 帖子链接。"],
+      ["X、Instagram 与 TikTok 公开测试", "识别公开的 x.com、instagram.com 和 tiktok.com 视频链接。"],
       ["格式清晰", "将清晰度和媒体信息统一为一致的选择界面。"],
       ["受控交付", "使用短期交付链接，不公开上游媒体地址。"]
     ],
-    supported: { label: "公开测试：", platforms: ["X", "Instagram"] },
+    supported: { label: "公开测试：", platforms: ["X", "Instagram", "TikTok"] },
     process: {
       title: "工作方式",
       steps: [
@@ -122,7 +122,7 @@ const copy = {
     faq: {
       title: "常见问题",
       items: [
-        ["可以使用哪些链接？", "当前测试版接受公开的 x.com、twitter.com 帖子，以及公开的 Instagram Reel 和帖子链接。"],
+        ["可以使用哪些链接？", "当前测试版接受公开的 X 帖子、公开的 Instagram Reel 或帖子，以及公开的 TikTok 视频页面链接。"],
         ["需要创建账号吗？", "不需要。TikDD 不会索取你的账号、Cookie、sessionid，也不会访问私密内容。"],
         ["为什么已识别的链接仍可能失败？", "私密、付费、受限或近期结构发生变化的页面可能无法解析。"]
       ]
@@ -131,7 +131,7 @@ const copy = {
       title: "围绕安全交付设计", labels: "限定范围 · 短期有效 · 单次使用",
       description: "TikDD 会将公开页面链接发送给第三方处理服务。可用时，预览图会从经过审核的第三方图片主机加载。公开结果不会包含第三方下载地址或私密请求头。"
     },
-    legal: "TikDD 是独立工具，与 X 或 Instagram 不存在隶属关系。"
+    legal: "TikDD 是独立工具，与 X、Instagram 或 TikTok 不存在隶属关系。"
   }
 } as const;
 

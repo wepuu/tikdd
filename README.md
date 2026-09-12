@@ -100,8 +100,11 @@ and [ADR-0031](docs/architecture/adr/0031-free-provider-intake-and-bounded-routi
 Work Item 45 implements the first accepted candidate from that lane as a disabled SnapTik Monster
 TikTok adapter. It uses the existing resolver-to-redirect path, exact page/media host allowlists,
 sanitized fixtures, and independent activation gates. SSSTik and TTSave remain deferred, while
-Collabstr is rejected as a non-resolution service. No new Provider traffic is enabled by the
-implementation. See the [Work Item 45 record](docs/work-item-45-tiktok-provider-batch.md).
+Collabstr is rejected as a non-resolution service. The follow-up TikTok Beta launch batch also adds
+the bilingual, non-indexable TikTok landing page and updates the public copy to identify TikTok as
+experimental. Provider gates and rollout remain disabled until the separate production approval
+loop; no new Provider traffic is implied by the code or content change. See the [Work Item 45
+record](docs/work-item-45-tiktok-provider-batch.md) and [Work Item 46 record](docs/work-item-46-tiktok-beta-launch.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -271,7 +274,8 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`; neither platform is promoted as stable support.
+  and `savefromins` in `nl`. TikTok is prepared as a separate SnapTik Monster Beta and remains
+  disabled until its explicit production enablement; no platform is promoted as stable support.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized
