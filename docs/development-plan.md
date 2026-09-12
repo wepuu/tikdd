@@ -276,6 +276,18 @@ explicit Host/redirect review, delivery verification (when applicable), and the 
 GitHub-image, backup, deployment, and short-observation loop. Until then the current X/Instagram
 production routes are unchanged.
 
+### Work Item 45 current status
+
+Work Item 45 adds the first disabled TikTok free-Provider adapter in the portfolio lane. The
+accepted candidate is SnapTik Monster: one bounded probe returned a public, no-login/no-challenge
+HTML result with an MP4 link on the exact reviewed `tikcdn.beubagah.com` host. The adapter is
+fixture-tested, redirect-only, and guarded by independent terms and Delivery-audit flags. SSSTik is
+deferred after an empty parse response; TTSave is deferred because its current flow starts a
+server-side MP4 job; Collabstr is rejected as a non-resolution marketplace. No rollout rule,
+production traffic, migration, X/Instagram change, or frequent live test is included. See the
+[Work Item 45 record](work-item-45-tiktok-provider-batch.md) and
+[SnapTik Monster Provider record](providers/snaptik-monster.md).
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

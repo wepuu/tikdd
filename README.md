@@ -7,7 +7,8 @@ delivery service turns reviewed internal candidates into controlled browser deli
 
 The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
 delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified Instagram Beta
-redirect capability; DLPanda has multi-platform resolution-only capabilities. All real adapters
+redirect capability; DLPanda has multi-platform resolution-only capabilities; SnapTik Monster has
+a disabled, fixture-verified TikTok redirect adapter. All real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
 media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
@@ -95,6 +96,12 @@ Provider or generate live third-party traffic. SaveFromIns remains the Instagram
 future free candidates must pass the same public/no-cookie/no-challenge and delivery review before
 they can be implemented. See the [Work Item 44 record](docs/work-item-44-free-provider-portfolio.md)
 and [ADR-0031](docs/architecture/adr/0031-free-provider-intake-and-bounded-routing.md).
+
+Work Item 45 implements the first accepted candidate from that lane as a disabled SnapTik Monster
+TikTok adapter. It uses the existing resolver-to-redirect path, exact page/media host allowlists,
+sanitized fixtures, and independent activation gates. SSSTik and TTSave remain deferred, while
+Collabstr is rejected as a non-resolution service. No new Provider traffic is enabled by the
+implementation. See the [Work Item 45 record](docs/work-item-45-tiktok-provider-batch.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`

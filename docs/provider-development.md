@@ -105,3 +105,4 @@ Current records:
 - [SSSTwitter](providers/ssstwitter.md)
 - [ReelsVideo Instagram feasibility](providers/reelsvideo.md)
 - [SaveFromIns Instagram feasibility](providers/savefromins.md)
+- [SnapTik Monster TikTok batch](providers/snaptik-monster.md)

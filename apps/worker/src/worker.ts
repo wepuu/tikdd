@@ -22,6 +22,7 @@ import {
   MockProvider,
   ProviderRouter,
   SaveFromInsProvider,
+  SnapTikMonsterProvider,
   SSSTwitterProvider,
   TwitterSaverProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
@@ -46,6 +47,7 @@ import {
 } from "./rollout";
 import { loadSSSTwitterActivationConfiguration } from "./provider-activation";
 import { loadSaveFromInsActivationConfiguration } from "./savefromins-activation";
+import { loadSnapTikActivationConfiguration } from "./snaptik-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -58,6 +60,7 @@ const twitterSaverTermsApproved =
 const dlPandaTermsApproved = (process.env.DLPANDA_TERMS_APPROVED ?? "false") === "true";
 const ssstwitterActivation = loadSSSTwitterActivationConfiguration();
 const savefrominsActivation = loadSaveFromInsActivationConfiguration();
+const snaptikActivation = loadSnapTikActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -152,6 +155,9 @@ if (savefrominsActivation.enabled) {
     requestAuth: savefrominsActivation.requestAuth,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
+}
+if (snaptikActivation.enabled) {
+  providers.push(new SnapTikMonsterProvider({ enabled: true }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

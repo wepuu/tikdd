@@ -32,6 +32,7 @@ import {
 import {
   DLPandaProvider,
   SaveFromInsProvider,
+  SnapTikMonsterProvider,
   SSSTwitterProvider,
   TwitterSaverProvider,
   resolveJobAttemptsForPlatform
@@ -136,7 +137,8 @@ registerProviderHealthDiagnostics(app, {
     new TwitterSaverProvider({ enabled: process.env.ENABLE_TWITTERSAVER_PROVIDER === "true" }).manifest,
     new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }).manifest,
     new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest,
-    new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }).manifest
+    new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }).manifest,
+    new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken
