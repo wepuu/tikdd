@@ -43,9 +43,12 @@ flowchart LR
 
 The current repository implements the catalog, provider manifests, deterministic ranking,
 sequential fallback, normalized-result validation, an attempt ledger, transactional encrypted
-delivery candidates, and fixture-tested provider adapters. The production Beta currently runs
-SSSTwitter for X and SaveFromIns for Instagram through reviewed redirect-only Delivery paths;
-TwitterSaver and DLPanda remain disabled. ADR-0006 defines tuple-keyed health aggregation and
+delivery candidates, and fixture-tested provider adapters. The production release currently runs
+SSSTwitter for X and SaveFromIns for Instagram through reviewed redirect-only Delivery paths, plus
+the reviewed TikTok route through SnapTik Monster. Work Item 50 promotes TikTok to the stable
+catalog state and publishes its bilingual landing pages after the release is deployed. TwitterSaver
+and DLPanda remain disabled.
+ADR-0006 defines tuple-keyed health aggregation and
 distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key
 open and half-open decisions. ADR-0007 defines production admission controls; work item 9.1 now

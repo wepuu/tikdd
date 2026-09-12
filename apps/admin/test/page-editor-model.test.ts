@@ -47,7 +47,7 @@ describe("page editor model", () => {
   it("provides the exact code-owned starter path for a missing TikTok page", () => {
     const starter = starterPageFor("page_tiktok", "en");
     expect(starter).toEqual(starterPages("en").find((page) => page.pageId === "page_tiktok"));
-    expect(starter?.seo).toMatchObject({ localPath: "/tiktok-downloader", indexable: false, includeInSitemap: false });
+    expect(starter?.seo).toMatchObject({ localPath: "/tiktok-downloader", indexable: true, includeInSitemap: true });
 
     const fields = editorFieldsFromContent(starter?.content);
     const content = mergePageContent(undefined, {

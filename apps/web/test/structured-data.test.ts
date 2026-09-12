@@ -5,6 +5,7 @@ import { buildStructuredData, serializeStructuredData } from "../lib/structured-
 
 const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageType === "homepage" && page.locale === "en")!;
 const instagram = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageId === "page_instagram" && page.locale === "en")!;
+const tiktok = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageId === "page_tiktok" && page.locale === "en")!;
 
 describe("published structured data", () => {
   it("builds a localized homepage graph from the visible copy", () => {
@@ -31,6 +32,17 @@ describe("published structured data", () => {
       siteUrl: "https://www.tikdd.cc"
     });
     expect(document).toBeNull();
+  });
+
+  it("builds structured data for the stable TikTok landing page", () => {
+    const document = buildStructuredData({
+      page: tiktok,
+      copy: copyForPage(tiktok),
+      siteName: "TikDD",
+      siteUrl: "https://www.tikdd.cc"
+    });
+    expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
+    expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/tiktok-downloader");
   });
 
   it("adds breadcrumbs only after an eligible platform page is indexable", () => {

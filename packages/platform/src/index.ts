@@ -28,7 +28,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "tiktok",
     displayName: "TikTok",
-    status: "experimental",
+    status: "stable",
     source: "yt-dlp",
     hosts: [host("tiktok.com"), host("vm.tiktok.com", false), host("vt.tiktok.com", false)],
     extractorKeys: ["TikTok", "tiktok:user", "tiktok:live"]

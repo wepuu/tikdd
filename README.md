@@ -8,7 +8,7 @@ delivery service turns reviewed internal candidates into controlled browser deli
 The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
 delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified Instagram Beta
 redirect capability; DLPanda has multi-platform resolution-only capabilities; SnapTik Monster has
-a disabled, fixture-verified TikTok redirect adapter. All real adapters
+a reviewed TikTok redirect adapter enabled in the NL production route. All real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
 media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
@@ -105,9 +105,16 @@ the bilingual, non-indexable TikTok landing page and updates the public copy to 
 experimental. Provider gates and rollout remain disabled until the separate production approval
 loop; no new Provider traffic is implied by the code or content change. See the [Work Item 45
 record](docs/work-item-45-tiktok-provider-batch.md) and [Work Item 46 record](docs/work-item-46-tiktok-beta-launch.md).
-Work Item 47 keeps SnapTik disabled while preparing the Admin three-platform health view and the
-on-demand publication workflow for the missing TikTok landing pages. See the [Work Item 47
-record](docs/work-item-47-tiktok-beta-launch-readiness.md).
+Work Item 47 prepared the Admin three-platform health view and the on-demand publication workflow
+for the TikTok landing pages. See the [Work Item 47
+record](docs/work-item-47-tiktok-beta-launch-readiness.md). Work Item 48 is merged and deployed
+from `main@5008685f2f50528ac1861e5b95c14d549013d1c1`; it makes the SnapTik Delivery handoff a
+single browser action. Work Item 49 then published the TikTok Beta snapshot and enabled the
+approved SnapTik route for natural-traffic evaluation. Work Item 50 records the owner-approved
+natural-traffic closeout: TikTok is promoted to stable in the catalog and its reviewed bilingual
+landing pages are prepared for sitemap publication. The Web flow reports the browser handoff
+and requests a fresh one-use ticket for “download again”; it never reopens a consumed ticket. See
+the [Work Item 49 record](docs/work-item-49-tiktok-beta-closure.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -277,8 +284,10 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`. TikTok is prepared as a separate SnapTik Monster Beta and remains
-  disabled until its explicit production enablement; no platform is promoted as stable support.
+  and `savefromins` in `nl`, plus the owner-approved TikTok route backed by SnapTik Monster. Work
+  Item 50 promotes TikTok to stable in the catalog and publishes its reviewed immutable landing-page
+  snapshot to the sitemap after the release is deployed; no other Provider, Admin, or calibration
+  profile is started by this promotion.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

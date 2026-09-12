@@ -3,9 +3,9 @@ export type Locale = (typeof locales)[number];
 
 const copy = {
   en: {
-    nav: { home: "Home", features: "Features", process: "How it works", supported: "Beta platforms", faq: "FAQ", language: "中文" },
+    nav: { home: "Home", features: "Features", process: "How it works", supported: "Supported platforms", faq: "FAQ", language: "中文" },
     hero: {
-      badge: "X, Instagram & TikTok downloader · Public Beta",
+      badge: "TikTok supported · X & Instagram Public Beta",
       lead: "Download ", accent: "public videos", tail: " from X, Instagram & TikTok",
       description: "Paste a public X post, Instagram Reel, Instagram post, or TikTok video URL. TikDD resolves the available formats and creates a short-lived download link."
     },
@@ -23,10 +23,9 @@ const copy = {
       workingLonger: "Still checking available formats. Some supported links take longer; you can keep this page open.",
       columns: { quality: "Quality", format: "Format", video: "Video", audio: "Audio", container: "Container", action: "Action" },
       videoAudio: "Video + audio", videoOnly: "Video only", audioOnly: "Audio only",
-      download: "Prepare download", preparingDownload: "Preparing",
-      deliveryReady: "Click once to open the short-lived download. Your browser downloads directly from the media host.", startDownload: "Start download",
-      deliveryHandedOff: "The download is opening in your browser. The browser or media host may choose the final filename.", deliveryFallback: "Open download again",
-      deliveryExpired: "This download link expired or was already used.", regenerateDownload: "Create a new link",
+      download: "Download", preparingDownload: "Starting download…", downloadAgain: "Download again",
+      deliveryHandedOff: "The download was handed off to your browser. If it did not start, use Download again.",
+      deliveryExpired: "This download link expired or was already used.", regenerateDownload: "Download again",
       statusLabel: "Task status",
       resolveError: "This link could not be resolved. Check that it is public and try again.",
       retryableTitle: "Temporarily unavailable", retryableDescription: "TikDD could not finish this request yet. Try the same link again shortly.", retryAction: "Try again", resolveAgainAction: "Resolve again",
@@ -42,11 +41,11 @@ const copy = {
       expired: "This task expired. Resolve the link again."
     },
     features: [
-      ["X, Instagram & TikTok Public Beta", "Recognizes public x.com, instagram.com, and tiktok.com video URLs."],
+      ["TikTok supported · X & Instagram Public Beta", "Recognizes public x.com, instagram.com, and tiktok.com video URLs."],
       ["Clear formats", "Normalizes quality and media details into one consistent view."],
       ["Controlled delivery", "Uses short-lived delivery links instead of exposing upstream URLs."]
     ],
-    supported: { label: "Public Beta:", platforms: ["X", "Instagram", "TikTok"] },
+    supported: { label: "Supported:", platforms: ["X", "Instagram", "TikTok"] },
     process: {
       title: "How it works",
       steps: [
@@ -58,7 +57,7 @@ const copy = {
     faq: {
       title: "Frequently asked questions",
       items: [
-        ["Which links can I use?", "The current Beta accepts public x.com and twitter.com posts, plus public Instagram Reels or posts, and public TikTok video pages."],
+        ["Which links can I use?", "TikDD accepts public x.com and twitter.com posts, public Instagram Reels or posts, and public TikTok video pages. TikTok is a stable supported route; X and Instagram remain in public Beta."],
         ["Do I need an account?", "No. TikDD does not request your account, cookies, session ID, or access to private content."],
         ["Why can a recognized link fail?", "Private, paid, restricted, or recently changed pages may not resolve."]
       ]
@@ -70,9 +69,9 @@ const copy = {
     legal: "TikDD is an independent tool and is not affiliated with X, Instagram, or TikTok."
   },
   "zh-CN": {
-    nav: { home: "首页", features: "功能", process: "工作方式", supported: "测试平台", faq: "常见问题", language: "English" },
+    nav: { home: "首页", features: "功能", process: "工作方式", supported: "支持的平台", faq: "常见问题", language: "English" },
     hero: {
-      badge: "X、Instagram 与 TikTok 下载工具 · 公开测试版",
+      badge: "TikTok 已支持 · X 与 Instagram 公开测试",
       lead: "从 X、Instagram 与 TikTok 下载", accent: "公开视频", tail: "",
       description: "粘贴公开的 X 帖子、Instagram Reel、Instagram 帖子或 TikTok 视频链接，TikDD 会解析可用格式并生成短期下载链接。"
     },
@@ -88,10 +87,9 @@ const copy = {
       workingLonger: "仍在检查可用格式。部分受支持链接需要更长时间，你可以保持本页打开。",
       columns: { quality: "清晰度", format: "格式", video: "视频", audio: "音频", container: "封装", action: "操作" },
       videoAudio: "视频 + 音频", videoOnly: "仅视频", audioOnly: "仅音频",
-      download: "准备下载", preparingDownload: "准备中",
-      deliveryReady: "点击一次即可打开短期下载，浏览器会直接从媒体主机下载。", startDownload: "开始下载",
-      deliveryHandedOff: "下载正在浏览器中打开。最终文件名可能由浏览器或媒体主机决定。", deliveryFallback: "再次打开下载",
-      deliveryExpired: "下载链接已过期或已使用。", regenerateDownload: "创建新链接",
+      download: "下载", preparingDownload: "正在开始下载…", downloadAgain: "再次下载",
+      deliveryHandedOff: "下载已交给浏览器处理。如果没有开始，请点击“再次下载”。",
+      deliveryExpired: "下载链接已过期或已使用。", regenerateDownload: "再次下载",
       statusLabel: "任务状态",
       resolveError: "无法解析该链接，请确认页面公开后重试。",
       retryableTitle: "暂时无法完成", retryableDescription: "TikDD 暂时未能完成本次请求，请稍后使用同一链接重试。", retryAction: "重试", resolveAgainAction: "重新解析",
@@ -106,11 +104,11 @@ const copy = {
       deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
     },
     features: [
-      ["X、Instagram 与 TikTok 公开测试", "识别公开的 x.com、instagram.com 和 tiktok.com 视频链接。"],
+      ["TikTok 已支持 · X 与 Instagram 公开测试", "识别公开的 x.com、instagram.com 和 tiktok.com 视频链接。"],
       ["格式清晰", "将清晰度和媒体信息统一为一致的选择界面。"],
       ["受控交付", "使用短期交付链接，不公开上游媒体地址。"]
     ],
-    supported: { label: "公开测试：", platforms: ["X", "Instagram", "TikTok"] },
+    supported: { label: "支持的平台：", platforms: ["X", "Instagram", "TikTok"] },
     process: {
       title: "工作方式",
       steps: [
@@ -122,7 +120,7 @@ const copy = {
     faq: {
       title: "常见问题",
       items: [
-        ["可以使用哪些链接？", "当前测试版接受公开的 X 帖子、公开的 Instagram Reel 或帖子，以及公开的 TikTok 视频页面链接。"],
+        ["可以使用哪些链接？", "TikDD 支持公开的 X 帖子、公开的 Instagram Reel 或帖子，以及公开的 TikTok 视频页面链接。TikTok 已稳定支持，X 与 Instagram 仍处于公开测试。"],
         ["需要创建账号吗？", "不需要。TikDD 不会索取你的账号、Cookie、sessionid，也不会访问私密内容。"],
         ["为什么已识别的链接仍可能失败？", "私密、付费、受限或近期结构发生变化的页面可能无法解析。"]
       ]
