@@ -21,10 +21,17 @@ owner remains the only person who can decide whether a candidate proceeds to ada
 
 ## Current portfolio decision
 
-No new free Provider URL was supplied for this batch. DLPanda remains resolution-only and is not an
-Instagram download route. SaveFromIns remains the current owner-approved Instagram Beta; do not
-increase its live test frequency. X and Instagram rollout rules, gates, Admin lifecycle, calibration,
-and other Provider flags are unchanged.
+The owner supplied a follow-up candidate queue on 2026-09-13. These entries are discovery inputs,
+not approved adapters or fallback routes:
+
+- TikTok: `tokvid.io`, `tikvid.cc`, `tikcd.com`, and `tikvid.io`.
+- Instagram: `snapinsta.to`, `gramsnap.com`, and `savevid.net/en`.
+
+Each candidate remains untested and disabled until a later bounded feasibility batch reviews its
+public/no-cookie/no-challenge flow, deterministic fixtures, exact page/media Hosts, and redirect
+delivery. DLPanda remains resolution-only and is not an Instagram download route. SaveFromIns
+remains the current owner-approved Instagram Beta; do not increase its live test frequency. Current
+rollout rules, gates, Admin lifecycle, calibration, and other Provider flags are unchanged.
 
 ## Explicitly not included
 

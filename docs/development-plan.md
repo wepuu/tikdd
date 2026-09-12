@@ -2,7 +2,7 @@
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
 - Repository checkpoint: `main@5008685f2f50528ac1861e5b95c14d549013d1c1` (Work Item 48 production deployment)
-- Roadmap revision date: 2026-09-12
+- Roadmap revision date: 2026-09-13
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -16,7 +16,9 @@ two real browser downloads and a clean 15-minute watch. Work Item 22.1 shipped r
 thumbnails with the existing platform-icon fallback from `main@c3fbd217` on 2026-09-08. ADR-0020
 replaces elapsed calibration and evidence prerequisites with a lightweight release loop: PR CI,
 GitHub-built immutable images, backup, one real browser download, a short health watch, and fast
-rollback. X and Instagram remain experimental rather than `stable`. Work Item 23 is merged and deployed from
+rollback. X and Instagram remain experimental rather than `stable`. Work Item 50 is the pending
+TikTok stability and sitemap promotion based on the successful natural-traffic closeout; it does not
+change the X/Instagram status. Work Item 23 is merged and deployed from
 `main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
 bilingual Instagram landing page for content review; it is deliberately noindex and absent from
 the sitemap/hreflang group until the existing eligibility gate passes. Work Item 24 and Work Item
@@ -350,18 +352,41 @@ See the [Work Item 48 record](work-item-48-snaptik-delivery-handoff.md).
 
 ### Work Item 49 — TikTok Beta closure and free-Provider expansion gate
 
-Work Item 49 is complete. It published the bilingual, non-indexable TikTok snapshot and enabled
-the unique `snaptik-monster / tiktok / nl` rule at revision 4 with `allocationBps=10000` after one
-approved browser acceptance. Production records show successful task creation, Provider attempt,
-ticket creation, redirect validation, and browser handoff; X and Instagram remain unchanged.
+Work Item 49 is complete. It published the bilingual TikTok snapshot and enabled the unique
+`snaptik-monster / tiktok / nl` rule at revision 4 with `allocationBps=10000` after one approved
+browser acceptance. Production records show successful task creation, Provider attempt, ticket
+creation, redirect validation, and browser handoff; X and Instagram remain unchanged.
+
+### Work Item 50 — TikTok stable promotion and sitemap publication
+
+Work Item 50 promotes TikTok from `experimental` to `stable` after the owner confirmed successful
+natural traffic. The sanitized production aggregate contains eight successful public TikTok tasks
+(seven after the acceptance task) and no recorded SnapTik failures, with matching successful
+Delivery outcomes. The code-owned bilingual TikTok pages now carry reviewed GEO content and are
+eligible for `indexable=true`, reciprocal hreflang, structured data, and sitemap inclusion. X and
+Instagram remain experimental/noindex. The corresponding SEO fields must still be saved and
+published in one on-demand Admin session after the merged code is deployed; the active immutable
+snapshot, not the source starter alone, controls the production sitemap.
+
+The release keeps the current TikTok rollout and gates unchanged, does not run calibration, and does
+not start Admin outside the publication session. Verification is limited to image provenance,
+backup/deploy health, snapshot acknowledgement, localized metadata, sitemap paths, and preservation
+of X/Instagram noindex boundaries. See the [Work Item 50 record](work-item-50-tiktok-stable-seo.md).
+
+The next free-Provider feasibility batch now has an owner-supplied queue but is not part of the
+Work Item 50 release. TikTok candidates are `tokvid.io`, `tikvid.cc`, `tikcd.com`, and `tikvid.io`;
+Instagram candidates are `snapinsta.to`, `gramsnap.com`, and `savevid.net/en`. They remain untested,
+disabled discovery inputs. A later stage may evaluate them with one bounded request per candidate,
+sanitized fixtures, explicit page/media Host policy, and Delivery verification; no candidate is a
+fallback or production route until that review passes.
 
 The Web flow now performs the Delivery handoff in one browser action. After handoff it shows a
 status message and a “download again” action that creates a fresh one-use ticket; it does not
-render or reopen the consumed ticket. The current stage is natural-traffic evaluation only. If
-the first ten tasks fall below 70% or show recurring 403/429/challenge responses, disable the
-SnapTik rule before its gates and open the next free-Provider batch. That batch evaluates
-owner-supplied candidates together behind disabled manifests until each passes fixtures, Host
-policy, Delivery verification, CI, deployment, and one acceptance request.
+render or reopen the consumed ticket. Natural-traffic evaluation has since passed and is closed by
+Work Item 50, which promotes TikTok to stable and prepares the reviewed pages for sitemap
+publication. The free-Provider batch remains a contingency for a future regression and evaluates
+owner-supplied candidates behind disabled manifests until each passes fixtures, Host policy,
+Delivery verification, CI, deployment, and one acceptance request.
 
 ## Coordinated future lanes
 

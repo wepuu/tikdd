@@ -71,6 +71,11 @@ describe("detectPlatform", () => {
     expect(instagram).toMatchObject({ status: "experimental", source: "yt-dlp" });
   });
 
+  it("reports TikTok as stable after the natural-traffic closeout", () => {
+    const tiktok = listPlatformDefinitions().find((platform) => platform.id === "tiktok");
+    expect(tiktok).toMatchObject({ status: "stable", source: "yt-dlp" });
+  });
+
   it("rejects non-http schemes", () => {
     expect(isSupportedPlatformUrl("file:///etc/passwd")).toBe(false);
   });

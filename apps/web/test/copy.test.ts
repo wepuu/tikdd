@@ -29,13 +29,15 @@ describe("delivery handoff copy", () => {
     expect(handoffCopy).not.toContain("fallback");
   });
 
-  it("keeps the release-owned X, Instagram, and TikTok Beta surface when an older homepage snapshot is active", () => {
+  it("keeps the release-owned platform status surface when an older homepage snapshot is active", () => {
     const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(({ locale }) => locale === "en");
     expect(homepage).toBeDefined();
     const current = copyForPage(homepage!);
 
-    expect(current.hero.badge).toContain("Public Beta");
+    expect(current.hero.badge).toContain("TikTok supported");
+    expect(current.hero.badge).toContain("X & Instagram Public Beta");
     expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok"]);
+    expect(current.faq.items[0]?.[1]).toContain("stable supported route");
     expect(current.faq.items[0]?.[1]).toContain("x.com");
     expect(current.faq.items[0]?.[1]).toContain("Instagram");
     expect(current.form.label).toBe("Public video page URL");

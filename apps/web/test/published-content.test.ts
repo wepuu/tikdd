@@ -10,7 +10,7 @@ describe("public published-content loader", () => {
     expect(instagramPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(2);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(4);
   });
 
   it("bundles the X Beta landing page with the same noindex boundary", () => {
@@ -19,6 +19,13 @@ describe("public published-content loader", () => {
     expect(xPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(xPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(xPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+  });
+
+  it("bundles the TikTok stable landing page in the public index set", () => {
+    const tiktokPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "tiktok");
+    expect(tiktokPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+    expect(tiktokPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(tiktokPages.every((page) => page.content.template === "platform" && page.content.eyebrow.includes("TikTok") && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
 
   it("uses only a runtime-validated active snapshot", async () => {

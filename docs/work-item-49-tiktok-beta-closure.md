@@ -1,8 +1,9 @@
 # Work Item 49 — TikTok Beta closure and free-Provider expansion gate
 
 Status: Stage A and Stage B completed on 2026-09-12; TikTok content snapshot is published,
-SnapTik is enabled as an experimental 100% route, and Admin is readonly/stopped. Stage C natural
-traffic evaluation is pending.
+SnapTik is enabled as a 100% route, and Admin is readonly/stopped. Stage C natural-traffic
+evaluation was completed by Work Item 50, which supersedes this item's temporary experimental
+status and opens the stable/sitemap publication path.
 
 ## Current production facts
 
@@ -78,12 +79,13 @@ allowlists, add a proxy, bypass challenges, or repeatedly probe the Provider.
   `ADMIN_WRITE_MODE=readonly`. API, Worker, Delivery, Web, PostgreSQL, and Redis were healthy
   with zero restarts. No additional Provider requests were sent.
 
-## Stage C — natural-traffic decision and free-provider batch
+## Stage C — natural-traffic decision and free-provider batch (superseded by Work Item 50)
 
-On success, keep TikTok as experimental and judge the first ten natural tasks. A success rate of at
-least 70% keeps SnapTik as the Beta route. Lower success, recurring 403/429/challenge responses, or
-an opened circuit starts the next free-Provider feasibility batch and keeps SnapTik disabled or as a
-standby candidate. Do not claim a fallback relationship until another Provider passes the same review.
+The original plan was to keep TikTok experimental while judging the first ten natural tasks. The
+owner subsequently confirmed successful natural traffic and the sanitized production aggregate
+recorded eight successful public tasks with no SnapTik failures. Work Item 50 therefore promotes
+TikTok to stable and handles the reviewed sitemap publication. The free-Provider batch remains a
+future contingency only; no fallback relationship is claimed.
 
 The next free-provider batch accepts 3–5 owner-supplied candidates, performs one bounded public
 feasibility request per candidate, and implements all accepted adapters together behind disabled
@@ -95,4 +97,5 @@ and one real acceptance request.
 
 - No paid Provider, calibration, permanent Admin process, repeated synthetic testing, media proxy,
   public upstream URL, cookie or challenge bypass.
-- No stable promotion or TikTok indexing until a later evidence and content decision.
+- Stable promotion and TikTok indexing are handled by Work Item 50 after the merged code and
+  reviewed immutable content snapshot are deployed.

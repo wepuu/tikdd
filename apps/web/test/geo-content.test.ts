@@ -37,17 +37,17 @@ describe("Web GEO source registry", () => {
     }
   });
 
-  it("ships a bilingual TikTok Beta page without claiming editorial review", () => {
+  it("ships a bilingual TikTok stable page with reviewed GEO inputs", () => {
     const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "tiktok");
     expect(pages).toHaveLength(2);
     expect(pages.every((page) => page.seo.localPath === "/tiktok-downloader")).toBe(true);
-    expect(pages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(pages.every((page) => page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     for (const page of pages) {
       expect(page.content.template).toBe("platform");
       if (page.content.template !== "platform") continue;
       expect(page.content.geo).toMatchObject({
-        reviewStatus: "draft",
-        reviewedAt: null,
+        reviewStatus: "reviewed",
+        reviewedAt: "2026-09-13T00:00:00.000Z",
         sourceRefs: ["tikdd-workflow", "tiktok-public-content"]
       });
     }
