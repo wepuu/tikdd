@@ -365,6 +365,9 @@ export class AdminReadService {
           policyRevision: policy?.revision ?? null,
           circuitState: circuit?.state === "half-open" ? "half_open" : circuit?.state ?? "unknown",
           successRateBps: circuit ? Math.round(circuit.successRate * 10_000) : null,
+          accessFrictionRateBps: circuit && !circuit.insufficientData && circuit.sampleCount > 0
+            ? Math.max(0, Math.min(10_000, Math.round(circuit.counts.accessFriction / circuit.sampleCount * 10_000)))
+            : null,
           p50LatencyMs: null,
           p95LatencyMs: circuit?.latencyP95Ms ?? null,
           activeConcurrency: null,

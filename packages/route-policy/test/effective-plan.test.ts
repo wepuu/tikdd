@@ -30,6 +30,16 @@ describe("effective route plan", () => {
     expect(effectiveRouteScore(primary)).toBeGreaterThan(effectiveRouteScore(fallback));
   });
 
+  it("softly deprioritizes access-friction without overriding manual order", () => {
+    const healthy = candidate({ providerId: "healthy", preferencePosition: null, basePriority: 900, accessFrictionRateBps: 0 });
+    const limited = candidate({ providerId: "limited", preferencePosition: null, basePriority: 900, accessFrictionRateBps: 10_000 });
+    expect(effectiveRouteScore(healthy)).toBeGreaterThan(effectiveRouteScore(limited));
+
+    const explicitlyOrdered = candidate({ providerId: "primary", preferencePosition: 1, accessFrictionRateBps: 10_000 });
+    const fallback = candidate({ providerId: "fallback", preferencePosition: 2, basePriority: 1_000, accessFrictionRateBps: 0 });
+    expect(rankEffectiveRoutes([explicitlyOrdered, fallback]).map(({ input }) => input.providerId)).toEqual(["primary", "fallback"]);
+  });
+
   it("reports bounded exclusions and a maximum attempt order", () => {
     const plan = buildEffectiveRoutePlan([
       candidate({ providerId: "primary" }),

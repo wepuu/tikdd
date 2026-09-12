@@ -63,6 +63,18 @@ export {
   TwitterSaverProvider,
   type TwitterSaverProviderOptions
 } from "./adapters/twitter-saver";
+export {
+  FREE_PROVIDER_MIN_FAILURE_FIXTURES,
+  FreeProviderCandidateSchema,
+  FreeProviderQualificationReasonSchema,
+  FreeProviderQualificationResultSchema,
+  FreeProviderQualificationStatusSchema,
+  qualifyFreeProviderCandidate,
+  type FreeProviderCandidate,
+  type FreeProviderQualificationReason,
+  type FreeProviderQualificationResult,
+  type FreeProviderQualificationStatus
+} from "./free-provider-qualification";
 
 export interface ResolveInput {
   taskId: string;
@@ -95,7 +107,8 @@ class NeutralProviderHealthSource implements ProviderRoutingHealthSource {
       latencyP95Ms: 0,
       insufficientData: true,
       openUntil: null,
-      calculatedAt: new Date().toISOString()
+      calculatedAt: new Date().toISOString(),
+      accessFrictionRate: null
     };
   }
 
@@ -324,7 +337,10 @@ export class ProviderRouter {
         preferencePosition: position ?? null,
         manualOrderSize: preferencePositions.size,
         successRateBps: successRate * 10_000,
-        p95LatencyMs
+        p95LatencyMs,
+        accessFrictionRateBps: health.insufficientData || health.accessFrictionRate == null
+          ? null
+          : health.accessFrictionRate * 10_000
       });
       const concurrencyLimitOverride=preference?.concurrencyCaps.find(({providerId})=>providerId===manifest.id)?.limit;
       ranked.push({ provider, capability, score, successRate, p95LatencyMs, circuitKey, requiresProbe, concurrencyLimitOverride });

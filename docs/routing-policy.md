@@ -42,12 +42,15 @@ Current score:
 platform priority × 1000
 + bounded success-rate bonus
 - bounded p95 latency penalty
+- bounded access-friction penalty (recent rate limits/challenges)
 - cost weight
 ```
 
-Static priority dominates, making business intent and adapter quality deterministic. Health and cost
-can reorder providers within a priority neighborhood without silently overriding a large explicit
-preference. Provider ID is the final tie-breaker so tests and operations are reproducible.
+Static priority dominates, making business intent and adapter quality deterministic. Health, recent
+access friction, and cost can reorder providers within a priority neighborhood without silently
+overriding a large explicit preference. Access friction is capped at 80 score points and is neutral
+when the health window has no sample. Provider ID is the final tie-breaker so tests and operations
+are reproducible.
 
 The default maximum is four sequential provider calls inside a 30-second route budget. Each
 provider also has its own shorter timeout. The first valid normalized result wins.

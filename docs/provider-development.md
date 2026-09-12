@@ -88,8 +88,9 @@ Pull-request tests use fixtures and never depend on a live third-party site. Sch
 operations signal outside deterministic CI.
 
 For a new candidate, use the compact [Provider onboarding checklist](provider-onboarding-checklist.md)
-and verify the Admin effective route plan before requesting any rollout allocation. A candidate that
-is not in the bounded effective attempt order is not advertised as a fallback.
+and the offline `qualifyFreeProviderCandidate` intake helper before writing an adapter. Verify the
+Admin effective route plan before requesting any rollout allocation. A candidate that is not in the
+bounded effective attempt order is not advertised as a fallback.
 
 ## Rollout
 

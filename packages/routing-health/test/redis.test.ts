@@ -212,6 +212,24 @@ describe("Redis routing health state", () => {
     });
   });
 
+  it("exposes only the bounded access-friction ratio to the Router", async () => {
+    const store = new RedisCircuitStore(new MemoryRedis() as unknown as Redis);
+    const snapshot = aggregateCircuitHealth({
+      key,
+      policy,
+      now,
+      observations: [
+        { ...failedObservation(1), failureCode: "provider_rate_limited" },
+        { ...failedObservation(2), status: "succeeded", failureCode: null }
+      ]
+    });
+    await store.putSnapshot(snapshot, null, policy.snapshotTtlMs);
+    await expect(new RedisProviderRoutingHealthSource(store, policy, () => now).get(key)).resolves.toMatchObject({
+      accessFrictionRate: 0.5,
+      insufficientData: false
+    });
+  });
+
   it("refreshes one snapshot per exact observed circuit", async () => {
     const store = new RedisCircuitStore(new MemoryRedis() as unknown as Redis);
     const result = await refreshCircuitHealth({

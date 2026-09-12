@@ -118,6 +118,30 @@ describe("ProviderRouter", () => {
     });
     await router.resolve(input);expect(calls).toEqual(["available"]);
   });
+  it("uses access-friction health as a bounded tie-breaker for equivalent Providers", async () => {
+    const calls: string[] = [];
+    const router = new ProviderRouter([
+      new TestProvider("limited", 900, "success", calls),
+      new TestProvider("healthy", 900, "success", calls)
+    ], {
+      healthSource: {
+        async get(key) {
+          return {
+            state: "closed" as const,
+            successRate: 1,
+            latencyP95Ms: 0,
+            insufficientData: false,
+            openUntil: null,
+            calculatedAt: new Date().toISOString(),
+            accessFrictionRate: key.providerId === "limited" ? 1 : 0
+          };
+        },
+        async acquireProbe() { return false; }
+      }
+    });
+    await router.resolve(input);
+    expect(calls).toEqual(["healthy"]);
+  });
   it("returns a normalized mock result", async () => {
     const router = new ProviderRouter([new MockProvider(["youtube"])]);
     const routed = await router.resolve(input);

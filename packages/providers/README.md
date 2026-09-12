@@ -14,3 +14,8 @@ An adapter result must use the detected platform, its own Manifest ID as provena
 modes declared for that exact capability. Production formats each require one matching candidate.
 Add capability, error-decision, normalized-result, candidate-host, and sequential-fallback tests for
 every adapter change. New source and delivery hosts require explicit allowlists and redirect tests.
+
+Before implementing a new free Provider, run the code-owned `qualifyFreeProviderCandidate` intake
+from the package. It is offline-only and reports sanitized reject/defer reasons; an accepted result
+still requires the normal adapter fixtures, Host review, Delivery verification, rollout approval,
+and deployment checks.

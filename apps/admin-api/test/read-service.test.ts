@@ -136,7 +136,7 @@ describe("Admin read composition", () => {
     const routes = await service.listRoutes();
     expect(routes).toMatchObject({
       degradedSources: [],
-      routes: [{ tuple: { providerId: "twittersaver", platform: "x", region: "nl" }, allocationBps: 10_000, state: "healthy" }]
+      routes: [{ tuple: { providerId: "twittersaver", platform: "x", region: "nl" }, allocationBps: 10_000, state: "healthy", accessFrictionRateBps: 200 }]
     });
     const overview = await service.getOverview();
     expect(overview).toMatchObject({ state: "healthy", queue: { queued: 1 }, delivery: { handoffCount: 10, failureCount: 1 } });
