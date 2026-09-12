@@ -329,6 +329,23 @@ observation in the Admin Beta aggregate. Repeated synthetic probing is intention
 
 See the [Work Item 47 record](work-item-47-tiktok-beta-launch-readiness.md).
 
+### Work Item 48 — SnapTik Delivery browser handoff
+
+The failed TikTok activation produced successful Delivery ticket creation but no ticket redemption;
+the tickets expired unused before the browser reached `/d/{ticket}`. Work Item 48 keeps SnapTik,
+Admin, calibration, and other Providers disabled while changing the Web flow to create the one-use
+ticket and navigate the current tab in one user action. Delivery remains redirect-only, keeps its
+exact Host/DNS policy and 60-second ticket boundary, and never transfers media bytes. A manual
+fallback link retains the best-effort filename hint if navigation does not start.
+
+The branch adds SnapTik to the Delivery redirect matrix, tests opaque browser navigation, and
+documents layered production acceptance. It must pass PR CI and the GitHub-image/backup deployment
+loop before one separately approved TikTok browser test; no repeated Provider probes are planned.
+If the Delivery GET and 302 succeed but the CDN transfer fails, SnapTik remains disabled and the
+next free-Provider feasibility item is opened.
+
+See the [Work Item 48 record](work-item-48-snaptik-delivery-handoff.md).
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

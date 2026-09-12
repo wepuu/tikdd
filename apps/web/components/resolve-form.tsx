@@ -22,6 +22,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
 import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/analytics";
+import { navigateToDelivery } from "../lib/delivery-navigation";
 import { suggestedDownloadFilename } from "../lib/download-filename";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
@@ -169,7 +170,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [deliveryExpired, setDeliveryExpired] = useState(false);
-  const [deliveryHandedOff, setDeliveryHandedOff] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [workingLonger, setWorkingLonger] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
@@ -350,7 +350,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setTask(null);
     setDelivery(null);
     setDeliveryExpired(false);
-    setDeliveryHandedOff(false);
     setDeliveryError(null);
     try {
       const normalizedUrl = url.trim();
@@ -400,23 +399,23 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     }
   }
 
-  async function requestDelivery(formatId: string): Promise<void> {
-    if (!task || task.status !== "succeeded" || deliveringFormatId) return;
+  async function requestDelivery(formatId: string): Promise<Delivery | null> {
+    if (!task || task.status !== "succeeded" || deliveringFormatId) return null;
     setDeliveringFormatId(formatId);
     setDeliveryError(null);
     setDelivery(null);
     setDeliveryExpired(false);
-    setDeliveryHandedOff(false);
     try {
       if (qaScenarioRef.current) {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        setDelivery({
+        const nextDelivery = {
           id: "dtk_qa_ready",
           mode: "redirect",
           url: `${deliveryBaseUrl}/d/dlt_${"B".repeat(43)}`,
           expiresAt: new Date(Date.now() + 60_000).toISOString()
-        });
-        return;
+        } satisfies Delivery;
+        setDelivery(nextDelivery);
+        return nextDelivery;
       }
       const response = await fetch(`${deliveryBaseUrl}/v1/deliveries`, {
         method: "POST",
@@ -427,11 +426,36 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
       const nextDelivery = (await response.json()) as Delivery;
       setDelivery(nextDelivery);
       setDeliveryExpired(isDeliveryExpired(nextDelivery.expiresAt, Date.now()));
+      return nextDelivery;
     } catch {
       setDeliveryError(copy.deliveryError);
+      return null;
     } finally {
       setDeliveringFormatId(null);
     }
+  }
+
+  async function startDownload(formatId: string): Promise<void> {
+    const nextDelivery = await requestDelivery(formatId);
+    if (!nextDelivery || isDeliveryExpired(nextDelivery.expiresAt, Date.now())) {
+      setDeliveryExpired(true);
+      return;
+    }
+
+    // Keep development QA scenarios rendered for visual checks; production
+    // navigates immediately after the single user action.
+    if (qaScenarioRef.current) return;
+
+    const platform = analyticsPlatform(task?.platform);
+    if (platform) {
+      trackWebEvent("download_handoff", {
+        platform,
+        locale: analyticsLocale,
+        page_type: analyticsPageType
+      });
+    }
+    const navigated = navigateToDelivery(nextDelivery.url, (url) => window.location.assign(url));
+    if (!navigated) setDeliveryError(copy.deliveryError);
   }
 
   function clearLink(): void {
@@ -443,7 +467,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setSubmissionError(null);
     setDelivery(null);
     setDeliveryExpired(false);
-    setDeliveryHandedOff(false);
     setDeliveryError(null);
   }
 
@@ -451,7 +474,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setSelectedFormatId(formatId);
     setDelivery(null);
     setDeliveryExpired(false);
-    setDeliveryHandedOff(false);
     setDeliveryError(null);
   }
 
@@ -525,7 +547,6 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                 setSubmissionError(null);
                 setDelivery(null);
                 setDeliveryExpired(false);
-                setDeliveryHandedOff(false);
                 setDeliveryError(null);
               }}
               placeholder={copy.placeholder} aria-describedby="url-status" aria-invalid={Boolean(url.trim() && !detectedPlatform)} required
@@ -658,48 +679,28 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                 </div>
                 {delivery && !deliveryExpired ? (
                   <div className="delivery-ready" role="status">
-                    <p>{copy.deliveryReady}</p>
+                    <p>{copy.deliveryHandedOff}</p>
                     <a
                       className="download-action"
                       href={delivery.url}
                       download={selectedFormat ? suggestedDownloadFilename(task!, selectedFormat) : undefined}
-                      target="_blank"
                       rel="noreferrer noopener"
-                      onClick={() => {
-                        const platform = analyticsPlatform(task?.platform);
-                        if (platform) {
-                          trackWebEvent("download_handoff", {
-                            platform,
-                            locale: analyticsLocale,
-                            page_type: analyticsPageType
-                          });
-                        }
-                        setDeliveryHandedOff(true);
-                        setDeliveryExpired(true);
-                      }}
                     >
-                      <DownloadSimpleIcon size={20} weight="bold" /><span>{copy.startDownload}</span>
+                      <DownloadSimpleIcon size={20} weight="bold" /><span>{copy.deliveryFallback}</span>
                     </a>
                   </div>
-                ) : (
-                  <>
-                    {deliveryHandedOff ? (
-                      <p className="delivery-note" role="status">{copy.deliveryHandedOff}</p>
-                    ) : deliveryExpired ? (
-                      <p className="delivery-note" role="status">{copy.deliveryExpired}</p>
-                    ) : null}
-                    {deliveryError ? <p className="delivery-note is-error" role="alert">{deliveryError}</p> : null}
-                    <button
-                      className="download-action"
-                      type="button"
-                      disabled={!selectedFormat || Boolean(deliveringFormatId)}
-                      onClick={() => selectedFormat && void requestDelivery(selectedFormat.id)}
-                    >
-                      {deliveringFormatId ? <CircleNotchIcon className="spin" size={20} weight="bold" /> : <DownloadSimpleIcon size={20} weight="bold" />}
-                      <span>{deliveringFormatId ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : copy.download}</span>
-                    </button>
-                  </>
-                )}
+                ) : null}
+                {deliveryExpired ? <p className="delivery-note" role="status">{copy.deliveryExpired}</p> : null}
+                {deliveryError ? <p className="delivery-note is-error" role="alert">{deliveryError}</p> : null}
+                <button
+                  className="download-action"
+                  type="button"
+                  disabled={!selectedFormat || Boolean(deliveringFormatId)}
+                  onClick={() => selectedFormat && void startDownload(selectedFormat.id)}
+                >
+                  {deliveringFormatId ? <CircleNotchIcon className="spin" size={20} weight="bold" /> : <DownloadSimpleIcon size={20} weight="bold" />}
+                  <span>{deliveringFormatId ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : copy.download}</span>
+                </button>
               </>
             )}
           </div>

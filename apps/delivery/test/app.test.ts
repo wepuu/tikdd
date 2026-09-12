@@ -124,6 +124,12 @@ describe("delivery application", () => {
       hostPolicyId: "ssstwitter-media-v1",
       formatId: "fmt_ssstwitter_360p",
       targetUrl: "https://ssscdn.io/fixture/video-360.mp4?token=secret"
+    },
+    {
+      providerId: "snaptik-monster",
+      hostPolicyId: "snaptik-monster-tiktok-media-v1",
+      formatId: "fmt_snaptik_monster_original",
+      targetUrl: "https://tikcdn.beubagah.com/fixture/video.mp4?token=secret"
     }
   ] satisfies DeliveryFixture[])(
     "issues and redeems one opaque ticket for $providerId/$formatId without fetching media",
