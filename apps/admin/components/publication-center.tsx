@@ -25,9 +25,11 @@ const blockerLabels: Record<string, string> = {
   content_gaps: "页面或语言覆盖仍有缺口"
 };
 
-function statusCopy(status: PublicationCenterStatus): { label: string; tone: string; detail: string } {
+function statusCopy(status: PublicationCenterStatus, published: boolean): { label: string; tone: string; detail: string } {
   switch (status) {
-    case "ready": return { label: "可以发布", tone: "ready", detail: "当前数据源已返回完整快照检查结果。" };
+    case "ready": return published
+      ? { label: "已发布", tone: "ready", detail: "当前快照已传播，暂无待发布差异。" }
+      : { label: "可以发布", tone: "ready", detail: "当前数据源已返回完整快照检查结果。" };
     case "blocked": return { label: "发布被阻塞", tone: "blocked", detail: "先处理下方阻塞项，再进入完整维护模式发布。" };
     case "propagating": return { label: "正在确认生效", tone: "propagating", detail: "快照已提交，等待 Web 确认新 revision。" };
     default: return { label: "发布数据不可用", tone: "unavailable", detail: "Admin API 未返回完整内容和发布视图。" };
@@ -40,8 +42,12 @@ function Metric({ icon, label, value, detail }: { icon: ReactNode; label: string
 
 export function PublicationCenter({ content, publication, seo, settings }: Props) {
   const overview = derivePublicationCenter({ content, publication, seo, settings });
-  const status = statusCopy(overview.status);
+  const published = overview.currentRevision !== null && overview.diffCount === 0 && overview.pendingSnapshotId === null && publication?.propagationState === "propagated";
+  const status = statusCopy(overview.status, published);
   const configured = overview.configuredIntegrationCount;
+  const clearDetail = published
+    ? `当前 r${overview.currentRevision} 已由 Web 确认，暂无待发布差异。`
+    : "完整性检查通过；在完整维护模式输入部署确认后发布。";
 
   return <section className="publication-center" id="publication-center">
     <header className="publication-center-header">
@@ -57,7 +63,7 @@ export function PublicationCenter({ content, publication, seo, settings }: Props
     </div>
 
     <div className="publication-center-grid">
-      <section className="panel publication-blockers"><header><div><small>RELEASE PREFLIGHT</small><h3>发布前检查</h3></div><span className={`state-pill state-${status.tone}`}>{status.label}</span></header>{overview.blockers.length ? <ul>{overview.blockers.map((blocker) => <li key={blocker}><WarningCircle size={16} /><span>{blockerLabels[blocker] ?? blocker}</span><a href={blocker === "seo_blockers" ? "#seo-readiness" : "#publishing"}>处理<ArrowUpRight size={13} /></a></li>)}</ul> : <div className="publication-clear"><CheckCircle size={22} weight="fill" /><div><strong>没有发现发布阻塞</strong><p>仍需在完整维护模式中输入部署确认并执行发布。</p></div></div>}</section>
+      <section className="panel publication-blockers"><header><div><small>RELEASE PREFLIGHT</small><h3>发布前检查</h3></div><span className={`state-pill state-${status.tone}`}>{status.label}</span></header>{overview.blockers.length ? <ul>{overview.blockers.map((blocker) => <li key={blocker}><WarningCircle size={16} /><span>{blockerLabels[blocker] ?? blocker}</span><a href={blocker === "seo_blockers" ? "#seo-readiness" : "#publishing"}>处理<ArrowUpRight size={13} /></a></li>)}</ul> : <div className="publication-clear"><CheckCircle size={22} weight="fill" /><div><strong>没有发现发布阻塞</strong><p>{clearDetail}</p></div></div>}</section>
       <section className="panel publication-snapshot"><header><div><small>IMMUTABLE SNAPSHOT</small><h3>快照传播</h3></div><span className={`state-pill state-${publication?.propagationState ?? "unavailable"}`}>{publication?.propagationState ?? "unavailable"}</span></header><dl><div><dt>当前 revision</dt><dd>{overview.currentRevision === null ? "—" : `r${overview.currentRevision}`}</dd></div><div><dt>待确认快照</dt><dd>{overview.pendingSnapshotId ? overview.pendingSnapshotId.slice(0, 14) + "…" : "无"}</dd></div><div><dt>待发布差异</dt><dd>{overview.diffCount} 项</dd></div></dl><a className="publication-link" href="#publishing">打开内容校样台 <ArrowUpRight size={14} /></a></section>
     </div>
   </section>;

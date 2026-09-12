@@ -21,9 +21,27 @@ runs immutable images.
 
 Admin is a separate owner-on-demand operation after the public release has passed. Starting Admin
 requires an approved HTTPS owner route (`admin.tikdd.cc`) through the existing Tunnel/Nginx
-boundary; a loopback port alone is not a production access path. The first session is read-only:
-verify login/session behavior and the Beta health view, do not publish content or change routing,
-then run `admin-stop`. Admin API port 4100 remains private and is never published.
+boundary; a loopback port alone is not a production access path. Always pass the write mode expected
+for the session; the release script verifies the running Admin API environment and stops Admin if it
+does not match:
+
+```sh
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+TIKDD_ADMIN_EXPECTED_WRITE_MODE=readonly \
+scripts/production-release.sh admin-start
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-stop
+```
+
+The first session is read-only: verify login/session behavior and the Beta health view, do not publish
+content or change routing, then run `admin-stop`. Admin API port 4100 remains private and is never
+published. Owner-account recovery uses the release-env-bound one-shot operation rather than a bare
+Compose command:
+
+```sh
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+scripts/production-release.sh admin-account \
+pnpm admin:account reset-password --username solo
+```
 
 ## Rollback
 

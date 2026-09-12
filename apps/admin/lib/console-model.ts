@@ -1,5 +1,6 @@
 import type { AdminBetaHealth, AdminRouteSummary } from "@tikdd/admin-contracts";
 import type { AdminConsoleSnapshot } from "./console-contract";
+import { derivePublicationCenter } from "./publication-model";
 
 export type AlertSeverity = "critical" | "warning" | "notice";
 
@@ -19,6 +20,51 @@ export interface BetaCadenceSignal {
   label: string;
   advice: string;
   transientFailureCount: number;
+}
+
+export type PublicationSummary = {
+  pendingDrafts: number;
+  localeGaps: number;
+  seoBlockers: number;
+  diffCount: number;
+  affectedPathCount: number;
+  currentRevision: number | null;
+};
+
+/**
+ * Prefer the content/publication control read models over the legacy overview aggregate.
+ * The latter is intentionally retained as a fallback while an older Admin API is in service.
+ */
+export function derivePublicationSummary(snapshot: AdminConsoleSnapshot): PublicationSummary {
+  const controls = snapshot.controls.status === "ready" ? snapshot.controls.data : null;
+  if (controls?.contentManagement && controls.contentPublication) {
+    const publication = derivePublicationCenter({
+      content: controls.contentManagement,
+      publication: controls.contentPublication,
+      seo: controls.seoTechnical,
+      settings: controls.settingsRecovery
+    });
+    return {
+      pendingDrafts: publication.draftCount,
+      localeGaps: publication.missingCellCount,
+      seoBlockers: publication.seoBlockerCount,
+      diffCount: publication.diffCount,
+      affectedPathCount: publication.affectedPathCount,
+      currentRevision: publication.currentRevision
+    };
+  }
+  if (snapshot.overview.status === "ready") {
+    const publishing = snapshot.overview.data.publishing;
+    return {
+      pendingDrafts: publishing.pendingDrafts,
+      localeGaps: publishing.localeGaps,
+      seoBlockers: publishing.seoBlockers,
+      diffCount: 0,
+      affectedPathCount: 0,
+      currentRevision: publishing.activeSnapshotRevision
+    };
+  }
+  return { pendingDrafts: 0, localeGaps: 0, seoBlockers: 0, diffCount: 0, affectedPathCount: 0, currentRevision: null };
 }
 
 const betaCadenceLabels: Record<BetaCadenceState, string> = {
@@ -183,7 +229,8 @@ export function deriveAlerts(snapshot: AdminConsoleSnapshot): ConsoleAlert[] {
   if (snapshot.overview.status === "unavailable") {
     alerts.push({ id: "overview-unavailable", severity: "critical", title: "今日运行摘要不可读取", detail: "队列、交付和发布数字均不应视为零。", target: "runtime", actionLabel: "检查 Admin API" });
   } else {
-    const { queue, delivery, publishing, routes } = snapshot.overview.data;
+    const { queue, delivery, routes } = snapshot.overview.data;
+    const publishing = derivePublicationSummary(snapshot);
     if (queue.failed > 0 || queue.queued > 100) {
       alerts.push({ id: "queue-pressure", severity: queue.failed > 20 || queue.queued > 500 ? "critical" : "warning", title: "解析队列需要关注", detail: `${formatCount(queue.queued)} 个等待，${formatCount(queue.failed)} 个失败。`, target: "runtime", actionLabel: "检查队列与 Worker" });
     }
@@ -193,8 +240,8 @@ export function deriveAlerts(snapshot: AdminConsoleSnapshot): ConsoleAlert[] {
     if (routes.activeDenies > 0) {
       alerts.push({ id: "active-denies", severity: "warning", title: `${routes.activeDenies} 条运行路线处于拒绝或暂停`, detail: "确认限制来源；受保护的恢复只会到期精确 Admin deny，不会创建或提高授权。", target: "routing", actionLabel: "查看暂停路线" });
     }
-    if (publishing.localeGaps > 0 || publishing.seoBlockers > 0 || publishing.pendingDrafts > 0) {
-      alerts.push({ id: "publishing", severity: publishing.seoBlockers > 0 ? "warning" : "notice", title: "发布准备尚未完成", detail: `${publishing.pendingDrafts} 个草稿，${publishing.localeGaps} 个语言缺口，${publishing.seoBlockers} 个 SEO 阻塞。`, target: "publishing", actionLabel: "查看发布准备度" });
+    if (publishing.localeGaps > 0 || publishing.seoBlockers > 0 || publishing.pendingDrafts > 0 || publishing.diffCount > 0) {
+      alerts.push({ id: "publishing", severity: publishing.seoBlockers > 0 ? "warning" : "notice", title: "发布准备尚未完成", detail: `${publishing.pendingDrafts} 个草稿，${publishing.localeGaps} 个语言缺口，${publishing.seoBlockers} 个 SEO 阻塞${publishing.diffCount > 0 ? `，${publishing.diffCount} 项待发布差异` : ""}。`, target: "publishing", actionLabel: "查看发布准备度" });
     }
   }
   if (snapshot.runtime.status === "unavailable") {

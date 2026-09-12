@@ -43,6 +43,35 @@ release_value() {
   fi
 }
 
+verify_admin_write_mode() {
+  expected="$1"
+  [ -n "$expected" ] || return 0
+  case "$expected" in
+    readonly|content-draft|full) ;;
+    *)
+      echo "TIKDD_ADMIN_EXPECTED_WRITE_MODE must be readonly, content-draft, or full." >&2
+      return 78
+      ;;
+  esac
+
+  container_id="$(compose --profile admin ps -q admin-api 2>/dev/null | awk 'NF { value=$1 } END { print value }')"
+  [ -n "$container_id" ] || {
+    echo "Admin API container is not running; cannot verify write mode." >&2
+    return 78
+  }
+  if ! env_dump="$(docker inspect "$container_id" --format '{{range .Config.Env}}{{println .}}{{end}}')"; then
+    echo "Admin API container environment could not be inspected; refusing to expose Admin." >&2
+    return 78
+  fi
+  actual="$(printf '%s\n' "$env_dump" | awk -F= '$1=="ADMIN_WRITE_MODE" { sub(/^[^=]*=/, ""); print; exit }')"
+  [ -n "$actual" ] || actual="readonly"
+  if [ "$actual" != "$expected" ]; then
+    echo "Admin write mode mismatch: expected $expected, actual $actual." >&2
+    return 78
+  fi
+  echo "admin_write_mode=PASS mode=$actual"
+}
+
 validate() {
   compose --profile admin --profile ops --profile admin-ops config --quiet
 }
@@ -60,6 +89,7 @@ initial_empty_confirmed="$(release_value TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED 
 provider_rollout_enabled="$(release_value PROVIDER_ROLLOUT_ENABLED "false")"
 internal_preflight_required="$(release_value TIKDD_INTERNAL_PREFLIGHT_REQUIRED "false")"
 preflight_signals="$(release_value TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON "")"
+expected_admin_write_mode="$(release_value TIKDD_ADMIN_EXPECTED_WRITE_MODE "")"
 
 run_stage_gate() {
   stage="$1"
@@ -206,6 +236,13 @@ case "$action" in
       stop_admin_after_failure
       exit "$status"
     fi
+    if verify_admin_write_mode "$expected_admin_write_mode"; then
+      :
+    else
+      status="$?"
+      stop_admin_after_failure
+      exit "$status"
+    fi
     if run_stage_gate admin-on-demand; then
       :
     else
@@ -219,8 +256,18 @@ case "$action" in
     compose --profile admin stop admin admin-api
     run_stage_gate admin-stopped
     ;;
+  admin-account)
+    acquire_lock
+    validate
+    shift
+    [ "$#" -gt 0 ] || {
+      echo "Usage: $0 admin-account <account-cli arguments...>" >&2
+      exit 64
+    }
+    compose --profile admin-ops run --rm admin-account "$@"
+    ;;
   *)
-    echo "Usage: $0 {validate|deploy|rollback|admin-start|admin-stop}" >&2
+    echo "Usage: $0 {validate|deploy|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac

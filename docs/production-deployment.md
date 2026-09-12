@@ -291,15 +291,18 @@ continuous deploy path and is started only when needed; startup or on-demand gat
 the Admin pair:
 
 ```sh
-TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-start
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+TIKDD_ADMIN_EXPECTED_WRITE_MODE=readonly \
+scripts/production-release.sh admin-start
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-stop
 ```
 
 Initialize or recover the single owner account interactively:
 
 ```sh
-docker compose --env-file /etc/tikdd/production.env -f compose.production.yml \
-  --profile admin-ops run --rm admin-account pnpm admin:account init --username owner
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+scripts/production-release.sh admin-account \
+pnpm admin:account init --username solo
 ```
 
 Manual one-shot operations:

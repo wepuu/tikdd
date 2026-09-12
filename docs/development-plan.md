@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@f25c516c8dbdefc90a4f1cc72044e1360ab68003` (Stage 3 deployment lineage)
+- Repository checkpoint: `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf` (Stage 4 production deployment)
 - Roadmap revision date: 2026-09-11
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -193,12 +193,55 @@ snapshot. See the [Stage 3 record](stage-3-growth-content-measurement.md).
 
 ### Stage 4 current status
 
-Stage 4 / Work Item 38 is being implemented on `codex/work-item-38-content-bootstrap`. It creates the
-first bilingual structured content set (homepage, FAQ, help, privacy, terms, X, and Instagram) as
-code-owned starter data, exposes a read-only preview and idempotent Admin action that creates only
-`ready` drafts before the first snapshot, and keeps publication behind the existing `full` mode.
-Web fallback and Admin bootstrap share the same contracts; no migration, Provider request, rollout
-change, calibration profile, or permanent Admin process is included. See the [Work Item 38 record](work-item-38-content-bootstrap.md).
+Stage 4 / Work Item 38 is merged and deployed from `main@8f6eb9bb08196ece7ccb4601df2dd9a877c6bddf`.
+It creates the first bilingual structured content set (homepage, FAQ, help, privacy, terms, X, and
+Instagram) as code-owned starter data, exposes a read-only preview and idempotent Admin action that
+creates only `ready` drafts before the first snapshot, and keeps publication behind the existing
+`full` mode. Web fallback and Admin bootstrap share the same contracts. The release used GitHub-built
+immutable images, an encrypted PostgreSQL backup, and a successful staged health gate; no Provider,
+rollout, calibration, or permanent Admin process changed. See the [Work Item 38 record](work-item-38-content-bootstrap.md).
+
+### Stage 5 current status
+
+Stage 5 / Work Item 39 is complete. The owner-authorized on-demand session created and reviewed the
+bilingual starter drafts, published the first immutable snapshot at `r1`, and received Web
+acknowledgement for 16 changes across 14 paths. PostgreSQL/configuration backups were captured before
+the session, the six core containers remained healthy with zero restarts, and Admin returned to
+`readonly` and was stopped (public Admin route 404). Provider traffic, rollout, calibration, and
+Delivery remained unchanged. See the [Work Item 39 record](work-item-39-first-content-publication.md).
+
+### Stage 6 current status
+
+Stage 6 / Work Item 40 is implemented locally on the current release line; its external release closure
+is still handled through the normal approval flow. It hardens the Admin publication control room and
+its production lifecycle without adding a new persistence or delivery path. The Admin UI uses the
+authoritative content/publication/SEO read models for blocker counts, make the sequence
+`内容就绪 → 发布前检查 → 部署确认 → 快照传播 → 公共读取` explicit, and show a clear disabled reason
+for every unavailable publish action. Published `r1` with zero diff is shown as complete rather than as
+an outstanding first-publication alert.
+
+The official release script will accept an explicit expected Admin write mode, verify the running
+container matches it, fail closed and stop Admin on mismatch, and provide a release-env-bound one-shot
+account operation. `admin-stop` continues to verify the 404 route while leaving the six core services
+untouched. Tests cover authoritative-versus-legacy status, idle/propagating/propagated/failed UI
+states, mode mismatch cleanup, Compose validation, and the existing `pnpm check` gate. This batch does
+not call SaveFromIns, change any Provider or rollout state, run calibration, alter indexability, or
+start Admin in the production deployment path. See the [Work Item 40 record](work-item-40-admin-publication-ops.md).
+
+### Stage 7 current status
+
+Stage 7 / Work Item 41 is the next batched Admin editorial workflow. The implementation branch adds a
+lossless structured page editor for all five code-owned templates (homepage, platform, guide, FAQ and
+legal), keeps nested steps/FAQ/sections editable, and adds an explicit draft-discard action. Existing
+SEO paths, noindex/sitemap policy, redirects and social metadata are preserved when a page is edited;
+new pages still use the safe noindex defaults. The live preview follows the in-progress form values so
+an owner can review the exact template shape before saving.
+
+This batch changes no Provider, rollout, calibration, Delivery or persistence schema. It is verified with
+pure editor-model tests and the Admin typecheck before joining the normal Stage 6 release closure. The
+remaining release sequence is intentionally batched: push/PR and CI, merge, verify GitHub-built images,
+then separately authorize backup/deploy and one read-only Admin content edit followed by a publish or
+discard decision. See the [Work Item 41 record](work-item-41-admin-editorial-workflow.md).
 
 ## Coordinated future lanes
 
