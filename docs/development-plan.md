@@ -1171,6 +1171,20 @@ until two-sample success is established without guessing the Schema. See the
 This remains evidence-only: no Delivery host policy, environment gate, rollout rule, database
 change or production deployment was made. SaveFromIns remains the sole Instagram production route.
 
+### Work Item 59 — Instagram Provider 技术验证（批次 3）
+
+Work Item 59 从 NL VPS 对六个新候选执行了一次无凭据、无重试的协议级检查：EmbedSocial.jp、
+ReelsVideo、Save-Free、AnonSaver、Snap-Insta 和 DLReel。ReelsVideo 与 Save-Free 暴露
+Turnstile/验证码或浏览器态字段，AnonSaver 返回 Cloudflare 访问挑战；三者记录为
+`technicalState=blocked`。Snap-Insta 的匿名表单请求返回 HTML 且没有可验证 MP4，EmbedSocial.jp
+和 DLReel 仅返回页面而未发现可安全调用的公开解析协议，三者记录为 `technicalState=no-media`。
+
+没有候选达到 `resolved` 或 `qualified`，所以没有执行第二 Reel 确认，也没有保存原始响应或完整
+CDN 地址。临时探测脚本已从本机和 NL VPS 删除。本批次只更新了 preflight 映射、离线候选矩阵、
+测试和证据记录，不创建 Adapter、Delivery Host policy、rollout rule、数据库变更或生产部署。
+SaveFromIns 仍是唯一 Instagram 生产路线。详见
+[Work Item 59 记录](work-item-59-instagram-provider-batch-3.md)。
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
