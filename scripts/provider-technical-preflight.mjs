@@ -11,7 +11,12 @@ export const CANDIDATES = {
   fastdl: "https://fastdl.app/",
   "igram-world": "https://igram.world/",
   sssinstagram: "https://sssinstagram.com/",
-  inflact: "https://inflact.com/instagram-downloader/"
+  inflact: "https://inflact.com/instagram-downloader/",
+  "savefrom-net": "https://en1.savefrom.net/25-instagram-reels-download-5Ie.html",
+  collabstr: "https://collabstr.com/",
+  igexport: "https://igexport.com/en/reels-download/",
+  fastvideosave: "https://fastvideosave.net/",
+  indown: "https://indown.io/reels/en2"
 };
 
 function contentTypeCategory(headers) {

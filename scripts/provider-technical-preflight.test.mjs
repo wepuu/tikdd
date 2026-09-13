@@ -12,13 +12,18 @@ describe("technical Provider preflight classification", () => {
     expect(classifyTechnicalResponse({ status: 429, challenge: false })).toEqual({ state: "deferred", failureCode: "temporary_http_error" });
   });
 
-  it("keeps the Work Item 56 Instagram candidate mapping explicit", () => {
+  it("keeps the Instagram candidate mappings explicit", () => {
     expect(CANDIDATES).toMatchObject({
       fastdl: "https://fastdl.app/",
       snapinsta: "https://snapinsta.to/",
       "igram-world": "https://igram.world/",
       sssinstagram: "https://sssinstagram.com/",
-      inflact: "https://inflact.com/instagram-downloader/"
+      inflact: "https://inflact.com/instagram-downloader/",
+      "savefrom-net": "https://en1.savefrom.net/25-instagram-reels-download-5Ie.html",
+      collabstr: "https://collabstr.com/",
+      igexport: "https://igexport.com/en/reels-download/",
+      fastvideosave: "https://fastvideosave.net/",
+      indown: "https://indown.io/reels/en2"
     });
   });
 });

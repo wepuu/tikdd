@@ -192,6 +192,18 @@ describe("Work Item 51 portfolio qualification", () => {
         reasons: expect.arrayContaining(["technical_blocked"])
       });
     }
+    for (const providerId of ["savefrom-net", "collabstr", "igexport", "indown"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "deferred",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_blocked"])
+      });
+    }
+    expect(results.find(({ providerId }) => providerId === "fastvideosave")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_no_media"])
+    });
   });
 });
 
