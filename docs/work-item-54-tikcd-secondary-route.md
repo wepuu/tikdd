@@ -1,6 +1,6 @@
 # Work Item 54 — Production convergence and TikCD secondary route
 
-Status: implemented and deployed with TikCD disabled (2026-09-13).
+Status: implemented, deployed, and TikCD secondary route enabled (2026-09-13).
 
 ## Baseline
 
@@ -8,7 +8,8 @@ Status: implemented and deployed with TikCD disabled (2026-09-13).
 `main@2e3745e8759f708d0afccb7c2a0e76f3ef9ae50f`; its CI and Release Images runs succeeded. The NL
 VPS now runs that SHA from `/opt/tikdd/releases/2e3745e8759f708d0afccb7c2a0e76f3ef9ae50f` with
 GitHub-built immutable Web/Admin/Service image digests. TikTok production traffic continues to use
-SnapTik Monster; TikCD remains disabled by default.
+SnapTik Monster remains primary; TikCD is enabled as the bounded secondary route after the
+owner-approved activation.
 
 ## Objective
 
@@ -21,7 +22,7 @@ and make it a sequential fallback behind SnapTik Monster. No percentage traffic 
   API status/schema, MP4 Range response, reviewed CDN suffix, and sanitized failure classification.
 - Keep TikCD's exact `tikwm.com` API allowlist and reviewed `tiktokcdn-us.com` media suffix. Do not
   broaden the allowlist from page content or a marketing claim.
-- Promote the code adapter to internal redirect candidates while retaining default-off activation
+- Promote the code adapter to internal redirect candidates while retaining explicit activation
   gates. The public result remains URL-free and Delivery remains a one-use, short-lived 302.
 - Configure route order `SnapTik Monster → TikCD`, omit TikCD from traffic-share allocations, and
   retain existing timeout, concurrency, circuit, and terminal-error boundaries.
@@ -34,7 +35,9 @@ and make it a sequential fallback behind SnapTik Monster. No percentage traffic 
 2. Two independent TikCD samples resolve normalized MP4 resources and pass Range checks.
 3. A controlled browser flow reaches the reviewed TikTok CDN through Delivery 302; NL does not stream
    media bytes.
-4. SnapTik success never calls TikCD; only an allowed SnapTik fallback failure reaches TikCD.
+4. SnapTik success never calls TikCD; only an allowed SnapTik fallback failure reaches TikCD. The
+   production acceptance run intentionally did not force a primary failure, so it records SnapTik
+   success and no TikCD attempt.
 5. If the browser check or health signal fails, the TikCD rule and three gates are disabled first,
    leaving SnapTik as the sole TikTok route.
 
@@ -56,8 +59,17 @@ and deployment steps do not require repeated approval.
   datastore, migration, API, Delivery, Worker, Web and preflight gates. All eight running containers
   are healthy with zero restarts; API `/v1/platforms` returns 200 and Delivery invalid-ticket handling
   returns 410.
-- `ENABLE_TIKCD_PROVIDER`, `TIKCD_TERMS_APPROVED` and `TIKCD_DELIVERY_AUDIT_APPROVED` are all
-  `false`. No TikCD rollout rule or calibration container was started. Admin remains on and healthy;
-  existing X, Instagram, SnapTik Monster and SaveFromIns gates are unchanged.
-- The browser Delivery acceptance and creation of the unique TikCD secondary rollout rule remain the
-  next owner-approved action. Until that approval, no TikCD Provider request is sent.
+- Before activation, the production configuration was backed up to
+  `/var/backups/tikdd/p0-dr-01/production.env.pre-tikcd-activation-20260913T064500Z`.
+- The owner-approved activation set `ENABLE_TIKCD_PROVIDER`, `TIKCD_TERMS_APPROVED` and
+  `TIKCD_DELIVERY_AUDIT_APPROVED` to `true`. The unique `tikcd-tiktok-nl` rule is enabled at
+  `allocationBps=10000`, revision 2, snapshot revision 37, with no expiry. SnapTik Monster remains
+  the first route; X, Instagram and SaveFromIns gates are unchanged, `PROVIDER_PILOT_GUARD_REQUIRED`
+  remains `false`, and Admin stays healthy while calibration and other Providers remain off.
+- Two independent public browser tasks completed ticket creation, Delivery redirect validation and
+  browser handoff successfully (two events in each category). Both were served by SnapTik Monster;
+  TikCD received no request because the primary succeeded. This preserves the bounded fallback design
+  without taking a stable primary route offline to manufacture a failover.
+- TikCD is now available only when SnapTik emits a fallback-eligible failure. Continue observing
+  natural traffic; on repeated TikCD failures, disable the `tikcd-tiktok-nl` rule first, then the
+  three TikCD gates.
