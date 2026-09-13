@@ -23,10 +23,10 @@ CI, create rollout rules, or enable traffic. Logs contain only provider id, stat
 redirect count, and sanitized failure code. Provider-specific adapters still own protocol parsing,
 normalization, and exact host policy checks.
 
-TikCD is the first candidate with a positive protocol observation in this work item: the reviewed
-NL probe received `code=0` JSON from `tikwm.com/api`, and a returned TikTok CDN range response was
-`206 video/mp4` for the supplied public sample. It remains resolution-only until fixture coverage,
-host review, and browser Delivery evidence are complete.
+TikCD is the first candidate with a positive protocol observation in this work item: two reviewed NL
+probes received `code=0` JSON from `tikwm.com/api`, and returned TikTok CDN range responses were
+`206 video/mp4`. It remains disabled by default until the merged image passes one browser Delivery
+check and its explicit rollout gates are enabled.
 
 ## Consequences
 

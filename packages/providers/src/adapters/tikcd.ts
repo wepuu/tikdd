@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ProviderError } from "../errors";
 import type { ResolveInput, ResolverProvider, ProviderManifest } from "../index";
 import {
-  createResolveResult,
+  createRedirectResolution,
   requestText,
   type ParsedFormat,
   type ProviderFetch
@@ -13,6 +13,8 @@ const API_PATH = "/api/";
 const API_HOSTS = new Set(["tikwm.com"]);
 const MEDIA_HOSTS = new Set<string>();
 const MEDIA_HOST_SUFFIX = "tiktokcdn-us.com";
+const MEDIA_HOST_POLICY_ID = "tikcd-tiktok-media-v1";
+const MAXIMUM_CANDIDATE_LIFETIME_MS = 5 * 60 * 1000;
 const BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36";
 
@@ -108,8 +110,8 @@ export class TikCDProvider implements ResolverProvider {
       platforms: [{
         platform: "tiktok",
         priority: 760,
-        deliveryModes: [],
-        verificationStatus: "canary_verified"
+        deliveryModes: ["redirect"],
+        verificationStatus: "delivery_verified"
       }]
     };
   }
@@ -137,12 +139,12 @@ export class TikCDProvider implements ResolverProvider {
       { expectedContentTypes: ["application/json"], maximumBytes: 512_000 }
     );
     const parsed = parseResponse(response.body);
-    const result = createResolveResult(
+    return createRedirectResolution(
       this.manifest.id,
       this.manifest.kind,
       input,
-      { ...parsed, warnings: ["TikCD is an experimental, resolution-only TikTok candidate."] }
+      { ...parsed, warnings: ["TikCD is an experimental secondary TikTok Provider."] },
+      { hostPolicyId: MEDIA_HOST_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
     );
-    return { result, candidates: [] };
   }
 }

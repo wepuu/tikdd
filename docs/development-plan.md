@@ -1103,6 +1103,14 @@ resolution-only adapter backed by the observed `tikwm.com/api` JSON protocol and
 See [ADR-0032](architecture/adr/0032-technical-provider-evidence.md) and the
 [Work Item 53 record](work-item-53-technical-provider-qualification.md).
 
+### Work Item 54 — Production convergence and TikCD secondary route
+
+Work Item 54 is the next stage-level release. It will deploy the accumulated `main` changes in one
+GitHub-built image, complete the second TikCD protocol sample and browser Delivery check, then place
+TikCD behind SnapTik Monster as a sequential fallback with no traffic-share split. TikCD's three
+activation gates remain off until the disabled-image health check and the one necessary owner
+activation decision are complete. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.

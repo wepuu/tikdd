@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { TikCDProvider, type ResolveInput } from "../src/index";
+import { ProviderRouter, SnapTikMonsterProvider, TikCDProvider, type ResolveInput } from "../src/index";
 
 const input: ResolveInput = {
   taskId: "tsk_5123456789abcdef0123456789abcdef",
@@ -14,9 +14,9 @@ const apiUrl = "https://tikwm.com/api/";
 const fixture = (name: string) =>
   readFile(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)), "utf8");
 
-function jsonResponse(body: string, status = 200): Response {
+function jsonResponse(body: string, status = 200, url = apiUrl): Response {
   const response = new Response(body, { status, headers: { "content-type": "application/json" } });
-  Object.defineProperty(response, "url", { value: apiUrl });
+  Object.defineProperty(response, "url", { value: url });
   return response;
 }
 
@@ -40,7 +40,11 @@ describe("TikCD technical adapter", () => {
     expect(requestUrl.searchParams.get("hd")).toBe("1");
     expect(resolution.result.formats).toHaveLength(2);
     expect(resolution.result.formats[0]).toMatchObject({ container: "mp4", hasVideo: true });
-    expect(resolution.candidates).toEqual([]);
+    expect(resolution.candidates).toHaveLength(2);
+    expect(resolution.candidates[0]).toMatchObject({
+      mode: "redirect",
+      hostPolicyId: "tikcd-tiktok-media-v1"
+    });
     expect(JSON.stringify(resolution.result)).not.toContain("tiktokcdn-us.com");
   });
 
@@ -58,5 +62,33 @@ describe("TikCD technical adapter", () => {
     const noMediaBody = await fixture("tikcd-no-media.json");
     const noMedia = new TikCDProvider({ enabled: true, fetchImpl: async () => jsonResponse(noMediaBody) });
     await expect(noMedia.resolve(input)).rejects.toMatchObject({ failureCode: "invalid_result" });
+  });
+
+  it("is reached only as a sequential fallback after SnapTik failure", async () => {
+    const primary = new SnapTikMonsterProvider({
+      enabled: true,
+      fetchImpl: async (url) => jsonResponse("", 503, url.toString())
+    });
+    const secondary = new TikCDProvider({
+      enabled: true,
+      fetchImpl: async (url) => jsonResponse(await fixture("tikcd-success.json"), 200, url.toString())
+    });
+    const rollout = {
+      async decide() {
+        return { allowed: true, reason: "allowed" as const, ruleId: "wi54", snapshotRevision: 1, bucket: 0 };
+      }
+    };
+    const routed = await new ProviderRouter([primary, secondary], {
+      production: true,
+      region: "nl",
+      rolloutSource: rollout,
+      maxAttempts: 2
+    }).resolve(input);
+    expect(routed.resolution.result.provenance.provider).toBe("tikcd");
+    expect(routed.resolution.candidates).toHaveLength(2);
+    expect(routed.attempts.map(({ providerId, status }) => [providerId, status])).toEqual([
+      ["snaptik-monster", "failed"],
+      ["tikcd", "succeeded"]
+    ]);
   });
 });

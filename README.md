@@ -293,8 +293,9 @@ through the asynchronous mock route.
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
   and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster. Work Item 50
-  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 52 keeps the free
-  candidates disabled, resolution-only, and marked `canary_failed`. No other Provider, Admin, or
+  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 52 recorded the first
+  failed free-provider probes, while Work Item 53 qualified TikCD's protocol path but keeps it
+  disabled pending delivery activation. No other Provider, Admin, or
   calibration profile is started
   by these promotions.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
