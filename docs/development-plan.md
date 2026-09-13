@@ -1105,11 +1105,12 @@ See [ADR-0032](architecture/adr/0032-technical-provider-evidence.md) and the
 
 ### Work Item 54 — Production convergence and TikCD secondary route
 
-Work Item 54 is the next stage-level release. It will deploy the accumulated `main` changes in one
-GitHub-built image, complete the second TikCD protocol sample and browser Delivery check, then place
-TikCD behind SnapTik Monster as a sequential fallback with no traffic-share split. TikCD's three
-activation gates remain off until the disabled-image health check and the one necessary owner
-activation decision are complete. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
+Work Item 54 is deployed from `main@2e3745e8759f708d0afccb7c2a0e76f3ef9ae50f` using GitHub-built
+immutable images. The second TikCD protocol sample, strict redirect adapter and sequential
+SnapTik → TikCD fallback code are in place; production health and migration checks passed. TikCD's
+three activation gates remain off and no rollout rule or Provider request has been created. The next
+owner-approved action is one browser Delivery acceptance; only after it succeeds may the unique
+TikCD secondary rule be enabled. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
 
 ## Definition of done for every new adapter
 
