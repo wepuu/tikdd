@@ -403,6 +403,20 @@ provider call; only development fixtures prove the secondary order. No rollout r
 Delivery host policy, public API, or live candidate probe is added in this item. See the
 [Work Item 51 record](work-item-51-free-provider-fallback-batch.md).
 
+### Work Item 52 — 免费 Provider 交付资格验证
+
+Work Item 52 closes the first live qualification loop for the two Work Item 51 adapters without
+promoting either one. The NL TikVid check confirmed that the public form uses browser-default GET
+and a same-site 302, but the authorized sample produced zero valid MP4 resources. The NL SnapInsta
+landing request returned an explicit Cloudflare challenge, so no Instagram URL was submitted.
+
+The shared adapter now models the HTML GET default and rejects generic navigation links that merely
+contain download wording. Both manifests and the offline portfolio record `canary_failed`; they
+remain disabled, resolution-only, and absent from production route policies. No Delivery Host policy,
+rollout rule, migration, public contract, production deployment, or challenge bypass is added. The
+next candidate batch may assess TokVid/TikCD/TikVid.io for TikTok and GramSnap for Instagram. See the
+[Work Item 52 record](work-item-52-free-provider-delivery-qualification.md).
+
 ## Coordinated future lanes
 
 The lanes may progress concurrently only where their gates permit. Lane B can productize existing

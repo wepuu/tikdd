@@ -39,7 +39,7 @@ export class SnapInstaProvider implements ResolverProvider {
         platform: "instagram",
         priority: 820,
         deliveryModes: [],
-        verificationStatus: "fixture_verified"
+        verificationStatus: "canary_failed"
       }]
     };
   }

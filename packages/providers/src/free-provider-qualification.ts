@@ -29,7 +29,7 @@ export const FreeProviderCandidateSchema = z.strictObject({
   deliveryVerified: z.boolean(),
   successFixtureCount: z.number().int().min(0).max(100),
   failureFixtureCount: z.number().int().min(0).max(100),
-  evidenceState: z.enum(["not-evaluated", "evaluating", "qualified", "rejected"])
+  evidenceState: z.enum(["not-evaluated", "evaluating", "canary-failed", "qualified", "rejected"])
 });
 
 export type FreeProviderCandidate = z.infer<typeof FreeProviderCandidateSchema>;
@@ -46,6 +46,7 @@ export const FreeProviderQualificationReasonSchema = z.enum([
   "missing_success_fixture",
   "missing_failure_fixtures",
   "delivery_unverified",
+  "canary_failed",
   "not_evaluated"
 ]);
 
@@ -105,7 +106,11 @@ export function qualifyFreeProviderCandidate(
   if (candidate.deliveryMode === "redirect" && !candidate.deliveryVerified) {
     pending.push("delivery_unverified");
   }
-  if (candidate.evidenceState !== "qualified") pending.push("not_evaluated");
+  if (candidate.evidenceState === "canary-failed") {
+    pending.push("canary_failed");
+  } else if (candidate.evidenceState !== "qualified") {
+    pending.push("not_evaluated");
+  }
 
   const reasons = [...hardFailures, ...pending];
   const status: FreeProviderQualificationStatus = hardFailures.length > 0

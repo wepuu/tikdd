@@ -90,6 +90,21 @@ describe("free Provider qualification", () => {
     expect(result.productionRouteEligible).toBe(false);
   });
 
+  it("defers a failed canary without turning transient evidence into a permanent policy rejection", () => {
+    const result = qualifyFreeProviderCandidate(candidate({
+      deliveryMode: "resolution-only",
+      deliveryVerified: false,
+      evidenceState: "canary-failed"
+    }));
+    expect(result).toEqual({
+      providerId: "candidate-free",
+      status: "deferred",
+      eligibleForImplementation: false,
+      productionRouteEligible: false,
+      reasons: ["canary_failed"]
+    });
+  });
+
   it("qualifies the reviewed SnapTik Monster batch candidate for disabled implementation", () => {
     const result = qualifyFreeProviderCandidate(candidate({
       id: "snaptik-monster",
