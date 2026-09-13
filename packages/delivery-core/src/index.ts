@@ -222,12 +222,21 @@ export const SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema
   hosts: ["tikcdn.beubagah.com"]
 });
 
+export const TIKCD_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "tikcd-tiktok-media-v1",
+  providerId: "tikcd",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["tiktokcdn-us.com"]
+});
+
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
   [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY],
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1],
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY],
-  [SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY.id, SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY]
+  [SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY.id, SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY],
+  [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

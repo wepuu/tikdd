@@ -173,8 +173,12 @@ describe("Work Item 51 portfolio qualification", () => {
         expect.objectContaining({ reasons: expect.arrayContaining(["canary_failed"]) })
       ]));
     expect(results.find(({ providerId }) => providerId === "savevid")).toMatchObject({
-      status: "rejected",
-      reasons: expect.arrayContaining(["public_only_boundary"])
+      status: "deferred",
+      reasons: expect.arrayContaining(["technical_blocked"])
+    });
+    expect(results.find(({ providerId }) => providerId === "tikcd")).toMatchObject({
+      status: "deferred",
+      reasons: expect.arrayContaining(["manifest_unreviewed"])
     });
   });
 });

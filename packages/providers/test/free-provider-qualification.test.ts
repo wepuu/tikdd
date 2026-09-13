@@ -21,6 +21,7 @@ const candidate = (overrides: Partial<FreeProviderCandidate> = {}): FreeProvider
   deliveryVerified: true,
   successFixtureCount: 1,
   failureFixtureCount: FREE_PROVIDER_MIN_FAILURE_FIXTURES,
+  technicalState: "resolved",
   evidenceState: "qualified",
   ...overrides
 });
@@ -103,6 +104,18 @@ describe("free Provider qualification", () => {
       productionRouteEligible: false,
       reasons: ["canary_failed"]
     });
+  });
+
+  it.each([
+    ["reachable", "technical_unverified"],
+    ["not-tested", "technical_unverified"],
+    ["no-media", "technical_no_media"],
+    ["blocked", "technical_blocked"]
+  ] as const)("defers technical state %s", (technicalState, reason) => {
+    const result = qualifyFreeProviderCandidate(candidate({ technicalState }));
+    expect(result.status).toBe("deferred");
+    expect(result.reasons).toContain(reason);
+    expect(result.eligibleForImplementation).toBe(false);
   });
 
   it("qualifies the reviewed SnapTik Monster batch candidate for disabled implementation", () => {

@@ -29,6 +29,7 @@ export const FreeProviderCandidateSchema = z.strictObject({
   deliveryVerified: z.boolean(),
   successFixtureCount: z.number().int().min(0).max(100),
   failureFixtureCount: z.number().int().min(0).max(100),
+  technicalState: z.enum(["not-tested", "reachable", "resolved", "no-media", "blocked"]),
   evidenceState: z.enum(["not-evaluated", "evaluating", "canary-failed", "qualified", "rejected"])
 });
 
@@ -46,6 +47,9 @@ export const FreeProviderQualificationReasonSchema = z.enum([
   "missing_success_fixture",
   "missing_failure_fixtures",
   "delivery_unverified",
+  "technical_unverified",
+  "technical_no_media",
+  "technical_blocked",
   "canary_failed",
   "not_evaluated"
 ]);
@@ -105,6 +109,13 @@ export function qualifyFreeProviderCandidate(
   }
   if (candidate.deliveryMode === "redirect" && !candidate.deliveryVerified) {
     pending.push("delivery_unverified");
+  }
+  if (candidate.technicalState === "not-tested" || candidate.technicalState === "reachable") {
+    pending.push("technical_unverified");
+  } else if (candidate.technicalState === "no-media") {
+    pending.push("technical_no_media");
+  } else if (candidate.technicalState === "blocked") {
+    pending.push("technical_blocked");
   }
   if (candidate.evidenceState === "canary-failed") {
     pending.push("canary_failed");

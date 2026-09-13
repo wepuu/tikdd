@@ -25,6 +25,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 1,
     failureFixtureCount: 4,
+    technicalState: "no-media",
     evidenceState: "canary-failed"
   },
   {
@@ -43,6 +44,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 1,
     failureFixtureCount: 4,
+    technicalState: "blocked",
     evidenceState: "canary-failed"
   },
   {
@@ -61,6 +63,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
+    technicalState: "reachable",
     evidenceState: "not-evaluated"
   },
   {
@@ -79,7 +82,8 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
-    evidenceState: "not-evaluated"
+    technicalState: "resolved",
+    evidenceState: "evaluating"
   },
   {
     id: "tikvid-io",
@@ -97,6 +101,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
+    technicalState: "blocked",
     evidenceState: "not-evaluated"
   },
   {
@@ -115,6 +120,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
+    technicalState: "reachable",
     evidenceState: "not-evaluated"
   },
   {
@@ -122,7 +128,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     displayName: "SaveVid.net",
     platforms: ["instagram"],
     freeAccess: true,
-    publicContentOnly: false,
+    publicContentOnly: true,
     requiresLogin: false,
     requiresCookies: false,
     requiresInteractiveChallenge: false,
@@ -133,6 +139,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
+    technicalState: "blocked",
     evidenceState: "not-evaluated"
   }
 ] as const;

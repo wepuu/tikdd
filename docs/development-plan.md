@@ -1092,6 +1092,17 @@ locale, and no thin pages are generated from the raw yt-dlp list.
 Exit criteria: failure of one provider, region, or heavy media workload does not degrade task
 creation or unrelated platform families.
 
+## Work Item 53 — Technical free-Provider qualification
+
+Work Item 53 supersedes page-copy screening with a technical evidence signal. Candidate records now
+distinguish `reachable`, `resolved`, `no-media`, and `blocked`; these states defer implementation
+without turning transient access friction into a permanent rejection. TikCD has a disabled,
+resolution-only adapter backed by the observed `tikwm.com/api` JSON protocol and a reviewed
+`tiktokcdn-us.com` delivery policy. Its single-sample result is not production qualification. The
+`provider:preflight` command is manual and sanitized; it does not run in CI or create rollout rules.
+See [ADR-0032](architecture/adr/0032-technical-provider-evidence.md) and the
+[Work Item 53 record](work-item-53-technical-provider-qualification.md).
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
