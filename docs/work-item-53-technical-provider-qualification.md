@@ -1,6 +1,6 @@
 # Work Item 53 — Technical free-Provider qualification
 
-Status: implemented and merged; no production rollout or new TikCD traffic (2026-09-13).
+Status: implemented and merged; superseded by Work Item 54 production activation (2026-09-13).
 
 ## Scope
 
@@ -35,6 +35,8 @@ cookie, credential, or CDN URL is written to diagnostics.
 
 ## Next gate
 
-The second NL sample and protocol evidence are now complete. The remaining gate is one browser
-Delivery check after the merged image is deployed; only then may a single secondary rollout rule be
-enabled. Existing X, Instagram, Admin, and calibration runtime state is unchanged.
+The second NL sample and protocol evidence are complete. The former browser-acceptance gate and
+default-off rule were completed by Work Item 54: TikCD is now enabled as a single secondary route
+behind SnapTik Monster. Existing X, Instagram and Admin runtime state is unchanged; calibration and
+other Providers remain off. Natural fallback traffic is now the evidence source, and no forced
+primary-route failure should be used merely to generate TikCD traffic.

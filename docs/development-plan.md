@@ -1107,10 +1107,12 @@ See [ADR-0032](architecture/adr/0032-technical-provider-evidence.md) and the
 
 Work Item 54 is deployed from `main@2e3745e8759f708d0afccb7c2a0e76f3ef9ae50f` using GitHub-built
 immutable images. The second TikCD protocol sample, strict redirect adapter and sequential
-SnapTik → TikCD fallback code are in place; production health and migration checks passed. TikCD's
-three activation gates remain off and no rollout rule or Provider request has been created. The next
-owner-approved action is one browser Delivery acceptance; only after it succeeds may the unique
-TikCD secondary rule be enabled. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
+SnapTik → TikCD fallback code are in place; production health and migration checks passed. Following
+owner approval, the three TikCD activation gates are true and the unique `tikcd-tiktok-nl` rule is
+enabled at 10000 allocation behind SnapTik Monster (revision 2, no expiry). Two real browser
+handoffs succeeded through the SnapTik primary; no forced failover was performed, so no TikCD
+production attempt is recorded. Continue observing natural fallback traffic without increasing
+request volume. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
 
 ## Definition of done for every new adapter
 
