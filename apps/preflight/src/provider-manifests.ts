@@ -1,8 +1,10 @@
 import type { ProviderManifest } from "@tikdd/providers";
 import {
   DLPandaProvider,
+  SnapInstaProvider,
   SSSTwitterProvider,
   SnapTikMonsterProvider,
+  TikVidProvider,
   TwitterSaverProvider
 } from "@tikdd/providers";
 
@@ -14,6 +16,8 @@ export function loadPreflightProviderManifests(
     new TwitterSaverProvider({ enabled: enabled.has("twittersaver") }).manifest,
     new DLPandaProvider({ enabled: enabled.has("dlpanda") }).manifest,
     new SSSTwitterProvider({ enabled: enabled.has("ssstwitter") }).manifest,
-    new SnapTikMonsterProvider({ enabled: enabled.has("snaptik-monster") }).manifest
+    new SnapTikMonsterProvider({ enabled: enabled.has("snaptik-monster") }).manifest,
+    new TikVidProvider({ enabled: enabled.has("tikvid") }).manifest,
+    new SnapInstaProvider({ enabled: enabled.has("snapinsta") }).manifest
   ];
 }

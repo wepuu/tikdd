@@ -85,7 +85,8 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
   const providers = ([
     ["twittersaver", "ENABLE_TWITTERSAVER_PROVIDER"], ["dlpanda", "ENABLE_DLPANDA_PROVIDER"],
     ["ssstwitter", "ENABLE_SSSTWITTER_PROVIDER"], ["savefromins", "ENABLE_SAVEFROMINS_PROVIDER"],
-    ["snaptik-monster", "ENABLE_SNAPTIK_MONSTER_PROVIDER"]
+    ["snaptik-monster", "ENABLE_SNAPTIK_MONSTER_PROVIDER"], ["tikvid", "ENABLE_TIKVID_PROVIDER"],
+    ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"]
   ] as const).filter(([, key]) => bool(environment[key])).map(([id]) => id);
   const providerApprovalsPresent = providers.every((provider) => {
     if (provider === "twittersaver") return bool(environment.TWITTERSAVER_TERMS_APPROVED);
@@ -95,6 +96,18 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
       return bool(environment.SAVEFROMINS_TERMS_APPROVED) &&
         bool(environment.SAVEFROMINS_DELIVERY_AUDIT_APPROVED) &&
         /^[A-Za-z0-9]{8,80}$/.test(environment.SAVEFROMINS_REQUEST_AUTH ?? "");
+    }
+    if (provider === "snaptik-monster") {
+      return bool(environment.SNAPTIK_MONSTER_TERMS_APPROVED) &&
+        bool(environment.SNAPTIK_MONSTER_DELIVERY_AUDIT_APPROVED);
+    }
+    if (provider === "tikvid") {
+      return bool(environment.TIKVID_TERMS_APPROVED) &&
+        bool(environment.TIKVID_DELIVERY_AUDIT_APPROVED);
+    }
+    if (provider === "snapinsta") {
+      return bool(environment.SNAPINSTA_TERMS_APPROVED) &&
+        bool(environment.SNAPINSTA_DELIVERY_AUDIT_APPROVED);
     }
     return bool(environment.SNAPTIK_MONSTER_TERMS_APPROVED) &&
       bool(environment.SNAPTIK_MONSTER_DELIVERY_AUDIT_APPROVED);

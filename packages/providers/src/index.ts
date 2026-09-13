@@ -43,10 +43,12 @@ export {
 } from "./failure-injection";
 export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda";
 export { SaveFromInsProvider, type SaveFromInsProviderOptions } from "./adapters/savefromins";
+export { SnapInstaProvider, type SnapInstaProviderOptions } from "./adapters/snapinsta";
 export {
   SnapTikMonsterProvider,
   type SnapTikMonsterProviderOptions
 } from "./adapters/snaptik-monster";
+export { TikVidProvider, type TikVidProviderOptions } from "./adapters/tikvid";
 export { ProviderCanaryConfigSchema, selectProviderCanaries, selectScheduledProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,
@@ -79,6 +81,10 @@ export {
   type FreeProviderQualificationResult,
   type FreeProviderQualificationStatus
 } from "./free-provider-qualification";
+export {
+  FREE_PROVIDER_PORTFOLIO,
+  qualifyFreeProviderPortfolio
+} from "./free-provider-portfolio";
 
 export interface ResolveInput {
   taskId: string;

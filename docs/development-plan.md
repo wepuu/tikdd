@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@5008685f2f50528ac1861e5b95c14d549013d1c1` (Work Item 48 production deployment)
+- Repository checkpoint: `main@9c0a2591f315df11ed2b6a522e48de59243b7623` (Work Item 50 stable TikTok/SEO deployment)
 - Roadmap revision date: 2026-09-13
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -16,7 +16,7 @@ two real browser downloads and a clean 15-minute watch. Work Item 22.1 shipped r
 thumbnails with the existing platform-icon fallback from `main@c3fbd217` on 2026-09-08. ADR-0020
 replaces elapsed calibration and evidence prerequisites with a lightweight release loop: PR CI,
 GitHub-built immutable images, backup, one real browser download, a short health watch, and fast
-rollback. X and Instagram remain experimental rather than `stable`. Work Item 50 is the pending
+rollback. X and Instagram remain experimental rather than `stable`. Work Item 50 completed the
 TikTok stability and sitemap promotion based on the successful natural-traffic closeout; it does not
 change the X/Instagram status. Work Item 23 is merged and deployed from
 `main@177775c9193f3699ddfcb96c962b9df23ca193aa`; it provides a reviewed,
@@ -375,10 +375,9 @@ of X/Instagram noindex boundaries. See the [Work Item 50 record](work-item-50-ti
 
 The next free-Provider feasibility batch now has an owner-supplied queue but is not part of the
 Work Item 50 release. TikTok candidates are `tokvid.io`, `tikvid.cc`, `tikcd.com`, and `tikvid.io`;
-Instagram candidates are `snapinsta.to`, `gramsnap.com`, and `savevid.net/en`. They remain untested,
-disabled discovery inputs. A later stage may evaluate them with one bounded request per candidate,
-sanitized fixtures, explicit page/media Host policy, and Delivery verification; no candidate is a
-fallback or production route until that review passes.
+Instagram candidates are `snapinsta.to`, `gramsnap.com`, and `savevid.net/en`. Work Item 51 records
+the first offline screening result and keeps every candidate out of production rollout until its
+fixtures, exact page/media Host policy, and Delivery verification pass.
 
 The Web flow now performs the Delivery handoff in one browser action. After handoff it shows a
 status message and a “download again” action that creates a fresh one-use ticket; it does not
@@ -387,6 +386,22 @@ Work Item 50, which promotes TikTok to stable and prepares the reviewed pages fo
 publication. The free-Provider batch remains a contingency for a future regression and evaluates
 owner-supplied candidates behind disabled manifests until each passes fixtures, Host policy,
 Delivery verification, CI, deployment, and one acceptance request.
+
+### Work Item 51 — 免费 Provider 组合验证与二级路由
+
+Work Item 51 is implemented on top of `main@9c0a259`. The offline candidate matrix covers the four
+TikTok and three Instagram candidates supplied by the owner. TikVid.cc and SnapInsta.to have
+fixture-backed, resolution-only adapters with exact provider-page allowlists and independent
+activation gates. The remaining candidates stay in the code-owned intake matrix; SaveVid.net is
+rejected because its public claims include private-content downloading, which conflicts with the
+public-only boundary.
+
+The intended preference chains are `SnapTik Monster → TikVid` for TikTok and
+`SaveFromIns → SnapInsta` for Instagram. Router fallback remains sequential, bounded, and terminal
+aware. Because the new capabilities declare `deliveryModes: []`, production rejects them before any
+provider call; only development fixtures prove the secondary order. No rollout rule, migration,
+Delivery host policy, public API, or live candidate probe is added in this item. See the
+[Work Item 51 record](work-item-51-free-provider-fallback-batch.md).
 
 ## Coordinated future lanes
 
