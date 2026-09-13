@@ -40,7 +40,13 @@ describe("technical Provider preflight classification", () => {
       luxa: "https://www.luxa.org/video/download",
       outfame: "https://www.outfame.com/free-instagram-tools/instagram-downloader",
       "sssinsta-za": "https://sssinsta.co.za/",
-      iqsaved: "https://iqsaved.com/en1/"
+      iqsaved: "https://iqsaved.com/en1/",
+      ahm7_alldl: "https://ahm7xmakki.com/api/alldl",
+      "cobalt-directory": "https://cobalt.directory/api/working?type=api",
+      tdownv4: "https://tdownv4.sl-bjs.workers.dev/",
+      clipx: "https://clipx.zamdev.workers.dev/",
+      postvault: "https://postvault.edwardd.app/",
+      tikwm: "https://tikwm.com/api/"
     });
   });
 });
