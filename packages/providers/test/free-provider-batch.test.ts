@@ -178,7 +178,7 @@ describe("Work Item 51 portfolio qualification", () => {
     });
     expect(results.find(({ providerId }) => providerId === "tikcd")).toMatchObject({
       status: "deferred",
-      reasons: expect.arrayContaining(["manifest_unreviewed"])
+      reasons: expect.arrayContaining(["delivery_unverified"])
     });
   });
 });
