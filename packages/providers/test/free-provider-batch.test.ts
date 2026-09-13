@@ -180,6 +180,11 @@ describe("Work Item 51 portfolio qualification", () => {
       status: "deferred",
       reasons: expect.arrayContaining(["delivery_unverified"])
     });
+    expect(results.find(({ providerId }) => providerId === "gramsnap")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_blocked"])
+    });
   });
 });
 

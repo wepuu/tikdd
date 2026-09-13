@@ -292,12 +292,11 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster. Work Item 50
-  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 52 recorded the first
-  failed free-provider probes, while Work Item 53 qualified TikCD's protocol path but keeps it
-  disabled pending delivery activation. No other Provider, Admin, or
-  calibration profile is started
-  by these promotions.
+  and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster with TikCD as a
+  bounded secondary route. Work Item 50 publishes the reviewed bilingual TikTok snapshot to the
+  sitemap. Work Item 54 records TikCD activation; Work Item 55 records the technical deferral of
+  GramSnap because its protocol requires browser-held tokens. No other Provider or calibration
+  profile is started by these promotions; Admin remains the owner control plane.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized
@@ -310,7 +309,9 @@ through the asynchronous mock route.
 See [SECURITY.md](SECURITY.md) for the URL-ingestion and proxy threat model.
 
 Work Item 53 changes free-Provider qualification to use technical protocol evidence rather than
-landing-page marketing copy. TikCD has a disabled, resolution-only adapter based on the observed
-`tikwm.com/api` JSON protocol and TikTok CDN MP4 range response; it is pending fixture, host, and
-browser Delivery evidence. See the [Work Item 53 record](docs/work-item-53-technical-provider-qualification.md)
-and [ADR-0032](docs/architecture/adr/0032-technical-provider-evidence.md).
+landing-page marketing copy. Work Item 54 enabled TikCD's strict redirect adapter as the TikTok
+secondary route after delivery checks. Work Item 55 confirms that GramSnap's Instagram flow requires
+browser-held `x-token`/Cloudflare token state and therefore remains outside the server-side Provider
+boundary. See the [Work Item 53 record](docs/work-item-53-technical-provider-qualification.md),
+[Work Item 54 record](docs/work-item-54-tikcd-secondary-route.md), and
+[Work Item 55 record](docs/work-item-55-instagram-provider-qualification.md).
