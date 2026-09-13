@@ -106,3 +106,5 @@ Current records:
 - [ReelsVideo Instagram feasibility](providers/reelsvideo.md)
 - [SaveFromIns Instagram feasibility](providers/savefromins.md)
 - [SnapTik Monster TikTok batch](providers/snaptik-monster.md)
+- [TikVid.cc secondary candidate](providers/tikvid.md)
+- [SnapInsta.to secondary candidate](providers/snapinsta.md)

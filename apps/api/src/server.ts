@@ -31,9 +31,11 @@ import {
 } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
   SSSTwitterProvider,
+  TikVidProvider,
   TwitterSaverProvider,
   resolveJobAttemptsForPlatform
 } from "@tikdd/providers";
@@ -138,7 +140,9 @@ registerProviderHealthDiagnostics(app, {
     new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }).manifest,
     new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }).manifest,
     new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }).manifest,
-    new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }).manifest
+    new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }).manifest,
+    new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }).manifest,
+    new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

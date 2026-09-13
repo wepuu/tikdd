@@ -21,9 +21,11 @@ import {
 import { listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
   SSSTwitterProvider,
+  TikVidProvider,
   TwitterSaverProvider
 } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
@@ -62,7 +64,9 @@ const providerAdapters = [
   new SSSTwitterProvider({ enabled: process.env.ENABLE_SSSTWITTER_PROVIDER === "true" }),
   new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }),
   new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }),
-  new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" })
+  new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }),
+  new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }),
+  new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();
