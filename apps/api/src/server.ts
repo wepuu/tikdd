@@ -36,6 +36,7 @@ import {
   SnapTikMonsterProvider,
   SSSTwitterProvider,
   TikVidProvider,
+  TikCDProvider,
   TwitterSaverProvider,
   resolveJobAttemptsForPlatform
 } from "@tikdd/providers";
@@ -142,6 +143,7 @@ registerProviderHealthDiagnostics(app, {
     new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }).manifest,
     new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }).manifest,
     new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }).manifest,
+    new TikCDProvider({ enabled: process.env.ENABLE_TIKCD_PROVIDER === "true" }).manifest,
     new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,

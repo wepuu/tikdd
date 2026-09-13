@@ -24,6 +24,7 @@ import {
   SaveFromInsProvider,
   SnapInstaProvider,
   SnapTikMonsterProvider,
+  TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
   TwitterSaverProvider,
@@ -52,6 +53,7 @@ import { loadSaveFromInsActivationConfiguration } from "./savefromins-activation
 import { loadSnapTikActivationConfiguration } from "./snaptik-activation";
 import { loadSnapInstaActivationConfiguration } from "./snapinsta-activation";
 import { loadTikVidActivationConfiguration } from "./tikvid-activation";
+import { loadTikCDActivationConfiguration } from "./tikcd-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -66,6 +68,7 @@ const ssstwitterActivation = loadSSSTwitterActivationConfiguration();
 const savefrominsActivation = loadSaveFromInsActivationConfiguration();
 const snaptikActivation = loadSnapTikActivationConfiguration();
 const tikvidActivation = loadTikVidActivationConfiguration();
+const tikcdActivation = loadTikCDActivationConfiguration();
 const snapinstaActivation = loadSnapInstaActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
@@ -167,6 +170,9 @@ if (snaptikActivation.enabled) {
 }
 if (tikvidActivation.enabled) {
   providers.push(new TikVidProvider({ enabled: true }));
+}
+if (tikcdActivation.enabled) {
+  providers.push(new TikCDProvider({ enabled: true }));
 }
 if (snapinstaActivation.enabled) {
   providers.push(new SnapInstaProvider({ enabled: true }));

@@ -105,7 +105,8 @@
     "verify:x-gate-03": "node scripts/verify-x-gate-03.mjs",
     "smoke:work-item-16": "node scripts/smoke-work-item-16.mjs",
     "verify:work-item-11-5": "node scripts/verify-work-item-11-5.mjs",
-    "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs"
+    "verify:work-item-11-baseline": "node scripts/verify-work-item-11-baseline.mjs",
+    "provider:preflight": "node scripts/provider-technical-preflight.mjs"
   },
   "dependencies": {
     "tsx": "^4.0.0"

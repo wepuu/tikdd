@@ -298,6 +298,27 @@ describe("reviewed delivery network policy", () => {
     }
   });
 
+  it("allows only reviewed TikCD TikTok CDN subdomains", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "tikcd",
+      mode: "redirect",
+      hostPolicyId: "tikcd-tiktok-media-v1",
+      targetUrl: "https://v19.tiktokcdn-us.com/fixture/video?mime_type=video_mp4"
+    }).hostname).toBe("v19.tiktokcdn-us.com");
+    for (const targetUrl of [
+      "https://tiktokcdn-us.com/fixture/video.mp4",
+      "https://evil.tiktokcdn-us.com.example.test/fixture/video.mp4",
+      "https://v19.tiktokcdn.com/fixture/video.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "tikcd",
+        mode: "redirect",
+        hostPolicyId: "tikcd-tiktok-media-v1",
+        targetUrl
+      })).toThrow(/not allowed/);
+    }
+  });
+
   it("allows only the exact reviewed SnapTik Monster media host", () => {
     expect(
       assertDeliveryTargetPolicy({

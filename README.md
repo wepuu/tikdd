@@ -307,3 +307,9 @@ through the asynchronous mock route.
   guarantee.
 
 See [SECURITY.md](SECURITY.md) for the URL-ingestion and proxy threat model.
+
+Work Item 53 changes free-Provider qualification to use technical protocol evidence rather than
+landing-page marketing copy. TikCD has a disabled, resolution-only adapter based on the observed
+`tikwm.com/api` JSON protocol and TikTok CDN MP4 range response; it is pending fixture, host, and
+browser Delivery evidence. See the [Work Item 53 record](docs/work-item-53-technical-provider-qualification.md)
+and [ADR-0032](docs/architecture/adr/0032-technical-provider-evidence.md).

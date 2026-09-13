@@ -25,7 +25,7 @@
 | TikCD.com (`tikcd`) | TikTok | deferred | 只有候选记录，等待离线 fixture 与 Host 审查 |
 | TikVid.io (`tikvid-io`) | TikTok | deferred | 只有候选记录，等待离线 fixture 与 Host 审查 |
 | GramSnap (`gramsnap`) | Instagram | deferred | 只有候选记录，等待离线 fixture 与 Host 审查 |
-| SaveVid.net (`savevid`) | Instagram | rejected | 公开页面宣称支持 private downloader，与 TikDD public-only 边界冲突 |
+| SaveVid.net (`savevid`) | Instagram | deferred | Work Item 53 supersedes page-copy screening; NL technical access is currently blocked and needs an isolated protocol check |
 
 矩阵由 `@tikdd/providers` 的 `FREE_PROVIDER_PORTFOLIO` 和
 `qualifyFreeProviderPortfolio()` 生成；它不是 Admin 或数据库配置，不会授权流量。

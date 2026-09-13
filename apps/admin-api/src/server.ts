@@ -24,6 +24,7 @@ import {
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
+  TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
   TwitterSaverProvider
@@ -65,6 +66,7 @@ const providerAdapters = [
   new DLPandaProvider({ enabled: process.env.ENABLE_DLPANDA_PROVIDER === "true" }),
   new SaveFromInsProvider({ enabled: process.env.ENABLE_SAVEFROMINS_PROVIDER === "true" }),
   new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }),
+  new TikCDProvider({ enabled: process.env.ENABLE_TIKCD_PROVIDER === "true" }),
   new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }),
   new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" })
 ];

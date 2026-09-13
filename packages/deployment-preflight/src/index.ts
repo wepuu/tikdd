@@ -86,11 +86,12 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     ["twittersaver", "ENABLE_TWITTERSAVER_PROVIDER"], ["dlpanda", "ENABLE_DLPANDA_PROVIDER"],
     ["ssstwitter", "ENABLE_SSSTWITTER_PROVIDER"], ["savefromins", "ENABLE_SAVEFROMINS_PROVIDER"],
     ["snaptik-monster", "ENABLE_SNAPTIK_MONSTER_PROVIDER"], ["tikvid", "ENABLE_TIKVID_PROVIDER"],
-    ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"]
+    ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"], ["tikcd", "ENABLE_TIKCD_PROVIDER"]
   ] as const).filter(([, key]) => bool(environment[key])).map(([id]) => id);
   const providerApprovalsPresent = providers.every((provider) => {
     if (provider === "twittersaver") return bool(environment.TWITTERSAVER_TERMS_APPROVED);
     if (provider === "dlpanda") return bool(environment.DLPANDA_TERMS_APPROVED);
+    if (provider === "tikcd") return bool(environment.TIKCD_TERMS_APPROVED) && bool(environment.TIKCD_DELIVERY_AUDIT_APPROVED);
     if (provider === "ssstwitter") return bool(environment.SSSTWITTER_TERMS_APPROVED) && bool(environment.SSSTWITTER_DELIVERY_AUDIT_APPROVED);
     if (provider === "savefromins") {
       return bool(environment.SAVEFROMINS_TERMS_APPROVED) &&

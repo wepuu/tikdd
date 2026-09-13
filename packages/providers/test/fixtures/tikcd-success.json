@@ -1,0 +1,10 @@
+{
+  "code": 0,
+  "data": {
+    "id": "7615724915156667679",
+    "title": "Fixture title",
+    "play": "https://v19.tiktokcdn-us.com/fixture/video?mime_type=video_mp4",
+    "hdplay": "https://v16-notes.tiktokcdn-us.com/fixture/video?mime_type=video_mp4",
+    "cover": "https://p16-common-sign.tiktokcdn-us.com/fixture/cover.jpeg"
+  }
+}
