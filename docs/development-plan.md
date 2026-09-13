@@ -1142,6 +1142,21 @@ contain the explicit candidate mappings and sanitized technical states. SaveFrom
 Instagram production route; this evidence-only batch does not create an adapter, host policy, rollout
 rule, or deployment. See the [Work Item 56 record](work-item-56-instagram-provider-technical-batch.md).
 
+### Work Item 57 — Instagram Provider batch 2
+
+Work Item 57 tested the next owner-supplied batch from NL: SaveFrom.net's Instagram page, Collabstr,
+IGExport, FastVideoSave and InDown. SaveFrom.net, Collabstr and IGExport exposed Cloudflare or
+browser-token/storage boundaries before an anonymous request. FastVideoSave accepted one GET form
+submission but returned no media. InDown returned HTTP 419 from its download form, so an anonymous
+CSRF/session chain could not be established within the one-request limit. No candidate reached
+`resolved` or `qualified`, and no second sample was attempted. The candidate mappings and sanitized
+states are recorded in the [Work Item 57 record](work-item-57-instagram-provider-batch-2.md).
+
+This is an evidence-only closeout: no Adapter, Delivery host policy, rollout rule, database change,
+or production deployment was made. SaveFromIns remains the only Instagram production route. The
+next provider batch must use new candidates or a demonstrably changed anonymous protocol and should
+not repeat blocked candidates merely to increase request volume.
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
