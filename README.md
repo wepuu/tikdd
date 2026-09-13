@@ -112,9 +112,16 @@ from `main@5008685f2f50528ac1861e5b95c14d549013d1c1`; it makes the SnapTik Deliv
 single browser action. Work Item 49 then published the TikTok Beta snapshot and enabled the
 approved SnapTik route for natural-traffic evaluation. Work Item 50 records the owner-approved
 natural-traffic closeout: TikTok is promoted to stable in the catalog and its reviewed bilingual
-landing pages are prepared for sitemap publication. The Web flow reports the browser handoff
+landing pages are published in the sitemap. The Web flow reports the browser handoff
 and requests a fresh one-use ticket for “download again”; it never reopens a consumed ticket. See
 the [Work Item 49 record](docs/work-item-49-tiktok-beta-closure.md).
+
+Work Item 51 adds an offline portfolio for the owner-supplied free Provider candidates and
+fixture-backed, disabled resolution-only adapters for TikVid.cc (TikTok) and SnapInsta.to
+(Instagram). The intended secondary chains are `SnapTik Monster → TikVid` and
+`SaveFromIns → SnapInsta`, but production filters non-deliverable capabilities until exact media
+Host and redirect reviews pass. No rollout rules, migrations, live candidate probes, or new traffic
+are introduced. See the [Work Item 51 record](docs/work-item-51-free-provider-fallback-batch.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -284,10 +291,10 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`, plus the owner-approved TikTok route backed by SnapTik Monster. Work
-  Item 50 promotes TikTok to stable in the catalog and publishes its reviewed immutable landing-page
-  snapshot to the sitemap after the release is deployed; no other Provider, Admin, or calibration
-  profile is started by this promotion.
+  and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster. Work Item 50
+  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 51's free candidates
+  remain disabled and resolution-only. No other Provider, Admin, or calibration profile is started
+  by these promotions.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized
