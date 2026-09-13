@@ -36,7 +36,11 @@ describe("technical Provider preflight classification", () => {
       vidssave: "https://vidssave.com/ins",
       "fdown-vn": "https://fdown.vn/en/instagram-downloader",
       "downloadmedia-app": "https://downloadmedia.app/instagram-video-downloader/",
-      "bolta-ai": "https://bolta.ai/public-apps/video-downloader/instagram"
+      "bolta-ai": "https://bolta.ai/public-apps/video-downloader/instagram",
+      luxa: "https://www.luxa.org/video/download",
+      outfame: "https://www.outfame.com/free-instagram-tools/instagram-downloader",
+      "sssinsta-za": "https://sssinsta.co.za/",
+      iqsaved: "https://iqsaved.com/en1/"
     });
   });
 });

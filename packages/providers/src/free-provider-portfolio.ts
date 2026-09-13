@@ -7,7 +7,7 @@ import {
 /**
  * Offline owner-supplied candidate matrix for Work Items 51, 56, 57 and 58. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
- * Work Items 59 and 60 add the third and fourth Instagram technical-validation batches.
+ * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
   {
@@ -350,7 +350,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "resolved",
-    evidenceState: "not-evaluated"
+    evidenceState: "evaluating"
   },
   {
     id: "cliplatch",
@@ -368,8 +368,8 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
-    technicalState: "reachable",
-    evidenceState: "not-evaluated"
+    technicalState: "resolved",
+    evidenceState: "evaluating"
   },
   {
     id: "embedsocial-jp",
@@ -559,6 +559,82 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "luxa",
+    displayName: "Luxa Video Downloader",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "outfame",
+    displayName: "Outfame Instagram Downloader",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: true,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "sssinsta-za",
+    displayName: "SSSInsta.co.za",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "iqsaved",
+    displayName: "IQSaved",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: true,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
     evidenceState: "not-evaluated"
   }
 ] as const;
