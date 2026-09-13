@@ -204,13 +204,16 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_no_media"])
     });
-    for (const providerId of ["ahm7_alldl", "cliplatch"]) {
-      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
-        status: "deferred",
-        productionRouteEligible: false,
-        reasons: expect.arrayContaining(["technical_unverified"])
-      });
-    }
+    expect(results.find(({ providerId }) => providerId === "ahm7_alldl")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_unverified"])
+    });
+    expect(results.find(({ providerId }) => providerId === "cliplatch")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
+    });
     expect(results.find(({ providerId }) => providerId === "prexzy")).toMatchObject({
       status: "deferred",
       reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
@@ -222,7 +225,9 @@ describe("Work Item 51 portfolio qualification", () => {
       "vidssave",
       "fdown-vn",
       "downloadmedia-app",
-      "bolta-ai"
+      "bolta-ai",
+      "luxa",
+      "sssinsta-za"
     ]) {
       expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
         status: "deferred",
@@ -230,7 +235,7 @@ describe("Work Item 51 portfolio qualification", () => {
         reasons: expect.arrayContaining(["technical_no_media"])
       });
     }
-    for (const providerId of ["reelsvideo", "save-free", "anonsaver"]) {
+    for (const providerId of ["reelsvideo", "save-free", "anonsaver", "outfame", "iqsaved"]) {
       expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
         status: "rejected",
         productionRouteEligible: false,

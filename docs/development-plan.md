@@ -1202,6 +1202,22 @@ JSON 和两个同站资源；两个资源的无 Cookie Range 请求均返回 HTM
 policy、rollout rule、数据库变更或生产部署。SaveFromIns 仍是唯一 Instagram 生产路线。详见
 [Work Item 60 记录](work-item-60-instagram-provider-multidimensional-validation.md)。
 
+### Work Item 61 — Instagram client and edge-redirect validation
+
+Work Item 61 excludes Provider-page handoff and reviews every previously supplied Instagram
+candidate against two alternatives. Prexzy is the only candidate with both anonymous API CORS and
+two successful NL media results, but the real browser call did not complete inside the 10-second
+window. Coupling Web directly to a Provider would also bypass normalization, routing, attempt-ledger
+and circuit-breaker boundaries, so browser-direct Provider API access is not being shipped.
+
+A fixed-Provider, fixed-sample Cloudflare Worker prototype passed five local tests for authorization,
+Instagram host validation, static media-host validation, fail-closed behavior and byte-free `302`
+delivery. The Cloudflare runtime probe remains unverified because the Wrangler runtime dependency
+could not be downloaded and the official Playground did not load within the test window. No Worker,
+proxy, Adapter, rollout or production change was deployed. A production Edge Resolver requires a
+new ADR covering one-use tickets, Provider/host policy, throttling, redaction and rollback. See the
+[Work Item 61 record](work-item-61-instagram-client-edge-delivery-validation.md).
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
