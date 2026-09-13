@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Items 51, 56 and 57. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51, 56, 57 and 58. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
@@ -311,6 +311,63 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "ahm7_alldl",
+    displayName: "AHM7 AllDL",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "reachable",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "prexzy",
+    displayName: "Prexzy APIs",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "resolved",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "cliplatch",
+    displayName: "ClipLatch",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "reachable",
     evidenceState: "not-evaluated"
   }
 ] as const;

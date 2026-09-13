@@ -1157,6 +1157,20 @@ or production deployment was made. SaveFromIns remains the only Instagram produc
 next provider batch must use new candidates or a demonstrably changed anonymous protocol and should
 not repeat blocked candidates merely to increase request volume.
 
+### Work Item 58 — Instagram API Provider technical batch
+
+Work Item 58 tested three owner-supplied API candidates from NL using one primary public Reel each:
+AHM7 AllDL, Prexzy APIs and experimental ClipLatch. AHM7 and ClipLatch timed out at the bounded
+10-second limit. Prexzy's `igv2` response contained no media, its sequential `instagram` endpoint
+timed out, and its `aiov2` endpoint returned one MP4 whose media host passed the HTTPS/public-DNS/
+Range check. The second confirmation Reel did not complete, so Prexzy is recorded as
+`technicalState=resolved` but not `qualified`. No exact response fixture or Adapter is committed
+until two-sample success is established without guessing the Schema. See the
+[Work Item 58 record](work-item-58-instagram-api-providers.md).
+
+This remains evidence-only: no Delivery host policy, environment gate, rollout rule, database
+change or production deployment was made. SaveFromIns remains the sole Instagram production route.
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
