@@ -26,7 +26,13 @@ describe("technical Provider preflight classification", () => {
       indown: "https://indown.io/reels/en2",
       ahm7_alldl: "https://ahm7xmakki.com/api/alldl",
       prexzy: "https://prexzyapis.com/download/igv2",
-      cliplatch: "https://cliplatch.com/api/parse"
+      cliplatch: "https://cliplatch.com/api/parse",
+      "embedsocial-jp": "https://embedsocial.jp/tools/instagram-reels-downloader/",
+      reelsvideo: "https://reelsvideo.io/",
+      "save-free": "https://www.save-free.com/en/reels-downloader/",
+      anonsaver: "https://anonsaver.com/en1/",
+      "snap-insta": "https://snap-insta.to/en",
+      dlreel: "https://dlreel.com/"
     });
   });
 });

@@ -215,6 +215,20 @@ describe("Work Item 51 portfolio qualification", () => {
       status: "deferred",
       reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
     });
+    for (const providerId of ["embedsocial-jp", "snap-insta", "dlreel"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "deferred",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_no_media"])
+      });
+    }
+    for (const providerId of ["reelsvideo", "save-free", "anonsaver"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "rejected",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_blocked"])
+      });
+    }
   });
 });
 
