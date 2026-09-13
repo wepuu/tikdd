@@ -1185,6 +1185,23 @@ CDN 地址。临时探测脚本已从本机和 NL VPS 删除。本批次只更�
 SaveFromIns 仍是唯一 Instagram 生产路线。详见
 [Work Item 59 记录](work-item-59-instagram-provider-batch-3.md)。
 
+### Work Item 60 — Instagram Provider 多维度技术验证
+
+Work Item 60 从 NL VPS 对 VidsSave、FDown.vn、DownloadMedia.app 和 Bolta AI 执行网络、TLS、
+HTTP、页面/客户端协议、真实解析与媒体 Range 的多维度验证。四站均可通过公开 DNS、TLS 1.3
+和 HTTP 200 页面检查，但没有一个返回可由 TikDD 安全规范化并由客户端无 Cookie 直连下载的
+MP4。
+
+FDown 是本批次最接近可用的协议：页面匿名签发的临时 XSRF/session 可以调用同源
+`POST /api/instagram/download`，实际字段通过 422 响应确认是 `url`，正确请求返回 HTTP 200
+JSON 和两个同站资源；两个资源的无 Cookie Range 请求均返回 HTML，而不是 `206 video/*`，
+因此记录为 `technicalState=no-media`。DownloadMedia 的 GET 表单提交没有返回媒体，VidsSave
+和 Bolta AI 没有暴露可复现的公开下载协议，也都记录为 `no-media`。
+
+本批次没有候选达到 `resolved` 或 `qualified`，不执行第二样本，不创建 Adapter、Delivery Host
+policy、rollout rule、数据库变更或生产部署。SaveFromIns 仍是唯一 Instagram 生产路线。详见
+[Work Item 60 记录](work-item-60-instagram-provider-multidimensional-validation.md)。
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.

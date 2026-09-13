@@ -32,7 +32,11 @@ describe("technical Provider preflight classification", () => {
       "save-free": "https://www.save-free.com/en/reels-downloader/",
       anonsaver: "https://anonsaver.com/en1/",
       "snap-insta": "https://snap-insta.to/en",
-      dlreel: "https://dlreel.com/"
+      dlreel: "https://dlreel.com/",
+      vidssave: "https://vidssave.com/ins",
+      "fdown-vn": "https://fdown.vn/en/instagram-downloader",
+      "downloadmedia-app": "https://downloadmedia.app/instagram-video-downloader/",
+      "bolta-ai": "https://bolta.ai/public-apps/video-downloader/instagram"
     });
   });
 });
