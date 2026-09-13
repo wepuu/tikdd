@@ -7,7 +7,7 @@ import {
 /**
  * Offline owner-supplied candidate matrix for Work Items 51, 56, 57 and 58. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
- * Work Item 59 adds the third Instagram technical-validation batch.
+ * Work Items 59 and 60 add the third and fourth Instagram technical-validation batches.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
   {
@@ -469,6 +469,82 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
   {
     id: "dlreel",
     displayName: "DLReel",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "vidssave",
+    displayName: "VidsSave Instagram Downloader",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fdown-vn",
+    displayName: "FDown.vn Instagram Downloader",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "downloadmedia-app",
+    displayName: "DownloadMedia.app Instagram Downloader",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "bolta-ai",
+    displayName: "Bolta AI Instagram Video Downloader",
     platforms: ["instagram"],
     freeAccess: true,
     publicContentOnly: true,

@@ -215,7 +215,15 @@ describe("Work Item 51 portfolio qualification", () => {
       status: "deferred",
       reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
     });
-    for (const providerId of ["embedsocial-jp", "snap-insta", "dlreel"]) {
+    for (const providerId of [
+      "embedsocial-jp",
+      "snap-insta",
+      "dlreel",
+      "vidssave",
+      "fdown-vn",
+      "downloadmedia-app",
+      "bolta-ai"
+    ]) {
       expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
         status: "deferred",
         productionRouteEligible: false,
