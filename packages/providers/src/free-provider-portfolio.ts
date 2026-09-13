@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Item 51. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51 and 56. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
@@ -126,6 +126,82 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
   {
     id: "savevid",
     displayName: "SaveVid.net",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fastdl",
+    displayName: "FastDL.app",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "igram-world",
+    displayName: "iGram.world",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "sssinstagram",
+    displayName: "sssInstagram.com",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "inflact",
+    displayName: "Inflact Instagram Downloader",
     platforms: ["instagram"],
     freeAccess: true,
     publicContentOnly: true,
