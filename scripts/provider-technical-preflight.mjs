@@ -1,13 +1,17 @@
 import { pathToFileURL } from "node:url";
 
-const CANDIDATES = {
+export const CANDIDATES = {
   tokvid: "https://tokvid.io/",
   tikcd: "https://tikcd.com/",
   "tikvid-io": "https://tikvid.io/",
   "gramsnap": "https://gramsnap.com/",
   savevid: "https://savevid.net/en",
   tikvid: "https://tikvid.cc/",
-  snapinsta: "https://snapinsta.to/"
+  snapinsta: "https://snapinsta.to/",
+  fastdl: "https://fastdl.app/",
+  "igram-world": "https://igram.world/",
+  sssinstagram: "https://sssinstagram.com/",
+  inflact: "https://inflact.com/instagram-downloader/"
 };
 
 function contentTypeCategory(headers) {
@@ -24,7 +28,9 @@ export function classifyTechnicalResponse({ status, challenge }) {
     return { state: "blocked", failureCode: "access_challenge" };
   }
   if (status >= 200 && status < 400) return { state: "reachable", failureCode: null };
-  if (status >= 500) return { state: "blocked", failureCode: "upstream_unavailable" };
+  if (status === 408 || status === 429 || status >= 500) {
+    return { state: "deferred", failureCode: status >= 500 ? "upstream_unavailable" : "temporary_http_error" };
+  }
   return { state: "blocked", failureCode: "http_error" };
 }
 

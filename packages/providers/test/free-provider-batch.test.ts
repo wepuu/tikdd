@@ -185,6 +185,13 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_blocked"])
     });
+    for (const providerId of ["fastdl", "igram-world", "sssinstagram", "inflact"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "deferred",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_blocked"])
+      });
+    }
   });
 });
 

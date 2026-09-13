@@ -1129,6 +1129,19 @@ database subsystem is added in this batch. SaveFromIns remains the sole Instagra
 future candidates must expose a server-callable public protocol before a sequential secondary adapter
 is considered. See the [Work Item 55 record](work-item-55-instagram-provider-qualification.md).
 
+### Work Item 56 — Instagram Provider technical test batch
+
+Work Item 56 completed a single bounded NL protocol probe for `fastdl.app`, `snapinsta.to`,
+`igram.world`, `sssinstagram.com` and `inflact.com/instagram-downloader/`. The probe checked DNS/TLS,
+HTTP status/content type, same-host redirects, challenge markers, forms and client endpoint evidence;
+it did not use SaveFromIns, user cookies, login, browser tokens or challenge bypass. Every candidate
+was blocked by a Cloudflare/browser-state or login/session boundary before a Reel submission, so no
+candidate is `resolved` or `qualified` and no second confirmation sample was attempted. The temporary
+probe was removed from both NL and the repository. `provider:preflight` and the offline portfolio now
+contain the explicit candidate mappings and sanitized technical states. SaveFromIns remains the only
+Instagram production route; this evidence-only batch does not create an adapter, host policy, rollout
+rule, or deployment. See the [Work Item 56 record](work-item-56-instagram-provider-technical-batch.md).
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
