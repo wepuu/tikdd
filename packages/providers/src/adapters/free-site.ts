@@ -49,7 +49,9 @@ function formDetails(html: string, origin: string, allowedHosts: ReadonlySet<str
     throw new ProviderError("The Provider form redirected outside its allowlist.", "invalid_result", false, true);
   }
 
-  const method = (attributes.get("method") ?? "POST").toUpperCase() === "GET" ? "GET" : "POST";
+  // HTML forms default to GET when the method attribute is omitted. Treating an omitted method as
+  // POST silently diverges from browser behavior and can make a fixture-only adapter look viable.
+  const method = (attributes.get("method") ?? "GET").toUpperCase() === "POST" ? "POST" : "GET";
   const fields = new URLSearchParams();
   for (const match of html.matchAll(/<input\b([^>]*)>/gi)) {
     const input = readAttributes(match[1] ?? "");
@@ -85,7 +87,7 @@ export function parseFreeSiteResult(html: string, providerName: string): ParsedM
     const label = textFromHtml(match[2] ?? "");
     if (!candidate || !isSafeHttpsUrl(candidate) || seen.has(candidate)) continue;
     if (/\b(?:mp3|m4a|audio|photo|image)\b/i.test(`${label} ${candidate}`)) continue;
-    if (!/\.mp4(?:[?#]|$)/i.test(candidate) && !/\b(?:mp4|video|download)\b/i.test(label)) continue;
+    if (!/\.mp4(?:[?#]|$)/i.test(candidate) && !/\b(?:mp4|video)\b/i.test(label)) continue;
     seen.add(candidate);
     const quality = label.match(/\b(?:\d{3,4}p|hd|original|source)\b/i)?.[0] ?? "Original";
     formats.push({

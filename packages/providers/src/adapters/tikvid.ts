@@ -40,7 +40,7 @@ export class TikVidProvider implements ResolverProvider {
         platform: "tiktok",
         priority: 780,
         deliveryModes: [],
-        verificationStatus: "fixture_verified"
+        verificationStatus: "canary_failed"
       }]
     };
   }

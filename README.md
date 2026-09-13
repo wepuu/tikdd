@@ -117,11 +117,12 @@ and requests a fresh one-use ticket for “download again”; it never reopens a
 the [Work Item 49 record](docs/work-item-49-tiktok-beta-closure.md).
 
 Work Item 51 adds an offline portfolio for the owner-supplied free Provider candidates and
-fixture-backed, disabled resolution-only adapters for TikVid.cc (TikTok) and SnapInsta.to
-(Instagram). The intended secondary chains are `SnapTik Monster → TikVid` and
-`SaveFromIns → SnapInsta`, but production filters non-deliverable capabilities until exact media
-Host and redirect reviews pass. No rollout rules, migrations, live candidate probes, or new traffic
-are introduced. See the [Work Item 51 record](docs/work-item-51-free-provider-fallback-batch.md).
+disabled resolution-only adapters for TikVid.cc (TikTok) and SnapInsta.to (Instagram). Work Item 52
+then checks both candidates from NL: TikVid follows its real GET/302 page flow but returns no valid
+MP4 for the authorized sample, while SnapInsta presents a landing-page challenge before any media
+URL is submitted. Both capabilities are therefore `canary_failed`; neither proposed secondary chain
+is active in production. See the [Work Item 51 record](docs/work-item-51-free-provider-fallback-batch.md)
+and [Work Item 52 record](docs/work-item-52-free-provider-delivery-qualification.md).
 
 Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
 first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
@@ -292,8 +293,9 @@ through the asynchronous mock route.
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
   and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster. Work Item 50
-  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 51's free candidates
-  remain disabled and resolution-only. No other Provider, Admin, or calibration profile is started
+  publishes the reviewed bilingual TikTok snapshot to the sitemap; Work Item 52 keeps the free
+  candidates disabled, resolution-only, and marked `canary_failed`. No other Provider, Admin, or
+  calibration profile is started
   by these promotions.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.

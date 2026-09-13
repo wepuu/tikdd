@@ -42,12 +42,12 @@ describe("Work Item 51 free Provider adapters", () => {
     expect(new TikVidProvider().manifest).toMatchObject({
       id: "tikvid",
       enabled: false,
-      platforms: [{ platform: "tiktok", deliveryModes: [], verificationStatus: "fixture_verified" }]
+      platforms: [{ platform: "tiktok", deliveryModes: [], verificationStatus: "canary_failed" }]
     });
     expect(new SnapInstaProvider().manifest).toMatchObject({
       id: "snapinsta",
       enabled: false,
-      platforms: [{ platform: "instagram", deliveryModes: [], verificationStatus: "fixture_verified" }]
+      platforms: [{ platform: "instagram", deliveryModes: [], verificationStatus: "canary_failed" }]
     });
   });
 
@@ -66,7 +66,12 @@ describe("Work Item 51 free Provider adapters", () => {
     expect(resolution.result.formats[0]).toMatchObject({ container: "mp4", hasVideo: true });
     expect(resolution.candidates).toEqual([]);
     expect(JSON.stringify(resolution.result)).not.toContain("media.tikvid.cc");
-    expect(calls[1]?.init?.body?.toString()).toContain("url=https%3A%2F%2Fwww.tiktok.com");
+    expect(calls[1]?.init?.method).toBe("GET");
+    expect(calls[1]?.init?.body).toBeUndefined();
+    const submitted = new URL(calls[1]?.url ?? "https://invalid.example.test");
+    expect(submitted.pathname).toBe("/en1/download");
+    expect(submitted.searchParams.get("url")).toBe(tiktokInput.canonicalUrl);
+    expect(submitted.searchParams.get("csrf_token")).toBe("fixture-token");
   });
 
   it("normalizes SnapInsta Reel results and rejects private content as terminal", async () => {
@@ -107,6 +112,33 @@ describe("Work Item 51 free Provider adapters", () => {
     });
   });
 
+  it("follows a bounded same-host result redirect without changing a GET submission to POST", async () => {
+    const [landing, success] = await Promise.all([fixture("tikvid-landing.html"), fixture("tikvid-success.html")]);
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const provider = new TikVidProvider({
+      enabled: true,
+      fetchImpl: async (input, init) => {
+        calls.push({ url: input.toString(), ...(init ? { init } : {}) });
+        if (calls.length === 1) return htmlResponse(landing, input.toString());
+        if (calls.length === 2) {
+          const response = new Response(null, {
+            status: 302,
+            headers: { location: "/en1/result/fixture", "content-type": "text/html" }
+          });
+          Object.defineProperty(response, "url", { value: input.toString() });
+          return response;
+        }
+        return htmlResponse(success, input.toString());
+      }
+    });
+
+    await expect(provider.resolve(tiktokInput)).resolves.toMatchObject({ candidates: [] });
+    expect(calls).toHaveLength(3);
+    expect(calls[1]?.init?.method).toBe("GET");
+    expect(calls[2]?.url).toBe("https://tikvid.cc/en1/result/fixture");
+    expect(calls[2]?.init?.method).toBe("GET");
+  });
+
   it.each([
     ["tikvid-private.html", "content_private", false],
     ["tikvid-not-found.html", "content_not_found", false],
@@ -135,6 +167,11 @@ describe("Work Item 51 portfolio qualification", () => {
       expect.objectContaining({ providerId: "tikvid", status: "deferred", productionRouteEligible: false }),
       expect.objectContaining({ providerId: "snapinsta", status: "deferred", productionRouteEligible: false })
     ]);
+    expect(results.filter(({ providerId }) => ["tikvid", "snapinsta"].includes(providerId)))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ reasons: expect.arrayContaining(["canary_failed"]) }),
+        expect.objectContaining({ reasons: expect.arrayContaining(["canary_failed"]) })
+      ]));
     expect(results.find(({ providerId }) => providerId === "savevid")).toMatchObject({
       status: "rejected",
       reasons: expect.arrayContaining(["public_only_boundary"])

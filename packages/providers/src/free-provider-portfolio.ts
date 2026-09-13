@@ -25,7 +25,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 1,
     failureFixtureCount: 4,
-    evidenceState: "evaluating"
+    evidenceState: "canary-failed"
   },
   {
     id: "snapinsta",
@@ -43,7 +43,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 1,
     failureFixtureCount: 4,
-    evidenceState: "evaluating"
+    evidenceState: "canary-failed"
   },
   {
     id: "tokvid",

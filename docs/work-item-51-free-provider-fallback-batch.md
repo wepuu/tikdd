@@ -2,6 +2,9 @@
 
 状态：代码实现完成，候选仍未获得生产 Delivery 资格（2026-09-13）。
 
+后续状态：Work Item 52 的 NL 验证已将 TikVid 与 SnapInsta 标记为 `canary_failed`；本文件的
+`fixture_verified` 结果仅保留为当时的离线实现记录。
+
 ## 范围与基线
 
 本批次从 `main@9c0a2591f315df11ed2b6a522e48de59243b7623` 开始。TikTok 已由 Work Item 50
