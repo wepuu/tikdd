@@ -1114,6 +1114,21 @@ handoffs succeeded through the SnapTik primary; no forced failover was performed
 production attempt is recorded. Continue observing natural fallback traffic without increasing
 request volume. See the [Work Item 54 record](work-item-54-tikcd-secondary-route.md).
 
+### Work Item 55 — Instagram free-Provider qualification and routing boundary
+
+Work Item 55 closes the next Instagram Provider batch as a technical evidence decision. A bounded NL
+inspection of GramSnap's actual client protocol found a browser form backed by `POST /api/convert`
+with a `target_url` payload, plus browser-held `x-token` and Cloudflare token state. Because the
+server-side resolver cannot safely obtain or forward those tokens, GramSnap is recorded as
+`technicalState=blocked` and remains out of manifests and production routing. No SaveFromIns
+frequency amplification, challenge bypass, or new Delivery Host policy was introduced.
+
+The existing Admin Providers route detail and Beta health aggregate already expose the sanitized
+attempt, fallback, delivery and circuit facts needed for natural observation, so no new audit or
+database subsystem is added in this batch. SaveFromIns remains the sole Instagram production route;
+future candidates must expose a server-callable public protocol before a sequential secondary adapter
+is considered. See the [Work Item 55 record](work-item-55-instagram-provider-qualification.md).
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
