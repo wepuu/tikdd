@@ -204,6 +204,17 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_no_media"])
     });
+    for (const providerId of ["ahm7_alldl", "cliplatch"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "deferred",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_unverified"])
+      });
+    }
+    expect(results.find(({ providerId }) => providerId === "prexzy")).toMatchObject({
+      status: "deferred",
+      reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
+    });
   });
 });
 

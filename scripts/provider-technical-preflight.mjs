@@ -16,7 +16,10 @@ export const CANDIDATES = {
   collabstr: "https://collabstr.com/",
   igexport: "https://igexport.com/en/reels-download/",
   fastvideosave: "https://fastvideosave.net/",
-  indown: "https://indown.io/reels/en2"
+  indown: "https://indown.io/reels/en2",
+  ahm7_alldl: "https://ahm7xmakki.com/api/alldl",
+  prexzy: "https://prexzyapis.com/download/igv2",
+  cliplatch: "https://cliplatch.com/api/parse"
 };
 
 function contentTypeCategory(headers) {
