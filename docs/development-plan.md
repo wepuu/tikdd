@@ -1218,6 +1218,30 @@ proxy, Adapter, rollout or production change was deployed. A production Edge Res
 new ADR covering one-use tickets, Provider/host policy, throttling, redaction and rollback. See the
 [Work Item 61 record](work-item-61-instagram-client-edge-delivery-validation.md).
 
+### Work Item 62 — Free Provider Lab and server-side protocol evidence
+
+Work Item 62 adds an evidence-only Provider Lab for the owner-supplied Prexzy, AHM7, Cobalt,
+TikTok Downloader Worker, ClipX, PostVault, ClipLatch, TikWM, AnyDownloader and ReClip candidates.
+Remote checks are sequential and low-frequency with a ten-second timeout, public-DNS/HTTPS and
+redirect validation, and a bounded media Range probe. Sample URLs, response bodies, cookies,
+tokens, titles, authors and complete CDN URLs are never persisted or printed. A 429, challenge or
+upstream 5xx stops that candidate without an automatic retry.
+
+The NL run found no new two-sample `qualified` candidate: Cobalt and TikWM were blocked by access
+challenges, the TikTok Downloader Worker and PostVault returned transient upstream errors, and
+ClipX was only reachable without a confirmed active endpoint. Previous Prexzy, AHM7 and ClipLatch
+evidence remains unchanged and does not qualify an adapter. AnyDownloader and ReClip were reviewed
+only as local Docker candidates; both download and store media on the server, so they do not fit
+TikDD's redirect-only path. Local Docker Desktop was unavailable during this batch, and neither
+source was built or started.
+
+The code-owned lab catalog, sanitized probe tests, preflight mappings and offline portfolio records
+are documented in the [Work Item 62 record](work-item-62-free-provider-lab.md). This closes as
+evidence-only: no adapter, Delivery host policy, rollout rule, database change, Admin lifecycle
+change or production deployment. SaveFromIns remains the sole Instagram production route; future
+provider work must present a demonstrably server-callable anonymous protocol or a separately
+approved isolated yt-dlp/FFmpeg design.
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.

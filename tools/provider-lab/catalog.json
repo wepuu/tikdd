@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1",
+  "providers": [
+    {
+      "id": "prexzy",
+      "kind": "public-api",
+      "landingUrl": "https://prexzyapis.com/",
+      "apiHost": "prexzyapis.com",
+      "active": { "id": "instagram-v2", "platform": "instagram", "method": "GET", "path": "/download/igv2", "queryField": "url" }
+    },
+    {
+      "id": "ahm7_alldl",
+      "kind": "public-api",
+      "landingUrl": "https://ahm7xmakki.com/alldl",
+      "apiHost": "ahm7xmakki.com",
+      "active": { "id": "alldl", "platform": "instagram", "method": "GET", "path": "/api/alldl", "queryField": "url" }
+    },
+    {
+      "id": "cobalt-directory",
+      "kind": "community-directory",
+      "landingUrl": "https://cobalt.directory/",
+      "probeUrl": "https://cobalt.directory/api/working?type=api",
+      "apiHost": "cobalt.directory",
+      "active": null
+    },
+    {
+      "id": "tdownv4",
+      "kind": "public-api",
+      "landingUrl": "https://tdownv4.sl-bjs.workers.dev/",
+      "apiHost": "tdownv4.sl-bjs.workers.dev",
+      "active": { "id": "download", "platform": "tiktok", "method": "GET", "path": "/", "queryField": "down" }
+    },
+    {
+      "id": "clipx",
+      "kind": "public-api",
+      "landingUrl": "https://clipx.zamdev.dev/docs/api",
+      "apiHost": "clipx.zamdev.workers.dev",
+      "active": null
+    },
+    {
+      "id": "postvault",
+      "kind": "web-candidate",
+      "landingUrl": "https://postvault.edwardd.app/",
+      "apiHost": "postvault.edwardd.app",
+      "active": null
+    },
+    {
+      "id": "cliplatch",
+      "kind": "web-candidate",
+      "landingUrl": "https://cliplatch.com/",
+      "apiHost": "cliplatch.com",
+      "active": { "id": "parse", "platform": "instagram", "method": "POST", "path": "/api/parse", "bodyField": "url" }
+    },
+    {
+      "id": "tikwm",
+      "kind": "web-candidate",
+      "landingUrl": "https://tikwm.com/",
+      "apiHost": "tikwm.com",
+      "active": { "id": "api", "platform": "tiktok", "method": "GET", "path": "/api/", "queryField": "url" }
+    },
+    {
+      "id": "anydownloader",
+      "kind": "self-hosted-source",
+      "landingUrl": "https://github.com/nyxsky404/AnyDownloader",
+      "apiHost": null,
+      "active": null,
+      "localOnly": true
+    },
+    {
+      "id": "reclip",
+      "kind": "self-hosted-source",
+      "landingUrl": "https://github.com/averygan/reclip",
+      "apiHost": null,
+      "active": null,
+      "localOnly": true
+    }
+  ]
+}
