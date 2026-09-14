@@ -1,6 +1,6 @@
 # TikDD Provider Lab
 
-This directory is an evidence-only harness for Work Item 62. It is not a production service and
+This directory is an evidence-only harness for Provider validation work (Work Items 62–64). It is not a production service and
 must never be imported by Web, API, Worker or Delivery.
 
 ## Operating rules
@@ -22,7 +22,7 @@ must never be imported by Web, API, Worker or Delivery.
 
 ```text
 node tools/provider-lab/probe.mjs passive --all
-node tools/provider-lab/probe.mjs passive prexzy ahm7-alldl
+node tools/provider-lab/probe.mjs passive prexzy ahm7_alldl
 node tools/provider-lab/probe.mjs active prexzy <temporary-sample-file>
 node --test tools/provider-lab/test/*.test.mjs
 ```

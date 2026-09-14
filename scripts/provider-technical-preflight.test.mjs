@@ -10,6 +10,7 @@ describe("technical Provider preflight classification", () => {
     expect(classifyTechnicalResponse({ status: 403, challenge: true })).toEqual({ state: "blocked", failureCode: "access_challenge" });
     expect(classifyTechnicalResponse({ status: 503, challenge: false })).toEqual({ state: "deferred", failureCode: "upstream_unavailable" });
     expect(classifyTechnicalResponse({ status: 429, challenge: false })).toEqual({ state: "deferred", failureCode: "temporary_http_error" });
+    expect(classifyTechnicalResponse({ status: 419, challenge: false })).toEqual({ state: "blocked", failureCode: "session_required" });
   });
 
   it("keeps the Instagram candidate mappings explicit", () => {
@@ -46,7 +47,10 @@ describe("technical Provider preflight classification", () => {
       tdownv4: "https://tdownv4.sl-bjs.workers.dev/",
       clipx: "https://clipx.zamdev.workers.dev/",
       postvault: "https://postvault.edwardd.app/",
-      tikwm: "https://tikwm.com/api/"
+      tikwm: "https://tikwm.com/api/",
+      fdown: "https://fdown.net/",
+      "fdownloader-vn": "https://fdownloader.vn/",
+      fget: "https://fget.io/"
     });
   });
 });

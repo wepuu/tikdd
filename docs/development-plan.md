@@ -1260,6 +1260,21 @@ Providers for Facebook, Vimeo and Pinterest. SocialKit and SaveAPI remain deferr
 commercial-API review covers official protocol, terms, pricing, quotas, secret injection and
 rollback.
 
+### Work Item 64 — Facebook free Provider candidate batch
+
+Work Item 64 tested the owner-supplied `fdown.net`, `fdownloader.vn` and `fget.io` candidates from
+NL VPS using the bounded Provider Lab. `fdown.net` returned HTTP 403 with an access challenge.
+`fdownloader.vn` exposed a same-origin `POST /api/download` request with a URL field, but both
+public Facebook samples returned HTTP 419 JSON and no media, indicating an anonymous CSRF/session
+boundary. `fget.io` was reachable but exposed no safe public parsing endpoint; only static page
+assets were observed. No candidate reached `resolved` or `qualified`.
+
+The test input and protocol inspection scripts were temporary and removed after the run. No response
+body, Cookie, Token, Provider page or CDN URL was persisted. The three candidates are recorded in
+the offline Provider portfolio as blocked/no-media evidence. No adapter, Host policy, rollout rule,
+environment gate, database change or production deployment was made. Existing DLPanda, Facebook,
+X, TikTok and Instagram production states remain unchanged.
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
