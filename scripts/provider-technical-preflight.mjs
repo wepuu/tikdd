@@ -39,7 +39,10 @@ export const CANDIDATES = {
   tdownv4: "https://tdownv4.sl-bjs.workers.dev/",
   clipx: "https://clipx.zamdev.workers.dev/",
   postvault: "https://postvault.edwardd.app/",
-  tikwm: "https://tikwm.com/api/"
+  tikwm: "https://tikwm.com/api/",
+  fdown: "https://fdown.net/",
+  "fdownloader-vn": "https://fdownloader.vn/",
+  fget: "https://fget.io/"
 };
 
 function contentTypeCategory(headers) {
@@ -55,6 +58,7 @@ export function classifyTechnicalResponse({ status, challenge }) {
   if (challenge || status === 401 || status === 403) {
     return { state: "blocked", failureCode: "access_challenge" };
   }
+  if (status === 419) return { state: "blocked", failureCode: "session_required" };
   if (status >= 200 && status < 400) return { state: "reachable", failureCode: null };
   if (status === 408 || status === 429 || status >= 500) {
     return { state: "deferred", failureCode: status >= 500 ? "upstream_unavailable" : "temporary_http_error" };

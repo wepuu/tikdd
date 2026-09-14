@@ -52,6 +52,17 @@ test("active probe classifies access challenges as blocked", async () => {
   assert.equal(result.failureCode, "access_challenge");
 });
 
+test("active probe classifies HTTP 419 as a session boundary", async () => {
+  const provider = { id: "fixture", apiHost: "api.example.com", active: { id: "parse", platform: "facebook", method: "POST", path: "/parse", bodyField: "url" } };
+  const result = await activeProbe(provider, { id: "primary", url: "https://www.facebook.com/share/r/sample/" }, {
+    budget: new RequestBudget({ minIntervalMs: 0 }),
+    fetchImpl: async () => new Response("{}", { status: 419, headers: { "content-type": "application/json" } }),
+    dnsCheck: async (host) => host === "api.example.com"
+  });
+  assert.equal(result.result, "blocked");
+  assert.equal(result.failureCode, "session_required");
+});
+
 test("challenge markers in bounded HTML are treated as blocked", async () => {
   assert.equal(hasChallengeMarker("<html><title>Just a moment...</title><script>turnstile.render()</script></html>"), true);
   const provider = { id: "fixture", apiHost: "api.example.com", active: { id: "parse", platform: "instagram", method: "GET", path: "/parse", queryField: "url" } };

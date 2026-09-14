@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58 and 62. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62 and 64. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
@@ -768,6 +768,63 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 1,
     technicalState: "not-tested",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fdown",
+    displayName: "FDown.net",
+    platforms: ["facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: true,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fdownloader-vn",
+    displayName: "FDownloader.vn",
+    platforms: ["facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: true,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fget",
+    displayName: "FGet.io",
+    platforms: ["facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "no-media",
     evidenceState: "not-evaluated"
   }
 ] as const;

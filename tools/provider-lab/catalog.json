@@ -59,6 +59,27 @@
       "active": { "id": "api", "platform": "tiktok", "method": "GET", "path": "/api/", "queryField": "url" }
     },
     {
+      "id": "fdown",
+      "kind": "web-candidate",
+      "landingUrl": "https://fdown.net/",
+      "apiHost": "fdown.net",
+      "active": null
+    },
+    {
+      "id": "fdownloader-vn",
+      "kind": "web-candidate",
+      "landingUrl": "https://fdownloader.vn/",
+      "apiHost": "fdownloader.vn",
+      "active": { "id": "download", "platform": "facebook", "method": "POST", "path": "/api/download", "bodyField": "url" }
+    },
+    {
+      "id": "fget",
+      "kind": "web-candidate",
+      "landingUrl": "https://fget.io/",
+      "apiHost": "fget.io",
+      "active": null
+    },
+    {
       "id": "anydownloader",
       "kind": "self-hosted-source",
       "landingUrl": "https://github.com/nyxsky404/AnyDownloader",

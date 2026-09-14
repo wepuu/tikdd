@@ -167,8 +167,8 @@ export async function activeProbe(provider, sample, { budget = new RequestBudget
   if (response.status === 408 || response.status === 429 || response.status >= 500) {
     return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "deferred", httpStatus: response.status, contentType: contentTypeCategory(response.headers), latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: response.status >= 500 ? "upstream_unavailable" : "rate_limited" });
   }
-  if (response.status === 401 || response.status === 403) {
-    return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "blocked", httpStatus: response.status, contentType: contentTypeCategory(response.headers), latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: "access_challenge" });
+  if (response.status === 401 || response.status === 403 || response.status === 419) {
+    return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "blocked", httpStatus: response.status, contentType: contentTypeCategory(response.headers), latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: response.status === 419 ? "session_required" : "access_challenge" });
   }
   const type = contentTypeCategory(response.headers);
   if (response.headers.get("cf-mitigated") === "challenge" || hasChallengeMarker(result.body)) {

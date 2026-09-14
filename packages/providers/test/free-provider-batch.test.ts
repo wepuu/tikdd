@@ -242,6 +242,18 @@ describe("Work Item 51 portfolio qualification", () => {
         reasons: expect.arrayContaining(["technical_blocked"])
       });
     }
+    for (const providerId of ["fdown", "fdownloader-vn"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "rejected",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_blocked"])
+      });
+    }
+    expect(results.find(({ providerId }) => providerId === "fget")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_no_media"])
+    });
   });
 });
 
