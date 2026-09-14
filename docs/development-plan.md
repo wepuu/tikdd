@@ -1242,6 +1242,24 @@ change or production deployment. SaveFromIns remains the sole Instagram producti
 provider work must present a demonstrably server-callable anonymous protocol or a separately
 approved isolated yt-dlp/FFmpeg design.
 
+### Work Item 63 — Non-Instagram platform Provider validation
+
+Instagram Provider research is paused. Work Item 63 used the six owner-supplied public samples for
+Facebook, Vimeo and Pinterest to exercise the existing DLPanda adapter from NL VPS. All six samples
+hit `provider_challenge` at the DLPanda request boundary before any media request, normalized result
+or Delivery candidate was available. The common failure across three platforms and two samples per
+platform indicates an access boundary at DLPanda/NL, not a platform-specific parser defect. No
+challenge bypass, login, cookie, browser state or full media download was attempted.
+
+No new adapter, Host policy, rollout rule, environment gate, database or production change was made;
+the existing DLPanda capabilities remain resolution-only/unverified and all production routes are
+unchanged. The evidence and cleanup record are in the [Work Item 63 record](work-item-63-multiplatform-provider-validation.md).
+
+The next stage is a consolidated non-Instagram candidate batch, prioritizing genuinely new free
+Providers for Facebook, Vimeo and Pinterest. SocialKit and SaveAPI remain deferred until a separate
+commercial-API review covers official protocol, terms, pricing, quotas, secret injection and
+rollback.
+
 ## Definition of done for every new adapter
 
 1. Compliance owner and upstream terms review are documented.
