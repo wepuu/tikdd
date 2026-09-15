@@ -63,6 +63,34 @@ test("active probe classifies HTTP 419 as a session boundary", async () => {
   assert.equal(result.failureCode, "session_required");
 });
 
+test("active probe supports reviewed form encoding and bounded static body defaults", async () => {
+  const provider = {
+    id: "fixture",
+    apiHost: "api.example.com",
+    active: {
+      id: "parse",
+      platform: "facebook",
+      method: "POST",
+      path: "/parse",
+      bodyField: "url",
+      bodyEncoding: "form-urlencoded",
+      bodyDefaults: { quality: "best" }
+    }
+  };
+  let request;
+  await activeProbe(provider, { id: "primary", url: "https://www.facebook.com/share/r/sample/" }, {
+    budget: new RequestBudget({ minIntervalMs: 0 }),
+    fetchImpl: async (_input, options) => {
+      request = options;
+      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+    },
+    dnsCheck: async (host) => host === "api.example.com"
+  });
+  assert.match(request.headers["content-type"], /application\/x-www-form-urlencoded/);
+  assert.equal(new URLSearchParams(request.body).get("url"), "https://www.facebook.com/share/r/sample/");
+  assert.equal(new URLSearchParams(request.body).get("quality"), "best");
+});
+
 test("challenge markers in bounded HTML are treated as blocked", async () => {
   assert.equal(hasChallengeMarker("<html><title>Just a moment...</title><script>turnstile.render()</script></html>"), true);
   const provider = { id: "fixture", apiHost: "api.example.com", active: { id: "parse", platform: "instagram", method: "GET", path: "/parse", queryField: "url" } };

@@ -4,7 +4,7 @@ import catalog from "../catalog.json" with { type: "json" };
 
 test("catalog contains only explicit candidates and marks self-host sources local-only", () => {
   const ids = new Set(catalog.providers.map((provider) => provider.id));
-  for (const id of ["prexzy", "ahm7_alldl", "cobalt-directory", "tdownv4", "clipx", "postvault", "cliplatch", "tikwm", "anydownloader", "reclip"]) {
+  for (const id of ["prexzy", "ahm7_alldl", "cobalt-directory", "tdownv4", "clipx", "postvault", "cliplatch", "tikwm", "instagram-video-downloader-vercel", "reelsaver-fun", "fdown-isuru", "vidown-netlify", "anydownloader", "reclip"]) {
     assert.equal(ids.has(id), true, id);
   }
   assert.equal(catalog.providers.find((provider) => provider.id === "anydownloader").localOnly, true);

@@ -42,7 +42,11 @@ export const CANDIDATES = {
   tikwm: "https://tikwm.com/api/",
   fdown: "https://fdown.net/",
   "fdownloader-vn": "https://fdownloader.vn/",
-  fget: "https://fget.io/"
+  fget: "https://fget.io/",
+  "instagram-video-downloader-vercel": "https://instagram-video-downloader-mu.vercel.app/",
+  "reelsaver-fun": "https://www.reelsaver.fun/",
+  "fdown-isuru": "https://fdown.isuru.eu.org/",
+  "vidown-netlify": "https://vidown.netlify.app/"
 };
 
 function contentTypeCategory(headers) {
