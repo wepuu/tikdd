@@ -1283,3 +1283,17 @@ X, TikTok and Instagram production states remain unchanged.
 4. Contract, timeout, cancellation, SSRF/redirect, and secret-leak tests pass.
 5. Scheduled canaries, metrics, circuit thresholds, and a rollback flag exist.
 6. The adapter launches disabled and is promoted gradually by platform and region.
+
+### Work Item 65 — mixed free Provider technical batch
+
+Work Item 65 tested four owner-supplied candidates from the NL VPS using protocol evidence rather
+than page claims. Instagram Video Downloader (Vercel) exposed a form-encoded `POST /api` call but
+the endpoint returned HTTP 404 HTML. ReelSaver.fun returned HTTP 422 JSON without media. ViDown's
+separate API origin returned HTTP 403 for Instagram and timed out for Facebook. These three are not
+usable for a TikDD route in the observed access boundary.
+
+FDown Isuru exposed an anonymous JSON `POST /download` protocol. Both existing Facebook samples
+returned HTTP 200 and four media resources each passed public-DNS and bounded Range validation on
+the `fbcdn.net` suffix. It is recorded as `technicalState=resolved`, not production-qualified:
+fixtures, a tolerant parser, manifest, Delivery Host policy and browser handoff still need review.
+See the [Work Item 65 record](work-item-65-provider-candidate-batch.md). No production state changed.

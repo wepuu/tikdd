@@ -1,6 +1,6 @@
 # TikDD Provider Lab
 
-This directory is an evidence-only harness for Provider validation work (Work Items 62–64). It is not a production service and
+This directory is an evidence-only harness for Provider validation work (Work Items 62 through 65). It is not a production service and
 must never be imported by Web, API, Worker or Delivery.
 
 ## Operating rules

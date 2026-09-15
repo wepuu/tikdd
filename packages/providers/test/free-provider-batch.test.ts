@@ -254,6 +254,23 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_no_media"])
     });
+    for (const providerId of ["instagram-video-downloader-vercel", "reelsaver-fun"]) {
+      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
+        status: "deferred",
+        productionRouteEligible: false,
+        reasons: expect.arrayContaining(["technical_no_media"])
+      });
+    }
+    expect(results.find(({ providerId }) => providerId === "fdown-isuru")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["manifest_unreviewed", "host_policy_unreviewed"])
+    });
+    expect(results.find(({ providerId }) => providerId === "vidown-netlify")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_blocked"])
+    });
   });
 });
 

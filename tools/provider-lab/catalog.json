@@ -80,6 +80,34 @@
       "active": null
     },
     {
+      "id": "instagram-video-downloader-vercel",
+      "kind": "web-candidate",
+      "landingUrl": "https://instagram-video-downloader-mu.vercel.app/",
+      "apiHost": "instagram-video-downloader-mu.vercel.app",
+      "active": { "id": "api", "platform": "instagram", "method": "POST", "path": "/api", "bodyField": "postUrl", "bodyEncoding": "form-urlencoded" }
+    },
+    {
+      "id": "reelsaver-fun",
+      "kind": "web-candidate",
+      "landingUrl": "https://www.reelsaver.fun/",
+      "apiHost": "www.reelsaver.fun",
+      "active": { "id": "download", "platform": "instagram", "method": "GET", "path": "/api/download", "queryField": "url" }
+    },
+    {
+      "id": "fdown-isuru",
+      "kind": "web-candidate",
+      "landingUrl": "https://fdown.isuru.eu.org/",
+      "apiHost": "fdown.isuru.eu.org",
+      "active": { "id": "download", "platform": "facebook", "method": "POST", "path": "/download", "bodyField": "url", "bodyDefaults": { "quality": "best" } }
+    },
+    {
+      "id": "vidown-netlify",
+      "kind": "web-candidate",
+      "landingUrl": "https://vidown.netlify.app/",
+      "apiHost": "social-media-video-download-mern-xi.vercel.app",
+      "active": { "id": "instagram", "platform": "instagram", "method": "POST", "path": "/api/v1/ig", "bodyField": "urls" }
+    },
+    {
       "id": "anydownloader",
       "kind": "self-hosted-source",
       "landingUrl": "https://github.com/nyxsky404/AnyDownloader",

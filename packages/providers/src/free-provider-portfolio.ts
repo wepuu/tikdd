@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62 and 64. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64 and 65. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
@@ -825,6 +825,82 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 1,
     technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "instagram-video-downloader-vercel",
+    displayName: "Instagram Video Downloader (Vercel)",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "reelsaver-fun",
+    displayName: "ReelSaver.fun",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "no-media",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "fdown-isuru",
+    displayName: "FDown Isuru",
+    platforms: ["facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "resolved",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "vidown-netlify",
+    displayName: "ViDown (Netlify)",
+    platforms: ["instagram", "facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "blocked",
     evidenceState: "not-evaluated"
   }
 ] as const;

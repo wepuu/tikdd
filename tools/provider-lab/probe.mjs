@@ -157,8 +157,11 @@ export async function activeProbe(provider, sample, { budget = new RequestBudget
   const endpoint = provider.active;
   const api = new URL(endpoint.path, `https://${provider.apiHost}`);
   if (endpoint.queryField) api.searchParams.set(endpoint.queryField, sample.url);
+  const requestPayload = { [endpoint.bodyField]: sample.url, ...(endpoint.bodyDefaults ?? {}) };
   const options = endpoint.method === "POST"
-    ? { method: "POST", headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify({ [endpoint.bodyField]: sample.url }) }
+    ? endpoint.bodyEncoding === "form-urlencoded"
+      ? { method: "POST", headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: new URLSearchParams(requestPayload).toString() }
+      : { method: "POST", headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify(requestPayload) }
     : { method: "GET", headers: { accept: "application/json" } };
   const started = Date.now();
   const result = await fetchBounded(api.toString(), options, budget, { expectedHosts: new Set([provider.apiHost]), fetcher: fetchImpl, dnsCheck });
@@ -180,7 +183,8 @@ export async function activeProbe(provider, sample, { budget = new RequestBudget
   const urls = collectHttpsUrls(payload);
   const mediaHostSuffixes = new Set();
   let validMediaCount = 0;
-  for (const url of urls.slice(0, 10)) {
+  // One Provider request plus at most five bounded media checks keeps the per-run budget at six.
+  for (const url of urls.slice(0, 5)) {
     const mediaResult = await fetchBounded(url, { method: "GET", headers: { accept: "video/*,audio/*", range: "bytes=0-1023" } }, budget, { media: true, fetcher: fetchImpl, dnsCheck });
     const mediaType = mediaResult.response ? contentTypeCategory(mediaResult.response.headers) : "missing";
     if (mediaResult.response && mediaResult.response.status >= 200 && mediaResult.response.status < 300 && (mediaType === "video" || /\.mp4(?:$|[?#])/i.test(url))) {
