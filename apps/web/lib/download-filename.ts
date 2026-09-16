@@ -19,6 +19,8 @@ function sourceIdFor(task: Pick<ResolveTask, "platform" | "canonicalUrl" | "id">
     ? [/(?:x|twitter)\.com\/[^/]+\/status\/([0-9]+)/i]
     : task.platform === "instagram"
       ? [/instagram\.com\/(?:reel|p|tv)\/([A-Za-z0-9_-]+)/i]
+      : task.platform === "facebook"
+        ? [/facebook\.com\/(?:share\/r|reel)\/([A-Za-z0-9_-]+)/i]
       : [];
 
   for (const pattern of patterns) {
@@ -46,6 +48,8 @@ export function suggestedDownloadFilename(
     ? "X"
     : task.platform === "instagram"
       ? "Instagram"
+      : task.platform === "facebook"
+        ? "Facebook"
       : cleanPart(task.platform, "Media", 24);
   const sourceId = sourceIdFor(task);
   const quality = cleanPart(format.quality, "Original", 24);

@@ -14,7 +14,8 @@ Content-Type: application/json
 
 The adapter accepts the observed `status`, `video_info`, top-level `download_url` and
 `available_formats` fields. Optional title, uploader, thumbnail, duration and quality values may
-be absent. HTTPS MP4 URLs on a real `*.fbcdn.net` subdomain become internal redirect candidates;
+be absent. A thumbnail is rendered only from a reviewed HTTPS image URL on a real
+`*.xx.fbcdn.net` subdomain. HTTPS MP4 URLs on a real `*.fbcdn.net` subdomain become internal redirect candidates;
 the bare suffix, look-alike domains, credentials, custom ports and non-HTTPS URLs are rejected.
 Provider URLs never cross the public resolve-result contract. Delivery policy v2 is used for new
 results, while v1 remains registered for still-valid legacy tickets.
@@ -29,6 +30,8 @@ results, while v1 remains registered for still-valid legacy tickets.
 - Rate limits, challenges, authentication, private content, unavailable content, schema changes and
   missing MP4 resources map to typed Provider errors.
 - Delivery remains one-use short-lived `302`; the Delivery service does not stream or proxy media.
+  New v2 tickets advertise `cors-download`, allowing the browser to fetch and save the MP4 Blob
+  directly from Meta CDN; older v1 tickets and all other Providers use navigation.
 
 ## Qualification state
 

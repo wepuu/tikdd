@@ -1333,3 +1333,14 @@ revision and FDown gates inside the running container before rollout. It records
 runtime binding failure rather than Provider evidence; FDown parsing and Delivery policy v2 remain
 unchanged until a real Provider attempt is observed. See
 [Work Item 68](work-item-68-provider-runtime-config-binding.md).
+
+### Work Item 69 — FDown thumbnail and client save
+
+Work Item 69 restores FDown's reviewed `*.xx.fbcdn.net` thumbnail and adds an optional Delivery
+`browserHandoff` strategy. FDown v2 uses a bounded credential-free browser CORS fetch and Blob
+save so media bytes travel from the user's browser to Meta CDN; Delivery remains a one-use 302
+and never proxies media. Failed saves offer an explicit fresh-ticket playback fallback without
+replaying the Provider. Other Providers retain navigation, and production FDown rollout/gates
+remain unchanged pending a separately authorized deployment. See
+[Work Item 69](work-item-69-fdown-thumbnail-client-save.md) and
+[ADR-0034](architecture/adr/0034-fdown-thumbnail-client-save.md).

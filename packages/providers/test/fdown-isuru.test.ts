@@ -40,7 +40,9 @@ describe("FDownIsuruProvider", () => {
     expect(provider.manifest).toMatchObject({ id: "fdown-isuru", enabled: true, regions: ["nl"] });
     expect(resolution.result.media.title).toBe("Facebook fixture");
     expect(resolution.result.media.author).toBe("fixture-uploader");
-    expect(resolution.result.media.thumbnailUrl).toBeNull();
+    expect(resolution.result.media.thumbnailUrl).toBe(
+      "https://scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.jpg?variant=preview"
+    );
     expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["Original", "720p"]);
     expect(resolution.candidates).toHaveLength(2);
     expect(resolution.candidates.every(({ hostPolicyId }) => hostPolicyId === "fdown-isuru-facebook-media-v2")).toBe(true);
@@ -48,7 +50,7 @@ describe("FDownIsuruProvider", () => {
     expect(request?.headers).toMatchObject({ "content-type": "application/json" });
     expect(String(request?.body)).toContain('"quality":"best"');
     expect(String(request?.body)).toContain("https://www.facebook.com/share/r/fixture/");
-    expect(JSON.stringify(resolution.result)).not.toContain("fbcdn.net");
+    expect(JSON.stringify(resolution.result)).not.toContain("/fixture/video.mp4");
   });
 
   it("allows missing optional media fields while failing closed without MP4s", async () => {
@@ -68,6 +70,36 @@ describe("FDownIsuruProvider", () => {
     const parsed = parseFDownIsuruResponse(await fixture("fdown-isuru-fbcdn-success.json"));
     expect(parsed.title).toBeNull();
     expect(parsed.formats.map(({ quality }) => quality)).toEqual(["Original", "720p"]);
+  });
+
+  it.each([
+    "https://xx.fbcdn.net/fixture/thumbnail.jpg",
+    "https://evilxx.fbcdn.net/fixture/thumbnail.jpg",
+    "http://scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.jpg",
+    "https://scontent-den2-1.xx.fbcdn.net:8443/fixture/thumbnail.jpg",
+    "https://user:pass@scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.jpg",
+    "https://scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.gif"
+  ])("ignores an unreviewed thumbnail URL without rejecting media: %s", (thumbnail) => {
+    const parsed = parseFDownIsuruResponse(JSON.stringify({
+      status: "success",
+      video_info: { thumbnail },
+      available_formats: [{ url: "https://video-edge.fbcdn.net/fixture/video.mp4", quality: "720p" }]
+    }));
+    expect(parsed.thumbnailUrl).toBeNull();
+    expect(parsed.formats).toHaveLength(1);
+  });
+
+  it("strips a thumbnail fragment while preserving its signed query", () => {
+    const parsed = parseFDownIsuruResponse(JSON.stringify({
+      status: "success",
+      video_info: {
+        thumbnail: "https://scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.webp?variant=preview#preview"
+      },
+      available_formats: [{ url: "https://video-edge.fbcdn.net/fixture/video.mp4", quality: "720p" }]
+    }));
+    expect(parsed.thumbnailUrl).toBe(
+      "https://scontent-den2-1.xx.fbcdn.net/fixture/thumbnail.webp?variant=preview"
+    );
   });
 
   it.each([

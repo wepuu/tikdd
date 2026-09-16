@@ -25,6 +25,14 @@ describe("suggestedDownloadFilename", () => {
     }, format())).toBe("TikDD-Instagram-DcSBz8UCbTG-720p.mp4");
   });
 
+  it("uses the Facebook reel ID and platform label", () => {
+    expect(suggestedDownloadFilename({
+      id: "tsk_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      platform: "facebook",
+      canonicalUrl: "https://www.facebook.com/reel/1234567890"
+    }, format())).toBe("TikDD-Facebook-1234567890-720p.mp4");
+  });
+
   it("falls back to a task suffix and a safe extension", () => {
     expect(suggestedDownloadFilename({
       id: "tsk_0123456789abcdef0123456789abcdef",

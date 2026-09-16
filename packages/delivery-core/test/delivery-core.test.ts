@@ -9,6 +9,7 @@ import {
   DeliveryCandidateInputSchema,
   DeliveryTokenSchema,
   EnvelopeDecryptionError,
+  getDeliveryHostPolicy,
   hashDeliveryToken,
   isPublicNetworkAddress,
   ProviderResolutionSchema,
@@ -176,6 +177,11 @@ describe("opaque delivery tokens", () => {
 });
 
 describe("reviewed delivery network policy", () => {
+  it("derives browser handoff from the reviewed policy", () => {
+    expect(getDeliveryHostPolicy("fdown-isuru-facebook-media-v2")?.browserHandoff).toBe("cors-download");
+    expect(getDeliveryHostPolicy("fdown-isuru-facebook-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("twittersaver-media-v1")?.browserHandoff).toBe("navigate");
+  });
   it("allows only the exact reviewed TwitterSaver media host", () => {
     expect(
       assertDeliveryTargetPolicy({

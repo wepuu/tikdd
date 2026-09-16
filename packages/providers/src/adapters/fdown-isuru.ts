@@ -15,6 +15,8 @@ const API_HOSTS = new Set(["fdown.isuru.eu.org"]);
 const MEDIA_HOST_POLICY_ID = "fdown-isuru-facebook-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
+const THUMBNAIL_HOST_SUFFIX = ".xx.fbcdn.net";
+const THUMBNAIL_PATH_PATTERN = /\.(?:jpe?g|png|webp)$/i;
 
 const FormatSchema = z.object({
   quality: z.string().max(80).nullish(),
@@ -30,7 +32,9 @@ const ResponseSchema = z.object({
   video_info: z.object({
     title: z.string().max(1_000).nullish(),
     duration: z.number().nonnegative().max(86_400).nullish(),
-    thumbnail: z.string().url().max(16_384).nullish(),
+    // Keep optional metadata untrusted and non-fatal. The reviewed URL helper
+    // below applies the stricter host/path boundary after parsing.
+    thumbnail: z.unknown().nullish(),
     uploader: z.string().max(500).nullish()
   }).passthrough().nullish(),
   download_url: z.string().url().max(16_384).nullish(),
@@ -118,11 +122,34 @@ function mapFailure(status: number, message: string): never {
   throw new ProviderError("FDown Isuru changed its response schema.", "provider_schema_changed", true, true);
 }
 
+function reviewedFDownThumbnailUrl(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 4_096) return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.port ||
+    !hostname.endsWith(THUMBNAIL_HOST_SUFFIX) ||
+    !THUMBNAIL_PATH_PATTERN.test(url.pathname)
+  ) {
+    return null;
+  }
+  url.hash = "";
+  return url.toString();
+}
+
 function parseFDownIsuruResponseInternal(
   body: string,
   httpStatus = 200
 ): {
-  parsed: { title: string | null; author: string | null; thumbnailUrl: null; durationSeconds: number | null; formats: ParsedFormat[] };
+  parsed: { title: string | null; author: string | null; thumbnailUrl: string | null; durationSeconds: number | null; formats: ParsedFormat[] };
   diagnostics: FDownIsuruParseDiagnostics;
 } {
   const diagnostics = emptyParseDiagnostics();
@@ -197,7 +224,7 @@ function parseFDownIsuruResponseInternal(
     parsed: {
       title: payload.video_info?.title ?? null,
       author: payload.video_info?.uploader ?? null,
-      thumbnailUrl: null,
+      thumbnailUrl: reviewedFDownThumbnailUrl(payload.video_info?.thumbnail),
       durationSeconds: payload.video_info?.duration ?? null,
       formats
     },
@@ -208,7 +235,7 @@ function parseFDownIsuruResponseInternal(
 export function parseFDownIsuruResponse(
   body: string,
   httpStatus = 200
-): { title: string | null; author: string | null; thumbnailUrl: null; durationSeconds: number | null; formats: ParsedFormat[] } {
+): { title: string | null; author: string | null; thumbnailUrl: string | null; durationSeconds: number | null; formats: ParsedFormat[] } {
   return parseFDownIsuruResponseInternal(body, httpStatus).parsed;
 }
 

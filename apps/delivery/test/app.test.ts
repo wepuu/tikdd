@@ -64,7 +64,12 @@ class MemoryDeliveryRepository implements DeliveryRepository {
     tokenHash: Uint8Array;
   }): Promise<IssuedDeliveryTicket | null> {
     this.issuedHash = Buffer.from(input.tokenHash);
-    return { mode: "redirect", expiresAt: new Date(Date.now() + 60_000).toISOString() };
+    return {
+      mode: "redirect",
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      providerId: this.encryptedCandidate.providerId,
+      hostPolicyId: this.encryptedCandidate.hostPolicyId
+    };
   }
 
   async redeemDeliveryTicket(tokenHash: Uint8Array): Promise<RedeemedDeliveryCandidate | null> {
@@ -130,6 +135,12 @@ describe("delivery application", () => {
       hostPolicyId: "snaptik-monster-tiktok-media-v1",
       formatId: "fmt_snaptik_monster_original",
       targetUrl: "https://tikcdn.beubagah.com/fixture/video.mp4?token=secret"
+    },
+    {
+      providerId: "fdown-isuru",
+      hostPolicyId: "fdown-isuru-facebook-media-v2",
+      formatId: "fmt_fdown_original",
+      targetUrl: "https://video-edge.fbcdn.net/fixture/video.mp4?token=secret"
     }
   ] satisfies DeliveryFixture[])(
     "issues and redeems one opaque ticket for $providerId/$formatId without fetching media",
@@ -147,6 +158,11 @@ describe("delivery application", () => {
           mode: "redirect",
           url: `https://download.tikdd.test/d/${token}`
         });
+        if (fixture.providerId === "fdown-isuru") {
+          expect(created.json().browserHandoff).toBe("cors-download");
+        } else {
+          expect(created.json().browserHandoff).toBe("navigate");
+        }
         expect(created.body).not.toContain(new URL(fixture.targetUrl).hostname);
         expect(hashDeliveryToken(token)).toHaveLength(32);
 

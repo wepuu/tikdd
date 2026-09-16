@@ -33,6 +33,7 @@
 - [ADR-0031: Free Provider intake and bounded access-friction routing](0031-free-provider-intake-and-bounded-routing.md)
 - [ADR-0032: Technical evidence is the Provider availability signal](0032-technical-provider-evidence.md)
 - [ADR-0033: Versioned Facebook fbcdn Delivery policy](0033-versioned-facebook-fbcdn-delivery-policy.md)
+- [ADR-0034: FDown thumbnails and browser-owned Facebook saves](0034-fdown-thumbnail-client-save.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
