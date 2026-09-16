@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "message": null,
+  "video_info": {},
+  "download_url": "https://video-edge.fbcdn.net/sanitized/video.mp4",
+  "available_formats": [
+    {
+      "quality": "1080p",
+      "ext": "mp4",
+      "url": "https://video-edge.fbcdn.net/sanitized/video.mp4"
+    },
+    {
+      "quality": "720p",
+      "ext": "mp4",
+      "url": "https://video-edge.fbcdn.net/sanitized/video-720.mp4"
+    },
+    {
+      "quality": "audio",
+      "ext": "m4a",
+      "url": "https://video-edge.fbcdn.net/sanitized/audio.m4a"
+    }
+  ]
+}

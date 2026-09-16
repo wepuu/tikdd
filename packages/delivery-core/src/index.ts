@@ -230,13 +230,24 @@ export const TIKCD_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   hostSuffixes: ["tiktokcdn-us.com"]
 });
 
-export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1 = DeliveryHostPolicySchema.parse({
   id: "fdown-isuru-facebook-media-v1",
   providerId: "fdown-isuru",
   modes: ["redirect"],
   hosts: [],
   hostSuffixes: ["fna.fbcdn.net"]
 });
+
+export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2 = DeliveryHostPolicySchema.parse({
+  id: "fdown-isuru-facebook-media-v2",
+  providerId: "fdown-isuru",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["fbcdn.net"]
+});
+
+/** @deprecated Use the explicit versioned policy constants. */
+export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
@@ -245,7 +256,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY],
   [SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY.id, SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY],
   [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY],
-  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY]
+  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1],
+  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

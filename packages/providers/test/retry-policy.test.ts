@@ -8,6 +8,7 @@ describe("provider automatic retry policy", () => {
   it("limits Instagram SaveFromIns jobs to one retry", () => {
     expect(resolveJobAttemptsForPlatform("instagram")).toBe(2);
     expect(resolveJobAttemptsForPlatform("x")).toBe(3);
+    expect(resolveJobAttemptsForPlatform("facebook")).toBe(1);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
@@ -46,5 +47,20 @@ describe("provider automatic retry policy", () => {
       providerId: "other-provider",
       failureCode: "provider_schema_changed"
     })).toBe(true);
+  });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay FDown Isuru after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "facebook",
+      providerId: "fdown-isuru",
+      failureCode
+    })).toBe(false);
   });
 });

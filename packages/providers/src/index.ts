@@ -45,7 +45,10 @@ export { DLPandaProvider, type DLPandaProviderOptions } from "./adapters/dlpanda
 export {
   FDownIsuruProvider,
   parseFDownIsuruResponse,
-  type FDownIsuruProviderOptions
+  type FDownIsuruProviderOptions,
+  type FDownIsuruContentType,
+  type FDownIsuruDiagnosticEvent,
+  type FDownIsuruDiagnosticPhase
 } from "./adapters/fdown-isuru";
 export { SaveFromInsProvider, type SaveFromInsProviderOptions } from "./adapters/savefromins";
 export { SnapInstaProvider, type SnapInstaProviderOptions } from "./adapters/snapinsta";

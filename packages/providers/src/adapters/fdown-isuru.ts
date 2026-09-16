@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProviderFailureCode } from "@tikdd/contracts";
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
 import {
@@ -11,7 +12,7 @@ import {
 const API_ORIGIN = "https://fdown.isuru.eu.org";
 const API_PATH = "/download";
 const API_HOSTS = new Set(["fdown.isuru.eu.org"]);
-const MEDIA_HOST_POLICY_ID = "fdown-isuru-facebook-media-v1";
+const MEDIA_HOST_POLICY_ID = "fdown-isuru-facebook-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -39,18 +40,59 @@ const ResponseSchema = z.object({
 export interface FDownIsuruProviderOptions {
   enabled?: boolean;
   fetchImpl?: ProviderFetch;
+  diagnosticSink?: (event: FDownIsuruDiagnosticEvent) => void;
 }
 
-function isReviewedMediaUrl(value: unknown): value is string {
-  if (typeof value !== "string" || value.length === 0 || value.length > 16_384) return false;
-  try {
-    const url = new URL(value);
-    const host = url.hostname.toLowerCase();
-    return url.protocol === "https:" && !url.username && !url.password && !url.port &&
-      host.endsWith(".fna.fbcdn.net") && /\.mp4(?:$|[?#])/i.test(url.pathname);
-  } catch {
-    return false;
+export type FDownIsuruDiagnosticPhase = "request" | "payload" | "resources" | "completed";
+export type FDownIsuruContentType = "json" | "html" | "text" | "other" | "missing";
+
+export interface FDownIsuruDiagnosticEvent {
+  event: "fdown_isuru_resolution_diagnostic";
+  taskId: string;
+  phase: FDownIsuruDiagnosticPhase;
+  outcome: "success" | "failure";
+  httpStatus: number | null;
+  contentType: FDownIsuruContentType;
+  candidateCount: number | null;
+  validMp4Count: number;
+  rejectedHostCount: number;
+  rejectedNonMp4Count: number;
+  rejectedMalformedCount: number;
+  failureCode: ProviderFailureCode | null;
+  durationMs: number;
+}
+
+interface FDownIsuruParseDiagnostics {
+  candidateCount: number;
+  validMp4Count: number;
+  rejectedHostCount: number;
+  rejectedNonMp4Count: number;
+  rejectedMalformedCount: number;
+}
+
+const emptyParseDiagnostics = (): FDownIsuruParseDiagnostics => ({
+  candidateCount: 0,
+  validMp4Count: 0,
+  rejectedHostCount: 0,
+  rejectedNonMp4Count: 0,
+  rejectedMalformedCount: 0
+});
+
+function diagnosticFailureCode(error: unknown): ProviderFailureCode {
+  if (error instanceof ProviderError) return error.failureCode;
+  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
+    return "provider_timeout";
   }
+  return "internal_error";
+}
+
+function contentTypeCategory(headers: Headers): FDownIsuruContentType {
+  const contentType = headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+  if (!contentType) return "missing";
+  if (contentType === "application/json" || contentType.endsWith("+json")) return "json";
+  if (contentType === "text/html") return "html";
+  if (contentType.startsWith("text/")) return "text";
+  return "other";
 }
 
 function mapFailure(status: number, message: string): never {
@@ -76,10 +118,14 @@ function mapFailure(status: number, message: string): never {
   throw new ProviderError("FDown Isuru changed its response schema.", "provider_schema_changed", true, true);
 }
 
-export function parseFDownIsuruResponse(
+function parseFDownIsuruResponseInternal(
   body: string,
   httpStatus = 200
-): { title: string | null; author: string | null; thumbnailUrl: null; durationSeconds: number | null; formats: ParsedFormat[] } {
+): {
+  parsed: { title: string | null; author: string | null; thumbnailUrl: null; durationSeconds: number | null; formats: ParsedFormat[] };
+  diagnostics: FDownIsuruParseDiagnostics;
+} {
+  const diagnostics = emptyParseDiagnostics();
   let payload: z.infer<typeof ResponseSchema>;
   try {
     payload = ResponseSchema.parse(JSON.parse(body));
@@ -97,13 +143,41 @@ export function parseFDownIsuruResponse(
   const candidates: Array<{ value: unknown; quality: string }> = [];
   if (payload.download_url) candidates.push({ value: payload.download_url, quality: "Original" });
   for (const item of payload.available_formats ?? []) {
+    diagnostics.candidateCount += 1;
     const parsed = FormatSchema.safeParse(item);
-    if (!parsed.success || !parsed.data.url) continue;
+    if (!parsed.success || !parsed.data.url) {
+      diagnostics.rejectedMalformedCount += 1;
+      continue;
+    }
     const quality = parsed.data.quality?.trim() || "Original";
     candidates.push({ value: parsed.data.url, quality });
   }
+  diagnostics.candidateCount += payload.download_url ? 1 : 0;
   for (const candidate of candidates) {
-    if (!isReviewedMediaUrl(candidate.value) || seen.has(candidate.value)) continue;
+    if (typeof candidate.value !== "string") {
+      diagnostics.rejectedMalformedCount += 1;
+      continue;
+    }
+    let candidateUrl: URL;
+    try {
+      candidateUrl = new URL(candidate.value);
+    } catch {
+      diagnostics.rejectedMalformedCount += 1;
+      continue;
+    }
+    if (candidateUrl.protocol !== "https:" || candidateUrl.username || candidateUrl.password || candidateUrl.port) {
+      diagnostics.rejectedHostCount += 1;
+      continue;
+    }
+    if (!candidateUrl.hostname.toLowerCase().endsWith(".fbcdn.net")) {
+      diagnostics.rejectedHostCount += 1;
+      continue;
+    }
+    if (!/\.mp4(?:$|[?#])/i.test(candidateUrl.pathname)) {
+      diagnostics.rejectedNonMp4Count += 1;
+      continue;
+    }
+    if (seen.has(candidate.value)) continue;
     seen.add(candidate.value);
     formats.push({
       url: candidate.value,
@@ -114,17 +188,28 @@ export function parseFDownIsuruResponse(
       hasAudio: true
     });
   }
+  diagnostics.validMp4Count = formats.length;
   if (formats.length === 0) {
     throw new ProviderError("FDown Isuru returned no reviewed MP4 resource.", "invalid_result", true, true);
   }
 
   return {
-    title: payload.video_info?.title ?? null,
-    author: payload.video_info?.uploader ?? null,
-    thumbnailUrl: null,
-    durationSeconds: payload.video_info?.duration ?? null,
-    formats
+    parsed: {
+      title: payload.video_info?.title ?? null,
+      author: payload.video_info?.uploader ?? null,
+      thumbnailUrl: null,
+      durationSeconds: payload.video_info?.duration ?? null,
+      formats
+    },
+    diagnostics
   };
+}
+
+export function parseFDownIsuruResponse(
+  body: string,
+  httpStatus = 200
+): { title: string | null; author: string | null; thumbnailUrl: null; durationSeconds: number | null; formats: ParsedFormat[] } {
+  return parseFDownIsuruResponseInternal(body, httpStatus).parsed;
 }
 
 function timeoutSignal(parent: AbortSignal | undefined): { signal: AbortSignal; dispose: () => void } {
@@ -145,9 +230,11 @@ function timeoutSignal(parent: AbortSignal | undefined): { signal: AbortSignal; 
 export class FDownIsuruProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly fetchImpl: ProviderFetch;
+  private readonly diagnosticSink: ((event: FDownIsuruDiagnosticEvent) => void) | null;
 
   constructor(options: FDownIsuruProviderOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.diagnosticSink = options.diagnosticSink ?? null;
     this.manifest = {
       id: "fdown-isuru",
       displayName: "FDown Isuru",
@@ -169,6 +256,32 @@ export class FDownIsuruProvider implements ResolverProvider {
     if (input.platform !== "facebook") {
       throw new ProviderError("FDown Isuru only accepts Facebook URLs.", "unsupported_url", false, true);
     }
+    const startedAt = Date.now();
+    let phase: FDownIsuruDiagnosticPhase = "request";
+    let httpStatus: number | null = null;
+    let contentType: FDownIsuruContentType = "missing";
+    let parseDiagnostics = emptyParseDiagnostics();
+    const emit = (outcome: FDownIsuruDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
+      try {
+        this.diagnosticSink?.({
+          event: "fdown_isuru_resolution_diagnostic",
+          taskId: input.taskId,
+          phase,
+          outcome,
+          httpStatus,
+          contentType,
+          candidateCount: phase === "request" ? null : parseDiagnostics.candidateCount,
+          validMp4Count: parseDiagnostics.validMp4Count,
+          rejectedHostCount: parseDiagnostics.rejectedHostCount,
+          rejectedNonMp4Count: parseDiagnostics.rejectedNonMp4Count,
+          rejectedMalformedCount: parseDiagnostics.rejectedMalformedCount,
+          failureCode,
+          durationMs: Math.max(0, Date.now() - startedAt)
+        });
+      } catch {
+        // Diagnostics must never change Provider behavior.
+      }
+    };
     const timeout = timeoutSignal(input.signal);
     try {
       const response = await requestText(
@@ -185,9 +298,27 @@ export class FDownIsuruProvider implements ResolverProvider {
           body: JSON.stringify({ url: input.canonicalUrl, quality: "best" })
         },
         API_HOSTS,
-        { expectedContentTypes: ["application/json"], maximumBytes: 512_000, maximumRedirects: 0, allowNonOk: true }
+        {
+          expectedContentTypes: ["application/json"],
+          maximumBytes: 512_000,
+          maximumRedirects: 0,
+          allowNonOk: true,
+          observer: {
+            onResponse: (observation) => {
+              phase = "payload";
+              httpStatus = observation.status;
+              contentType = contentTypeCategory(observation.headers);
+            }
+          }
+        }
       );
-      const parsed = parseFDownIsuruResponse(response.body, response.response.status);
+      phase = "payload";
+      const parsedWithDiagnostics = parseFDownIsuruResponseInternal(response.body, response.response.status);
+      parseDiagnostics = parsedWithDiagnostics.diagnostics;
+      phase = "resources";
+      const parsed = parsedWithDiagnostics.parsed;
+      phase = "completed";
+      emit("success", null);
       return createRedirectResolution(
         this.manifest.id,
         this.manifest.kind,
@@ -199,6 +330,7 @@ export class FDownIsuruProvider implements ResolverProvider {
         { hostPolicyId: MEDIA_HOST_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
       );
     } catch (error) {
+      emit("failure", diagnosticFailureCode(error));
       if (error instanceof ProviderError) throw error;
       if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
         throw new ProviderError("FDown Isuru timed out.", "provider_timeout", true, true);

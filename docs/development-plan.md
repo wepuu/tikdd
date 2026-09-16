@@ -1312,3 +1312,14 @@ default-off gates: `ENABLE_FDOWN_ISURU_PROVIDER`, `FDOWN_ISURU_TERMS_APPROVED` a
 challenge, no-media and malformed fixtures plus Host/redirect tests are included. The adapter is
 not yet production-enabled or deployed; browser Delivery verification and rollout approval remain
 the next release step. See [Work Item 66](work-item-66-fdown-isuru-facebook-beta.md).
+
+### Work Item 67 — FDown Isuru Facebook 下载修复
+
+Work Item 67 repairs the first FDown delivery failure observed from NL. Real successful responses
+contained public MP4 resources on ordinary `*.fbcdn.net` subdomains, while the previous adapter
+accepted only `*.fna.fbcdn.net`; candidates were therefore discarded before Delivery. Versioned
+policy v2 now accepts real `fbcdn.net` subdomains while retaining v1 for legacy tickets and the
+existing HTTPS/public-DNS/redirect/one-use checks. Facebook jobs make one FDown request per task,
+queue-level replay is disabled for this Provider, and internal diagnostics contain only sanitized
+counts and timing. No public contract, database, Admin or other Provider state changes. See
+[Work Item 67](work-item-67-fdown-facebook-repair.md).

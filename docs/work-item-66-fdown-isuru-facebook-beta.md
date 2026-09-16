@@ -20,8 +20,10 @@ Baseline: `main@13296b4`
 
 ## Safety and release state
 
-The adapter makes at most one upstream request per task, uses a ten-second timeout, caps responses
-at 512 KiB and rejects upstream redirects. It sends no user Cookie, login state or unrelated
+Each adapter execution made at most one upstream request, used a ten-second timeout, capped
+responses at 512 KiB and rejected upstream redirects. The Facebook queue still allowed BullMQ to
+replay a failed job up to three total executions; Work Item 67 corrects that operational mismatch
+and disables queue replay for FDown. The adapter sends no user Cookie, login state or unrelated
 headers. Delivery continues to issue a one-use short-lived `302`; it never reads or streams media
 bytes. No database migration, rollout rule, production environment change or deployment was made.
 

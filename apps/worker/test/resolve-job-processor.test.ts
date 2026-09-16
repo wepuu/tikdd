@@ -207,6 +207,41 @@ describe("resolve job Provider-success retry boundary", () => {
     expect(h.releaseAdmission).toHaveBeenCalledOnce();
   });
 
+  it("terminalizes a retryable FDown failure without queue replay", async () => {
+    const h = harness();
+    const facebookData: ResolveJobData = {
+      ...data,
+      sourceUrl: "https://www.facebook.com/share/r/Fixture/",
+      platform: "facebook"
+    };
+    const failedAttempt = {
+      ...attempt,
+      providerId: "fdown-isuru",
+      platform: "facebook" as const,
+      status: "failed" as const,
+      failureCode: "invalid_result" as const,
+      retryable: true,
+      fallbackAllowed: true
+    };
+    const error = new ProviderRoutingError(
+      "FDown Isuru returned no reviewed MP4 resource.",
+      "invalid_result",
+      true,
+      [failedAttempt]
+    );
+    h.resolve.mockRejectedValueOnce(error);
+
+    await expect(processResolveJob(facebookData, h.dependencies)).rejects.toBeInstanceOf(UnrecoverableError);
+    expect(h.resolve).toHaveBeenCalledTimes(1);
+    expect(h.tasks.recordProviderAttempts).toHaveBeenCalledWith(facebookData.taskId, [failedAttempt]);
+    expect(h.tasks.fail).toHaveBeenCalledWith(facebookData.taskId, {
+      code: "INVALID_RESULT",
+      message: "FDown Isuru returned no reviewed MP4 resource.",
+      retryable: true
+    });
+    expect(h.releaseAdmission).toHaveBeenCalledOnce();
+  });
+
   it("does not replay Provider resolution after candidate preparation fails", async () => {
     const h = harness();
     h.prepareCandidates.mockImplementationOnce(() => {

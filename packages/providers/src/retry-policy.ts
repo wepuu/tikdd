@@ -1,15 +1,18 @@
 import type { ProviderFailureCode } from "@tikdd/contracts";
 
 /**
- * Instagram is currently backed by a single site adapter. Keep its automatic
- * retry budget small and only spend it on transport/availability failures;
- * the user can still manually retry other retryable outcomes.
+ * Provider queue retries are deliberately narrow. Providers that expose a
+ * bounded sequential fallback should not be replayed by BullMQ after the
+ * router has already recorded its attempt ledger.
  */
 export function shouldAutomaticallyRetryProviderFailure(input: {
   platform: string;
   providerId: string | null;
   failureCode: ProviderFailureCode;
 }): boolean {
+  if (input.providerId === "fdown-isuru") {
+    return false;
+  }
   if (input.platform !== "instagram" || input.providerId !== "savefromins") {
     return true;
   }
@@ -18,5 +21,7 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
 
 /** The API queue includes the initial run in this count. */
 export function resolveJobAttemptsForPlatform(platform: string): number {
-  return platform === "instagram" ? 2 : 3;
+  if (platform === "instagram") return 2;
+  if (platform === "facebook") return 1;
+  return 3;
 }
