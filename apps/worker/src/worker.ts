@@ -19,6 +19,7 @@ import {
 import { listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  FDownIsuruProvider,
   MockProvider,
   ProviderRouter,
   SaveFromInsProvider,
@@ -54,6 +55,7 @@ import { loadSnapTikActivationConfiguration } from "./snaptik-activation";
 import { loadSnapInstaActivationConfiguration } from "./snapinsta-activation";
 import { loadTikVidActivationConfiguration } from "./tikvid-activation";
 import { loadTikCDActivationConfiguration } from "./tikcd-activation";
+import { loadFDownIsuruActivationConfiguration } from "./fdown-isuru-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -70,6 +72,7 @@ const snaptikActivation = loadSnapTikActivationConfiguration();
 const tikvidActivation = loadTikVidActivationConfiguration();
 const tikcdActivation = loadTikCDActivationConfiguration();
 const snapinstaActivation = loadSnapInstaActivationConfiguration();
+const fdownIsuruActivation = loadFDownIsuruActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -176,6 +179,9 @@ if (tikcdActivation.enabled) {
 }
 if (snapinstaActivation.enabled) {
   providers.push(new SnapInstaProvider({ enabled: true }));
+}
+if (fdownIsuruActivation.enabled) {
+  providers.push(new FDownIsuruProvider({ enabled: true }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

@@ -31,6 +31,7 @@ import {
 } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  FDownIsuruProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
@@ -144,7 +145,8 @@ registerProviderHealthDiagnostics(app, {
     new SnapTikMonsterProvider({ enabled: process.env.ENABLE_SNAPTIK_MONSTER_PROVIDER === "true" }).manifest,
     new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }).manifest,
     new TikCDProvider({ enabled: process.env.ENABLE_TIKCD_PROVIDER === "true" }).manifest,
-    new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest
+    new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest,
+    new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

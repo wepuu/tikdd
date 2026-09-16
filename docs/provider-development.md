@@ -108,3 +108,4 @@ Current records:
 - [SnapTik Monster TikTok batch](providers/snaptik-monster.md)
 - [TikVid.cc secondary candidate](providers/tikvid.md)
 - [SnapInsta.to secondary candidate](providers/snapinsta.md)
+- [FDown Isuru Facebook adapter](providers/fdown-isuru.md)

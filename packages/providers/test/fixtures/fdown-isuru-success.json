@@ -1,0 +1,29 @@
+{
+  "status": "success",
+  "message": null,
+  "video_info": {
+    "title": "Facebook fixture",
+    "duration": 9.166,
+    "thumbnail": "https://images.example.invalid/fixture.jpg",
+    "uploader": "fixture-uploader",
+    "view_count": 0,
+    "upload_date": "20260101"
+  },
+  "download_url": "https://video-1920.fna.fbcdn.net/fixture/video.mp4",
+  "available_formats": [
+    {
+      "quality": "1920p",
+      "format_id": "fixture-1920",
+      "ext": "mp4",
+      "filesize": null,
+      "url": "https://video-1920.fna.fbcdn.net/fixture/video.mp4"
+    },
+    {
+      "quality": "720p",
+      "format_id": "fixture-720",
+      "ext": "mp4",
+      "filesize": null,
+      "url": "https://video-720.fna.fbcdn.net/fixture/video.mp4"
+    }
+  ]
+}

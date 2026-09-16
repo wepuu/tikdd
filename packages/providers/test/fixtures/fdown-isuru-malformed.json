@@ -1,0 +1,4 @@
+{
+  "status": "success",
+  "available_formats": [{ "quality": "720p", "url": "not-a-url" }]
+}
