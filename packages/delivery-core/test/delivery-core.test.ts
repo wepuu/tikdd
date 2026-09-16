@@ -343,6 +343,36 @@ describe("reviewed delivery network policy", () => {
     }
   });
 
+  it("allows real FDown Isuru fbcdn subdomains in policy v2", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "fdown-isuru",
+      mode: "redirect",
+      hostPolicyId: "fdown-isuru-facebook-media-v2",
+      targetUrl: "https://video-edge.fbcdn.net/fixture/video.mp4"
+    }).hostname).toBe("video-edge.fbcdn.net");
+    expect(assertDeliveryTargetPolicy({
+      providerId: "fdown-isuru",
+      mode: "redirect",
+      hostPolicyId: "fdown-isuru-facebook-media-v2",
+      targetUrl: "https://video-720.fna.fbcdn.net/fixture/video.mp4"
+    }).hostname).toBe("video-720.fna.fbcdn.net");
+    for (const targetUrl of [
+      "https://fbcdn.net/fixture/video.mp4",
+      "https://evilfbcdn.net/fixture/video.mp4",
+      "https://video.fbcdn.net.example.test/fixture/video.mp4",
+      "http://video.fbcdn.net/fixture/video.mp4",
+      "https://video.fbcdn.net:8443/fixture/video.mp4",
+      "https://user:pass@video.fbcdn.net/fixture/video.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "fdown-isuru",
+        mode: "redirect",
+        hostPolicyId: "fdown-isuru-facebook-media-v2",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
   it("allows only the exact reviewed SnapTik Monster media host", () => {
     expect(
       assertDeliveryTargetPolicy({

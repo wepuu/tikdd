@@ -43,7 +43,7 @@ describe("FDownIsuruProvider", () => {
     expect(resolution.result.media.thumbnailUrl).toBeNull();
     expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["Original", "720p"]);
     expect(resolution.candidates).toHaveLength(2);
-    expect(resolution.candidates.every(({ hostPolicyId }) => hostPolicyId === "fdown-isuru-facebook-media-v1")).toBe(true);
+    expect(resolution.candidates.every(({ hostPolicyId }) => hostPolicyId === "fdown-isuru-facebook-media-v2")).toBe(true);
     expect(request?.method).toBe("POST");
     expect(request?.headers).toMatchObject({ "content-type": "application/json" });
     expect(String(request?.body)).toContain('"quality":"best"');
@@ -62,6 +62,12 @@ describe("FDownIsuruProvider", () => {
     expect(parsed.formats).toHaveLength(1);
     await expect(async () => parseFDownIsuruResponse(await fixture("fdown-isuru-no-media.json")))
       .rejects.toMatchObject({ failureCode: "invalid_result", retryable: true, fallbackAllowed: true });
+  });
+
+  it("accepts reviewed fbcdn subdomains outside the fna family", async () => {
+    const parsed = parseFDownIsuruResponse(await fixture("fdown-isuru-fbcdn-success.json"));
+    expect(parsed.title).toBeNull();
+    expect(parsed.formats.map(({ quality }) => quality)).toEqual(["Original", "720p"]);
   });
 
   it.each([
@@ -96,5 +102,41 @@ describe("FDownIsuruProvider", () => {
     const error = await provider.resolve(facebookInput).catch((value) => value);
     expect(error).toBeInstanceOf(ProviderError);
     expect(error).toMatchObject({ failureCode: "invalid_result", fallbackAllowed: true });
+  });
+
+  it("emits sanitized candidate diagnostics without media URLs", async () => {
+    const events: unknown[] = [];
+    const provider = new FDownIsuruProvider({
+      enabled: true,
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async (input) => response(JSON.stringify({
+        status: "success",
+        available_formats: [
+          { quality: "1080p", ext: "mp4", url: "https://video-edge.fbcdn.net/fixture/video.mp4" },
+          { quality: "720p", ext: "webm", url: "https://video-edge.fbcdn.net/fixture/video.webm" },
+          { quality: "bad", ext: "mp4", url: "https://not-reviewed.example/fixture/video.mp4" }
+        ]
+      }), input.toString())
+    });
+
+    await provider.resolve(facebookInput);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      event: "fdown_isuru_resolution_diagnostic",
+      taskId: facebookInput.taskId,
+      phase: "completed",
+      outcome: "success",
+      httpStatus: 200,
+      contentType: "json",
+      candidateCount: 3,
+      validMp4Count: 1,
+      rejectedHostCount: 1,
+      rejectedNonMp4Count: 1,
+      rejectedMalformedCount: 0,
+      failureCode: null
+    });
+    const serialized = JSON.stringify(events);
+    expect(serialized).not.toContain("fbcdn.net");
+    expect(serialized).not.toContain("not-reviewed.example");
   });
 });

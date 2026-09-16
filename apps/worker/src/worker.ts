@@ -30,6 +30,7 @@ import {
   TikVidProvider,
   TwitterSaverProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
+  type FDownIsuruDiagnosticEvent,
   type ResolverProvider
 } from "@tikdd/providers";
 import {
@@ -181,7 +182,10 @@ if (snapinstaActivation.enabled) {
   providers.push(new SnapInstaProvider({ enabled: true }));
 }
 if (fdownIsuruActivation.enabled) {
-  providers.push(new FDownIsuruProvider({ enabled: true }));
+  providers.push(new FDownIsuruProvider({
+    enabled: true,
+    diagnosticSink: (event: FDownIsuruDiagnosticEvent) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

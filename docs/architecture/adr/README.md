@@ -32,6 +32,7 @@
 - [ADR-0030: Effective Provider route plan](0030-effective-provider-route-plan.md)
 - [ADR-0031: Free Provider intake and bounded access-friction routing](0031-free-provider-intake-and-bounded-routing.md)
 - [ADR-0032: Technical evidence is the Provider availability signal](0032-technical-provider-evidence.md)
+- [ADR-0033: Versioned Facebook fbcdn Delivery policy](0033-versioned-facebook-fbcdn-delivery-policy.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
