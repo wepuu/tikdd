@@ -1323,3 +1323,13 @@ existing HTTPS/public-DNS/redirect/one-use checks. Facebook jobs make one FDown 
 queue-level replay is disabled for this Provider, and internal diagnostics contain only sanitized
 counts and timing. No public contract, database, Admin or other Provider state changes. See
 [Work Item 67](work-item-67-fdown-facebook-repair.md).
+
+### Work Item 68 — FDown runtime configuration binding
+
+The first Work Item 67 browser check did not invoke FDown because the Worker retained the previous
+environment snapshot and all three FDown gates were false. Work Item 68 adds the release-env-bound
+`worker-config-apply` operation, force-recreates only the Worker, and verifies the configuration
+revision and FDown gates inside the running container before rollout. It records the event as a
+runtime binding failure rather than Provider evidence; FDown parsing and Delivery policy v2 remain
+unchanged until a real Provider attempt is observed. See
+[Work Item 68](work-item-68-provider-runtime-config-binding.md).

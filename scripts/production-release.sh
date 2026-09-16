@@ -72,6 +72,52 @@ verify_admin_write_mode() {
   echo "admin_write_mode=PASS mode=$actual"
 }
 
+verify_worker_runtime_config() {
+  expected_revision="$(read_release_value TIKDD_CONFIGURATION_REVISION)"
+  [ -n "$expected_revision" ] || {
+    echo "TIKDD_CONFIGURATION_REVISION is required for Worker configuration verification." >&2
+    return 78
+  }
+
+  container_id="$(compose ps -q worker 2>/dev/null | awk 'NF { value=$1 } END { print value }')"
+  [ -n "$container_id" ] || {
+    echo "Worker container is not running; cannot verify runtime configuration." >&2
+    return 78
+  }
+  if ! env_dump="$(docker inspect "$container_id" --format '{{range .Config.Env}}{{println .}}{{end}}')"; then
+    echo "Worker environment could not be inspected; refusing to apply Provider configuration." >&2
+    return 78
+  fi
+
+  actual_revision="$(printf '%s\n' "$env_dump" | awk -F= '$1=="TIKDD_CONFIGURATION_REVISION" { sub(/^[^=]*=/, ""); print; exit }')"
+  if [ "$actual_revision" != "$expected_revision" ]; then
+    echo "Worker configuration revision mismatch; expected $expected_revision, actual ${actual_revision:-missing}." >&2
+    return 78
+  fi
+
+  expected_enabled="$(read_release_value ENABLE_FDOWN_ISURU_PROVIDER)"
+  expected_terms="$(read_release_value FDOWN_ISURU_TERMS_APPROVED)"
+  expected_audit="$(read_release_value FDOWN_ISURU_DELIVERY_AUDIT_APPROVED)"
+  case "$expected_enabled" in
+    true) expected_gate=true ;;
+    false) expected_gate=false ;;
+    *) echo "ENABLE_FDOWN_ISURU_PROVIDER must be true or false." >&2; return 78 ;;
+  esac
+  [ "$expected_terms" = "$expected_gate" ] && [ "$expected_audit" = "$expected_gate" ] || {
+    echo "FDown Isuru gates must all match ENABLE_FDOWN_ISURU_PROVIDER." >&2
+    return 78
+  }
+
+  for key in ENABLE_FDOWN_ISURU_PROVIDER FDOWN_ISURU_TERMS_APPROVED FDOWN_ISURU_DELIVERY_AUDIT_APPROVED; do
+    actual="$(printf '%s\n' "$env_dump" | awk -F= -v key="$key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+    if [ "$actual" != "$expected_gate" ]; then
+      echo "Worker FDown gate mismatch for $key; expected $expected_gate, actual ${actual:-missing}." >&2
+      return 78
+    fi
+  done
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$expected_gate"
+}
+
 validate() {
   compose --profile admin --profile ops --profile admin-ops config --quiet
 }
@@ -210,6 +256,12 @@ case "$action" in
     run_stage_gate preflight
     compose ps
     ;;
+  worker-config-apply)
+    acquire_lock
+    validate
+    compose up -d --force-recreate --wait worker
+    verify_worker_runtime_config
+    ;;
   rollback)
     acquire_lock
     : "${TIKDD_ROLLBACK_ENV:?Set TIKDD_ROLLBACK_ENV to the previous approved release environment file.}"
@@ -267,7 +319,7 @@ case "$action" in
     compose --profile admin-ops run --rm admin-account "$@"
     ;;
   *)
-    echo "Usage: $0 {validate|deploy|rollback|admin-start|admin-stop|admin-account}" >&2
+    echo "Usage: $0 {validate|deploy|worker-config-apply|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac
