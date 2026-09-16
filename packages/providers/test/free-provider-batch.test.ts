@@ -264,7 +264,7 @@ describe("Work Item 51 portfolio qualification", () => {
     expect(results.find(({ providerId }) => providerId === "fdown-isuru")).toMatchObject({
       status: "deferred",
       productionRouteEligible: false,
-      reasons: expect.arrayContaining(["manifest_unreviewed", "host_policy_unreviewed"])
+      reasons: expect.arrayContaining(["delivery_unverified", "not_evaluated"])
     });
     expect(results.find(({ providerId }) => providerId === "vidown-netlify")).toMatchObject({
       status: "deferred",

@@ -230,13 +230,22 @@ export const TIKCD_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   hostSuffixes: ["tiktokcdn-us.com"]
 });
 
+export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "fdown-isuru-facebook-media-v1",
+  providerId: "fdown-isuru",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["fna.fbcdn.net"]
+});
+
 const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TWITTERSAVER_MEDIA_HOST_POLICY.id, TWITTERSAVER_MEDIA_HOST_POLICY],
   [SSSTWITTER_MEDIA_HOST_POLICY.id, SSSTWITTER_MEDIA_HOST_POLICY],
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY_V1],
   [SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY.id, SAVEFROMINS_INSTAGRAM_MEDIA_HOST_POLICY],
   [SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY.id, SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY],
-  [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY]
+  [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY],
+  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -255,6 +264,9 @@ export function assertDeliveryTargetPolicy(input: {
     throw new Error("The delivery candidate does not match a reviewed host policy.");
   }
   const url = new URL(HttpsTargetUrlSchema.parse(input.targetUrl));
+  if (url.port) {
+    throw new Error("The delivery target must use the standard HTTPS port.");
+  }
   const hostname = url.hostname.toLowerCase();
   const exactMatch = policy.hosts.includes(hostname);
   const suffixMatch = policy.hostSuffixes.some((suffix) => hostname.endsWith(`.${suffix}`));

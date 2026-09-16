@@ -1297,3 +1297,18 @@ returned HTTP 200 and four media resources each passed public-DNS and bounded Ra
 the `fbcdn.net` suffix. It is recorded as `technicalState=resolved`, not production-qualified:
 fixtures, a tolerant parser, manifest, Delivery Host policy and browser handoff still need review.
 See the [Work Item 65 record](work-item-65-provider-candidate-batch.md). No production state changed.
+
+### Work Item 66 — FDown Isuru Facebook Beta adapter
+
+Work Item 66 implements the first Facebook candidate with repeatable anonymous protocol evidence.
+The adapter uses one bounded JSON `POST /download` request, tolerant parsing of the observed
+`video_info`/`available_formats` response, typed terminal versus retryable failures, and no Cookie,
+login or challenge bypass. Only MP4 resources on the reviewed `fna.fbcdn.net` suffix are encrypted
+as Delivery redirect candidates; the public result remains URL-free.
+
+The Provider is registered in Worker, API diagnostics and Admin route previews behind three
+default-off gates: `ENABLE_FDOWN_ISURU_PROVIDER`, `FDOWN_ISURU_TERMS_APPROVED` and
+`FDOWN_ISURU_DELIVERY_AUDIT_APPROVED`. Sanitized success, private, unavailable, rate-limit,
+challenge, no-media and malformed fixtures plus Host/redirect tests are included. The adapter is
+not yet production-enabled or deployed; browser Delivery verification and rollout approval remain
+the next release step. See [Work Item 66](work-item-66-fdown-isuru-facebook-beta.md).

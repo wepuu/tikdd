@@ -319,6 +319,30 @@ describe("reviewed delivery network policy", () => {
     }
   });
 
+  it("allows only the reviewed FDown Isuru Facebook CDN suffix", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "fdown-isuru",
+      mode: "redirect",
+      hostPolicyId: "fdown-isuru-facebook-media-v1",
+      targetUrl: "https://video-720.fna.fbcdn.net/fixture/video.mp4"
+    }).hostname).toBe("video-720.fna.fbcdn.net");
+    for (const targetUrl of [
+      "https://fna.fbcdn.net/fixture/video.mp4",
+      "https://video.fbcdn.net/fixture/video.mp4",
+      "https://video.fna.fbcdn.net.example.test/fixture/video.mp4",
+      "https://evilfna.fbcdn.net/fixture/video.mp4",
+      "http://video.fna.fbcdn.net/fixture/video.mp4",
+      "https://video.fna.fbcdn.net:8443/fixture/video.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "fdown-isuru",
+        mode: "redirect",
+        hostPolicyId: "fdown-isuru-facebook-media-v1",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
   it("allows only the exact reviewed SnapTik Monster media host", () => {
     expect(
       assertDeliveryTargetPolicy({

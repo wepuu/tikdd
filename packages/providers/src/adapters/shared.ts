@@ -194,6 +194,7 @@ export async function requestText(
     maximumBytes?: number;
     expectedContentTypes?: readonly string[];
     maximumRedirects?: number;
+    allowNonOk?: boolean;
     observer?: ProviderHttpObserver;
   } = {}
 ): Promise<{ body: string; cookie: string; response: Response }> {
@@ -333,7 +334,7 @@ export async function requestText(
   if (response.status >= 500) {
     throw new ProviderError("The provider is temporarily unavailable.", "provider_unavailable", true, true);
   }
-  if (!response.ok) {
+  if (!response.ok && !options.allowNonOk) {
     throw new ProviderError("The provider endpoint changed.", "provider_schema_changed", true, true);
   }
   const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
