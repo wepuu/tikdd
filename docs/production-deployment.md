@@ -245,8 +245,10 @@ Provider.
 `TIKDD_STAGE_VERIFY_COMMAND` is mandatory for `scripts/production-release.sh deploy` and the
 on-demand Admin operations. It receives the current step through `TIKDD_STAGE` and the expected
 Admin origin status through `TIKDD_STAGE_EXPECTED_ADMIN_STATUS` (`404` for ordinary releases and
-`admin-stopped`, `200` only for `admin-on-demand`). The command must be a reviewed read-only
-executable. It checks
+`admin-stopped` by default, `200` for `admin-on-demand`). A shared host that intentionally keeps
+the owner-only Admin route online may set `TIKDD_ADMIN_ORIGIN_MODE=always-on` in the reviewed
+release environment; ordinary release stages then expect `200`, while an explicit `admin-stop`
+still expects `404`. The command must be a reviewed read-only executable. It checks
 available RAM, swap level and growth, load/CPU pressure, OOM events, container restarts, disk,
 PostgreSQL/TikDD Redis and the existing PHP/MySQL/host-Redis regression boundary. After Gate C it
 also checks loopback-only TikDD Web/API/Delivery/staging/Admin host behavior and requires a healthy,
@@ -258,6 +260,8 @@ Start the fail-closed public foundation through the staged release command:
 
 ```sh
 export TIKDD_STAGE_VERIFY_COMMAND=/usr/local/sbin/tikdd-stage-gate
+# Set only when the owner-only Admin route is intentionally kept online.
+export TIKDD_ADMIN_ORIGIN_MODE=always-on
 # Only for the first proven-empty PostgreSQL directory; otherwise export the reviewed backup hook.
 export TIKDD_INITIAL_EMPTY_DATABASE_CONFIRMED=true
 # Supply measured values. This conservative example proves that Provider traffic remains blocked.

@@ -44,6 +44,11 @@ scripts/production-release.sh admin-start
 TIKDD_RELEASE_ENV=/etc/tikdd/production.env scripts/production-release.sh admin-stop
 ```
 
+If the single-operator Admin route is intentionally kept online between releases, set
+`TIKDD_ADMIN_ORIGIN_MODE=always-on` in the reviewed production environment. The staged release
+then verifies Admin as HTTP 200 without starting or stopping the Admin pair; the default remains
+`stopped` (HTTP 404), and an explicit `admin-stop` always verifies 404.
+
 The first session is read-only: verify login/session behavior and the Beta health view, do not publish
 content or change routing, then run `admin-stop`. Admin API port 4100 remains private and is never
 published. Owner-account recovery uses the release-env-bound one-shot operation rather than a bare

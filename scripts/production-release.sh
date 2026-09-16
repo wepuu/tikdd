@@ -136,6 +136,15 @@ provider_rollout_enabled="$(release_value PROVIDER_ROLLOUT_ENABLED "false")"
 internal_preflight_required="$(release_value TIKDD_INTERNAL_PREFLIGHT_REQUIRED "false")"
 preflight_signals="$(release_value TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON "")"
 expected_admin_write_mode="$(release_value TIKDD_ADMIN_EXPECTED_WRITE_MODE "")"
+admin_origin_mode="$(release_value TIKDD_ADMIN_ORIGIN_MODE "stopped")"
+
+case "$admin_origin_mode" in
+  stopped|always-on) ;;
+  *)
+    echo "TIKDD_ADMIN_ORIGIN_MODE must be stopped or always-on." >&2
+    exit 78
+    ;;
+esac
 
 run_stage_gate() {
   stage="$1"
@@ -144,8 +153,13 @@ run_stage_gate() {
     exit 78
   }
   expected_admin_status=404
+  if [ "$admin_origin_mode" = "always-on" ]; then
+    expected_admin_status=200
+  fi
   if [ "$stage" = "admin-on-demand" ]; then
     expected_admin_status=200
+  elif [ "$stage" = "admin-stopped" ]; then
+    expected_admin_status=404
   fi
   TIKDD_STAGE="$stage" \
     TIKDD_STAGE_EXPECTED_ADMIN_STATUS="$expected_admin_status" \
