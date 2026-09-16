@@ -332,6 +332,10 @@ components:
         expiresAt:
           type: string
           format: date-time
+        browserHandoff:
+          type: string
+          enum: [navigate, cors-download]
+          description: Browser handoff strategy; omitted by older Delivery services.
     ResolveResult:
       type: object
       additionalProperties: false

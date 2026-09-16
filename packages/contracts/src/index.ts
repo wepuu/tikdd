@@ -271,7 +271,10 @@ export const DeliverySchema = z.object({
   id: z.string().min(1),
   mode: ProviderDeliveryModeSchema,
   url: z.string().url(),
-  expiresAt: z.string().datetime()
+  expiresAt: z.string().datetime(),
+  // Optional for rolling deployments: older Delivery services omit it and
+  // clients must retain the navigate behavior.
+  browserHandoff: z.enum(["navigate", "cors-download"]).optional()
 });
 export type Delivery = z.infer<typeof DeliverySchema>;
 

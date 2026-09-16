@@ -179,7 +179,8 @@ export const DeliveryHostPolicySchema = z.object({
   providerId: InternalProviderIdSchema,
   modes: z.array(DeliveryModeSchema).min(1),
   hosts: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)),
-  hostSuffixes: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)).default([])
+  hostSuffixes: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)).default([]),
+  browserHandoff: z.enum(["navigate", "cors-download"]).default("navigate")
 }).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
   message: "A delivery host policy must include an exact host or reviewed suffix."
 });
@@ -243,7 +244,8 @@ export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2 = DeliveryHostPolicySchem
   providerId: "fdown-isuru",
   modes: ["redirect"],
   hosts: [],
-  hostSuffixes: ["fbcdn.net"]
+  hostSuffixes: ["fbcdn.net"],
+  browserHandoff: "cors-download"
 });
 
 /** @deprecated Use the explicit versioned policy constants. */

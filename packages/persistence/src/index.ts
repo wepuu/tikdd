@@ -128,6 +128,8 @@ interface TicketCandidateRow extends QueryResultRow {
 export interface IssuedDeliveryTicket {
   mode: DeliveryMode;
   expiresAt: string;
+  providerId: string;
+  hostPolicyId: string;
 }
 
 export interface DeliveryEvidenceContext {
@@ -667,7 +669,12 @@ export class TaskRepository {
       await client.query(
         `UPDATE delivery_tickets SET ticket_creation_outcome_emitted=TRUE WHERE id=$1`, [id]);
       await client.query("COMMIT");
-      return { mode: row.mode, expiresAt: expiresAt.toISOString() };
+      return {
+        mode: row.mode,
+        expiresAt: expiresAt.toISOString(),
+        providerId: row.provider_id,
+        hostPolicyId: row.host_policy_id
+      };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

@@ -38,6 +38,11 @@ const copy = {
       admissionUnavailable: "New resolution requests are temporarily unavailable. Try again shortly.",
       timeout: "Resolution is taking longer than expected. Try again shortly.",
       deliveryError: "This format is not available for secure delivery. Resolve the link again.",
+      clientDownloadError: "The browser could not save this video from the media host.",
+      clientDownloadTooLarge: "This video is larger than the 200 MiB browser download limit.",
+      clientDownloadTimeout: "The browser download timed out. Try again or open the video.",
+      clientDownloading: "Downloading from the media host…",
+      openVideo: "Open video",
       expired: "This task expired. Resolve the link again."
     },
     features: [
@@ -101,7 +106,7 @@ const copy = {
       idempotencyConflict: "该请求标识已被使用，请重新发起解析。",
       admissionUnavailable: "暂时无法接收新的解析请求，请稍后重试。",
       timeout: "解析时间超出预期，请稍后重试。",
-      deliveryError: "该格式暂时无法安全交付，请重新解析链接。", expired: "任务已经过期，请重新解析链接。"
+      deliveryError: "该格式暂时无法安全交付，请重新解析链接。", clientDownloadError: "浏览器无法从媒体主机保存此视频。", clientDownloadTooLarge: "视频超过 200 MiB 的浏览器下载限制。", clientDownloadTimeout: "浏览器下载超时，请重试或打开视频。", clientDownloading: "正在从媒体主机下载…", openVideo: "打开视频", expired: "任务已经过期，请重新解析链接。"
     },
     features: [
       ["TikTok 已支持 · X 与 Instagram 公开测试", "识别公开的 x.com、instagram.com 和 tiktok.com 视频链接。"],

@@ -22,7 +22,9 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
 import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/analytics";
+import { ClientDownloadError, downloadCorsBlob } from "../lib/client-download";
 import { navigateToDelivery } from "../lib/delivery-navigation";
+import { suggestedDownloadFilename } from "../lib/download-filename";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
@@ -173,6 +175,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   const [isWorking, setIsWorking] = useState(false);
   const [workingLonger, setWorkingLonger] = useState(false);
   const [deliveringFormatId, setDeliveringFormatId] = useState<string | null>(null);
+  const [isClientDownloading, setIsClientDownloading] = useState(false);
+  const [fallbackFormatId, setFallbackFormatId] = useState<string | null>(null);
   const [failedThumbnailUrl, setFailedThumbnailUrl] = useState<string | null>(null);
   const resultCardRef = useRef<HTMLElement>(null);
   const focusedStateRef = useRef<string | null>(null);
@@ -352,6 +356,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setDelivery(null);
     setDeliveryExpired(false);
     setDeliveryError(null);
+    setIsClientDownloading(false);
+    setFallbackFormatId(null);
     try {
       const normalizedUrl = url.trim();
       if (qaScenarioRef.current) {
@@ -401,7 +407,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   }
 
   async function requestDelivery(formatId: string): Promise<Delivery | null> {
-    if (!task || task.status !== "succeeded" || deliveringFormatId) return null;
+    if (!task || task.status !== "succeeded" || deliveringFormatId || isClientDownloading) return null;
     setDeliveringFormatId(formatId);
     setDeliveryError(null);
     setDelivery(null);
@@ -426,6 +432,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
       });
       if (!response.ok) throw new Error(copy.deliveryError);
       const nextDelivery = (await response.json()) as Delivery;
+      setDelivery(nextDelivery);
       return nextDelivery;
     } catch {
       setDeliveryError(copy.deliveryError);
@@ -447,6 +454,39 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     // navigates immediately after the single user action.
     if (qaScenarioRef.current) return;
 
+    if (nextDelivery.browserHandoff === "cors-download") {
+      setIsClientDownloading(true);
+      try {
+        if (!task || !selectedFormat) return;
+        await downloadCorsBlob({
+          url: nextDelivery.url,
+          filename: suggestedDownloadFilename(task, selectedFormat)
+        });
+        setFallbackFormatId(null);
+        setHandoffStarted(true);
+        const platform = analyticsPlatform(task.platform);
+        if (platform) {
+          trackWebEvent("download_handoff", {
+            platform,
+            locale: analyticsLocale,
+            page_type: analyticsPageType
+          });
+        }
+      } catch (error) {
+        const code = error instanceof ClientDownloadError ? error.code : "network";
+        const message = code === "too_large"
+          ? copy.clientDownloadTooLarge
+          : code === "timeout"
+            ? copy.clientDownloadTimeout
+            : copy.clientDownloadError;
+        setDeliveryError(message);
+        setFallbackFormatId(formatId);
+      } finally {
+        setIsClientDownloading(false);
+      }
+      return;
+    }
+
     const platform = analyticsPlatform(task?.platform);
     if (platform) {
       trackWebEvent("download_handoff", {
@@ -463,6 +503,17 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setHandoffStarted(true);
   }
 
+  async function openVideoFallback(formatId: string): Promise<void> {
+    const nextDelivery = await requestDelivery(formatId);
+    if (!nextDelivery || isDeliveryExpired(nextDelivery.expiresAt, Date.now())) return;
+    const navigated = navigateToDelivery(nextDelivery.url, (target) => window.location.assign(target));
+    if (navigated) {
+      setFallbackFormatId(null);
+      setDeliveryError(null);
+      setHandoffStarted(true);
+    }
+  }
+
   function clearLink(): void {
     submissionKeyRef.current = null;
     focusedStateRef.current = null;
@@ -474,6 +525,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setDeliveryExpired(false);
     setHandoffStarted(false);
     setDeliveryError(null);
+    setFallbackFormatId(null);
+    setIsClientDownloading(false);
   }
 
   function selectFormat(formatId: string): void {
@@ -482,6 +535,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     setDeliveryExpired(false);
     setDeliveryError(null);
     setHandoffStarted(false);
+    setFallbackFormatId(null);
+    setIsClientDownloading(false);
   }
 
   function moveFormatSelection(formatId: string, key: string): void {
@@ -555,6 +610,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                 setDelivery(null);
                 setDeliveryExpired(false);
                 setDeliveryError(null);
+                setIsClientDownloading(false);
+                setFallbackFormatId(null);
               }}
               placeholder={copy.placeholder} aria-describedby="url-status" aria-invalid={Boolean(url.trim() && !detectedPlatform)} required
             />
@@ -689,16 +746,22 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
                     <p>{copy.deliveryHandedOff}</p>
                   </div>
                 ) : null}
+                {isClientDownloading ? <p className="delivery-note" role="status">{copy.clientDownloading}</p> : null}
                 {deliveryExpired ? <p className="delivery-note" role="status">{copy.deliveryExpired}</p> : null}
                 {deliveryError ? <p className="delivery-note is-error" role="alert">{deliveryError}</p> : null}
+                {fallbackFormatId ? (
+                  <button className="secondary-action" type="button" onClick={() => void openVideoFallback(fallbackFormatId)} disabled={Boolean(deliveringFormatId)}>
+                    {copy.openVideo}
+                  </button>
+                ) : null}
                 <button
                   className="download-action"
                   type="button"
-                  disabled={!selectedFormat || Boolean(deliveringFormatId)}
+                  disabled={!selectedFormat || Boolean(deliveringFormatId) || isClientDownloading}
                   onClick={() => selectedFormat && void startDownload(selectedFormat.id)}
                 >
                   {deliveringFormatId ? <CircleNotchIcon className="spin" size={20} weight="bold" /> : <DownloadSimpleIcon size={20} weight="bold" />}
-                  <span>{deliveringFormatId ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : handoffStarted ? copy.downloadAgain : copy.download}</span>
+                  <span>{deliveringFormatId || isClientDownloading ? copy.preparingDownload : deliveryExpired ? copy.regenerateDownload : handoffStarted ? copy.downloadAgain : copy.download}</span>
                 </button>
               </>
             )}

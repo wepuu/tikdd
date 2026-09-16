@@ -10,6 +10,7 @@ import {
   assertPublicDeliveryDns,
   createDeliveryToken,
   DeliveryTokenSchema,
+  getDeliveryHostPolicy,
   hashDeliveryToken,
   type AesGcmCandidateCipher,
   type DeliveryDnsLookup
@@ -124,11 +125,23 @@ export async function createDeliveryApp(
       });
     }
 
+    const policy = getDeliveryHostPolicy(issued.hostPolicyId);
+    if (!policy || policy.providerId !== issued.providerId || !policy.modes.includes(issued.mode)) {
+      return reply.code(409).send({
+        error: {
+          code: "DELIVERY_CANDIDATE_NOT_AVAILABLE",
+          message: "The selected format is not available for secure delivery.",
+          retryable: false
+        }
+      });
+    }
+
     const delivery: Delivery = DeliverySchema.parse({
       id: ticketId,
       mode: issued.mode,
       url: new URL(`/d/${token}`, publicBaseUrl).toString(),
-      expiresAt: issued.expiresAt
+      expiresAt: issued.expiresAt,
+      browserHandoff: policy.browserHandoff
     });
     return reply.code(201).send(delivery);
   });
