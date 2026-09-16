@@ -21,6 +21,13 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).not.toMatch(/stage_service admin/);
   });
 
+  it("supports an explicit always-on Admin origin without weakening the stopped default", () => {
+    expect(releaseScript).toMatch(/admin_origin_mode="\$\(release_value TIKDD_ADMIN_ORIGIN_MODE "stopped"\)"/);
+    expect(releaseScript).toMatch(/TIKDD_ADMIN_ORIGIN_MODE must be stopped or always-on/);
+    expect(releaseScript).toMatch(/if \[ "\$admin_origin_mode" = "always-on" \]; then\s+expected_admin_status=200/);
+    expect(releaseScript).toMatch(/elif \[ "\$stage" = "admin-stopped" \]; then\s+expected_admin_status=404/);
+  });
+
   it("recreates only the Worker and verifies the selected runtime configuration", () => {
     expect(releaseScript).toMatch(/worker-config-apply\)/);
     expect(releaseScript).toMatch(/compose up -d --force-recreate --wait worker/);
