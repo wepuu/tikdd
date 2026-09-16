@@ -399,6 +399,19 @@ rollout switch. It never starts Admin, stops shared PHP
 components, manages host MySQL/Redis/PHP/Nginx/cloudflared, creates rollout rules or grants Provider
 traffic. Nginx/Tunnel work remains a separate reviewed host action after coexistence is proven.
 
+Provider gate changes use the smaller release-env-bound Worker operation:
+
+```sh
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+scripts/production-release.sh worker-config-apply
+```
+
+It force-recreates only `worker`, waits for health, and verifies the selected configuration revision
+and FDown gate values from inside the container. The rollout rule must remain disabled until this
+check passes. A bare Compose command without `TIKDD_PRODUCTION_ENV_FILE` may resolve
+`TIKDD_PRODUCTION_ENV_FILE` from an older versioned environment file and must not be used for
+Provider activation.
+
 Rollback requires `TIKDD_ROLLBACK_ENV` pointing to the previous approved immutable image/config
 bundle and an explicit `TIKDD_SCHEMA_COMPATIBILITY_CONFIRMED=true`. It preserves PostgreSQL data,
 route-policy/audit history and evidence. It never runs reverse migrations. If the previous

@@ -19,6 +19,18 @@ runs immutable images.
 8. Complete one real browser resolve-and-download journey and observe service health for 15
    minutes.
 
+Provider gate changes are applied through the release-env-bound Worker operation, with rollout
+still disabled until the runtime check passes:
+
+```sh
+TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
+scripts/production-release.sh worker-config-apply
+```
+
+This force-recreates only the Worker and verifies its configuration revision plus the FDown gate
+values. Do not use a bare `docker compose up` to apply Provider gates; without
+`TIKDD_PRODUCTION_ENV_FILE` it can select a previous versioned environment file.
+
 Admin is a separate owner-on-demand operation after the public release has passed. Starting Admin
 requires an approved HTTPS owner route (`admin.tikdd.cc`) through the existing Tunnel/Nginx
 boundary; a loopback port alone is not a production access path. Always pass the write mode expected

@@ -20,4 +20,18 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/compose --profile admin-ops run --rm admin-account "\$@"/);
     expect(releaseScript).not.toMatch(/stage_service admin/);
   });
+
+  it("recreates only the Worker and verifies the selected runtime configuration", () => {
+    expect(releaseScript).toMatch(/worker-config-apply\)/);
+    expect(releaseScript).toMatch(/compose up -d --force-recreate --wait worker/);
+    expect(releaseScript).toMatch(/verify_worker_runtime_config/);
+    expect(releaseScript).toMatch(/read_release_value TIKDD_CONFIGURATION_REVISION/);
+    expect(releaseScript).toMatch(/Worker configuration revision mismatch/);
+  });
+
+  it("requires the FDown gates to match the Provider switch in the Worker", () => {
+    expect(releaseScript).toMatch(/ENABLE_FDOWN_ISURU_PROVIDER FDOWN_ISURU_TERMS_APPROVED FDOWN_ISURU_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/FDown Isuru gates must all match ENABLE_FDOWN_ISURU_PROVIDER/);
+    expect(releaseScript).toMatch(/Worker FDown gate mismatch/);
+  });
 });
