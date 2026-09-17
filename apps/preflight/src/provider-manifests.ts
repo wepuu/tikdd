@@ -4,6 +4,7 @@ import {
   SnapInstaProvider,
   SSSTwitterProvider,
   SnapTikMonsterProvider,
+  SocialDownloaderProvider,
   TikCDProvider,
   TikVidProvider,
   TwitterSaverProvider
@@ -20,6 +21,7 @@ export function loadPreflightProviderManifests(
     new SnapTikMonsterProvider({ enabled: enabled.has("snaptik-monster") }).manifest,
     new TikCDProvider({ enabled: enabled.has("tikcd") }).manifest,
     new TikVidProvider({ enabled: enabled.has("tikvid") }).manifest,
-    new SnapInstaProvider({ enabled: enabled.has("snapinsta") }).manifest
+    new SnapInstaProvider({ enabled: enabled.has("snapinsta") }).manifest,
+    new SocialDownloaderProvider({ enabled: enabled.has("socialdownloader-space") }).manifest
   ];
 }

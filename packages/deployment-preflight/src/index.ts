@@ -86,7 +86,8 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     ["twittersaver", "ENABLE_TWITTERSAVER_PROVIDER"], ["dlpanda", "ENABLE_DLPANDA_PROVIDER"],
     ["ssstwitter", "ENABLE_SSSTWITTER_PROVIDER"], ["savefromins", "ENABLE_SAVEFROMINS_PROVIDER"],
     ["snaptik-monster", "ENABLE_SNAPTIK_MONSTER_PROVIDER"], ["tikvid", "ENABLE_TIKVID_PROVIDER"],
-    ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"], ["tikcd", "ENABLE_TIKCD_PROVIDER"], ["fdown-isuru", "ENABLE_FDOWN_ISURU_PROVIDER"]
+    ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"], ["tikcd", "ENABLE_TIKCD_PROVIDER"], ["fdown-isuru", "ENABLE_FDOWN_ISURU_PROVIDER"],
+    ["socialdownloader-space", "ENABLE_SOCIALDOWNLOADER_PROVIDER"]
   ] as const).filter(([, key]) => bool(environment[key])).map(([id]) => id);
   const providerApprovalsPresent = providers.every((provider) => {
     if (provider === "twittersaver") return bool(environment.TWITTERSAVER_TERMS_APPROVED);
@@ -113,6 +114,10 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     if (provider === "fdown-isuru") {
       return bool(environment.FDOWN_ISURU_TERMS_APPROVED) &&
         bool(environment.FDOWN_ISURU_DELIVERY_AUDIT_APPROVED);
+    }
+    if (provider === "socialdownloader-space") {
+      return bool(environment.SOCIALDOWNLOADER_TERMS_APPROVED) &&
+        bool(environment.SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED);
     }
     return bool(environment.SNAPTIK_MONSTER_TERMS_APPROVED) &&
       bool(environment.SNAPTIK_MONSTER_DELIVERY_AUDIT_APPROVED);

@@ -13,6 +13,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "fdown-isuru") {
     return false;
   }
+  if (input.providerId === "socialdownloader-space") {
+    return false;
+  }
   if (input.platform !== "instagram" || input.providerId !== "savefromins") {
     return true;
   }

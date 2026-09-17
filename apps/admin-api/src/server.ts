@@ -25,6 +25,7 @@ import {
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
+  SocialDownloaderProvider,
   TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
@@ -70,7 +71,8 @@ const providerAdapters = [
   new TikCDProvider({ enabled: process.env.ENABLE_TIKCD_PROVIDER === "true" }),
   new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }),
   new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }),
-  new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" })
+  new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }),
+  new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();

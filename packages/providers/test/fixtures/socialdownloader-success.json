@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "title": "Facebook fixture",
+  "downloadUrl": "/api/video?token=fixture-media",
+  "videoUrl": "/api/video?token=fixture-media"
+}

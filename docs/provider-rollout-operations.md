@@ -46,6 +46,18 @@ mock remains available only outside production.
 Process-level provider enablement and terms approval remain hard prerequisites. A rollout rule can
 only reduce the provider manifest's platform, region, timeout, and production-safety boundaries.
 
+SocialDownloader is a disabled-by-default Facebook secondary. Before any future activation, all
+three settings must be explicit and true:
+
+```text
+ENABLE_SOCIALDOWNLOADER_PROVIDER=true
+SOCIALDOWNLOADER_TERMS_APPROVED=true
+SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED=true
+```
+
+The current adapter is not enabled in production. A rollout must first record the browser delivery
+audit for any additional platform; X and TikTok are therefore not runtime capabilities in Work Item 72.
+
 SSSTwitter has an additional delivery-evidence gate. It remains disabled unless all three settings
 are explicit:
 

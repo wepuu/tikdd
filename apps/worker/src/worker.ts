@@ -25,6 +25,7 @@ import {
   SaveFromInsProvider,
   SnapInstaProvider,
   SnapTikMonsterProvider,
+  SocialDownloaderProvider,
   TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
@@ -57,6 +58,7 @@ import { loadSnapInstaActivationConfiguration } from "./snapinsta-activation";
 import { loadTikVidActivationConfiguration } from "./tikvid-activation";
 import { loadTikCDActivationConfiguration } from "./tikcd-activation";
 import { loadFDownIsuruActivationConfiguration } from "./fdown-isuru-activation";
+import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -74,6 +76,7 @@ const tikvidActivation = loadTikVidActivationConfiguration();
 const tikcdActivation = loadTikCDActivationConfiguration();
 const snapinstaActivation = loadSnapInstaActivationConfiguration();
 const fdownIsuruActivation = loadFDownIsuruActivationConfiguration();
+const socialDownloaderActivation = loadSocialDownloaderActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -185,6 +188,12 @@ if (fdownIsuruActivation.enabled) {
   providers.push(new FDownIsuruProvider({
     enabled: true,
     diagnosticSink: (event: FDownIsuruDiagnosticEvent) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
+}
+if (socialDownloaderActivation.enabled) {
+  providers.push(new SocialDownloaderProvider({
+    enabled: true,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }
 if (enableMockProvider) {
