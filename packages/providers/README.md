@@ -25,6 +25,8 @@ and deployment checks.
 Work Item 72 registers `socialdownloader-space` only for the repeatedly verified Facebook path.
 Its adapter accepts the anonymous JSON endpoint and the reviewed same-host `/api/video` stream;
 X and TikTok remain Lab-only until their browser delivery audit is recorded.
-The provider is disabled by default and requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
-`SOCIALDOWNLOADER_TERMS_APPROVED`, and `SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED` before any
-runtime activation. The queue performs no automatic replay for this provider.
+The production Facebook Beta route requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
+`SOCIALDOWNLOADER_TERMS_APPROVED`, and `SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED`; all three are
+currently enabled only for the reviewed NL rollout. The queue performs no automatic replay for this
+provider. Its browser handoff remains `navigate` until a separate CORS/browser-save audit qualifies
+the existing `cors-download` mode.

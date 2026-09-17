@@ -1260,6 +1260,21 @@ Providers for Facebook, Vimeo and Pinterest. SocialKit and SaveAPI remain deferr
 commercial-API review covers official protocol, terms, pricing, quotas, secret injection and
 rollback.
 
+### Work Item 74 — Facebook Beta productization and bounded dual routing
+
+Work Item 74 productizes the already audited Facebook route without changing its transport
+boundary. FDown Isuru remains primary and SocialDownloader remains the unique NL secondary route;
+the public homepage and starter metadata now describe Facebook as Beta, while sitemap and stable
+platform pages remain unchanged. The Admin route workspace continues to expose the exact provider,
+allocation, gate, circuit and fallback projection without adding persistence or operator audit
+fields.
+
+SocialDownloader keeps the reviewed `socialdownloader-space-facebook-media-v1` policy and
+`browserHandoff=navigate`. A fresh low-frequency protocol probe did not establish a repeatable CORS
+and browser-save contract, so no `cors-download` policy is introduced and no automatic-save claim is
+made. The one-use Delivery redirect remains byte-free and Provider-page handoff remains forbidden.
+See [Work Item 74](work-item-74-facebook-beta-productization.md).
+
 ### Work Item 64 — Facebook free Provider candidate batch
 
 Work Item 64 tested the owner-supplied `fdown.net`, `fdownloader.vn` and `fget.io` candidates from

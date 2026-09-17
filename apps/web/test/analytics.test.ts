@@ -29,6 +29,7 @@ describe("privacy-bounded Web analytics", () => {
     expect(analyticsFailureClass("RESOLUTION_EXPIRED", false)).toBe("expired");
     expect(analyticsPlatform("provider-x")).toBeNull();
     expect(analyticsPlatform("tiktok")).toBe("tiktok");
+    expect(analyticsPlatform("facebook")).toBe("facebook");
     vi.unstubAllGlobals();
   });
 
