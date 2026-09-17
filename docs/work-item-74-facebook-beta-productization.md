@@ -1,6 +1,6 @@
 # Work Item 74 — Facebook Beta productization and bounded dual routing
 
-Status: implementation in progress on `codex/wi74-facebook-beta-productization`.
+Status: completed and deployed from `main@023160b0973c4b715abd429e1a4129a14e8da27b`.
 
 ## Scope
 
@@ -39,3 +39,9 @@ Beta handoff. A future `cors-download` policy requires a new protocol and browse
 
 No new Provider adapter, public CDN URL, media proxy, database migration, Admin lifecycle change,
 calibration, sitemap entry, or SocialDownloader platform expansion is included.
+
+## Production closeout
+
+After deployment, the owner manually verified four public Facebook samples covering Reel and shared
+video links. All four completed a browser download successfully. The evidence is recorded as a
+count only; raw sample URLs and upstream media addresses are not stored in the repository.

@@ -68,4 +68,14 @@ describe("beta operability aggregation", () => {
     expect(report.byPlatform.tiktok.tasks).toMatchObject({ total: 3, succeeded: 3 });
     expect(report.byPlatform.tiktok.latestEventAt).toBe("2026-09-09T03:00:00.000Z");
   });
+
+  it("includes Facebook without changing the other platform buckets", () => {
+    const report = aggregateBetaHealth({
+      taskStatuses: [{ platform: "facebook", status: "succeeded", count: 4, latestAt: "2026-09-17T03:00:00.000Z" }],
+      taskFailures: [], attempts: [], deliveries: []
+    }, window, ["x", "instagram", "tiktok", "facebook"]);
+
+    expect(report.platforms).toEqual(["x", "instagram", "tiktok", "facebook"]);
+    expect(report.byPlatform.facebook.tasks).toMatchObject({ total: 4, succeeded: 4 });
+  });
 });

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   FDownIsuruProvider,
   ProviderRouter,
+  SocialDownloaderRequestBudget,
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   type ResolveInput
@@ -41,11 +42,14 @@ describe("SocialDownloaderProvider", () => {
     });
 
     const resolution = await provider.resolve(facebookInput);
-    expect(provider.manifest).toMatchObject({
-      id: "socialdownloader-space",
-      enabled: true,
-      platforms: [{ platform: "facebook", priority: 650, deliveryModes: ["redirect"] }]
-    });
+    expect(provider.manifest).toMatchObject({ id: "socialdownloader-space", enabled: true });
+    expect(provider.manifest.platforms[0]).toMatchObject({ platform: "facebook", priority: 650, deliveryModes: ["redirect"] });
+    expect(provider.manifest.platforms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ platform: "x", deliveryModes: [] }),
+      expect.objectContaining({ platform: "tiktok", deliveryModes: [] }),
+      expect.objectContaining({ platform: "instagram", deliveryModes: [] }),
+      expect.objectContaining({ platform: "youtube", deliveryModes: [] })
+    ]));
     expect(calls).toHaveLength(1);
     expect(calls[0]?.init?.method).toBe("POST");
     expect(String(calls[0]?.init?.body)).toBe(JSON.stringify({ url: facebookInput.canonicalUrl }));
@@ -180,5 +184,32 @@ describe("SocialDownloaderProvider", () => {
       maxAttempts: 2
     }).resolve(facebookInput)).rejects.toMatchObject({ failureCode: "unsupported_url" });
     expect(calls).toEqual(["fdown", "socialdownloader"]);
+  });
+
+  it("keeps unapproved platform capabilities out of the active adapter", async () => {
+    const provider = new SocialDownloaderProvider({ enabled: true });
+    await expect(provider.resolve({ ...facebookInput, platform: "x" })).rejects.toMatchObject({
+      failureCode: "unsupported_url",
+      fallbackAllowed: true
+    });
+  });
+
+  it("shares a fail-fast budget across platform requests and honors cooldown", () => {
+    let now = 1_000;
+    const budget = new SocialDownloaderRequestBudget({ maxConcurrency: 1, minIntervalMs: 100, now: () => now });
+    const first = budget.tryAcquire();
+    expect(first).not.toBeNull();
+    expect(budget.tryAcquire()).toBeNull();
+    first?.release();
+    expect(budget.tryAcquire()).toBeNull();
+    now += 100;
+    const second = budget.tryAcquire();
+    expect(second).not.toBeNull();
+    second?.release();
+    budget.applyRetryAfter("2");
+    now += 100;
+    expect(budget.tryAcquire()).toBeNull();
+    now += 1_900;
+    expect(budget.tryAcquire()).not.toBeNull();
   });
 });

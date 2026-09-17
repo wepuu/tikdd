@@ -22,9 +22,10 @@ and deployment checks.
 
 ## SocialDownloader secondary
 
-Work Item 72 registers `socialdownloader-space` only for the repeatedly verified Facebook path.
-Its adapter accepts the anonymous JSON endpoint and the reviewed same-host `/api/video` stream;
-X and TikTok remain Lab-only until their browser delivery audit is recorded.
+Work Item 75 registers `socialdownloader-space` as a multi-platform manifest with independent
+capabilities. Only Facebook currently has a production delivery mode; X, TikTok, Instagram, and
+YouTube remain Lab-only until their own evidence and browser delivery audits are recorded. The
+adapter also applies one shared fail-fast request budget across platforms.
 The production Facebook Beta route requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
 `SOCIALDOWNLOADER_TERMS_APPROVED`, and `SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED`; all three are
 currently enabled only for the reviewed NL rollout. The queue performs no automatic replay for this
