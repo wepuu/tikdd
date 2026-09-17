@@ -36,9 +36,14 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/Worker configuration revision mismatch/);
   });
 
-  it("requires the FDown gates to match the Provider switch in the Worker", () => {
-    expect(releaseScript).toMatch(/ENABLE_FDOWN_ISURU_PROVIDER FDOWN_ISURU_TERMS_APPROVED FDOWN_ISURU_DELIVERY_AUDIT_APPROVED/);
-    expect(releaseScript).toMatch(/FDown Isuru gates must all match ENABLE_FDOWN_ISURU_PROVIDER/);
-    expect(releaseScript).toMatch(/Worker FDown gate mismatch/);
+  it("requires every Provider gate triplet to match its Provider switch in the Worker", () => {
+    expect(releaseScript).toMatch(/ENABLE_FDOWN_ISURU_PROVIDER[\s\S]*FDOWN_ISURU_TERMS_APPROVED[\s\S]*FDOWN_ISURU_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/\$provider_label gates must all match \$enabled_key/);
+    expect(releaseScript).toMatch(/Worker \$provider_label gate mismatch/);
+    expect(releaseScript).toMatch(/ENABLE_SOCIALDOWNLOADER_PROVIDER/);
+    expect(releaseScript).toMatch(/SOCIALDOWNLOADER_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"SocialDownloader"/);
+    expect(releaseScript).toMatch(/socialdownloader_enabled=/);
   });
 });

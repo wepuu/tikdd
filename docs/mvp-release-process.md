@@ -27,8 +27,9 @@ TIKDD_RELEASE_ENV=/etc/tikdd/production.env \
 scripts/production-release.sh worker-config-apply
 ```
 
-This force-recreates only the Worker and verifies its configuration revision plus the FDown gate
-values. Do not use a bare `docker compose up` to apply Provider gates; without
+This force-recreates only the Worker and verifies its configuration revision plus every configured
+Provider gate triplet, including FDown Isuru and SocialDownloader. Do not use a bare
+`docker compose up` to apply Provider gates; without
 `TIKDD_PRODUCTION_ENV_FILE` it can select a previous versioned environment file.
 
 Admin is a separate owner-on-demand operation after the public release has passed. Starting Admin

@@ -1375,3 +1375,21 @@ RapidAPI 密钥依赖、429、404/422、挑战或网络不可达阻塞/延后。
 本项不创建 Adapter、Delivery Host Policy、数据库迁移、门禁、rollout rule 或生产部署。
 SocialDownloader 仅保留为后续服务器代理风险评审的条件候选；现有 X、TikTok、Instagram、
 Facebook 生产 Provider 和 Admin/calibration 状态不变。
+
+### Work Item 73 — SocialDownloader Facebook 生产资格审计与受控上线
+
+Work Item 73 follows the merged `main@774491d` baseline and closes the operational gap left by
+Work Item 72. It first deploys the default-off code with the existing Facebook route unchanged,
+then audits the Provider-owned `/api/video` stream through the one-use Delivery redirect and a
+real browser. The audit covers redirects, MIME, Range, expiry, Content-Disposition/CORS and save
+behavior; it must not turn TikDD into a media proxy or expose the Provider page. The release
+script now verifies both FDown Isuru and SocialDownloader gate triplets during the isolated
+Worker configuration apply.
+
+Only after two one-shot browser checks pass may the owner enable the three SocialDownloader gates
+and create the unique `socialdownloader-space/facebook/nl` rollout rule. The steady-state route
+remains `FDown Isuru → SocialDownloader`; a temporary SocialDownloader-first policy is used only
+for the owner-controlled audit and is removed immediately afterward. A failed audit disables the
+rollout and gates without changing existing X, Instagram, TikTok, FDown, Admin or calibration
+state. See [Work Item 73](work-item-73-socialdownloader-facebook-production-audit.md) and
+[SocialDownloader Provider notes](providers/socialdownloader.md).

@@ -95,27 +95,45 @@ verify_worker_runtime_config() {
     return 78
   fi
 
-  expected_enabled="$(read_release_value ENABLE_FDOWN_ISURU_PROVIDER)"
-  expected_terms="$(read_release_value FDOWN_ISURU_TERMS_APPROVED)"
-  expected_audit="$(read_release_value FDOWN_ISURU_DELIVERY_AUDIT_APPROVED)"
-  case "$expected_enabled" in
-    true) expected_gate=true ;;
-    false) expected_gate=false ;;
-    *) echo "ENABLE_FDOWN_ISURU_PROVIDER must be true or false." >&2; return 78 ;;
-  esac
-  [ "$expected_terms" = "$expected_gate" ] && [ "$expected_audit" = "$expected_gate" ] || {
-    echo "FDown Isuru gates must all match ENABLE_FDOWN_ISURU_PROVIDER." >&2
-    return 78
+  verify_provider_gate_triplet() {
+    provider_label="$1"
+    enabled_key="$2"
+    terms_key="$3"
+    audit_key="$4"
+    expected_enabled="$(release_value "$enabled_key" "false")"
+    expected_terms="$(release_value "$terms_key" "false")"
+    expected_audit="$(release_value "$audit_key" "false")"
+    case "$expected_enabled" in
+      true) expected_gate=true ;;
+      false) expected_gate=false ;;
+      *) echo "$enabled_key must be true or false." >&2; return 78 ;;
+    esac
+    [ "$expected_terms" = "$expected_gate" ] && [ "$expected_audit" = "$expected_gate" ] || {
+      echo "$provider_label gates must all match $enabled_key." >&2
+      return 78
+    }
+
+    for key in "$enabled_key" "$terms_key" "$audit_key"; do
+      actual="$(printf '%s\n' "$env_dump" | awk -F= -v key="$key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+      if [ "$actual" != "$expected_gate" ]; then
+        echo "Worker $provider_label gate mismatch for $key; expected $expected_gate, actual ${actual:-missing}." >&2
+        return 78
+      fi
+    done
+    printf '%s' "$expected_gate"
   }
 
-  for key in ENABLE_FDOWN_ISURU_PROVIDER FDOWN_ISURU_TERMS_APPROVED FDOWN_ISURU_DELIVERY_AUDIT_APPROVED; do
-    actual="$(printf '%s\n' "$env_dump" | awk -F= -v key="$key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
-    if [ "$actual" != "$expected_gate" ]; then
-      echo "Worker FDown gate mismatch for $key; expected $expected_gate, actual ${actual:-missing}." >&2
-      return 78
-    fi
-  done
-  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$expected_gate"
+  fdown_enabled="$(verify_provider_gate_triplet \
+    "FDown Isuru" \
+    ENABLE_FDOWN_ISURU_PROVIDER \
+    FDOWN_ISURU_TERMS_APPROVED \
+    FDOWN_ISURU_DELIVERY_AUDIT_APPROVED)"
+  socialdownloader_enabled="$(verify_provider_gate_triplet \
+    "SocialDownloader" \
+    ENABLE_SOCIALDOWNLOADER_PROVIDER \
+    SOCIALDOWNLOADER_TERMS_APPROVED \
+    SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED)"
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled"
 }
 
 validate() {
