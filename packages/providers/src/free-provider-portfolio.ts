@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64 and 65. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65 and 71. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
@@ -901,6 +901,101 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 1,
     technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "socialdownloader-space",
+    displayName: "SocialDownloader.space",
+    platforms: ["x", "instagram", "tiktok", "facebook", "youtube"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 4,
+    failureFixtureCount: 2,
+    technicalState: "resolved",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "social-media-downloader-eight",
+    displayName: "Social Media Downloader (Vercel)",
+    platforms: ["instagram", "tiktok", "facebook", "youtube"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: true,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "gram-grabberz",
+    displayName: "Gram Grabberz",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "reachable",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "facebookone",
+    displayName: "FacebookOne",
+    platforms: ["facebook"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: true,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "reeldown",
+    displayName: "ReelDown.io",
+    platforms: ["instagram"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 1,
+    technicalState: "reachable",
     evidenceState: "not-evaluated"
   }
 ] as const;

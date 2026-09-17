@@ -1344,3 +1344,21 @@ replaying the Provider. Other Providers retain navigation, and production FDown 
 remain unchanged pending a separately authorized deployment. See
 [Work Item 69](work-item-69-fdown-thumbnail-client-save.md) and
 [ADR-0034](architecture/adr/0034-fdown-thumbnail-client-save.md).
+
+### Work Item 71 — 多平台免费 Provider 技术资格验证
+
+Work Item 71 对 SocialDownloader、Social Media Downloader、Instagram Video Downloader、
+ReelSaver、Gram Grabberz、FacebookOne 和 ReelDown 执行了协议级被动检查及受限主动矩阵。
+SocialDownloader 的 X、Instagram、TikTok 和 Facebook 主样本能返回 MP4，但均为 Provider
+自有流式地址；Facebook 第二样本也成功，Instagram 第二样本返回 422，因此没有 direct-CDN
+或透明 302 的可生产候选。YouTube 主样本超时，未继续请求确认样本。其他候选分别被
+RapidAPI 密钥依赖、429、404/422、挑战或网络不可达阻塞/延后。
+
+本批次共发出 15 个受限请求，低于 55 请求预算；没有下载完整媒体，没有使用账号、Cookie、
+验证码或 Provider 页面接力。Provider Lab 已升级为 schema 2 的按平台 `activeEndpoints`，
+并强制矩阵平台白名单、顺序执行、单媒体 1 KiB Range 和脱敏输出。证据详见
+[Work Item 71 记录](work-item-71-multiplatform-provider-qualification.md)。
+
+本项不创建 Adapter、Delivery Host Policy、数据库迁移、门禁、rollout rule 或生产部署。
+SocialDownloader 仅保留为后续服务器代理风险评审的条件候选；现有 X、TikTok、Instagram、
+Facebook 生产 Provider 和 Admin/calibration 状态不变。

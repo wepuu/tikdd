@@ -1,19 +1,19 @@
 {
-  "schemaVersion": "1",
+  "schemaVersion": "2",
   "providers": [
     {
       "id": "prexzy",
       "kind": "public-api",
       "landingUrl": "https://prexzyapis.com/",
       "apiHost": "prexzyapis.com",
-      "active": { "id": "instagram-v2", "platform": "instagram", "method": "GET", "path": "/download/igv2", "queryField": "url" }
+      "activeEndpoints": [{ "id": "instagram-v2", "platform": "instagram", "method": "GET", "path": "/download/igv2", "queryField": "url" }]
     },
     {
       "id": "ahm7_alldl",
       "kind": "public-api",
       "landingUrl": "https://ahm7xmakki.com/alldl",
       "apiHost": "ahm7xmakki.com",
-      "active": { "id": "alldl", "platform": "instagram", "method": "GET", "path": "/api/alldl", "queryField": "url" }
+      "activeEndpoints": [{ "id": "alldl", "platform": "instagram", "method": "GET", "path": "/api/alldl", "queryField": "url" }]
     },
     {
       "id": "cobalt-directory",
@@ -21,98 +21,98 @@
       "landingUrl": "https://cobalt.directory/",
       "probeUrl": "https://cobalt.directory/api/working?type=api",
       "apiHost": "cobalt.directory",
-      "active": null
+      "activeEndpoints": []
     },
     {
       "id": "tdownv4",
       "kind": "public-api",
       "landingUrl": "https://tdownv4.sl-bjs.workers.dev/",
       "apiHost": "tdownv4.sl-bjs.workers.dev",
-      "active": { "id": "download", "platform": "tiktok", "method": "GET", "path": "/", "queryField": "down" }
+      "activeEndpoints": [{ "id": "download", "platform": "tiktok", "method": "GET", "path": "/", "queryField": "down" }]
     },
     {
       "id": "clipx",
       "kind": "public-api",
       "landingUrl": "https://clipx.zamdev.dev/docs/api",
       "apiHost": "clipx.zamdev.workers.dev",
-      "active": null
+      "activeEndpoints": []
     },
     {
       "id": "postvault",
       "kind": "web-candidate",
       "landingUrl": "https://postvault.edwardd.app/",
       "apiHost": "postvault.edwardd.app",
-      "active": null
+      "activeEndpoints": []
     },
     {
       "id": "cliplatch",
       "kind": "web-candidate",
       "landingUrl": "https://cliplatch.com/",
       "apiHost": "cliplatch.com",
-      "active": { "id": "parse", "platform": "instagram", "method": "POST", "path": "/api/parse", "bodyField": "url" }
+      "activeEndpoints": [{ "id": "parse", "platform": "instagram", "method": "POST", "path": "/api/parse", "bodyField": "url" }]
     },
     {
       "id": "tikwm",
       "kind": "web-candidate",
       "landingUrl": "https://tikwm.com/",
       "apiHost": "tikwm.com",
-      "active": { "id": "api", "platform": "tiktok", "method": "GET", "path": "/api/", "queryField": "url" }
+      "activeEndpoints": [{ "id": "api", "platform": "tiktok", "method": "GET", "path": "/api/", "queryField": "url" }]
     },
     {
       "id": "fdown",
       "kind": "web-candidate",
       "landingUrl": "https://fdown.net/",
       "apiHost": "fdown.net",
-      "active": null
+      "activeEndpoints": []
     },
     {
       "id": "fdownloader-vn",
       "kind": "web-candidate",
       "landingUrl": "https://fdownloader.vn/",
       "apiHost": "fdownloader.vn",
-      "active": { "id": "download", "platform": "facebook", "method": "POST", "path": "/api/download", "bodyField": "url" }
+      "activeEndpoints": [{ "id": "download", "platform": "facebook", "method": "POST", "path": "/api/download", "bodyField": "url" }]
     },
     {
       "id": "fget",
       "kind": "web-candidate",
       "landingUrl": "https://fget.io/",
       "apiHost": "fget.io",
-      "active": null
+      "activeEndpoints": []
     },
     {
       "id": "instagram-video-downloader-vercel",
       "kind": "web-candidate",
       "landingUrl": "https://instagram-video-downloader-mu.vercel.app/",
       "apiHost": "instagram-video-downloader-mu.vercel.app",
-      "active": { "id": "api", "platform": "instagram", "method": "POST", "path": "/api", "bodyField": "postUrl", "bodyEncoding": "form-urlencoded" }
+      "activeEndpoints": [{ "id": "api", "platform": "instagram", "method": "POST", "path": "/api", "bodyField": "postUrl", "bodyEncoding": "form-urlencoded" }]
     },
     {
       "id": "reelsaver-fun",
       "kind": "web-candidate",
       "landingUrl": "https://www.reelsaver.fun/",
       "apiHost": "www.reelsaver.fun",
-      "active": { "id": "download", "platform": "instagram", "method": "GET", "path": "/api/download", "queryField": "url" }
+      "activeEndpoints": [{ "id": "download", "platform": "instagram", "method": "GET", "path": "/api/download", "queryField": "url" }]
     },
     {
       "id": "fdown-isuru",
       "kind": "web-candidate",
       "landingUrl": "https://fdown.isuru.eu.org/",
       "apiHost": "fdown.isuru.eu.org",
-      "active": { "id": "download", "platform": "facebook", "method": "POST", "path": "/download", "bodyField": "url", "bodyDefaults": { "quality": "best" } }
+      "activeEndpoints": [{ "id": "download", "platform": "facebook", "method": "POST", "path": "/download", "bodyField": "url", "bodyDefaults": { "quality": "best" } }]
     },
     {
       "id": "vidown-netlify",
       "kind": "web-candidate",
       "landingUrl": "https://vidown.netlify.app/",
       "apiHost": "social-media-video-download-mern-xi.vercel.app",
-      "active": { "id": "instagram", "platform": "instagram", "method": "POST", "path": "/api/v1/ig", "bodyField": "urls" }
+      "activeEndpoints": [{ "id": "instagram", "platform": "instagram", "method": "POST", "path": "/api/v1/ig", "bodyField": "urls" }]
     },
     {
       "id": "anydownloader",
       "kind": "self-hosted-source",
       "landingUrl": "https://github.com/nyxsky404/AnyDownloader",
       "apiHost": null,
-      "active": null,
+      "activeEndpoints": [],
       "localOnly": true
     },
     {
@@ -120,8 +120,54 @@
       "kind": "self-hosted-source",
       "landingUrl": "https://github.com/averygan/reclip",
       "apiHost": null,
-      "active": null,
+      "activeEndpoints": [],
       "localOnly": true
+    },
+    {
+      "id": "socialdownloader-space",
+      "kind": "web-candidate",
+      "landingUrl": "https://www.socialdownloader.space/",
+      "apiHost": "www.socialdownloader.space",
+      "matrixPlatforms": ["x", "instagram", "tiktok", "facebook", "youtube"],
+      "activeEndpoints": [
+        { "id": "download-x", "platform": "x", "method": "POST", "path": "/api/download", "bodyField": "url" },
+        { "id": "download-instagram", "platform": "instagram", "method": "POST", "path": "/api/download", "bodyField": "url" },
+        { "id": "download-tiktok", "platform": "tiktok", "method": "POST", "path": "/api/download", "bodyField": "url" },
+        { "id": "download-facebook", "platform": "facebook", "method": "POST", "path": "/api/download", "bodyField": "url" },
+        { "id": "download-youtube", "platform": "youtube", "method": "POST", "path": "/api/download", "bodyField": "url" }
+      ]
+    },
+    {
+      "id": "social-media-downloader-eight",
+      "kind": "web-candidate",
+      "landingUrl": "https://social-media-downloader-eight.vercel.app/",
+      "apiHost": "social-media-downloader-eight.vercel.app",
+      "matrixPlatforms": ["instagram", "tiktok", "facebook", "youtube"],
+      "activeEndpoints": []
+    },
+    {
+      "id": "gram-grabberz",
+      "kind": "web-candidate",
+      "landingUrl": "https://gram-grabberz.vercel.app/",
+      "apiHost": "gram-grabberz.vercel.app",
+      "matrixPlatforms": ["instagram"],
+      "activeEndpoints": [{ "id": "instagram-shortcode", "platform": "instagram", "method": "GET", "path": "/api/instagram/p/{shortcode}", "pathTemplate": "instagram-shortcode" }]
+    },
+    {
+      "id": "facebookone",
+      "kind": "web-candidate",
+      "landingUrl": "https://facebookone.vercel.app/",
+      "apiHost": "facebookone.vercel.app",
+      "matrixPlatforms": ["facebook"],
+      "activeEndpoints": []
+    },
+    {
+      "id": "reeldown",
+      "kind": "web-candidate",
+      "landingUrl": "https://reeldown.io/",
+      "apiHost": "reeldown.io",
+      "matrixPlatforms": ["instagram"],
+      "activeEndpoints": []
     }
   ]
 }

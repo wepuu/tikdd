@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import catalog from "./catalog.json" with { type: "json" };
 import {
   contentTypeCategory,
+  isMp4Response,
   isPublicIp,
   isSafeHttpsUrl,
   mediaHostSuffix,
@@ -13,9 +14,13 @@ import {
 
 export const MAX_REDIRECTS = 3;
 export const MAX_BODY_BYTES = 512_000;
+export const MAX_MEDIA_BYTES = 1_024;
 export const REQUEST_TIMEOUT_MS = 10_000;
 export const MIN_INTERVAL_MS = 10_000;
 export const MAX_REQUESTS = 24;
+export const MAX_MATRIX_REQUESTS = 55;
+export const MAX_SCRIPT_REQUESTS = 2;
+export const KNOWN_MATRIX_PLATFORMS = new Set(["x", "instagram", "tiktok", "facebook", "youtube", "vimeo", "pinterest"]);
 
 const CHALLENGE_MARKER = /(?:cf-chl-|cf-challenge|cf-mitigated|turnstile|captcha|verify\s+you\s+are\s+human|challenge-platform)/i;
 
@@ -68,6 +73,25 @@ async function readLimitedText(response) {
   return new TextDecoder().decode(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))));
 }
 
+async function readLimitedBytes(response) {
+  if (!response.body) return 0;
+  const reader = response.body.getReader();
+  let total = 0;
+  try {
+    while (total < MAX_MEDIA_BYTES) {
+      const next = await reader.read();
+      if (next.done) break;
+      const chunk = next.value ?? new Uint8Array();
+      const remaining = MAX_MEDIA_BYTES - total;
+      total += Math.min(chunk.byteLength, remaining);
+      if (chunk.byteLength > remaining) break;
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+  return total;
+}
+
 async function publicDns(hostname) {
   try {
     const answers = await lookup(hostname, { all: true, verbatim: true });
@@ -107,28 +131,94 @@ async function fetchBounded(url, options, budget, { expectedHosts = new Set(), m
       redirectCount += 1;
       continue;
     }
-    const body = media ? await readLimitedText(response) : await readLimitedText(response);
-    return { response, body, redirectCount, failureCode: null };
+    const body = media ? "" : await readLimitedText(response);
+    const bytesRead = media ? await readLimitedBytes(response) : 0;
+    return { response, body, bytesRead, finalUrl: current.toString(), redirectCount, failureCode: null };
   }
 }
 
-function collectHttpsUrls(value, output = [], seen = new Set()) {
+function extractFirstPartyScripts(html, origin) {
+  const output = [];
+  const seen = new Set();
+  const pattern = /<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  for (const match of html.matchAll(pattern)) {
+    try {
+      const url = new URL(match[1], origin);
+      if (url.protocol !== "https:" || url.hostname !== new URL(origin).hostname) continue;
+      url.hash = "";
+      url.search = "";
+      if (!seen.has(url.toString())) {
+        seen.add(url.toString());
+        output.push(url.toString());
+      }
+    } catch {
+      // Ignore malformed script references from untrusted HTML.
+    }
+    if (output.length >= MAX_SCRIPT_REQUESTS) break;
+  }
+  return output;
+}
+
+function extractEndpointHints(value) {
+  const output = new Set();
+  const pattern = /(?:https:\/\/[^\s"'<>]+)?\/(?:api|ajax|download|parse|resolve|convert|info|media)[a-zA-Z0-9._~!$&'()*+,;=:@%/?-]*/g;
+  for (const match of String(value).matchAll(pattern)) {
+    try {
+      const url = new URL(match[0], "https://hint.invalid");
+      const path = url.pathname.replace(/\/+/g, "/");
+      if (path.length > 1) output.add(path.slice(0, 120));
+    } catch {
+      // Ignore non-URL script fragments.
+    }
+    if (output.size >= 20) break;
+  }
+  return [...output];
+}
+
+function selectActiveEndpoint(provider, platform) {
+  const endpoints = Array.isArray(provider.activeEndpoints)
+    ? provider.activeEndpoints
+    : provider.active
+      ? [provider.active]
+      : [];
+  if (!platform) return endpoints[0] ?? null;
+  return endpoints.find((endpoint) => endpoint.platform === platform) ?? null;
+}
+
+export function activeEndpointFor(provider, platform) {
+  return selectActiveEndpoint(provider, platform);
+}
+
+function collectMediaUrls(value, baseOrigin, output = [], seen = new Set()) {
   if (output.length >= 50 || value === null || value === undefined) return output;
   if (typeof value === "string") {
-    if (isSafeHttpsUrl(value) && !seen.has(value)) {
-      seen.add(value);
-      output.push(value);
+    let candidate = value;
+    if (candidate.startsWith("/")) {
+      try { candidate = new URL(candidate, baseOrigin).toString(); } catch { candidate = ""; }
+    }
+    if (isSafeHttpsUrl(candidate) && !seen.has(candidate)) {
+      seen.add(candidate);
+      output.push(candidate);
     }
     return output;
   }
   if (Array.isArray(value)) {
-    for (const item of value) collectHttpsUrls(item, output, seen);
+    for (const item of value) collectMediaUrls(item, baseOrigin, output, seen);
     return output;
   }
   if (typeof value === "object") {
-    for (const item of Object.values(value)) collectHttpsUrls(item, output, seen);
+    for (const item of Object.values(value)) collectMediaUrls(item, baseOrigin, output, seen);
   }
   return output;
+}
+
+function resolveEndpointPath(endpoint, sample, platform) {
+  if (!endpoint.pathTemplate) return endpoint.path;
+  if (endpoint.pathTemplate === "instagram-shortcode") {
+    const match = sample.url.match(/\/(?:p|reel|tv)\/([^/?#]+)/i);
+    return match ? endpoint.path.replace("{shortcode}", encodeURIComponent(match[1])) : null;
+  }
+  return null;
 }
 
 export async function passiveProbe(provider, { fetchImpl = fetch, budget = new RequestBudget(), dnsCheck = publicDns } = {}) {
@@ -138,7 +228,20 @@ export async function passiveProbe(provider, { fetchImpl = fetch, budget = new R
     const probeUrl = provider.probeUrl ?? provider.landingUrl;
     const result = await fetchBounded(probeUrl, { method: "GET", headers: { accept: "text/html,application/xhtml+xml,application/json" } }, budget, { expectedHosts: new Set([new URL(probeUrl).hostname.toLowerCase()]), fetcher: fetchImpl, dnsCheck });
     const response = result.response;
-    const challenge = response?.headers.get("cf-mitigated") === "challenge" || hasChallengeMarker(result.body);
+    const scriptUrls = response && contentTypeCategory(response.headers) === "html"
+      ? extractFirstPartyScripts(result.body, probeUrl)
+      : [];
+    const scriptBodies = [];
+    for (const scriptUrl of scriptUrls) {
+      const scriptResult = await fetchBounded(scriptUrl, { method: "GET", headers: { accept: "application/javascript,text/javascript,*/*" } }, budget, {
+        expectedHosts: new Set([new URL(probeUrl).hostname.toLowerCase()]),
+        fetcher: fetchImpl,
+        dnsCheck
+      });
+      if (scriptResult.body) scriptBodies.push(scriptResult.body);
+    }
+    const inspectionBody = [result.body, ...scriptBodies].join("\n");
+    const challenge = response?.headers.get("cf-mitigated") === "challenge" || hasChallengeMarker(inspectionBody);
     const state = result.failureCode === "timeout" || response?.status === 408 || response?.status === 429 || (response?.status ?? 0) >= 500
       ? "deferred"
       : result.failureCode || challenge || response?.status === 401 || response?.status === 403
@@ -146,16 +249,28 @@ export async function passiveProbe(provider, { fetchImpl = fetch, budget = new R
         : response && response.status >= 200 && response.status < 400
           ? "reachable"
           : "blocked";
-    return sanitizeRecord({ providerId: provider.id, result: state, httpStatus: response?.status ?? null, contentType: response ? contentTypeCategory(response.headers) : "missing", latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: result.failureCode ?? (challenge || response?.status === 401 || response?.status === 403 ? "access_challenge" : null) });
+    return sanitizeRecord({
+      providerId: provider.id,
+      result: state,
+      httpStatus: response?.status ?? null,
+      contentType: response ? contentTypeCategory(response.headers) : "missing",
+      latencyMs: Date.now() - started,
+      scriptCount: scriptUrls.length,
+      endpointHints: extractEndpointHints(inspectionBody),
+      redirectCount: result.redirectCount,
+      failureCode: result.failureCode ?? (challenge || response?.status === 401 || response?.status === 403 ? "access_challenge" : null)
+    });
   } catch (error) {
     return sanitizeRecord({ providerId: provider.id, result: "blocked", latencyMs: Date.now() - started, failureCode: sanitizeFailure(error) });
   }
 }
 
-export async function activeProbe(provider, sample, { budget = new RequestBudget(), fetchImpl = fetch, dnsCheck = publicDns } = {}) {
-  if (!provider.active) return sanitizeRecord({ providerId: provider.id, result: "not_configured", failureCode: "protocol_not_confirmed" });
-  const endpoint = provider.active;
-  const api = new URL(endpoint.path, `https://${provider.apiHost}`);
+export async function activeProbe(provider, sample, { platform, budget = new RequestBudget(), fetchImpl = fetch, dnsCheck = publicDns } = {}) {
+  const endpoint = selectActiveEndpoint(provider, platform);
+  if (!endpoint) return sanitizeRecord({ providerId: provider.id, platform: platform ?? null, result: "not_configured", failureCode: "protocol_not_confirmed" });
+  const endpointPath = resolveEndpointPath(endpoint, sample, platform);
+  if (!endpointPath || !provider.apiHost) return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "not_configured", failureCode: "protocol_not_confirmed" });
+  const api = new URL(endpointPath, `https://${provider.apiHost}`);
   if (endpoint.queryField) api.searchParams.set(endpoint.queryField, sample.url);
   const requestPayload = { [endpoint.bodyField]: sample.url, ...(endpoint.bodyDefaults ?? {}) };
   const options = endpoint.method === "POST"
@@ -180,19 +295,24 @@ export async function activeProbe(provider, sample, { budget = new RequestBudget
   if (type !== "json") return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "no_media", httpStatus: response.status, contentType: type, latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: "non_json_response" });
   let payload;
   try { payload = JSON.parse(result.body); } catch { return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: "no_media", httpStatus: response.status, contentType: type, latencyMs: Date.now() - started, redirectCount: result.redirectCount, failureCode: "schema_changed" }); }
-  const urls = collectHttpsUrls(payload);
+  const urls = collectMediaUrls(payload, `https://${provider.apiHost}`);
   const mediaHostSuffixes = new Set();
+  const mediaTopologies = new Set();
   let validMediaCount = 0;
-  // One Provider request plus at most five bounded media checks keeps the per-run budget at six.
-  for (const url of urls.slice(0, 5)) {
+  // One Provider request plus one bounded media check keeps each matrix cell at two requests.
+  for (const url of urls.slice(0, 1)) {
     const mediaResult = await fetchBounded(url, { method: "GET", headers: { accept: "video/*,audio/*", range: "bytes=0-1023" } }, budget, { media: true, fetcher: fetchImpl, dnsCheck });
     const mediaType = mediaResult.response ? contentTypeCategory(mediaResult.response.headers) : "missing";
-    if (mediaResult.response && mediaResult.response.status >= 200 && mediaResult.response.status < 300 && (mediaType === "video" || /\.mp4(?:$|[?#])/i.test(url))) {
+    if (mediaResult.response && mediaResult.response.status >= 200 && mediaResult.response.status < 300 && isMp4Response(mediaResult.response.headers, mediaResult.finalUrl ?? url)) {
       validMediaCount += 1;
-      mediaHostSuffixes.add(mediaHostSuffix(url));
+      const finalUrl = mediaResult.finalUrl ?? url;
+      const mediaHost = new URL(finalUrl).hostname.toLowerCase();
+      const apiHost = provider.apiHost.toLowerCase();
+      mediaTopologies.add(mediaHost === apiHost || mediaHost.endsWith(`.${apiHost}`) ? "provider-stream" : "source-cdn");
+      mediaHostSuffixes.add(mediaHostSuffix(finalUrl));
     }
   }
-  return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: validMediaCount > 0 ? "resolved" : "no_media", httpStatus: response.status, contentType: type, latencyMs: Date.now() - started, resourceCount: urls.length, validMediaCount, mediaHostSuffixes: [...mediaHostSuffixes], redirectCount: result.redirectCount, failureCode: validMediaCount > 0 ? null : "no_valid_media" });
+  return sanitizeRecord({ providerId: provider.id, endpointId: endpoint.id, platform: endpoint.platform, sourceRef: sample.id, result: validMediaCount > 0 ? "resolved" : "no_media", httpStatus: response.status, contentType: type, latencyMs: Date.now() - started, resourceCount: urls.length, validMediaCount, mediaHostSuffixes: [...mediaHostSuffixes], mediaTopologies: [...mediaTopologies], redirectCount: result.redirectCount, failureCode: validMediaCount > 0 ? null : "no_valid_media" });
 }
 
 export async function loadSamples(path) {
@@ -222,6 +342,40 @@ export async function runActive(providerId, samples) {
   return { requestCount: budget.requestCount, results };
 }
 
+export async function runMatrix(cells, { fetchImpl = fetch, dnsCheck = publicDns } = {}) {
+  if (!Array.isArray(cells) || cells.length === 0) throw new Error("matrix_must_be_non_empty");
+  const budget = new RequestBudget({ maxRequests: MAX_MATRIX_REQUESTS, minIntervalMs: MIN_INTERVAL_MS });
+  const results = [];
+  for (const cell of cells) {
+    if (!cell || typeof cell.providerId !== "string" || typeof cell.platform !== "string" || !cell.sample) {
+      throw new Error("invalid_matrix_cell");
+    }
+    const provider = providerById(cell.providerId);
+    if (!provider) throw new Error("no_known_provider");
+    if (!KNOWN_MATRIX_PLATFORMS.has(cell.platform)) throw new Error("platform_not_allowed");
+    const allowedPlatforms = provider.matrixPlatforms ?? (provider.activeEndpoints ?? []).map((endpoint) => endpoint.platform);
+    if (allowedPlatforms.length > 0 && !allowedPlatforms.includes(cell.platform)) throw new Error("platform_not_allowed");
+    const sample = cell.sample;
+    results.push(await activeProbe(provider, sample, { platform: cell.platform, budget, fetchImpl, dnsCheck }));
+  }
+  return { requestCount: budget.requestCount, results };
+}
+
+export async function loadMatrix(path) {
+  const parsed = JSON.parse(await readFile(path, "utf8"));
+  if (!Array.isArray(parsed)) throw new Error("matrix_must_be_array");
+  return parsed.map((cell) => {
+    if (!cell || typeof cell.providerId !== "string" || typeof cell.platform !== "string" || !cell.sample) throw new Error("invalid_matrix_cell");
+    if (!KNOWN_MATRIX_PLATFORMS.has(cell.platform)) throw new Error("platform_not_allowed");
+    if (typeof cell.sample.id !== "string" || typeof cell.sample.url !== "string") throw new Error("invalid_sample");
+    return {
+      providerId: cell.providerId,
+      platform: cell.platform,
+      sample: { id: cell.sample.id.slice(0, 80), url: cell.sample.url }
+    };
+  });
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const mode = args[0] ?? "passive";
@@ -230,10 +384,25 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.stdout.write(`${JSON.stringify({ event: "provider_lab_passive", ...(await runPassive(ids.length > 0 ? ids : undefined)) })}\n`);
   } else if (mode === "active") {
     const providerId = args[1];
-    const samplePath = args[2];
-    if (!providerId || !samplePath) throw new Error("usage: active <provider-id> <temporary-sample-file>");
-    process.stdout.write(`${JSON.stringify({ event: "provider_lab_active", ...(await runActive(providerId, await loadSamples(samplePath))) })}\n`);
+    const platform = args.length >= 4 ? args[2] : undefined;
+    const samplePath = args.length >= 4 ? args[3] : args[2];
+    if (!providerId || !samplePath) throw new Error("usage: active <provider-id> [platform] <temporary-sample-file>");
+    if (platform) {
+      const provider = providerById(providerId);
+      if (!provider) throw new Error("no_known_provider");
+      const samples = await loadSamples(samplePath);
+      const budget = new RequestBudget({ maxRequests: 6, minIntervalMs: MIN_INTERVAL_MS });
+      const results = [];
+      for (const sample of samples.slice(0, 2)) results.push(await activeProbe(provider, sample, { platform, budget }));
+      process.stdout.write(`${JSON.stringify({ event: "provider_lab_active", requestCount: budget.requestCount, results })}\n`);
+    } else {
+      process.stdout.write(`${JSON.stringify({ event: "provider_lab_active", ...(await runActive(providerId, await loadSamples(samplePath))) })}\n`);
+    }
+  } else if (mode === "matrix") {
+    const matrixPath = args[1];
+    if (!matrixPath) throw new Error("usage: matrix <temporary-matrix-file>");
+    process.stdout.write(`${JSON.stringify({ event: "provider_lab_matrix", ...(await runMatrix(await loadMatrix(matrixPath))) })}\n`);
   } else {
-    throw new Error("usage: passive [provider-id ...] | active <provider-id> <temporary-sample-file>");
+    throw new Error("usage: passive [provider-id ...] | active <provider-id> [platform] <temporary-sample-file> | matrix <temporary-matrix-file>");
   }
 }
