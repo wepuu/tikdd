@@ -7,6 +7,7 @@ import {
   CircleNotchIcon,
   DotsThreeIcon,
   DownloadSimpleIcon,
+  FacebookLogoIcon,
   GlobeHemisphereWestIcon,
   InstagramLogoIcon,
   LinkSimpleIcon,
@@ -159,7 +160,7 @@ function submissionFailureMessage(error: Pick<TaskError, "code" | "retryable">, 
   );
 }
 
-const platformIcons = [XLogoIcon, InstagramLogoIcon] as const;
+const platformIcons = [XLogoIcon, InstagramLogoIcon, DotsThreeIcon, FacebookLogoIcon] as const;
 const processIcons = [LinkSimpleIcon, ScanIcon, DownloadSimpleIcon] as const;
 const featureIcons = [GlobeHemisphereWestIcon, SlidersHorizontalIcon, ShieldCheckIcon] as const;
 

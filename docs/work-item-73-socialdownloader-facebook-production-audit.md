@@ -1,12 +1,18 @@
 # Work Item 73 — SocialDownloader Facebook 生产资格审计与受控上线
 
-状态：实施中；代码基线已合并，生产门禁和 rollout 尚未启用。
+状态：已完成；生产门禁和 rollout 已启用，FDown 保持主 Provider。
 
-基线为 `main@774491d41ab4434e7fddebc3075326081c2232e3`。Work Item 71 的两个 Facebook
+基线为 `main@25bd4b625c6d45c9b6be94d817fc57d79d9d8af8`。Work Item 71 的两个 Facebook
 样本已证明 SocialDownloader 能返回 MP4，但媒体是 Provider 自有 `/api/video` 流，不是
 源平台 CDN。Work Item 72 已将它实现为 FDown Isuru 之后的默认关闭二级路由。本项完成发布
 环境绑定、真实浏览器交付审计和可回滚的 Facebook 受控上线；不扩展到 X、TikTok、Instagram
 或 YouTube。
+
+生产记录：SocialDownloader 三个门禁已通过 `worker-config-apply` 生效，唯一的
+`socialdownloader-space/facebook/nl` 规则已启用并保持为 FDown 之后的二级路线。两条公开
+Facebook 样本各产生一次 SocialDownloader attempt，并完成一次性票据、受审 302 和非零媒体
+流交接；核心容器、API/Delivery 5xx、重启和熔断在十分钟观察窗口内保持正常。当前交付策略
+仍为 `navigate`，浏览器可能打开 Provider 媒体流/播放器；未宣称自动保存，详见 Work Item 74。
 
 ## 已完成的代码工作
 

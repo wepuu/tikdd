@@ -1,6 +1,6 @@
 # SocialDownloader.space Facebook Provider
 
-Status: implemented, disabled pending production delivery audit
+Status: enabled as the Facebook Beta secondary route after Work Item 73 production audit
 
 ## Reviewed protocol
 
@@ -18,11 +18,11 @@ upstream failures may fall through from FDown to this Provider.
 
 Delivery uses the existing one-use ticket and a reviewed `302` redirect. The allowed target is
 `https://www.socialdownloader.space/api/video` only; TikDD does not read or proxy media bytes.
-The current browser handoff is `navigate` until a production browser audit verifies the final
-MIME, redirect chain, Range behavior, expiry, Content-Disposition/CORS behavior and save result.
-If navigation only opens a player and CORS permits a safe client-side save, a separate reviewed
-change may select the existing `cors-download` handoff. A server-side media proxy and Provider-page
-handoff are out of scope.
+The current browser handoff remains `navigate`. Work Item 73 verified the one-use redirect and
+Provider-owned stream without sending media bytes through NL, but did not establish a repeatable
+CORS/browser-save contract. The browser may therefore open the approved media stream or player;
+this is an accepted Beta fallback, not a Provider-page handoff. A separate reviewed change may
+select the existing `cors-download` handoff only after a fresh protocol and browser-save audit.
 
 ## Activation boundary
 
@@ -34,9 +34,10 @@ SOCIALDOWNLOADER_TERMS_APPROVED=true
 SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED=true
 ```
 
-The rollout rule is separate from process gates and must be created or updated by CAS. The normal
-Facebook order remains FDown Isuru first and SocialDownloader second. Until the two-sample browser
-audit is recorded, no production rollout rule should authorize this Provider.
+The rollout rule is separate from process gates and is created or updated by CAS. The production
+Facebook order is FDown Isuru first and SocialDownloader second. The unique
+`socialdownloader-space/facebook/nl` rule is enabled only for the audited secondary route; it does
+not authorize X, TikTok, Instagram, or YouTube.
 
 ## Rollback
 
