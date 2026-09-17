@@ -12,6 +12,16 @@ export function contentTypeCategory(headers) {
   if (value.startsWith("audio/")) return "audio";
   return "other";
 }
+
+export function mediaMime(headers) {
+  return headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+}
+
+export function isMp4Response(headers, rawUrl = "") {
+  const mime = mediaMime(headers);
+  if (mime === "video/mp4") return true;
+  return !mime && /\.mp4(?:$|[?#])/i.test(rawUrl);
+}
 export function mediaHostSuffix(rawUrl) {
   try {
     const url = new URL(rawUrl);
@@ -66,6 +76,9 @@ export function sanitizeRecord(record) {
     resourceCount: Number.isInteger(record.resourceCount) ? Math.max(0, record.resourceCount) : 0,
     validMediaCount: Number.isInteger(record.validMediaCount) ? Math.max(0, record.validMediaCount) : 0,
     mediaHostSuffixes: [...new Set((record.mediaHostSuffixes ?? []).filter((item) => typeof item === "string").map((item) => item.slice(0, 120)))].slice(0, 10),
+    mediaTopologies: [...new Set((record.mediaTopologies ?? []).filter((item) => typeof item === "string" && ["source-cdn", "provider-stream"].includes(item)))].slice(0, 4),
+    scriptCount: Number.isInteger(record.scriptCount) ? Math.max(0, record.scriptCount) : 0,
+    endpointHints: [...new Set((record.endpointHints ?? []).filter((item) => typeof item === "string").map((item) => item.slice(0, 120)))].slice(0, 20),
     redirectCount: Number.isInteger(record.redirectCount) ? Math.max(0, record.redirectCount) : 0,
     failureCode: record.failureCode ? String(record.failureCode).slice(0, 80) : null
   };

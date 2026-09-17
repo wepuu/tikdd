@@ -54,7 +54,12 @@ describe("technical Provider preflight classification", () => {
       "instagram-video-downloader-vercel": "https://instagram-video-downloader-mu.vercel.app/",
       "reelsaver-fun": "https://www.reelsaver.fun/",
       "fdown-isuru": "https://fdown.isuru.eu.org/",
-      "vidown-netlify": "https://vidown.netlify.app/"
+      "vidown-netlify": "https://vidown.netlify.app/",
+      "socialdownloader-space": "https://www.socialdownloader.space/",
+      "social-media-downloader-eight": "https://social-media-downloader-eight.vercel.app/",
+      "gram-grabberz": "https://gram-grabberz.vercel.app/",
+      facebookone: "https://facebookone.vercel.app/",
+      reeldown: "https://reeldown.io/"
     });
   });
 });

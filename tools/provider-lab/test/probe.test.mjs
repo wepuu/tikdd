@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { MAX_REDIRECTS, RequestBudget, activeProbe, hasChallengeMarker } from "../probe.mjs";
+import { MAX_MATRIX_REQUESTS, MAX_REDIRECTS, RequestBudget, activeEndpointFor, activeProbe, hasChallengeMarker, runMatrix } from "../probe.mjs";
 
 test("request budget is bounded", async () => {
   const budget = new RequestBudget({ maxRequests: 1, minIntervalMs: 0 });
@@ -101,4 +101,63 @@ test("challenge markers in bounded HTML are treated as blocked", async () => {
   });
   assert.equal(result.result, "blocked");
   assert.equal(result.failureCode, "access_challenge");
+});
+
+test("multi-platform endpoint selection rejects an unknown platform", () => {
+  const provider = {
+    id: "fixture",
+    activeEndpoints: [
+      { id: "ig", platform: "instagram", method: "GET", path: "/ig", queryField: "url" },
+      { id: "yt", platform: "youtube", method: "POST", path: "/yt", bodyField: "url" }
+    ]
+  };
+  assert.equal(activeEndpointFor(provider, "instagram").id, "ig");
+  assert.equal(activeEndpointFor(provider, "facebook"), null);
+});
+
+test("relative provider stream URLs are normalized and classified without exposing them", async () => {
+  const provider = {
+    id: "fixture",
+    apiHost: "api.example.com",
+    activeEndpoints: [{ id: "parse", platform: "instagram", method: "GET", path: "/parse", queryField: "url" }]
+  };
+  let calls = 0;
+  const result = await activeProbe(provider, { id: "primary", url: "https://www.instagram.com/reel/sample/" }, {
+    budget: new RequestBudget({ minIntervalMs: 0 }),
+    fetchImpl: async (_input, options) => {
+      calls += 1;
+      if (calls === 1) return new Response(JSON.stringify({ downloadUrl: "/api/video?token=temporary" }), { status: 200, headers: { "content-type": "application/json" } });
+      assert.equal(options.headers.range, "bytes=0-1023");
+      return new Response(new Uint8Array([0, 1, 2]), { status: 206, headers: { "content-type": "video/mp4" } });
+    },
+    dnsCheck: async (host) => host === "api.example.com"
+  });
+  assert.equal(result.result, "resolved");
+  assert.deepEqual(result.mediaTopologies, ["provider-stream"]);
+  assert.equal(calls, 2);
+  assert.equal(JSON.stringify(result).includes("temporary"), false);
+});
+
+test("shortcode path templates stay platform-scoped", async () => {
+  const provider = {
+    id: "fixture",
+    apiHost: "api.example.com",
+    activeEndpoints: [{ id: "shortcode", platform: "instagram", method: "GET", path: "/api/instagram/p/{shortcode}", pathTemplate: "instagram-shortcode" }]
+  };
+  let requestUrl;
+  const result = await activeProbe(provider, { id: "primary", url: "https://www.instagram.com/reel/AbC123/" }, {
+    budget: new RequestBudget({ minIntervalMs: 0 }),
+    fetchImpl: async (input) => {
+      requestUrl = String(input);
+      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+    },
+    dnsCheck: async (host) => host === "api.example.com"
+  });
+  assert.equal(result.result, "no_media");
+  assert.match(requestUrl, /\/api\/instagram\/p\/AbC123$/);
+});
+
+test("matrix enforces the platform allowlist and global request budget", async () => {
+  await assert.rejects(() => runMatrix([{ providerId: "socialdownloader-space", platform: "vimeo", sample: { id: "primary", url: "https://vimeo.com/123" } }]), /platform_not_allowed/);
+  assert.equal(MAX_MATRIX_REQUESTS, 55);
 });
