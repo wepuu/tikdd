@@ -180,6 +180,7 @@ export const DeliveryHostPolicySchema = z.object({
   modes: z.array(DeliveryModeSchema).min(1),
   hosts: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)),
   hostSuffixes: z.array(z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/)).default([]),
+  pathPrefixes: z.array(z.string().min(1).max(256).regex(/^\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]*$/)).default([]),
   browserHandoff: z.enum(["navigate", "cors-download"]).default("navigate")
 }).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
   message: "A delivery host policy must include an exact host or reviewed suffix."
@@ -248,6 +249,14 @@ export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2 = DeliveryHostPolicySchem
   browserHandoff: "cors-download"
 });
 
+export const SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "socialdownloader-space-facebook-media-v1",
+  providerId: "socialdownloader-space",
+  modes: ["redirect"],
+  hosts: ["www.socialdownloader.space"],
+  pathPrefixes: ["/api/video"]
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -259,7 +268,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY.id, SNAPTIK_MONSTER_TIKTOK_MEDIA_HOST_POLICY],
   [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY],
   [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1],
-  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2]
+  [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2],
+  [SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -286,6 +296,12 @@ export function assertDeliveryTargetPolicy(input: {
   const suffixMatch = policy.hostSuffixes.some((suffix) => hostname.endsWith(`.${suffix}`));
   if (!exactMatch && !suffixMatch) {
     throw new Error("The delivery target host is not allowed by its reviewed policy.");
+  }
+  if (
+    policy.pathPrefixes.length > 0 &&
+    !policy.pathPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))
+  ) {
+    throw new Error("The delivery target path is not allowed by its reviewed policy.");
   }
   return url;
 }

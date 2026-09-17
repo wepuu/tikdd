@@ -1345,6 +1345,19 @@ remain unchanged pending a separately authorized deployment. See
 [Work Item 69](work-item-69-fdown-thumbnail-client-save.md) and
 [ADR-0034](architecture/adr/0034-fdown-thumbnail-client-save.md).
 
+### Work Item 72 — SocialDownloader Facebook secondary routing
+
+Work Item 72 将 Work Item 71 中 Facebook 两个可重复样本的 SocialDownloader 证据落到一个
+默认关闭的适配器和版本化 Delivery policy。FDown Isuru 保持高优先级；只有可回退的上游
+失败才顺序尝试 SocialDownloader，每个任务最多一次 Provider 请求，422/no-media、私有和
+不支持内容不触发更低级路由。Delivery 仅允许精确的
+`www.socialdownloader.space/api/video`，仍使用一次性票据和 302，不由 NL VPS 读取媒体。
+`ENABLE_SOCIALDOWNLOADER_PROVIDER`、`SOCIALDOWNLOADER_TERMS_APPROVED` 和
+`SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED` 默认均关闭。X/TikTok 虽已补充一次协议样本，仍因
+缺少浏览器交付审计保持 Lab-only；Instagram、YouTube 不加入。详见
+[Work Item 72](work-item-72-socialdownloader-secondary-routing.md) 和
+[ADR-0035](architecture/adr/0035-socialdownloader-secondary-routing.md)。
+
 ### Work Item 71 — 多平台免费 Provider 技术资格验证
 
 Work Item 71 对 SocialDownloader、Social Media Downloader、Instagram Video Downloader、

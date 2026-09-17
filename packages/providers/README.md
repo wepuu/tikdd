@@ -19,3 +19,12 @@ Before implementing a new free Provider, run the code-owned `qualifyFreeProvider
 from the package. It is offline-only and reports sanitized reject/defer reasons; an accepted result
 still requires the normal adapter fixtures, Host review, Delivery verification, rollout approval,
 and deployment checks.
+
+## SocialDownloader secondary
+
+Work Item 72 registers `socialdownloader-space` only for the repeatedly verified Facebook path.
+Its adapter accepts the anonymous JSON endpoint and the reviewed same-host `/api/video` stream;
+X and TikTok remain Lab-only until their browser delivery audit is recorded.
+The provider is disabled by default and requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
+`SOCIALDOWNLOADER_TERMS_APPROVED`, and `SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED` before any
+runtime activation. The queue performs no automatic replay for this provider.

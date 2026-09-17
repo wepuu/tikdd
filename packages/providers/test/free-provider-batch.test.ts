@@ -271,6 +271,11 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_blocked"])
     });
+    expect(results.find(({ providerId }) => providerId === "socialdownloader-space")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["delivery_unverified"])
+    });
   });
 });
 

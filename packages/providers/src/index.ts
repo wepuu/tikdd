@@ -58,6 +58,14 @@ export {
 } from "./adapters/snaptik-monster";
 export { TikVidProvider, type TikVidProviderOptions } from "./adapters/tikvid";
 export { TikCDProvider, type TikCDProviderOptions } from "./adapters/tikcd";
+export {
+  SocialDownloaderProvider,
+  parseSocialDownloaderResponse,
+  type SocialDownloaderProviderOptions,
+  type SocialDownloaderDiagnosticEvent,
+  type SocialDownloaderDiagnosticPhase,
+  type SocialDownloaderContentType
+} from "./adapters/socialdownloader";
 export { ProviderCanaryConfigSchema, selectProviderCanaries, selectScheduledProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,

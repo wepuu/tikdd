@@ -181,6 +181,30 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("fdown-isuru-facebook-media-v2")?.browserHandoff).toBe("cors-download");
     expect(getDeliveryHostPolicy("fdown-isuru-facebook-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("twittersaver-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("socialdownloader-space-facebook-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only the exact reviewed SocialDownloader Facebook stream host", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "socialdownloader-space",
+      mode: "redirect",
+      hostPolicyId: "socialdownloader-space-facebook-media-v1",
+      targetUrl: "https://www.socialdownloader.space/api/video?token=fixture"
+    }).hostname).toBe("www.socialdownloader.space");
+    for (const targetUrl of [
+      "https://socialdownloader.space/api/video?token=fixture",
+      "https://evil.socialdownloader.space/api/video?token=fixture",
+      "https://www.socialdownloader.space/api/download?token=fixture",
+      "http://www.socialdownloader.space/api/video?token=fixture",
+      "https://user:pass@www.socialdownloader.space/api/video?token=fixture"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "socialdownloader-space",
+        mode: "redirect",
+        hostPolicyId: "socialdownloader-space-facebook-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
   it("allows only the exact reviewed TwitterSaver media host", () => {
     expect(
