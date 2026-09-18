@@ -2,8 +2,9 @@
 
 ## Status
 
-Accepted for Work Item 76. Facebook remains active; X and TikTok are activated only after their
-individual browser handoff audits.
+Accepted for Work Item 76 and operationally extended by Work Item 77. Facebook remains active;
+X is client-browser-audited and may be enabled as a secondary route. TikTok still requires its
+single isolated browser handoff audit before activation.
 
 ## Decision
 

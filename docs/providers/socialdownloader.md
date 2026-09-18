@@ -1,6 +1,8 @@
 # SocialDownloader.space multi-platform Provider
 
-Status: enabled only as the Facebook Beta secondary route after Work Item 73 production audit
+Status: Facebook is enabled as a Beta secondary route. X has passed the owner-observed client
+browser handoff audit in Work Item 77 and is eligible for secondary activation; TikTok remains
+pending its isolated browser audit.
 
 SocialDownloader is one Provider with platform-specific capabilities. Rollout, circuit, delivery
 policy, and qualification are evaluated per `socialdownloader-space/<platform>/nl`; enabling the
@@ -21,8 +23,10 @@ private, deleted, unsupported and no-media responses are terminal.
 Current capability state:
 
 - Facebook: `delivery_verified`, active secondary after FDown.
-- X and TikTok: protocol evidence is repeatable and versioned Delivery policies exist; production
-  activation remains blocked until the browser handoff audit is recorded for each platform.
+- X: repeatable protocol evidence and a successful owner-observed client-browser handoff; activate
+  only through the platform-specific rollout rule and runtime lists.
+- TikTok: repeatable protocol evidence and a versioned Delivery policy; production activation remains
+  blocked until the one isolated browser handoff audit is complete.
 - Instagram and YouTube: Lab-only failed or deferred evidence; no production delivery mode.
 
 ## Delivery boundary

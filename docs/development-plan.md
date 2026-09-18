@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@9c0a2591f315df11ed2b6a522e48de59243b7623` (Work Item 50 stable TikTok/SEO deployment)
-- Roadmap revision date: 2026-09-13
+- Repository checkpoint: `main@200e09bbf5afbe165143b0baa61c5b235ade5924` (Work Item 76 platform-gated SocialDownloader routes)
+- Roadmap revision date: 2026-09-18
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -1440,3 +1440,17 @@ lists and disables its rollout rule. Instagram and YouTube remain Lab-only, Face
 active Beta secondary route, and the shared request budget/Retry-After protection applies across
 all SocialDownloader platforms. See the [Work Item 76 record](work-item-76-socialdownloader-x-tiktok-routing.md)
 and [ADR-0037](architecture/adr/0037-socialdownloader-platform-activation.md).
+
+### Work Item 77 — SocialDownloader production route closeout
+
+Work Item 77 records the owner-observed local-browser handoff for X and prepares the existing
+SocialDownloader X capability as the sequential fallback after SSSTwitter. The NL VPS is not used
+as a media-download probe: a server-side 403 can coexist with a successful user-browser download
+because Delivery remains a one-use 302 to the Provider stream.
+
+TikTok receives one isolated browser handoff check. SnapTik Monster and TikCD are temporarily
+disabled only for that check and are restored immediately afterward. A successful result retains
+the SocialDownloader TikTok rule as the third route; a failure removes TikTok from both runtime
+lists and leaves it Lab-only. Facebook remains unchanged, while Instagram and YouTube stay
+Lab-only. No adapter, public contract, database, Host policy, media proxy, sitemap or calibration
+change is included. See the [Work Item 77 record](work-item-77-socialdownloader-production-closeout.md).
