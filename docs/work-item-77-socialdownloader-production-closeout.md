@@ -3,9 +3,10 @@
 ## Status
 
 Implementation starts from `main@200e09bbf5afbe165143b0baa61c5b235ade5924` after Work Item 76.
-Facebook remains the active SocialDownloader secondary route. X has passed an owner-observed
-client-browser handoff audit and is ready to become the secondary route after the production
-configuration change. TikTok remains pending one isolated client-browser handoff audit.
+Facebook remains the active SocialDownloader secondary route. X passed the owner-observed
+client-browser handoff audit and is enabled as the sequential secondary route after SSSTwitter.
+TikTok was tested once in isolation and remains Lab-only because the secure Delivery handoff was
+rejected by the Web client.
 
 ## Evidence boundary
 
@@ -32,16 +33,18 @@ The existing `socialdownloader-space / x / nl` rule is enabled with CAS. SSSTwit
 X primary route; SocialDownloader is sequential fallback only. No duplicate rule is created and
 the Facebook route is unchanged.
 
-## TikTok decision
+## TikTok decision and closeout
 
-TikTok receives one isolated browser test using the already-reviewed public sample. The test
+TikTok received one isolated browser test using the already-reviewed public sample. The test
 temporarily disables SnapTik Monster and TikCD so the request can prove the SocialDownloader path,
 then restores both primary routes immediately.
 
-- Success: retain the unique SocialDownloader TikTok rule and add `tiktok` to both platform lists,
-  producing `SnapTik Monster → TikCD → SocialDownloader`.
-- Failure, rate limit, challenge or unusable browser handoff: remove `tiktok` from both lists and
-  CAS-disable only the SocialDownloader TikTok rule. No retry or Host policy expansion is allowed.
+- The resolve step returned one SocialDownloader format, but the single Download action produced
+  `This format is not available for secure delivery`. This is a failed browser handoff, not a
+  reason to broaden Delivery policy or retry the Provider.
+- SnapTik Monster and TikCD were restored to 10000 allocation. The unique SocialDownloader TikTok
+  rule is CAS-disabled and `tiktok` was removed from both runtime platform lists. TikTok therefore
+  remains Lab-only; production order is unchanged.
 
 One request is made for the sample; no repeated synthetic probing is scheduled.
 
@@ -52,6 +55,9 @@ One request is made for the sample; no repeated synthetic probing is scheduled.
 - Admin remains enabled for owner operations; calibration remains disabled.
 - A short health check confirms core-container health, no new API/Delivery 5xx, and no
   SocialDownloader provider-wide cooldown.
+- Final runtime state is `SOCIALDOWNLOADER_APPROVED_PLATFORMS=facebook,x` and
+  `SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS=facebook,x`; Worker revision is
+  `wi77-socialdownloader-x-200e09b`.
 - Instagram and YouTube remain Lab-only.
 
 If the upstream service shows a provider-wide failure, all SocialDownloader platform rules are
