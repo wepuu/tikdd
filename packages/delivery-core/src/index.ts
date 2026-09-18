@@ -257,6 +257,22 @@ export const SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY = DeliveryHostPol
   pathPrefixes: ["/api/video"]
 });
 
+export const SOCIALDOWNLOADER_SPACE_X_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "socialdownloader-space-x-media-v1",
+  providerId: "socialdownloader-space",
+  modes: ["redirect"],
+  hosts: ["www.socialdownloader.space"],
+  pathPrefixes: ["/api/video"]
+});
+
+export const SOCIALDOWNLOADER_SPACE_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "socialdownloader-space-tiktok-media-v1",
+  providerId: "socialdownloader-space",
+  modes: ["redirect"],
+  hosts: ["www.socialdownloader.space"],
+  pathPrefixes: ["/api/video"]
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -269,7 +285,9 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [TIKCD_TIKTOK_MEDIA_HOST_POLICY.id, TIKCD_TIKTOK_MEDIA_HOST_POLICY],
   [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1],
   [FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2.id, FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V2],
-  [SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY]
+  [SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_FACEBOOK_MEDIA_HOST_POLICY],
+  [SOCIALDOWNLOADER_SPACE_X_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_X_MEDIA_HOST_POLICY],
+  [SOCIALDOWNLOADER_SPACE_TIKTOK_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_TIKTOK_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

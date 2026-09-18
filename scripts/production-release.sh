@@ -133,6 +133,18 @@ verify_worker_runtime_config() {
     ENABLE_SOCIALDOWNLOADER_PROVIDER \
     SOCIALDOWNLOADER_TERMS_APPROVED \
     SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED)"
+  expected_socialdownloader_platforms="$(release_value SOCIALDOWNLOADER_APPROVED_PLATFORMS "facebook")"
+  expected_socialdownloader_verified="$(release_value SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS "facebook")"
+  for platform_key in SOCIALDOWNLOADER_APPROVED_PLATFORMS SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS; do
+    expected_platforms="$expected_socialdownloader_platforms"
+    [ "$platform_key" = SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS ] && expected_platforms="$expected_socialdownloader_verified"
+    actual_platforms="$(printf '%s\n' "$env_dump" | awk -F= -v key="$platform_key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+    [ -n "$actual_platforms" ] || actual_platforms="facebook"
+    if [ "$actual_platforms" != "$expected_platforms" ]; then
+      echo "Worker SocialDownloader platform binding mismatch for $platform_key." >&2
+      return 78
+    fi
+  done
   echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled"
 }
 

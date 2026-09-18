@@ -182,6 +182,8 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("fdown-isuru-facebook-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("twittersaver-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("socialdownloader-space-facebook-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("socialdownloader-space-x-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
   });
 
   it("allows only the exact reviewed SocialDownloader Facebook stream host", () => {
@@ -202,6 +204,32 @@ describe("reviewed delivery network policy", () => {
         providerId: "socialdownloader-space",
         mode: "redirect",
         hostPolicyId: "socialdownloader-space-facebook-media-v1",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
+  it.each([
+    ["x", "socialdownloader-space-x-media-v1"],
+    ["tiktok", "socialdownloader-space-tiktok-media-v1"]
+  ])("allows only the exact reviewed SocialDownloader %s stream host", (_platform, hostPolicyId) => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "socialdownloader-space",
+      mode: "redirect",
+      hostPolicyId,
+      targetUrl: "https://www.socialdownloader.space/api/video?token=fixture"
+    }).hostname).toBe("www.socialdownloader.space");
+    for (const targetUrl of [
+      "https://socialdownloader.space/api/video?token=fixture",
+      "https://evil.socialdownloader.space/api/video?token=fixture",
+      "https://www.socialdownloader.space/api/download?token=fixture",
+      "http://www.socialdownloader.space/api/video?token=fixture",
+      "https://user:pass@www.socialdownloader.space/api/video?token=fixture"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "socialdownloader-space",
+        mode: "redirect",
+        hostPolicyId,
         targetUrl
       })).toThrow();
     }

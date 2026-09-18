@@ -21,7 +21,8 @@ private, deleted, unsupported and no-media responses are terminal.
 Current capability state:
 
 - Facebook: `delivery_verified`, active secondary after FDown.
-- X and TikTok: Lab-only fixture evidence; no production delivery mode.
+- X and TikTok: protocol evidence is repeatable and versioned Delivery policies exist; production
+  activation remains blocked until the browser handoff audit is recorded for each platform.
 - Instagram and YouTube: Lab-only failed or deferred evidence; no production delivery mode.
 
 ## Delivery boundary
@@ -34,6 +35,17 @@ CORS/browser-save contract. The browser may therefore open the approved media st
 this is an accepted Beta fallback, not a Provider-page handoff. A separate reviewed change may
 select the existing `cors-download` handoff only after a fresh protocol and browser-save audit.
 
+Platform activation is split into two explicit runtime lists:
+
+```text
+SOCIALDOWNLOADER_APPROVED_PLATFORMS=facebook
+SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS=facebook
+```
+
+The second list must be a subset of the first. A platform absent from either list cannot enter the
+production router. This allows X or TikTok to be rolled back independently while Facebook keeps
+its existing secondary route and Provider-wide gates remain enabled.
+
 ## Activation boundary
 
 All three settings must be true before the Worker can use the Provider:
@@ -45,9 +57,10 @@ SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED=true
 ```
 
 The rollout rule is separate from process gates and is created or updated by CAS. The production
-Facebook order is FDown Isuru first and SocialDownloader second. The unique
-`socialdownloader-space/facebook/nl` rule is enabled only for the audited secondary route; it does
-not authorize X, TikTok, Instagram, or YouTube.
+Facebook order is FDown Isuru first and SocialDownloader second. When separately audited and
+authorized, X appends SocialDownloader after the existing X route, while TikTok appends it after
+SnapTik Monster and TikCD. The unique rollout rule is always platform-specific; the Facebook rule
+does not authorize X, TikTok, Instagram, or YouTube.
 
 ## Rollback
 

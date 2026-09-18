@@ -23,8 +23,10 @@ and deployment checks.
 ## SocialDownloader secondary
 
 Work Item 75 registers `socialdownloader-space` as a multi-platform manifest with independent
-capabilities. Only Facebook currently has a production delivery mode; X, TikTok, Instagram, and
-YouTube remain Lab-only until their own evidence and browser delivery audits are recorded. The
+capabilities. Work Item 76 adds versioned X and TikTok Delivery policies, but the runtime defaults
+still authorize and delivery-verify only Facebook. X and TikTok enter production only when both
+`SOCIALDOWNLOADER_APPROVED_PLATFORMS` and `SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS` contain
+the exact platform after its browser handoff audit. Instagram and YouTube remain Lab-only. The
 adapter also applies one shared fail-fast request budget across platforms.
 The production Facebook Beta route requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
 `SOCIALDOWNLOADER_TERMS_APPROVED`, and `SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED`; all three are

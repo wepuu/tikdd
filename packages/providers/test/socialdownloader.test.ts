@@ -64,6 +64,36 @@ describe("SocialDownloaderProvider", () => {
     expect(JSON.stringify(resolution.result)).not.toContain("socialdownloader.space");
   });
 
+  it("exposes independent X and TikTok delivery capabilities only when verified", async () => {
+    const success = await fixture("socialdownloader-success.json");
+    const input: ResolveInput = {
+      ...facebookInput,
+      sourceUrl: "https://www.tiktok.com/@fixture/video/7615724915156667679",
+      canonicalUrl: "https://www.tiktok.com/@fixture/video/7615724915156667679",
+      platform: "tiktok"
+    };
+    const labProvider = new SocialDownloaderProvider({ enabled: true, approvedPlatforms: ["facebook", "tiktok"] });
+    expect(labProvider.manifest.platforms.find(({ platform }) => platform === "tiktok")).toMatchObject({
+      deliveryModes: [],
+      verificationStatus: "fixture_verified"
+    });
+    const provider = new SocialDownloaderProvider({
+      enabled: true,
+      approvedPlatforms: ["facebook", "tiktok"],
+      deliveryVerifiedPlatforms: ["facebook", "tiktok"],
+      fetchImpl: async (request) => jsonResponse(success, 200, request.toString())
+    });
+    const resolution = await provider.resolve(input);
+    expect(provider.manifest.platforms.find(({ platform }) => platform === "tiktok")).toMatchObject({
+      deliveryModes: ["redirect"],
+      verificationStatus: "delivery_verified"
+    });
+    expect(resolution.candidates[0]).toMatchObject({
+      mode: "redirect",
+      hostPolicyId: "socialdownloader-space-tiktok-media-v1"
+    });
+  });
+
   it("accepts only the reviewed same-host media path", () => {
     const parsed = parseSocialDownloaderResponse(JSON.stringify({
       success: true,
@@ -106,18 +136,19 @@ describe("SocialDownloaderProvider", () => {
     const events: unknown[] = [];
     const provider = new SocialDownloaderProvider({
       enabled: true,
+      approvedPlatforms: ["facebook", "x"],
       diagnosticSink: (event) => events.push(event),
       fetchImpl: async (input) => jsonResponse(JSON.stringify({
         success: true,
         downloadUrl: "https://evil.example.test/api/video?secret=fixture"
       }), 200, input.toString())
     });
-    await expect(provider.resolve(facebookInput)).rejects.toMatchObject({ failureCode: "unsupported_url" });
+    await expect(provider.resolve({ ...facebookInput, platform: "x" })).rejects.toMatchObject({ failureCode: "unsupported_url" });
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       event: "socialdownloader_resolution_diagnostic",
       taskId: facebookInput.taskId,
-      platform: "facebook",
+      platform: "x",
       outcome: "failure",
       failureCode: "unsupported_url"
     });
