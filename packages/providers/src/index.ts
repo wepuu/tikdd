@@ -66,6 +66,11 @@ export {
   type SocialDownloaderDiagnosticPhase,
   type SocialDownloaderContentType
 } from "./adapters/socialdownloader";
+export {
+  SocialDownloaderRequestBudget,
+  type SocialDownloaderBudgetPermit,
+  type SocialDownloaderRequestBudgetOptions
+} from "./socialdownloader-budget";
 export { ProviderCanaryConfigSchema, selectProviderCanaries, selectScheduledProviderCanaries } from "./canary-config";
 export {
   SSSTwitterProvider,

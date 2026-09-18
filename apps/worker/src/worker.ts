@@ -193,6 +193,12 @@ if (fdownIsuruActivation.enabled) {
 if (socialDownloaderActivation.enabled) {
   providers.push(new SocialDownloaderProvider({
     enabled: true,
+    approvedPlatforms: socialDownloaderActivation.approvedPlatforms,
+    requestBudgetOptions: {
+      maxConcurrency: socialDownloaderActivation.maxConcurrency,
+      minIntervalMs: socialDownloaderActivation.minIntervalMs,
+      maxCooldownMs: socialDownloaderActivation.maxCooldownMs
+    },
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

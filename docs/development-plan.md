@@ -1408,3 +1408,18 @@ for the owner-controlled audit and is removed immediately afterward. A failed au
 rollout and gates without changing existing X, Instagram, TikTok, FDown, Admin or calibration
 state. See [Work Item 73](work-item-73-socialdownloader-facebook-production-audit.md) and
 [SocialDownloader Provider notes](providers/socialdownloader.md).
+
+### Work Item 75 — Multi-platform Provider routing and Facebook Beta closeout
+
+Work Item 75 models SocialDownloader as one Provider with independent Facebook, X, TikTok,
+Instagram, and YouTube capabilities. Rollout rules, circuits, Delivery policies, and Admin health
+remain keyed by `provider/platform/region`. Only Facebook is delivery-verified and active in
+production; the other capabilities remain Lab-only until their own two-sample and browser handoff
+evidence is complete.
+
+Because the hosted service can rate-limit the NL egress IP across platforms, the Worker applies a
+shared fail-fast concurrency/interval budget and honors bounded `Retry-After` cooldowns. Admin Beta
+Health now includes Facebook while remaining a sanitized read-only aggregate. The four manually
+verified Facebook samples close the operational acceptance evidence; Facebook remains Beta and
+outside the sitemap. See the [Work Item 75 record](work-item-75-multiplatform-provider-routing.md)
+and [ADR-0036](architecture/adr/0036-multi-platform-provider-routing.md).

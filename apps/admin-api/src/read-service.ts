@@ -782,7 +782,7 @@ export class AdminReadService {
     }
     const report = await withTimeout(this.options.beta.report({
       hours,
-      platforms: ["x", "instagram", "tiktok"],
+      platforms: ["x", "instagram", "tiktok", "facebook"],
       now: this.now()
     }), this.options.readTimeoutMs * 2);
     return mapBetaReport(report);

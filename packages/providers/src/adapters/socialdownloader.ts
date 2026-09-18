@@ -1,7 +1,12 @@
 import { z } from "zod";
-import type { ProviderFailureCode } from "@tikdd/contracts";
+import type { Platform, ProviderFailureCode } from "@tikdd/contracts";
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
+import {
+  SocialDownloaderRequestBudget,
+  type SocialDownloaderBudgetPermit,
+  type SocialDownloaderRequestBudgetOptions
+} from "../socialdownloader-budget";
 import {
   createRedirectResolution,
   requestText,
@@ -12,10 +17,17 @@ import {
 const API_ORIGIN = "https://www.socialdownloader.space";
 const API_PATH = "/api/download";
 const API_HOSTS = new Set(["www.socialdownloader.space"]);
-const MEDIA_HOST_POLICY_ID = "socialdownloader-space-facebook-media-v1";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MEDIA_PATH = "/api/video";
+const SUPPORTED_PLATFORMS = ["facebook", "x", "tiktok", "instagram", "youtube"] as const;
+const MEDIA_POLICY_IDS: Record<(typeof SUPPORTED_PLATFORMS)[number], string> = {
+  facebook: "socialdownloader-space-facebook-media-v1",
+  x: "socialdownloader-space-x-media-v1",
+  tiktok: "socialdownloader-space-tiktok-media-v1",
+  instagram: "socialdownloader-space-instagram-media-v1",
+  youtube: "socialdownloader-space-youtube-media-v1"
+};
 
 const ResponseSchema = z.object({
   success: z.boolean().nullish(),
@@ -34,6 +46,9 @@ export interface SocialDownloaderProviderOptions {
   enabled?: boolean;
   fetchImpl?: ProviderFetch;
   diagnosticSink?: (event: SocialDownloaderDiagnosticEvent) => void;
+  approvedPlatforms?: readonly Platform[];
+  requestBudget?: SocialDownloaderRequestBudget;
+  requestBudgetOptions?: SocialDownloaderRequestBudgetOptions;
 }
 
 export type SocialDownloaderDiagnosticPhase = "request" | "payload" | "resources" | "completed";
@@ -42,7 +57,7 @@ export type SocialDownloaderContentType = "json" | "html" | "text" | "other" | "
 export interface SocialDownloaderDiagnosticEvent {
   event: "socialdownloader_resolution_diagnostic";
   taskId: string;
-  platform: "facebook";
+  platform: Platform;
   phase: SocialDownloaderDiagnosticPhase;
   outcome: "success" | "failure";
   httpStatus: number | null;
@@ -98,7 +113,7 @@ function mapFailure(status: number, message: string): never {
     throw new ProviderError("The Facebook post is unavailable.", "content_not_found", false, false);
   }
   if (/invalid|unsupported|no media|no downloadable/i.test(detail) || status === 422) {
-    throw new ProviderError("SocialDownloader does not support this Facebook URL.", "unsupported_url", false, false);
+    throw new ProviderError("SocialDownloader does not support this URL.", "unsupported_url", false, false);
   }
   if (status === 401) {
     throw new ProviderError("SocialDownloader requires authentication.", "authentication_required", false, false);
@@ -198,10 +213,14 @@ export class SocialDownloaderProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly fetchImpl: ProviderFetch;
   private readonly diagnosticSink: ((event: SocialDownloaderDiagnosticEvent) => void) | null;
+  private readonly approvedPlatforms: ReadonlySet<string>;
+  private readonly requestBudget: SocialDownloaderRequestBudget;
 
   constructor(options: SocialDownloaderProviderOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.diagnosticSink = options.diagnosticSink ?? null;
+    this.approvedPlatforms = new Set(options.approvedPlatforms ?? ["facebook"]);
+    this.requestBudget = options.requestBudget ?? new SocialDownloaderRequestBudget(options.requestBudgetOptions);
     this.manifest = {
       id: "socialdownloader-space",
       displayName: "SocialDownloader.space",
@@ -210,20 +229,22 @@ export class SocialDownloaderProvider implements ResolverProvider {
       regions: ["nl"],
       timeoutMs: REQUEST_TIMEOUT_MS,
       costWeight: 60,
-      // Facebook is the only platform with two repeatable samples in WI71.
-      // X/TikTok remain Lab-only until a second sample and browser delivery audit exist.
-      platforms: [{
-        platform: "facebook",
-        priority: 650,
-        deliveryModes: ["redirect"],
-        verificationStatus: "delivery_verified"
-      }]
+      // Each capability is independently qualified and routed. Facebook is the only
+      // production-delivery capability; the other entries remain Lab-only until their
+      // own two-sample and browser handoff evidence is complete.
+      platforms: [
+        { platform: "facebook", priority: 650, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" },
+        { platform: "x", priority: 650, deliveryModes: [], verificationStatus: "fixture_verified" },
+        { platform: "tiktok", priority: 650, deliveryModes: [], verificationStatus: "fixture_verified" },
+        { platform: "instagram", priority: 650, deliveryModes: [], verificationStatus: "canary_failed" },
+        { platform: "youtube", priority: 650, deliveryModes: [], verificationStatus: "canary_failed" }
+      ]
     };
   }
 
   async resolve(input: ResolveInput) {
-    if (input.platform !== "facebook") {
-      throw new ProviderError("SocialDownloader only accepts Facebook URLs in this release.", "unsupported_url", false, true);
+    if (!SUPPORTED_PLATFORMS.includes(input.platform as (typeof SUPPORTED_PLATFORMS)[number]) || !this.approvedPlatforms.has(input.platform)) {
+      throw new ProviderError("SocialDownloader is not approved for this platform.", "unsupported_url", false, true);
     }
     const startedAt = Date.now();
     let phase: SocialDownloaderDiagnosticPhase = "request";
@@ -253,6 +274,10 @@ export class SocialDownloaderProvider implements ResolverProvider {
       }
     };
 
+    const permit: SocialDownloaderBudgetPermit | null = this.requestBudget.tryAcquire();
+    if (!permit) {
+      throw new ProviderError("SocialDownloader is temporarily rate limited.", "provider_unavailable", true, true);
+    }
     try {
       const response = await requestText(
         this.fetchImpl,
@@ -278,6 +303,9 @@ export class SocialDownloaderProvider implements ResolverProvider {
               phase = "payload";
               httpStatus = observation.status;
               contentType = contentTypeCategory(observation.headers);
+              if (observation.status === 429) {
+                this.requestBudget.applyRetryAfter(observation.headers.get("retry-after"));
+              }
             }
           }
         }
@@ -295,9 +323,9 @@ export class SocialDownloaderProvider implements ResolverProvider {
         {
           ...parsedWithDiagnostics.parsed,
           thumbnailUrl: null,
-          warnings: ["SocialDownloader is an experimental Facebook secondary Provider."]
+          warnings: [`SocialDownloader is an experimental ${input.platform} secondary Provider.`]
         },
-        { hostPolicyId: MEDIA_HOST_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
+        { hostPolicyId: MEDIA_POLICY_IDS[input.platform as (typeof SUPPORTED_PLATFORMS)[number]], maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
       );
     } catch (error) {
       emit("failure", diagnosticFailureCode(error));
@@ -306,6 +334,8 @@ export class SocialDownloaderProvider implements ResolverProvider {
         throw new ProviderError("SocialDownloader timed out.", "provider_timeout", true, true);
       }
       throw new ProviderError("SocialDownloader could not be reached.", "provider_unavailable", true, true);
+    } finally {
+      permit.release();
     }
   }
 }

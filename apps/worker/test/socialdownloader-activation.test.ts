@@ -6,7 +6,11 @@ describe("SocialDownloader activation", () => {
     expect(loadSocialDownloaderActivationConfiguration({})).toEqual({
       enabled: false,
       termsApproved: false,
-      deliveryAuditApproved: false
+      deliveryAuditApproved: false,
+      approvedPlatforms: ["facebook"],
+      maxConcurrency: 1,
+      minIntervalMs: 750,
+      maxCooldownMs: 60_000
     });
   });
 
@@ -22,6 +26,28 @@ describe("SocialDownloader activation", () => {
       ENABLE_SOCIALDOWNLOADER_PROVIDER: "true",
       SOCIALDOWNLOADER_TERMS_APPROVED: "true",
       SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED: "true"
-    })).toEqual({ enabled: true, termsApproved: true, deliveryAuditApproved: true });
+    })).toEqual({
+      enabled: true,
+      termsApproved: true,
+      deliveryAuditApproved: true,
+      approvedPlatforms: ["facebook"],
+      maxConcurrency: 1,
+      minIntervalMs: 750,
+      maxCooldownMs: 60_000
+    });
+  });
+
+  it("parses a bounded platform allowlist and shared budget", () => {
+    expect(loadSocialDownloaderActivationConfiguration({
+      SOCIALDOWNLOADER_APPROVED_PLATFORMS: "facebook,x",
+      SOCIALDOWNLOADER_MAX_CONCURRENCY: "2",
+      SOCIALDOWNLOADER_MIN_INTERVAL_MS: "1200",
+      SOCIALDOWNLOADER_MAX_COOLDOWN_MS: "90000"
+    })).toMatchObject({
+      approvedPlatforms: ["facebook", "x"],
+      maxConcurrency: 2,
+      minIntervalMs: 1200,
+      maxCooldownMs: 90000
+    });
   });
 });

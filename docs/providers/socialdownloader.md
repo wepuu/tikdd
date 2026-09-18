@@ -1,6 +1,10 @@
-# SocialDownloader.space Facebook Provider
+# SocialDownloader.space multi-platform Provider
 
-Status: enabled as the Facebook Beta secondary route after Work Item 73 production audit
+Status: enabled only as the Facebook Beta secondary route after Work Item 73 production audit
+
+SocialDownloader is one Provider with platform-specific capabilities. Rollout, circuit, delivery
+policy, and qualification are evaluated per `socialdownloader-space/<platform>/nl`; enabling the
+Provider process does not authorize every declared platform.
 
 ## Reviewed protocol
 
@@ -11,8 +15,14 @@ through `@tikdd/contracts`, and never exposes the upstream media address in the 
 
 The Provider is restricted to the NL region, has a 10-second request timeout, one request per
 resolve job, no queue replay, and no user Cookie, login, browser state, CAPTCHA or challenge
-bypass. Explicit private, deleted, unsupported and no-media responses are terminal; only bounded
-upstream failures may fall through from FDown to this Provider.
+bypass. A shared fail-fast budget covers all platform requests and honors `Retry-After`; explicit
+private, deleted, unsupported and no-media responses are terminal.
+
+Current capability state:
+
+- Facebook: `delivery_verified`, active secondary after FDown.
+- X and TikTok: Lab-only fixture evidence; no production delivery mode.
+- Instagram and YouTube: Lab-only failed or deferred evidence; no production delivery mode.
 
 ## Delivery boundary
 

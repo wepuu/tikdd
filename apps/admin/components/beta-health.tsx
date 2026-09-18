@@ -8,7 +8,7 @@ type BetaHealthResource =
   | { status: "ready"; data: AdminBetaHealth }
   | { status: "unavailable"; data: null };
 
-const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram", tiktok: "TikTok" };
+const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook" };
 const failureLabels: Record<string, string> = {
   timeout: "超时",
   provider_timeout: "超时",
@@ -70,7 +70,7 @@ export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: Beta
     return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta 健康暂时不可用</strong><p>汇总读取已安全失败；没有修改流量或 Provider 状态。</p></div>;
   }
   const report = view.data;
-  const platforms = ["x", "instagram", "tiktok"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
+  const platforms = ["x", "instagram", "tiktok", "facebook"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
   return (
     <div className="beta-health-dashboard panel">
       <header className="beta-health-toolbar">

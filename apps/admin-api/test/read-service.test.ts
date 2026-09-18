@@ -162,7 +162,7 @@ describe("Admin read composition", () => {
     expect(() => assertAdminSafeValue(report)).not.toThrow();
   });
 
-  it("requests the three supported public Beta platforms", async () => {
+  it("requests the four supported public Beta platforms", async () => {
     let requestedPlatforms: readonly string[] | undefined;
     const service = new AdminReadService(options({
       beta: {
@@ -174,7 +174,7 @@ describe("Admin read composition", () => {
     }));
 
     await service.getBetaHealth();
-    expect(requestedPlatforms).toEqual(["x", "instagram", "tiktok"]);
+    expect(requestedPlatforms).toEqual(["x", "instagram", "tiktok", "facebook"]);
   });
 
   it("explains support as a seven-stage ladder without confusing catalog recognition with availability", async () => {
