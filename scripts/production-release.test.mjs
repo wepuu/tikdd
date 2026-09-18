@@ -45,5 +45,8 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"SocialDownloader"/);
     expect(releaseScript).toMatch(/socialdownloader_enabled=/);
+    expect(releaseScript).toMatch(/SOCIALDOWNLOADER_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/Worker SocialDownloader platform binding mismatch/);
   });
 });

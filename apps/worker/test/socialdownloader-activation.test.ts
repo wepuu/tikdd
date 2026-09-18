@@ -8,6 +8,7 @@ describe("SocialDownloader activation", () => {
       termsApproved: false,
       deliveryAuditApproved: false,
       approvedPlatforms: ["facebook"],
+      deliveryVerifiedPlatforms: ["facebook"],
       maxConcurrency: 1,
       minIntervalMs: 750,
       maxCooldownMs: 60_000
@@ -31,6 +32,7 @@ describe("SocialDownloader activation", () => {
       termsApproved: true,
       deliveryAuditApproved: true,
       approvedPlatforms: ["facebook"],
+      deliveryVerifiedPlatforms: ["facebook"],
       maxConcurrency: 1,
       minIntervalMs: 750,
       maxCooldownMs: 60_000
@@ -39,15 +41,30 @@ describe("SocialDownloader activation", () => {
 
   it("parses a bounded platform allowlist and shared budget", () => {
     expect(loadSocialDownloaderActivationConfiguration({
-      SOCIALDOWNLOADER_APPROVED_PLATFORMS: "facebook,x",
+      SOCIALDOWNLOADER_APPROVED_PLATFORMS: "facebook,x,tiktok",
+      SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS: "facebook,x",
       SOCIALDOWNLOADER_MAX_CONCURRENCY: "2",
       SOCIALDOWNLOADER_MIN_INTERVAL_MS: "1200",
       SOCIALDOWNLOADER_MAX_COOLDOWN_MS: "90000"
     })).toMatchObject({
-      approvedPlatforms: ["facebook", "x"],
+      approvedPlatforms: ["facebook", "x", "tiktok"],
+      deliveryVerifiedPlatforms: ["facebook", "x"],
       maxConcurrency: 2,
       minIntervalMs: 1200,
       maxCooldownMs: 90000
     });
+  });
+
+  it("requires verified platforms to be approved", () => {
+    expect(() => loadSocialDownloaderActivationConfiguration({
+      SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS: "facebook,x"
+    })).toThrow(/must be a subset/);
+  });
+
+  it("rejects verified platforms without a reviewed Delivery policy", () => {
+    expect(() => loadSocialDownloaderActivationConfiguration({
+      SOCIALDOWNLOADER_APPROVED_PLATFORMS: "facebook,instagram",
+      SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS: "facebook,instagram"
+    })).toThrow(/without a reviewed Delivery policy/);
   });
 });

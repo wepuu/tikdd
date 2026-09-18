@@ -35,6 +35,8 @@
 - [ADR-0033: Versioned Facebook fbcdn Delivery policy](0033-versioned-facebook-fbcdn-delivery-policy.md)
 - [ADR-0034: FDown thumbnails and browser-owned Facebook saves](0034-fdown-thumbnail-client-save.md)
 - [ADR-0035: SocialDownloader Facebook secondary routing](0035-socialdownloader-secondary-routing.md)
+- [ADR-0036: Multi-platform Provider routing isolation](0036-multi-platform-provider-routing.md)
+- [ADR-0037: SocialDownloader platform-level activation](0037-socialdownloader-platform-activation.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

@@ -194,6 +194,7 @@ if (socialDownloaderActivation.enabled) {
   providers.push(new SocialDownloaderProvider({
     enabled: true,
     approvedPlatforms: socialDownloaderActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: socialDownloaderActivation.deliveryVerifiedPlatforms,
     requestBudgetOptions: {
       maxConcurrency: socialDownloaderActivation.maxConcurrency,
       minIntervalMs: socialDownloaderActivation.minIntervalMs,

@@ -1423,3 +1423,20 @@ Health now includes Facebook while remaining a sanitized read-only aggregate. Th
 verified Facebook samples close the operational acceptance evidence; Facebook remains Beta and
 outside the sitemap. See the [Work Item 75 record](work-item-75-multiplatform-provider-routing.md)
 and [ADR-0036](architecture/adr/0036-multi-platform-provider-routing.md).
+
+### Work Item 76 — SocialDownloader X/TikTok secondary routing
+
+Work Item 76 converts the existing NL protocol evidence for SocialDownloader X and TikTok into
+independently gated secondary capabilities. X remains behind the existing approved X route; TikTok
+keeps `SnapTik Monster → TikCD` ahead of SocialDownloader. Each capability has its own versioned
+Delivery policy, rollout tuple, circuit and rollback decision even though both use the reviewed
+`www.socialdownloader.space/api/video` stream.
+
+The Worker now separates `SOCIALDOWNLOADER_APPROVED_PLATFORMS` from
+`SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS`; both default to `facebook`, and the latter must be
+a subset of the former. This prevents a new image from creating X/TikTok traffic before the
+platform-specific browser handoff audit. A platform rollback removes only that platform from both
+lists and disables its rollout rule. Instagram and YouTube remain Lab-only, Facebook remains the
+active Beta secondary route, and the shared request budget/Retry-After protection applies across
+all SocialDownloader platforms. See the [Work Item 76 record](work-item-76-socialdownloader-x-tiktok-routing.md)
+and [ADR-0037](architecture/adr/0037-socialdownloader-platform-activation.md).

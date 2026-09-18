@@ -21,6 +21,7 @@ const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MEDIA_PATH = "/api/video";
 const SUPPORTED_PLATFORMS = ["facebook", "x", "tiktok", "instagram", "youtube"] as const;
+const DELIVERY_POLICY_PLATFORMS = new Set<Platform>(["facebook", "x", "tiktok"]);
 const MEDIA_POLICY_IDS: Record<(typeof SUPPORTED_PLATFORMS)[number], string> = {
   facebook: "socialdownloader-space-facebook-media-v1",
   x: "socialdownloader-space-x-media-v1",
@@ -47,6 +48,7 @@ export interface SocialDownloaderProviderOptions {
   fetchImpl?: ProviderFetch;
   diagnosticSink?: (event: SocialDownloaderDiagnosticEvent) => void;
   approvedPlatforms?: readonly Platform[];
+  deliveryVerifiedPlatforms?: readonly Platform[];
   requestBudget?: SocialDownloaderRequestBudget;
   requestBudgetOptions?: SocialDownloaderRequestBudgetOptions;
 }
@@ -104,16 +106,16 @@ function contentTypeCategory(headers: Headers): SocialDownloaderContentType {
   return "other";
 }
 
-function mapFailure(status: number, message: string): never {
+function mapFailure(platform: Platform, status: number, message: string): never {
   const detail = `${status} ${message}`.trim();
   if (/private|permission|restricted/i.test(detail)) {
-    throw new ProviderError("The Facebook post is private or restricted.", "content_private", false, false);
+    throw new ProviderError(`The ${platform} post is private or restricted.`, "content_private", false, false);
   }
   if (/not.?found|deleted|removed|unavailable/i.test(detail)) {
-    throw new ProviderError("The Facebook post is unavailable.", "content_not_found", false, false);
+    throw new ProviderError(`The ${platform} post is unavailable.`, "content_not_found", false, false);
   }
   if (/invalid|unsupported|no media|no downloadable/i.test(detail) || status === 422) {
-    throw new ProviderError("SocialDownloader does not support this URL.", "unsupported_url", false, false);
+    throw new ProviderError(`SocialDownloader does not support this ${platform} URL.`, "unsupported_url", false, false);
   }
   if (status === 401) {
     throw new ProviderError("SocialDownloader requires authentication.", "authentication_required", false, false);
@@ -142,7 +144,8 @@ function reviewedMediaUrl(value: unknown): { url: string | null; reason: "valid"
 
 function parseSocialDownloaderResponseInternal(
   body: string,
-  httpStatus = 200
+  httpStatus = 200,
+  platform: Platform = "facebook"
 ): {
   parsed: { title: string | null; formats: ParsedFormat[] };
   diagnostics: SocialDownloaderParseDiagnostics;
@@ -162,7 +165,7 @@ function parseSocialDownloaderResponseInternal(
     String(payload.status ?? "").toLowerCase() === "success" ||
     (payload.success == null && !payload.status && hasObservedMediaField);
   if (httpStatus < 200 || httpStatus >= 300 || !success) {
-    mapFailure(httpStatus, detail || `status ${String(payload.status ?? "missing")}`);
+    mapFailure(platform, httpStatus, detail || `status ${String(payload.status ?? "missing")}`);
   }
 
   const candidates = [payload.downloadUrl, payload.videoUrl].filter((value): value is string => Boolean(value));
@@ -214,13 +217,34 @@ export class SocialDownloaderProvider implements ResolverProvider {
   private readonly fetchImpl: ProviderFetch;
   private readonly diagnosticSink: ((event: SocialDownloaderDiagnosticEvent) => void) | null;
   private readonly approvedPlatforms: ReadonlySet<string>;
+  private readonly deliveryVerifiedPlatforms: ReadonlySet<string>;
   private readonly requestBudget: SocialDownloaderRequestBudget;
 
   constructor(options: SocialDownloaderProviderOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.diagnosticSink = options.diagnosticSink ?? null;
     this.approvedPlatforms = new Set(options.approvedPlatforms ?? ["facebook"]);
+    this.deliveryVerifiedPlatforms = new Set(options.deliveryVerifiedPlatforms ?? ["facebook"]);
+    const unsupportedDeliveryPlatform = [...this.deliveryVerifiedPlatforms].find(
+      (platform) => !DELIVERY_POLICY_PLATFORMS.has(platform as Platform)
+    );
+    if (unsupportedDeliveryPlatform) {
+      throw new Error(`SocialDownloader has no reviewed Delivery policy for ${unsupportedDeliveryPlatform}.`);
+    }
     this.requestBudget = options.requestBudget ?? new SocialDownloaderRequestBudget(options.requestBudgetOptions);
+    const capability = (
+      platform: (typeof SUPPORTED_PLATFORMS)[number],
+      labStatus: "fixture_verified" | "canary_failed"
+    ) => {
+      const deliveryModes: ("redirect" | "proxy" | "temporary-object")[] =
+        this.deliveryVerifiedPlatforms.has(platform) ? ["redirect"] : [];
+      return {
+        platform,
+        priority: 650,
+        deliveryModes,
+        verificationStatus: this.deliveryVerifiedPlatforms.has(platform) ? "delivery_verified" : labStatus
+      } as const;
+    };
     this.manifest = {
       id: "socialdownloader-space",
       displayName: "SocialDownloader.space",
@@ -229,15 +253,14 @@ export class SocialDownloaderProvider implements ResolverProvider {
       regions: ["nl"],
       timeoutMs: REQUEST_TIMEOUT_MS,
       costWeight: 60,
-      // Each capability is independently qualified and routed. Facebook is the only
-      // production-delivery capability; the other entries remain Lab-only until their
-      // own two-sample and browser handoff evidence is complete.
+      // Each capability is independently qualified and routed. The runtime delivery-verified
+      // allowlist defaults to Facebook and is narrowed by the Worker activation boundary.
       platforms: [
-        { platform: "facebook", priority: 650, deliveryModes: ["redirect"], verificationStatus: "delivery_verified" },
-        { platform: "x", priority: 650, deliveryModes: [], verificationStatus: "fixture_verified" },
-        { platform: "tiktok", priority: 650, deliveryModes: [], verificationStatus: "fixture_verified" },
-        { platform: "instagram", priority: 650, deliveryModes: [], verificationStatus: "canary_failed" },
-        { platform: "youtube", priority: 650, deliveryModes: [], verificationStatus: "canary_failed" }
+        capability("facebook", "fixture_verified"),
+        capability("x", "fixture_verified"),
+        capability("tiktok", "fixture_verified"),
+        capability("instagram", "canary_failed"),
+        capability("youtube", "canary_failed")
       ]
     };
   }
@@ -256,7 +279,7 @@ export class SocialDownloaderProvider implements ResolverProvider {
         this.diagnosticSink?.({
           event: "socialdownloader_resolution_diagnostic",
           taskId: input.taskId,
-          platform: "facebook",
+          platform: input.platform,
           phase,
           outcome,
           httpStatus,
@@ -311,7 +334,11 @@ export class SocialDownloaderProvider implements ResolverProvider {
         }
       );
       phase = "payload";
-      const parsedWithDiagnostics = parseSocialDownloaderResponseInternal(response.body, response.response.status);
+      const parsedWithDiagnostics = parseSocialDownloaderResponseInternal(
+        response.body,
+        response.response.status,
+        input.platform
+      );
       parseDiagnostics = parsedWithDiagnostics.diagnostics;
       phase = "resources";
       phase = "completed";
