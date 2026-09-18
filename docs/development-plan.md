@@ -1448,9 +1448,10 @@ SocialDownloader X capability as the sequential fallback after SSSTwitter. The N
 as a media-download probe: a server-side 403 can coexist with a successful user-browser download
 because Delivery remains a one-use 302 to the Provider stream.
 
-TikTok receives one isolated browser handoff check. SnapTik Monster and TikCD are temporarily
-disabled only for that check and are restored immediately afterward. A successful result retains
-the SocialDownloader TikTok rule as the third route; a failure removes TikTok from both runtime
-lists and leaves it Lab-only. Facebook remains unchanged, while Instagram and YouTube stay
-Lab-only. No adapter, public contract, database, Host policy, media proxy, sitemap or calibration
-change is included. See the [Work Item 77 record](work-item-77-socialdownloader-production-closeout.md).
+TikTok received one isolated browser handoff check. SnapTik Monster and TikCD were temporarily
+disabled only for that check and restored immediately afterward. The resolve returned a format,
+but the Download action was rejected as unavailable for secure Delivery, so the SocialDownloader
+TikTok rule was disabled and TikTok was removed from both runtime lists. TikTok remains Lab-only;
+Facebook and X remain active, while Instagram and YouTube stay Lab-only. No adapter, public
+contract, database, Host policy, media proxy, sitemap or calibration change is included. See the
+[Work Item 77 record](work-item-77-socialdownloader-production-closeout.md).

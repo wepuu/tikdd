@@ -1,8 +1,9 @@
 # SocialDownloader.space multi-platform Provider
 
-Status: Facebook is enabled as a Beta secondary route. X has passed the owner-observed client
-browser handoff audit in Work Item 77 and is eligible for secondary activation; TikTok remains
-pending its isolated browser audit.
+Status: Facebook is enabled as a Beta secondary route. X passed the owner-observed client-browser
+handoff audit in Work Item 77 and is enabled as the sequential secondary route. TikTok remains
+Lab-only: its isolated browser handoff was rejected by secure Delivery and its production route
+was rolled back.
 
 SocialDownloader is one Provider with platform-specific capabilities. Rollout, circuit, delivery
 policy, and qualification are evaluated per `socialdownloader-space/<platform>/nl`; enabling the
@@ -23,10 +24,10 @@ private, deleted, unsupported and no-media responses are terminal.
 Current capability state:
 
 - Facebook: `delivery_verified`, active secondary after FDown.
-- X: repeatable protocol evidence and a successful owner-observed client-browser handoff; activate
+- X: repeatable protocol evidence and a successful owner-observed client-browser handoff; active
   only through the platform-specific rollout rule and runtime lists.
-- TikTok: repeatable protocol evidence and a versioned Delivery policy; production activation remains
-  blocked until the one isolated browser handoff audit is complete.
+- TikTok: repeatable protocol evidence and a versioned Delivery policy; the isolated browser
+  handoff failed at secure Delivery, so production activation remains disabled.
 - Instagram and YouTube: Lab-only failed or deferred evidence; no production delivery mode.
 
 ## Delivery boundary
@@ -61,10 +62,10 @@ SOCIALDOWNLOADER_DELIVERY_AUDIT_APPROVED=true
 ```
 
 The rollout rule is separate from process gates and is created or updated by CAS. The production
-Facebook order is FDown Isuru first and SocialDownloader second. When separately audited and
-authorized, X appends SocialDownloader after the existing X route, while TikTok appends it after
-SnapTik Monster and TikCD. The unique rollout rule is always platform-specific; the Facebook rule
-does not authorize X, TikTok, Instagram, or YouTube.
+Facebook order is FDown Isuru first and SocialDownloader second. X appends SocialDownloader after
+the existing X route. TikTok currently stops at SnapTik Monster then TikCD; a future
+SocialDownloader retry requires a new isolated audit. The unique rollout rule is always
+platform-specific; the Facebook rule does not authorize X, TikTok, Instagram, or YouTube.
 
 ## Rollback
 

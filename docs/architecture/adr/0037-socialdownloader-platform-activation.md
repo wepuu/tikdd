@@ -3,8 +3,8 @@
 ## Status
 
 Accepted for Work Item 76 and operationally extended by Work Item 77. Facebook remains active;
-X is client-browser-audited and may be enabled as a secondary route. TikTok still requires its
-single isolated browser handoff audit before activation.
+X is client-browser-audited and enabled as a secondary route. TikTok's single isolated browser
+handoff audit failed at secure Delivery, so TikTok remains Lab-only.
 
 ## Decision
 
@@ -26,7 +26,8 @@ route offline.
 ## Route order
 
 - X: existing approved X Provider first, then SocialDownloader.
-- TikTok: SnapTik Monster, then TikCD, then SocialDownloader.
+- TikTok: SnapTik Monster, then TikCD. SocialDownloader remains a Lab-only candidate because its
+  isolated browser handoff was rejected by the secure Delivery check.
 
 Fallback remains sequential and bounded. Terminal URL/private/content errors do not advance to the
 next Provider. SocialDownloader keeps one request per task and a shared fail-fast budget across all
@@ -42,6 +43,7 @@ upstream URLs remain forbidden.
 ## Rollback
 
 If one platform fails, CAS-disable only its rollout rule, remove it from both runtime lists, and
-recreate the Worker with the release-env-bound operation. If the upstream service has a provider-wide
-outage or rate-limit event, disable all SocialDownloader platform rules while keeping the existing
-primary Providers available. No host policy is broadened during rollback.
+recreate the Worker with the release-env-bound operation. Work Item 77 applied this rollback to
+TikTok after the secure handoff rejection; X and Facebook remain unchanged. If the upstream service
+has a provider-wide outage or rate-limit event, disable all SocialDownloader platform rules while
+keeping the existing primary Providers available. No host policy is broadened during rollback.
