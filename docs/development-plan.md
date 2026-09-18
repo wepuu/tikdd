@@ -1455,3 +1455,16 @@ TikTok rule was disabled and TikTok was removed from both runtime lists. TikTok 
 Facebook and X remain active, while Instagram and YouTube stay Lab-only. No adapter, public
 contract, database, Host policy, media proxy, sitemap or calibration change is included. See the
 [Work Item 77 record](work-item-77-socialdownloader-production-closeout.md).
+
+### Work Item 78 — Multi-platform route operations pulse
+
+Work Item 78 adds a compact read-only `平台路由体温` view to the Admin Providers workspace. It
+reuses the sanitized effective route plan, route health summaries, and persisted Beta aggregates to
+show each platform's active primary/fallback chain, sample count, weighted success/fallback rates,
+and latest observation. Missing samples remain `等待自然流量`; disabled capabilities remain
+`当前无生产路线`.
+
+This slice adds no Provider request, public endpoint, database migration, rollout change, Host
+policy, media path, or second routing authority. SocialDownloader/TikTok stays disabled and
+Lab-only; X, Facebook, Instagram, and the TikTok SnapTik → TikCD chain retain their existing
+production state. See the [Work Item 78 record](work-item-78-route-operations-pulse.md).
