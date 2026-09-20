@@ -1543,3 +1543,12 @@ future release must separately audit browser handoff/save behavior; a 302 that o
 is not proof of a saved file. SaveVideo and DownBot remain deferred candidates, and existing X,
 Instagram, TikTok, Facebook, Pinterest, Admin and calibration state is unchanged. See [Work Item
 83](work-item-83-viddown-vimeo-beta.md) and [ADR-0039](architecture/adr/0039-viddown-vimeo-direct-cdn.md).
+
+### Work Item 84 — VidDown Vimeo handoff diagnostic closeout
+
+The first NL recheck of the two owner-supplied Vimeo samples returned HTTP 200 for the page, token,
+and loader requests, but the loader reported `state=1` with an error field and no MP4 candidates.
+Because no reviewed media URL was returned, no Range/CORS/browser-save decision could be made. VidDown
+therefore remains deferred: its existing redirect-only policy, three activation gates, and rollout
+tuple remain unchanged and disabled. The adapter now classifies bounded error fields without exposing
+upstream details. See [Work Item 84](work-item-84-viddown-vimeo-handoff.md).

@@ -99,5 +99,20 @@ describe("VidDown Vimeo adapter", () => {
   it("classifies an unsuccessful upstream response without retrying it in the adapter", () => {
     expect(() => parseVidDownResponse(JSON.stringify({ state: 1, msg: "private video" }), 200))
       .toThrow(/private Vimeo/i);
+    expect(() => parseVidDownResponse(JSON.stringify({
+      state: 1,
+      data: null,
+      error: { code: "content_not_found" }
+    }), 200)).toThrow(/could not find/i);
+    expect(() => parseVidDownResponse(JSON.stringify({
+      state: 1,
+      data: null,
+      error: { type: "unsupported_url" }
+    }), 200)).toThrow(/does not support/i);
+    expect(() => parseVidDownResponse(JSON.stringify({
+      state: 1,
+      data: null,
+      error: { status: "temporary_failure" }
+    }), 200)).toThrow(/unsuccessful response/i);
   });
 });

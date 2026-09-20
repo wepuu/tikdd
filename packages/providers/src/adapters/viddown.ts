@@ -147,8 +147,26 @@ function findThumbnail(value: unknown): string | null {
   return null;
 }
 
-function parseFailure(message: string | null, status: number): never {
-  const detail = `${status} ${message ?? ""}`;
+function failureDetail(value: unknown, depth = 0): string {
+  if (depth > 2 || value === null || value === undefined) return "";
+  if (typeof value === "string") return value.slice(0, 200);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    return value.slice(0, 8).map((entry) => failureDetail(entry, depth + 1)).filter(Boolean).join(" ");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => /code|error|message|reason|status|type/i.test(key))
+      .slice(0, 8)
+      .map(([key, entry]) => `${key} ${failureDetail(entry, depth + 1)}`)
+      .filter(Boolean)
+      .join(" ");
+  }
+  return "";
+}
+
+function parseFailure(message: string | null, status: number, error: unknown = null): never {
+  const detail = `${status} ${message ?? ""} ${failureDetail(error)}`;
   if (/private|permission|restricted/i.test(detail)) {
     throw new ProviderError("VidDown cannot resolve private Vimeo media.", "content_private", false, false);
   }
@@ -179,7 +197,7 @@ function parseLoaderResponse(body: string, httpStatus = 200): {
     ? null
     : String(payload.state).toLowerCase();
   if (httpStatus < 200 || httpStatus >= 300 || (state !== null && state !== "0" && state !== "success")) {
-    parseFailure(payload.msg ?? null, httpStatus);
+    parseFailure(payload.msg ?? null, httpStatus, payload.error);
   }
 
   const records: Record<string, unknown>[] = [];
