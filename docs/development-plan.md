@@ -1519,10 +1519,12 @@ until two one-shot public samples succeed through TikDD Delivery.
 Work Item 82 records a bounded protocol review of three newly proposed multi-platform services.
 The Lab keeps candidate landing pages separate from per-platform `activeEndpoints`, so a hosted
 service's marketing list cannot create a route for every platform automatically. The owner has
-now confirmed successful browser use on all three sites, but the platform/sample details are not
-stored as fixtures. SaveVideo also has one conflicting NL HTML error, while VidDown exposed a
-Vimeo API path and DownBot exposed its request/status API without a server-side media result.
-All three therefore remain `reachable/evaluating`, deferred, and production-disabled.
+now confirmed successful browser use on all three sites. A new bounded NL replay using the supplied
+Vimeo sample promoted VidDown to one-sample `resolved`: its anonymous page-token flow returned two
+MP4 candidates and a Vimeo CDN Range response. SaveVideo still returns an HTML error from NL, while
+DownBot's correct JSON request returns HTTP 400 without a job. VidDown is the sole lead for the
+next adapter work; all three remain deferred and production-disabled until fixture, second-sample,
+Delivery and browser evidence are complete.
 
 No adapter, Delivery Host Policy, gate, rollout, database, public page, sitemap, or production
 traffic changes are included. See [Work Item 82](work-item-82-multiplatform-provider-qualification.md).

@@ -1242,7 +1242,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 0,
-    technicalState: "reachable",
+    technicalState: "resolved",
     evidenceState: "evaluating"
   },
   {

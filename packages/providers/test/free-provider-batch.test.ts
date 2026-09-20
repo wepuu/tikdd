@@ -281,13 +281,16 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_unverified", "not_evaluated"])
     });
-    for (const providerId of ["viddown-net", "downbot-app"]) {
-      expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({
-        status: "deferred",
-        productionRouteEligible: false,
-        reasons: expect.arrayContaining(["technical_unverified", "not_evaluated"])
-      });
-    }
+    expect(results.find(({ providerId }) => providerId === "viddown-net")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
+    });
+    expect(results.find(({ providerId }) => providerId === "downbot-app")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["technical_unverified", "not_evaluated"])
+    });
   });
 });
 
