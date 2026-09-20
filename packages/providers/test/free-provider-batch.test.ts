@@ -279,7 +279,7 @@ describe("Work Item 51 portfolio qualification", () => {
     expect(results.find(({ providerId }) => providerId === "savevideo-me")).toMatchObject({
       status: "deferred",
       productionRouteEligible: false,
-      reasons: expect.arrayContaining(["technical_no_media", "canary_failed"])
+      reasons: expect.arrayContaining(["technical_unverified", "not_evaluated"])
     });
     for (const providerId of ["viddown-net", "downbot-app"]) {
       expect(results.find(({ providerId: candidateId }) => candidateId === providerId)).toMatchObject({

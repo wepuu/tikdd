@@ -1223,8 +1223,8 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     deliveryVerified: false,
     successFixtureCount: 0,
     failureFixtureCount: 1,
-    technicalState: "no-media",
-    evidenceState: "canary-failed"
+    technicalState: "reachable",
+    evidenceState: "evaluating"
   },
   {
     id: "viddown-net",
@@ -1243,7 +1243,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "reachable",
-    evidenceState: "not-evaluated"
+    evidenceState: "evaluating"
   },
   {
     id: "downbot-app",
@@ -1262,7 +1262,7 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "reachable",
-    evidenceState: "not-evaluated"
+    evidenceState: "evaluating"
   }
 ] as const;
 
