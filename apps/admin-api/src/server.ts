@@ -30,7 +30,8 @@ import {
   TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
-  TwitterSaverProvider
+  TwitterSaverProvider,
+  VidDownProvider
 } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
 import { RedisRoutePolicyStore } from "@tikdd/route-policy";
@@ -74,7 +75,8 @@ const providerAdapters = [
   new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }),
   new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }),
   new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }),
-  new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" })
+  new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }),
+  new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();

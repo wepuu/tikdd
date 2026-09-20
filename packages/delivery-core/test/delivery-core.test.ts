@@ -185,6 +185,30 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("socialdownloader-space-x-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only the exact reviewed VidDown Vimeo media host", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "viddown-net",
+      mode: "redirect",
+      hostPolicyId: "viddown-net-vimeo-media-v1",
+      targetUrl: "https://player.vimeo.com/video/fixture.mp4?token=fixture"
+    }).hostname).toBe("player.vimeo.com");
+    for (const targetUrl of [
+      "https://vimeo.com/video/fixture.mp4",
+      "https://evil.player.vimeo.com/video/fixture.mp4",
+      "http://player.vimeo.com/video/fixture.mp4",
+      "https://user:pass@player.vimeo.com/video/fixture.mp4",
+      "https://player.vimeo.com:8443/video/fixture.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "viddown-net",
+        mode: "redirect",
+        hostPolicyId: "viddown-net-vimeo-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("allows only the reviewed Pinterest Video Downloader media host", () => {

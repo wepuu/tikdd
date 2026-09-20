@@ -3,6 +3,7 @@ import { loadSSSTwitterActivationConfiguration } from "../src/provider-activatio
 import { loadSnapInstaActivationConfiguration } from "../src/snapinsta-activation";
 import { loadTikVidActivationConfiguration } from "../src/tikvid-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "../src/pinterest-videodownloader-activation";
+import { loadVidDownActivationConfiguration } from "../src/viddown-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -81,6 +82,28 @@ describe("Work Item 79 Pinterest activation", () => {
       ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER: "true",
       PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED: "true",
       PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED: "true"
+    }).enabled).toBe(true);
+  });
+});
+
+describe("Work Item 83 VidDown Vimeo activation", () => {
+  it("is disabled by default and requires both gates", () => {
+    expect(loadVidDownActivationConfiguration({})).toEqual({
+      enabled: false,
+      termsApproved: false,
+      deliveryAuditApproved: false
+    });
+    expect(() => loadVidDownActivationConfiguration({
+      ENABLE_VIDDOWN_PROVIDER: "true"
+    })).toThrow(/VIDDOWN_TERMS_APPROVED/);
+    expect(() => loadVidDownActivationConfiguration({
+      ENABLE_VIDDOWN_PROVIDER: "true",
+      VIDDOWN_TERMS_APPROVED: "true"
+    })).toThrow(/VIDDOWN_DELIVERY_AUDIT_APPROVED/);
+    expect(loadVidDownActivationConfiguration({
+      ENABLE_VIDDOWN_PROVIDER: "true",
+      VIDDOWN_TERMS_APPROVED: "true",
+      VIDDOWN_DELIVERY_AUDIT_APPROVED: "true"
     }).enabled).toBe(true);
   });
 });

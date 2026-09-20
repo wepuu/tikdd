@@ -37,6 +37,8 @@
 - [ADR-0035: SocialDownloader Facebook secondary routing](0035-socialdownloader-secondary-routing.md)
 - [ADR-0036: Multi-platform Provider routing isolation](0036-multi-platform-provider-routing.md)
 - [ADR-0037: SocialDownloader platform-level activation](0037-socialdownloader-platform-activation.md)
+- [ADR-0038: Pinterest Video Downloader direct CDN delivery](0038-pinterest-videodownloader-direct-cdn.md)
+- [ADR-0039: VidDown Vimeo direct CDN delivery](0039-viddown-vimeo-direct-cdn.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
