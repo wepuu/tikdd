@@ -62,8 +62,50 @@ export const CANDIDATES = {
   snapfetchr: "https://snapfetchr.com/",
   "reelsdownloader-in": "https://reelsdownloader.in/",
   savepanda: "https://www.savepanda.io/",
-  snapvideo: "https://snapvideo.cc/"
+  snapvideo: "https://snapvideo.cc/",
+  "savevideo-me": "https://savevideo.me/en/",
+  "viddown-net": "https://www.viddown.net/download-vimeo-video",
+  "downbot-app": "https://downbot.app/en"
 };
+
+/**
+ * Reviewed Provider Lab protocol map. This is deliberately separate from the candidate
+ * landing-page map so one hosted service can be evaluated independently per platform. An
+ * endpoint entry records only the public method and URL; request bodies, cookies and upstream
+ * media URLs never become part of the public Provider model.
+ */
+export const ACTIVE_ENDPOINTS = {
+  "savevideo-me": Object.fromEntries([
+    "dailymotion",
+    "facebook",
+    "vimeo",
+    "x",
+    "instagram",
+    "tiktok",
+    "reddit",
+    "rumble"
+  ].map((platform) => [platform, { method: "POST", url: "https://savevideo.me/en/get/" }])),
+  "viddown-net": {
+    vimeo: { method: "POST", url: "https://api.viddown.net/vimeo/v1/getLoaderList" }
+  },
+  "downbot-app": Object.fromEntries([
+    "youtube",
+    "tiktok",
+    "facebook",
+    "instagram",
+    "vimeo",
+    "x"
+  ].map((platform) => [platform, { method: "POST", url: "https://api.downbot.app/api/download/request" }]))
+};
+
+export function resolveActiveEndpoint(providerId, platform) {
+  const providerEndpoints = Object.hasOwn(ACTIVE_ENDPOINTS, providerId) ? ACTIVE_ENDPOINTS[providerId] : undefined;
+  const endpoint = providerEndpoints && Object.hasOwn(providerEndpoints, platform)
+    ? providerEndpoints[platform]
+    : undefined;
+  if (!endpoint) throw new Error(`No reviewed endpoint for ${providerId}/${platform}.`);
+  return endpoint;
+}
 
 function contentTypeCategory(headers) {
   const value = headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();

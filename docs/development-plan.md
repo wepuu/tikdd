@@ -1513,3 +1513,15 @@ It also makes the production release script pass the configured host memory/Swap
 each stage gate. No media proxy, Host-policy expansion, database migration, sitemap entry, or
 change to existing platform routes is included. Pinterest remains Experimental and fail-closed
 until two one-shot public samples succeed through TikDD Delivery.
+
+### Work Item 82 — SaveVideo、VidDown、DownBot 多平台 Provider 技术资格验证
+
+Work Item 82 records a bounded protocol review of three newly proposed multi-platform services.
+The Lab keeps candidate landing pages separate from per-platform `activeEndpoints`, so a hosted
+service's marketing list cannot create a route for every platform automatically. SaveVideo's
+anonymous Vimeo request returned an HTML error without media; VidDown exposed a Vimeo API path
+but has no active media evidence; DownBot exposed its request/status API but its single bounded
+probe did not produce a media result. All three therefore remain deferred and production-disabled.
+
+No adapter, Delivery Host Policy, gate, rollout, database, public page, sitemap, or production
+traffic changes are included. See [Work Item 82](work-item-82-multiplatform-provider-qualification.md).

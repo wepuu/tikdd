@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { CANDIDATES, classifyTechnicalResponse } from "./provider-technical-preflight.mjs";
+import {
+  ACTIVE_ENDPOINTS,
+  CANDIDATES,
+  classifyTechnicalResponse,
+  resolveActiveEndpoint
+} from "./provider-technical-preflight.mjs";
 
 describe("technical Provider preflight classification", () => {
   it("marks ordinary HTTP success as reachable", () => {
@@ -70,7 +75,35 @@ describe("technical Provider preflight classification", () => {
       snapfetchr: "https://snapfetchr.com/",
       "reelsdownloader-in": "https://reelsdownloader.in/",
       savepanda: "https://www.savepanda.io/",
-      snapvideo: "https://snapvideo.cc/"
+      snapvideo: "https://snapvideo.cc/",
+      "savevideo-me": "https://savevideo.me/en/",
+      "viddown-net": "https://www.viddown.net/download-vimeo-video",
+      "downbot-app": "https://downbot.app/en"
     });
+  });
+
+  it("keeps multi-platform endpoint selection explicit", () => {
+    expect(resolveActiveEndpoint("savevideo-me", "vimeo")).toEqual({
+      method: "POST",
+      url: "https://savevideo.me/en/get/"
+    });
+    expect(resolveActiveEndpoint("viddown-net", "vimeo")).toEqual({
+      method: "POST",
+      url: "https://api.viddown.net/vimeo/v1/getLoaderList"
+    });
+    expect(resolveActiveEndpoint("downbot-app", "youtube")).toEqual({
+      method: "POST",
+      url: "https://api.downbot.app/api/download/request"
+    });
+    expect(Object.hasOwn(ACTIVE_ENDPOINTS["savevideo-me"], "x")).toBe(true);
+    expect(() => resolveActiveEndpoint("viddown-net", "instagram")).toThrow(
+      "No reviewed endpoint for viddown-net/instagram."
+    );
+    expect(() => resolveActiveEndpoint("unknown", "vimeo")).toThrow(
+      "No reviewed endpoint for unknown/vimeo."
+    );
+    expect(() => resolveActiveEndpoint("toString", "vimeo")).toThrow(
+      "No reviewed endpoint for toString/vimeo."
+    );
   });
 });
