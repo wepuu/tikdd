@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "type": "video",
+  "provider_name": "Pinterest",
+  "title": "Fixture Pinterest video",
+  "author_name": "fixture-author",
+  "video_url": "https://v1.pinimg.com/videos/iht/expMp4/aa/bb/cc/fixture_720w.mp4",
+  "thumbnail_url": "https://i.pinimg.com/736x/aa/bb/cc/fixture.jpg"
+}

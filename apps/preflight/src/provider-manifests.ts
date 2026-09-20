@@ -1,6 +1,7 @@
 import type { ProviderManifest } from "@tikdd/providers";
 import {
   DLPandaProvider,
+  PinterestVideoDownloaderProvider,
   SnapInstaProvider,
   SSSTwitterProvider,
   SnapTikMonsterProvider,
@@ -22,6 +23,7 @@ export function loadPreflightProviderManifests(
     new TikCDProvider({ enabled: enabled.has("tikcd") }).manifest,
     new TikVidProvider({ enabled: enabled.has("tikvid") }).manifest,
     new SnapInstaProvider({ enabled: enabled.has("snapinsta") }).manifest,
-    new SocialDownloaderProvider({ enabled: enabled.has("socialdownloader-space") }).manifest
+    new SocialDownloaderProvider({ enabled: enabled.has("socialdownloader-space") }).manifest,
+    new PinterestVideoDownloaderProvider({ enabled: enabled.has("pinterest-videodownloader") }).manifest
   ];
 }

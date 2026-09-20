@@ -21,6 +21,7 @@ import {
 import { listPlatformDefinitions } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  PinterestVideoDownloaderProvider,
   FDownIsuruProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
@@ -72,7 +73,8 @@ const providerAdapters = [
   new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }),
   new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }),
   new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }),
-  new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" })
+  new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }),
+  new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();

@@ -184,6 +184,30 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("socialdownloader-space-facebook-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("socialdownloader-space-x-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only the reviewed Pinterest Video Downloader media host", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "pinterest-videodownloader",
+      mode: "redirect",
+      hostPolicyId: "pinterest-videodownloader-pinterest-media-v1",
+      targetUrl: "https://v1.pinimg.com/videos/iht/expMp4/fixture.mp4"
+    }).hostname).toBe("v1.pinimg.com");
+    for (const targetUrl of [
+      "https://i.pinimg.com/videos/iht/expMp4/fixture.mp4",
+      "https://pinimg.com/videos/iht/expMp4/fixture.mp4",
+      "https://evil.v1.pinimg.com/videos/iht/expMp4/fixture.mp4",
+      "http://v1.pinimg.com/videos/iht/expMp4/fixture.mp4",
+      "https://user:pass@v1.pinimg.com/videos/iht/expMp4/fixture.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "pinterest-videodownloader",
+        mode: "redirect",
+        hostPolicyId: "pinterest-videodownloader-pinterest-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("allows only the exact reviewed SocialDownloader Facebook stream host", () => {

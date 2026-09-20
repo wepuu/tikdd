@@ -67,6 +67,11 @@ export {
   type SocialDownloaderContentType
 } from "./adapters/socialdownloader";
 export {
+  PinterestVideoDownloaderProvider,
+  parsePinterestVideoDownloaderResponse,
+  type PinterestVideoDownloaderProviderOptions
+} from "./adapters/pinterest-videodownloader";
+export {
   SocialDownloaderRequestBudget,
   type SocialDownloaderBudgetPermit,
   type SocialDownloaderRequestBudgetOptions

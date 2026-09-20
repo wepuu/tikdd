@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@200e09bbf5afbe165143b0baa61c5b235ade5924` (Work Item 76 platform-gated SocialDownloader routes)
-- Roadmap revision date: 2026-09-18
+- Repository checkpoint: `main@393be36445a9bfd4387a317a01ca91ffef99430d` (Work Item 78 route operations pulse)
+- Roadmap revision date: 2026-09-20
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -1468,3 +1468,18 @@ This slice adds no Provider request, public endpoint, database migration, rollou
 policy, media path, or second routing authority. SocialDownloader/TikTok stays disabled and
 Lab-only; X, Facebook, Instagram, and the TikTok SnapTik → TikCD chain retain their existing
 production state. See the [Work Item 78 record](work-item-78-route-operations-pulse.md).
+### Work Item 79 — Pinterest / Vimeo Provider expansion
+
+Work Item 79 is the next bounded free-Provider batch after the route operations pulse. The
+protocol review selected Pinterest as the only current Beta candidate: the anonymous
+`pinterest-videodownloader.com/api/pin` endpoint produced repeatable direct `v1.pinimg.com`
+MP4 resources for two public Pins, and the media host passed 1 KiB Range/MIME checks. Its
+adapter, exact redirect policy and three activation gates are implemented but remain default-off
+until the owner-authorized production browser handoff is complete.
+
+The supplied Vimeo candidates are deferred: MediaFetcher and ClipSave produced no media, WhiteHole
+had no public extract endpoint, TryUnsora exposed a login boundary, and SocialDownloader was
+challenged. No Vimeo adapter, sitemap entry, Provider-page handoff or media proxy is introduced.
+Existing X, Instagram, TikTok, Facebook, Admin and calibration state remains unchanged. See
+[Work Item 79](work-item-79-pinterest-vimeo-provider-beta.md),
+[ADR-0038](architecture/adr/0038-pinterest-videodownloader-direct-cdn.md).
