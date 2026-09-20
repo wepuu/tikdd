@@ -172,6 +172,13 @@ internal_preflight_required="$(release_value TIKDD_INTERNAL_PREFLIGHT_REQUIRED "
 preflight_signals="$(release_value TIKDD_INTERNAL_PREFLIGHT_SIGNALS_JSON "")"
 expected_admin_write_mode="$(release_value TIKDD_ADMIN_EXPECTED_WRITE_MODE "")"
 admin_origin_mode="$(release_value TIKDD_ADMIN_ORIGIN_MODE "stopped")"
+baseline_swap_used_kb="$(release_value TIKDD_BASELINE_SWAP_USED_KB "")"
+max_swap_growth_kb="$(release_value TIKDD_MAX_SWAP_GROWTH_KB "")"
+min_available_memory_kb="$(release_value TIKDD_MIN_AVAILABLE_MEMORY_KB "")"
+
+[ -n "$baseline_swap_used_kb" ] && export TIKDD_BASELINE_SWAP_USED_KB="$baseline_swap_used_kb"
+[ -n "$max_swap_growth_kb" ] && export TIKDD_MAX_SWAP_GROWTH_KB="$max_swap_growth_kb"
+[ -n "$min_available_memory_kb" ] && export TIKDD_MIN_AVAILABLE_MEMORY_KB="$min_available_memory_kb"
 
 case "$admin_origin_mode" in
   stopped|always-on) ;;

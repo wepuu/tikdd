@@ -20,3 +20,9 @@ PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED=true
 The provider is not a generic Pinterest extractor, does not accept private media or credentials,
 and does not fall back to HHHDownload's `/api/stream` proxy. Vimeo candidates from Work Item 79
 remain deferred and are not routed by this adapter.
+
+The upstream currently returns an oEmbed-style JSON response with `type: "rich"`, `_type:
+"video"`, and `video_url`; `thumbnail_url` and other metadata may be empty. The adapter treats a
+reviewed HTTPS MP4 as the success signal and keeps optional metadata nullable. Pinterest tasks use
+one Provider execution per submission and do not automatically replay Provider failures; the user
+may submit the public link again manually.

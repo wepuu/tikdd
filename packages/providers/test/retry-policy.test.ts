@@ -9,6 +9,7 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("instagram")).toBe(2);
     expect(resolveJobAttemptsForPlatform("x")).toBe(3);
     expect(resolveJobAttemptsForPlatform("facebook")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
@@ -75,6 +76,21 @@ describe("provider automatic retry policy", () => {
     expect(shouldAutomaticallyRetryProviderFailure({
       platform: "facebook",
       providerId: "socialdownloader-space",
+      failureCode
+    })).toBe(false);
+  });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay Pinterest Video Downloader after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "pinterest",
+      providerId: "pinterest-videodownloader",
       failureCode
     })).toBe(false);
   });

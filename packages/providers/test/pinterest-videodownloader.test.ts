@@ -69,6 +69,14 @@ describe("Pinterest Video Downloader adapter", () => {
     expect(calls).toHaveLength(1);
   });
 
+  it("accepts the current rich oEmbed response when optional metadata is empty", async () => {
+    const body = await fixture("pinterest-videodownloader-rich.json");
+    const parsed = parsePinterestVideoDownloaderResponse(body);
+    expect(parsed.thumbnailUrl).toBeNull();
+    expect(parsed.formats).toHaveLength(1);
+    expect(parsed.formats[0]).toMatchObject({ container: "mp4", quality: "Source" });
+  });
+
   it("rejects unreviewed media hosts and malformed responses", async () => {
     expect(() => parsePinterestVideoDownloaderResponse(JSON.stringify({
       type: "video",

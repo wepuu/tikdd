@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "type": "rich",
+  "provider_name": "Pinterest",
+  "provider_url": "https://www.pinterest.com",
+  "title": "Fixture rich Pinterest video",
+  "author_name": "",
+  "author_url": "",
+  "thumbnail_url": "",
+  "thumbnail_width": 0,
+  "thumbnail_height": 0,
+  "video_url": "https://v1.pinimg.com/videos/iht/expMp4/aa/bb/cc/fixture_rich_720w.mp4",
+  "html": "<iframe></iframe>",
+  "_type": "video",
+  "_source": "scrape"
+}
