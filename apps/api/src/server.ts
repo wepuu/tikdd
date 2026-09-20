@@ -31,6 +31,7 @@ import {
 } from "@tikdd/platform";
 import {
   DLPandaProvider,
+  PinterestVideoDownloaderProvider,
   FDownIsuruProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
@@ -148,7 +149,8 @@ registerProviderHealthDiagnostics(app, {
     new TikCDProvider({ enabled: process.env.ENABLE_TIKCD_PROVIDER === "true" }).manifest,
     new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest,
     new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }).manifest,
-    new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }).manifest
+    new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }).manifest,
+    new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

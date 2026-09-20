@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadSSSTwitterActivationConfiguration } from "../src/provider-activation";
 import { loadSnapInstaActivationConfiguration } from "../src/snapinsta-activation";
 import { loadTikVidActivationConfiguration } from "../src/tikvid-activation";
+import { loadPinterestVideoDownloaderActivationConfiguration } from "../src/pinterest-videodownloader-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -59,5 +60,27 @@ describe("Work Item 51 candidate activation", () => {
     expect(() => load({ [enabledKey]: "true" })).toThrow(termsKey);
     expect(() => load({ [enabledKey]: "true", [termsKey]: "true" })).toThrow(deliveryKey);
     expect(load({ [enabledKey]: "true", [termsKey]: "true", [deliveryKey]: "true" }).enabled).toBe(true);
+  });
+});
+
+describe("Work Item 79 Pinterest activation", () => {
+  it("is disabled by default and requires both gates", () => {
+    expect(loadPinterestVideoDownloaderActivationConfiguration({})).toEqual({
+      enabled: false,
+      termsApproved: false,
+      deliveryAuditApproved: false
+    });
+    expect(() => loadPinterestVideoDownloaderActivationConfiguration({
+      ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER: "true"
+    })).toThrow(/PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED/);
+    expect(() => loadPinterestVideoDownloaderActivationConfiguration({
+      ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER: "true",
+      PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED: "true"
+    })).toThrow(/PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(loadPinterestVideoDownloaderActivationConfiguration({
+      ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER: "true",
+      PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED: "true",
+      PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED: "true"
+    }).enabled).toBe(true);
   });
 });

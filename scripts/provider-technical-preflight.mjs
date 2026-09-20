@@ -51,7 +51,18 @@ export const CANDIDATES = {
   "social-media-downloader-eight": "https://social-media-downloader-eight.vercel.app/",
   "gram-grabberz": "https://gram-grabberz.vercel.app/",
   facebookone: "https://facebookone.vercel.app/",
-  reeldown: "https://reeldown.io/"
+  reeldown: "https://reeldown.io/",
+  mediafetcher: "https://mediafetcher.org/",
+  pinsaver: "https://pinsaver.online/",
+  "pinterest-videodownloader": "https://pinterest-videodownloader.com/",
+  hhhdownload: "https://hhhdownload.com/",
+  clipsave: "https://clipsave.org/",
+  tryunsora: "https://tryunsora.com/",
+  whitehole: "https://whitehole.page/",
+  snapfetchr: "https://snapfetchr.com/",
+  "reelsdownloader-in": "https://reelsdownloader.in/",
+  savepanda: "https://www.savepanda.io/",
+  snapvideo: "https://snapvideo.cc/"
 };
 
 function contentTypeCategory(headers) {

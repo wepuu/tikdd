@@ -48,5 +48,10 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/SOCIALDOWNLOADER_APPROVED_PLATFORMS/);
     expect(releaseScript).toMatch(/SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS/);
     expect(releaseScript).toMatch(/Worker SocialDownloader platform binding mismatch/);
+    expect(releaseScript).toMatch(/ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER/);
+    expect(releaseScript).toMatch(/PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"Pinterest Video Downloader"/);
+    expect(releaseScript).toMatch(/pinterest_enabled=/);
   });
 });

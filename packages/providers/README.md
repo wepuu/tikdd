@@ -33,3 +33,9 @@ The production Facebook Beta route requires `ENABLE_SOCIALDOWNLOADER_PROVIDER`,
 currently enabled only for the reviewed NL rollout. The queue performs no automatic replay for this
 provider. Its browser handoff remains `navigate` until a separate CORS/browser-save audit qualifies
 the existing `cors-download` mode.
+## Pinterest Video Downloader Beta
+
+Work Item 79 adds `pinterest-videodownloader` as a Pinterest-only adapter. Its delivery boundary
+is the exact `v1.pinimg.com` host and the adapter is registered with three default-off activation
+gates. Vimeo candidates from the same batch remain evidence-only; no adapter may infer Vimeo
+support from a multi-platform Provider's landing page.
