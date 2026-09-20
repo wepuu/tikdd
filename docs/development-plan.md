@@ -1,7 +1,7 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@393be36445a9bfd4387a317a01ca91ffef99430d` (Work Item 78 route operations pulse)
+- Repository checkpoint: `main@c59dc0d201a384d4965ea85c14a86a79ac4758f0` (Work Item 79 Pinterest/Vimeo provider expansion)
 - Roadmap revision date: 2026-09-20
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
@@ -66,7 +66,8 @@ addresses the release-script executable bit and stage-gate false positives found
   `noindex`, and passed one real X download, one real Instagram download, and a 15-minute
   post-deploy watch with zero core-container restarts and zero observed API/Delivery 5xx.
 - `config/x-pilot-evidence.json` remains truthfully `pending`; it is optional diagnostic evidence.
-- Admin and the calibration profile remain intentionally stopped.
+- Admin remains available for the owner workflow; calibration remains intentionally stopped. Provider
+  gates and rollout rules remain platform-specific and are changed only through an authorized release.
 
 ### Work Item 26 current status
 
@@ -1487,3 +1488,16 @@ Provider-page handoff or media proxy is introduced.
 Existing X, Instagram, TikTok, Facebook, Admin and calibration state remains unchanged. See
 [Work Item 79](work-item-79-pinterest-vimeo-provider-beta.md),
 [ADR-0038](architecture/adr/0038-pinterest-videodownloader-direct-cdn.md).
+
+### Work Item 80 — Pinterest Beta production launch and platform status alignment
+
+Work Item 80 aligns the catalog and bilingual home-page/starter copy with the reviewed Pinterest
+capability. Pinterest is now classified as `experimental` and presented as a public Beta, while its
+adapter and exact `v1.pinimg.com` redirect policy remain behind the three existing activation gates
+until the owner-authorized production browser handoff. The release uses the fixed small-batch loop:
+GitHub-built immutable images, backup, health check, two real Pin downloads, and a 10-minute watch.
+
+The code does not add a Pinterest landing page or sitemap entry, public API, database migration,
+media proxy, or new routing authority. Vimeo remains deferred, and X, Instagram, TikTok, Facebook,
+Admin, and calibration keep their existing platform-specific state. See the
+[Work Item 80 record](work-item-80-pinterest-beta-launch.md).
