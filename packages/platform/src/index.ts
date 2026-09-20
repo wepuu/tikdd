@@ -132,7 +132,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "pinterest",
     displayName: "Pinterest",
-    status: "planned",
+    status: "experimental",
     source: "yt-dlp",
     hosts: [host("pinterest.com"), host("pin.it", false)],
     extractorKeys: ["Pinterest", "PinterestCollection"]

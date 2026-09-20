@@ -76,6 +76,11 @@ describe("detectPlatform", () => {
     expect(tiktok).toMatchObject({ status: "stable", source: "yt-dlp" });
   });
 
+  it("reports Pinterest as an experimental Beta after Delivery qualification", () => {
+    const pinterest = listPlatformDefinitions().find((platform) => platform.id === "pinterest");
+    expect(pinterest).toMatchObject({ status: "experimental", source: "yt-dlp" });
+  });
+
   it("rejects non-http schemes", () => {
     expect(isSupportedPlatformUrl("file:///etc/passwd")).toBe(false);
   });

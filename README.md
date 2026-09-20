@@ -156,6 +156,11 @@ cost weight, and enabled state. The worker performs bounded sequential fallback 
 sanitized attempt. See [the provider development guide](docs/provider-development.md).
 Provider-specific reviews live under [`docs/providers`](docs/providers/).
 
+Pinterest is currently an experimental public Beta backed by the reviewed
+`pinterest-videodownloader` route. It remains gated and is not in the sitemap until its production
+browser handoff and natural-traffic closeout are complete; Vimeo remains deferred. See the
+[Work Item 80 record](docs/work-item-80-pinterest-beta-launch.md).
+
 ## Quick start
 
 Requirements: Node.js 20.9+, pnpm 11+, Docker with Compose.
