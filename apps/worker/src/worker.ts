@@ -31,6 +31,7 @@ import {
   SSSTwitterProvider,
   TikVidProvider,
   TwitterSaverProvider,
+  VidDownProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -61,6 +62,7 @@ import { loadTikCDActivationConfiguration } from "./tikcd-activation";
 import { loadFDownIsuruActivationConfiguration } from "./fdown-isuru-activation";
 import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest-videodownloader-activation";
+import { loadVidDownActivationConfiguration } from "./viddown-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -80,6 +82,7 @@ const snapinstaActivation = loadSnapInstaActivationConfiguration();
 const fdownIsuruActivation = loadFDownIsuruActivationConfiguration();
 const socialDownloaderActivation = loadSocialDownloaderActivationConfiguration();
 const pinterestVideoDownloaderActivation = loadPinterestVideoDownloaderActivationConfiguration();
+const vidDownActivation = loadVidDownActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -208,6 +211,9 @@ if (socialDownloaderActivation.enabled) {
 }
 if (pinterestVideoDownloaderActivation.enabled) {
   providers.push(new PinterestVideoDownloaderProvider({ enabled: true }));
+}
+if (vidDownActivation.enabled) {
+  providers.push(new VidDownProvider({ enabled: true }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

@@ -1,0 +1,10 @@
+{
+  "state": 0,
+  "data": {
+    "id": "fixture-vimeo",
+    "type": "video",
+    "title": "Fixture Vimeo video",
+    "links": []
+  },
+  "msg": "Success"
+}

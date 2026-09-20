@@ -41,6 +41,7 @@ import {
   TikVidProvider,
   TikCDProvider,
   TwitterSaverProvider,
+  VidDownProvider,
   resolveJobAttemptsForPlatform
 } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
@@ -150,7 +151,8 @@ registerProviderHealthDiagnostics(app, {
     new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }).manifest,
     new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }).manifest,
     new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }).manifest,
-    new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }).manifest
+    new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }).manifest,
+    new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

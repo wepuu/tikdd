@@ -19,6 +19,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "pinterest-videodownloader") {
     return false;
   }
+  if (input.providerId === "viddown-net") {
+    return false;
+  }
   if (input.platform !== "instagram" || input.providerId !== "savefromins") {
     return true;
   }

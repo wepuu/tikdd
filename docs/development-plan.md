@@ -1528,3 +1528,18 @@ fixture, adapter, Delivery and browser evidence are complete.
 
 No adapter, Delivery Host Policy, gate, rollout, database, public page, sitemap, or production
 traffic changes are included. See [Work Item 82](work-item-82-multiplatform-provider-qualification.md).
+
+### Work Item 83 — VidDown Vimeo adapter and gated Beta preparation
+
+Work Item 83 implements the first Vimeo adapter from the Work Item 82 evidence. VidDown uses an
+anonymous page-token flow and returns tolerant `data.links[]` MP4 parsing for exact
+`player.vimeo.com` media targets; `i.vimeocdn.com` thumbnails are optional. The older evidence
+description of `vimeocdn.com` is corrected by the latest exact-host probe. Delivery policy,
+Worker/API/Admin registration, preflight and release-script checks are present, but all three
+VidDown gates and the `viddown-net / vimeo / nl` rollout tuple remain disabled.
+
+This item deliberately does not mark Vimeo stable, add sitemap content, or deploy production. A
+future release must separately audit browser handoff/save behavior; a 302 that opens a Vimeo player
+is not proof of a saved file. SaveVideo and DownBot remain deferred candidates, and existing X,
+Instagram, TikTok, Facebook, Pinterest, Admin and calibration state is unchanged. See [Work Item
+83](work-item-83-viddown-vimeo-beta.md) and [ADR-0039](architecture/adr/0039-viddown-vimeo-direct-cdn.md).

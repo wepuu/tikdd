@@ -284,7 +284,7 @@ describe("Work Item 51 portfolio qualification", () => {
     expect(results.find(({ providerId }) => providerId === "viddown-net")).toMatchObject({
       status: "deferred",
       productionRouteEligible: false,
-      reasons: expect.arrayContaining(["missing_success_fixture", "not_evaluated"])
+      reasons: expect.arrayContaining(["missing_failure_fixtures", "not_evaluated"])
     });
     expect(results.find(({ providerId }) => providerId === "downbot-app")).toMatchObject({
       status: "deferred",

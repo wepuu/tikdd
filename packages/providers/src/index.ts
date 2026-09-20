@@ -72,6 +72,11 @@ export {
   type PinterestVideoDownloaderProviderOptions
 } from "./adapters/pinterest-videodownloader";
 export {
+  VidDownProvider,
+  parseVidDownResponse,
+  type VidDownProviderOptions
+} from "./adapters/viddown";
+export {
   SocialDownloaderRequestBudget,
   type SocialDownloaderBudgetPermit,
   type SocialDownloaderRequestBudgetOptions

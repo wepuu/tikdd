@@ -88,7 +88,8 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     ["snaptik-monster", "ENABLE_SNAPTIK_MONSTER_PROVIDER"], ["tikvid", "ENABLE_TIKVID_PROVIDER"],
     ["snapinsta", "ENABLE_SNAPINSTA_PROVIDER"], ["tikcd", "ENABLE_TIKCD_PROVIDER"], ["fdown-isuru", "ENABLE_FDOWN_ISURU_PROVIDER"],
     ["socialdownloader-space", "ENABLE_SOCIALDOWNLOADER_PROVIDER"],
-    ["pinterest-videodownloader", "ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER"]
+    ["pinterest-videodownloader", "ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER"],
+    ["viddown-net", "ENABLE_VIDDOWN_PROVIDER"]
   ] as const).filter(([, key]) => bool(environment[key])).map(([id]) => id);
   const providerApprovalsPresent = providers.every((provider) => {
     if (provider === "twittersaver") return bool(environment.TWITTERSAVER_TERMS_APPROVED);
@@ -123,6 +124,10 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     if (provider === "pinterest-videodownloader") {
       return bool(environment.PINTEREST_VIDEODOWNLOADER_TERMS_APPROVED) &&
         bool(environment.PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED);
+    }
+    if (provider === "viddown-net") {
+      return bool(environment.VIDDOWN_TERMS_APPROVED) &&
+        bool(environment.VIDDOWN_DELIVERY_AUDIT_APPROVED);
     }
     return bool(environment.SNAPTIK_MONSTER_TERMS_APPROVED) &&
       bool(environment.SNAPTIK_MONSTER_DELIVERY_AUDIT_APPROVED);

@@ -53,6 +53,11 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/PINTEREST_VIDEODOWNLOADER_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"Pinterest Video Downloader"/);
     expect(releaseScript).toMatch(/pinterest_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_VIDDOWN_PROVIDER/);
+    expect(releaseScript).toMatch(/VIDDOWN_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/VIDDOWN_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"VidDown"/);
+    expect(releaseScript).toMatch(/viddown_enabled=/);
   });
 
   it("passes the configured host resource thresholds to every stage gate", () => {

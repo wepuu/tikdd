@@ -1,0 +1,34 @@
+{
+  "state": 0,
+  "data": {
+    "id": "fixture-vimeo",
+    "type": "video",
+    "title": "Fixture Vimeo video",
+    "author": { "name": "fixture-author" },
+    "duration": 210,
+    "thumbnails": [
+      {
+        "width": 1280,
+        "height": 720,
+        "url": "https://i.vimeocdn.com/video/fixture_1280.jpg?hash=fixture"
+      }
+    ],
+    "links": [
+      {
+        "quality": "720p",
+        "width": 1280,
+        "height": 720,
+        "type": 1,
+        "url": "https://player.vimeo.com/video/fixture-720.mp4?token=fixture"
+      },
+      {
+        "quality": "360p",
+        "width": 640,
+        "height": 360,
+        "type": 1,
+        "url": "https://player.vimeo.com/video/fixture-360.mp4?token=fixture"
+      }
+    ]
+  },
+  "msg": "Success"
+}
