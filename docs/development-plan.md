@@ -1501,3 +1501,15 @@ The code does not add a Pinterest landing page or sitemap entry, public API, dat
 media proxy, or new routing authority. Vimeo remains deferred, and X, Instagram, TikTok, Facebook,
 Admin, and calibration keep their existing platform-specific state. See the
 [Work Item 80 record](work-item-80-pinterest-beta-launch.md).
+
+### Work Item 81 — Pinterest schema repair and Beta status closeout
+
+The first controlled Pinterest launch was rolled back after the provider returned an oEmbed-style
+`rich` response that the adapter rejected; the same task also revealed that the generic queue
+budget replayed the provider three times. Work Item 81 accepts the observed rich/video shape,
+keeps optional metadata nullable, limits Pinterest to one Provider execution per submission, and
+removes the disabled capability from public Beta copy until direct browser evidence is complete.
+It also makes the production release script pass the configured host memory/Swap thresholds into
+each stage gate. No media proxy, Host-policy expansion, database migration, sitemap entry, or
+change to existing platform routes is included. Pinterest remains Experimental and fail-closed
+until two one-shot public samples succeed through TikDD Delivery.

@@ -54,4 +54,13 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/"Pinterest Video Downloader"/);
     expect(releaseScript).toMatch(/pinterest_enabled=/);
   });
+
+  it("passes the configured host resource thresholds to every stage gate", () => {
+    expect(releaseScript).toMatch(/baseline_swap_used_kb="\$\(release_value TIKDD_BASELINE_SWAP_USED_KB/);
+    expect(releaseScript).toMatch(/max_swap_growth_kb="\$\(release_value TIKDD_MAX_SWAP_GROWTH_KB/);
+    expect(releaseScript).toMatch(/min_available_memory_kb="\$\(release_value TIKDD_MIN_AVAILABLE_MEMORY_KB/);
+    expect(releaseScript).toMatch(/export TIKDD_BASELINE_SWAP_USED_KB="\$baseline_swap_used_kb"/);
+    expect(releaseScript).toMatch(/export TIKDD_MAX_SWAP_GROWTH_KB="\$max_swap_growth_kb"/);
+    expect(releaseScript).toMatch(/export TIKDD_MIN_AVAILABLE_MEMORY_KB="\$min_available_memory_kb"/);
+  });
 });

@@ -16,6 +16,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "socialdownloader-space") {
     return false;
   }
+  if (input.providerId === "pinterest-videodownloader") {
+    return false;
+  }
   if (input.platform !== "instagram" || input.providerId !== "savefromins") {
     return true;
   }
@@ -25,6 +28,6 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
 /** The API queue includes the initial run in this count. */
 export function resolveJobAttemptsForPlatform(platform: string): number {
   if (platform === "instagram") return 2;
-  if (platform === "facebook") return 1;
+  if (platform === "facebook" || platform === "pinterest") return 1;
   return 3;
 }

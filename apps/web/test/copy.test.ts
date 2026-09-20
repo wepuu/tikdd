@@ -35,10 +35,10 @@ describe("delivery handoff copy", () => {
     const current = copyForPage(homepage!);
 
     expect(current.hero.badge).toContain("TikTok supported");
-    expect(current.hero.badge).toContain("X, Instagram, Facebook & Pinterest Public Beta");
-    expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok", "Facebook", "Pinterest"]);
+    expect(current.hero.badge).toContain("X, Instagram & Facebook Public Beta");
+    expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok", "Facebook"]);
     expect(current.faq.items[0]?.[1]).toContain("stable supported route");
-    expect(current.faq.items[0]?.[1]).toContain("Pinterest Pins");
+    expect(current.faq.items[0]?.[1]).not.toContain("Pinterest Pins");
     expect(current.faq.items[0]?.[1]).toContain("x.com");
     expect(current.faq.items[0]?.[1]).toContain("Instagram");
     expect(current.form.label).toBe("Public video page URL");

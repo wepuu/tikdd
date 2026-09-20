@@ -20,12 +20,18 @@ const ExpandResponseSchema = z.object({
   url: z.string().url().max(8_192)
 }).passthrough();
 
+const optionalUrl = (maximum: number) => z.preprocess(
+  (value) => value === "" ? null : value,
+  z.string().url().max(maximum).nullable().optional()
+);
+
 const PinResponseSchema = z.object({
   type: z.string().max(40).nullish(),
+  _type: z.string().max(40).nullish(),
   title: z.string().max(1_000).nullish(),
   author_name: z.string().max(500).nullish(),
-  thumbnail_url: z.string().url().max(8_192).nullish(),
-  video_url: z.string().url().max(16_384).nullish()
+  thumbnail_url: optionalUrl(8_192),
+  video_url: optionalUrl(16_384)
 }).passthrough();
 
 export interface PinterestVideoDownloaderProviderOptions {
@@ -81,7 +87,10 @@ function parsePinResponse(body: string): {
   }
 
   const mediaUrl = payload.video_url ? reviewedMediaUrl(payload.video_url) : null;
-  if (!mediaUrl || !/^(?:video|reel)$/i.test(payload.type ?? "video")) {
+  // The upstream currently returns an oEmbed-style `type: "rich"` with `_type: "video"`.
+  // The media URL is the authoritative signal; optional type metadata must not make a valid
+  // MP4 unusable when the provider omits or changes it.
+  if (!mediaUrl) {
     throw new ProviderError(
       "Pinterest Video Downloader returned no reviewed MP4 resource.",
       "invalid_result",
