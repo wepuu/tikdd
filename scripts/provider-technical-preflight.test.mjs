@@ -66,7 +66,11 @@ describe("technical Provider preflight classification", () => {
       hhhdownload: "https://hhhdownload.com/",
       clipsave: "https://clipsave.org/",
       tryunsora: "https://tryunsora.com/",
-      whitehole: "https://whitehole.page/"
+      whitehole: "https://whitehole.page/",
+      snapfetchr: "https://snapfetchr.com/",
+      "reelsdownloader-in": "https://reelsdownloader.in/",
+      savepanda: "https://www.savepanda.io/",
+      snapvideo: "https://snapvideo.cc/"
     });
   });
 });

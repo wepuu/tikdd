@@ -1479,7 +1479,11 @@ until the owner-authorized production browser handoff is complete.
 
 The supplied Vimeo candidates are deferred: MediaFetcher and ClipSave produced no media, WhiteHole
 had no public extract endpoint, TryUnsora exposed a login boundary, and SocialDownloader was
-challenged. No Vimeo adapter, sitemap entry, Provider-page handoff or media proxy is introduced.
+challenged. A supplemental retest added SnapFetchr, ReelsDownloader.in, SavePanda and SnapVideo:
+SnapFetchr exposed only a Provider-side proxy handoff, ReelsDownloader requires an integration
+credential (and its web surface loads Turnstile), while SavePanda and SnapVideo did not expose a
+callable anonymous resolver in the bounded public surface. No Vimeo adapter, sitemap entry,
+Provider-page handoff or media proxy is introduced.
 Existing X, Instagram, TikTok, Facebook, Admin and calibration state remains unchanged. See
 [Work Item 79](work-item-79-pinterest-vimeo-provider-beta.md),
 [ADR-0038](architecture/adr/0038-pinterest-videodownloader-direct-cdn.md).

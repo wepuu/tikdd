@@ -24,6 +24,22 @@ Provider-page handoff, full media download, or upstream credential is used.
 | Vimeo | `clipsave.org` | no-media | Public `/info` endpoint returned HTTP 400 for the reviewed sample. |
 | Vimeo | `tryunsora.com` | blocked | Public flow exposes Clerk sign-in; no anonymous resolver was available. |
 | Vimeo | `whitehole.page` | blocked | The advertised `/api/extract` endpoint returned HTTP 404 HTML. |
+| Vimeo | `snapfetchr.com` | no-media | Public flow exposes a `/download-proxy` handoff; no direct anonymous Vimeo media endpoint was observable in the bounded script inspection, so it is not eligible for redirect delivery. |
+| Vimeo | `reelsdownloader.in` | blocked | Its public API contract requires an integration credential; the web surface also loads Cloudflare Turnstile. No credential or challenge interaction was attempted. |
+| Vimeo | `www.savepanda.io` | no-media | The public page advertises Vimeo support, but the bounded page/script inspection did not expose a callable anonymous resolver or direct media schema; no endpoint was guessed. |
+| Vimeo | `snapvideo.cc` | no-media | The public page advertises Vimeo support, but the bounded page/script inspection did not expose a callable anonymous resolver or direct media schema; no endpoint was guessed. |
+
+### Supplemental Vimeo retest
+
+The four additional Vimeo candidates supplied after the initial batch were checked against the
+same boundary. The checks remained passive unless an anonymous, documented resolver was visible:
+DNS/TLS/HTTP reachability, form and script signals, challenge/login/credential requirements, and
+whether a direct CDN response could be identified without guessing an endpoint. No candidate
+returned a reproducible direct MP4 suitable for TikDD Delivery. ReelsDownloader's public API
+documentation explicitly requires a per-integration client credential, while SnapFetchr exposes
+a Provider-side proxy path; both are outside the current no-credential/direct-CDN qualification.
+SavePanda and SnapVideo remain protocol-unobservable from the bounded public surface, so they are
+recorded as no-media rather than promoted on marketing claims.
 
 The Pinterest winner returned these sanitized facts only: API host/path `pinterest-videodownloader.com/api/pin`,
 method `GET`, required field `id`, two MP4 resources on `v1.pinimg.com`, and no credentials.
