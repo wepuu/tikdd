@@ -24,9 +24,36 @@ function response(body: string, contentType: string, url: string, status = 200, 
 }
 
 describe("VidDown Vimeo adapter", () => {
+  it("uses the bounded inline page token and does not call the legacy token endpoint", async () => {
+    const body = await fixture("viddown-vimeo-success.json");
+    const inlineToken = "inline-token-123456789012345678901234567890";
+    const page = `<html><script>window.__VID_DOWN_DYNAMIC_PAGE_JWT__ = "${inlineToken}";</script>${"x".repeat(70_000)}</html>`;
+    const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+    const provider = new VidDownProvider({
+      enabled: true,
+      fetchImpl: async (url, init) => {
+        calls.push({ url: url.toString(), init });
+        if (url.toString().includes("/download-vimeo-video")) {
+          return response(page, "text/html", url.toString());
+        }
+        return response(body, "application/json", url.toString());
+      }
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.url).toContain("api.viddown.net/vimeo/v1/getLoaderList");
+    const apiInit = calls[1]?.init;
+    expect(apiInit).toBeDefined();
+    if (!apiInit) return;
+    expect(new Headers(apiInit.headers).get("authorization")).toBe(inlineToken);
+    expect(new Headers(apiInit.headers).get("accept-lang")).toBe("en");
+    expect(JSON.stringify(resolution.result)).not.toContain(inlineToken);
+  });
+
   it("uses the anonymous page-token flow once and returns opaque Vimeo candidates", async () => {
     const body = await fixture("viddown-vimeo-success.json");
-  const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+    const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
     const provider = new VidDownProvider({
       enabled: true,
       fetchImpl: async (url, init) => {
@@ -67,6 +94,24 @@ describe("VidDown Vimeo adapter", () => {
     expect(JSON.stringify(resolution.result)).not.toContain("player.vimeo.com");
     expect(JSON.stringify(resolution.result)).not.toContain("fixture-token");
     expect(JSON.stringify(resolution.candidates)).toContain("player.vimeo.com");
+  });
+
+  it("fails closed when neither the inline token nor the legacy token endpoint is valid", async () => {
+    const provider = new VidDownProvider({
+      enabled: true,
+      fetchImpl: async (url) => {
+        if (url.toString().includes("/download-vimeo-video")) {
+          return response(
+            "<html><script>window.__VID_DOWN_DYNAMIC_PAGE_JWT__ = \"too-short\";</script></html>",
+            "text/html",
+            url.toString()
+          );
+        }
+        return response(JSON.stringify({}), "application/json", url.toString());
+      }
+    });
+
+    await expect(provider.resolve(input)).rejects.toThrow(/valid page token/i);
   });
 
   it("tolerates missing optional metadata while requiring a reviewed MP4", async () => {

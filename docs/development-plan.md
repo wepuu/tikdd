@@ -1546,9 +1546,15 @@ Instagram, TikTok, Facebook, Pinterest, Admin and calibration state is unchanged
 
 ### Work Item 84 — VidDown Vimeo handoff diagnostic closeout
 
-The first NL recheck of the two owner-supplied Vimeo samples returned HTTP 200 for the page, token,
-and loader requests, but the loader reported `state=1` with an error field and no MP4 candidates.
-Because no reviewed media URL was returned, no Range/CORS/browser-save decision could be made. VidDown
-therefore remains deferred: its existing redirect-only policy, three activation gates, and rollout
-tuple remain unchanged and disabled. The adapter now classifies bounded error fields without exposing
-upstream details. See [Work Item 84](work-item-84-viddown-vimeo-handoff.md).
+The first NL recheck returned no media because VidDown had changed its anonymous token flow and the
+page exceeded the former adapter response bound. That run is retained as a historical protocol-drift
+diagnostic; the adapter's bounded error classification remains unchanged. See [Work Item 84](work-item-84-viddown-vimeo-handoff.md).
+
+### Work Item 85 — VidDown dynamic token repair and Vimeo Beta validation
+
+Work Item 85 updates the adapter to prefer VidDown's strictly validated inline dynamic token, retain
+the legacy endpoint as a bounded fallback, and read the current page within a 256 KiB limit. The
+repaired flow was reproduced against both reviewed Vimeo samples with loader success and MP4
+candidates. Production gates and rollout remain disabled until the browser handoff/save audit,
+exact-SHA image deployment, and two one-attempt downloads complete. Vimeo remains Experimental/Beta
+and is not added to the sitemap. See [Work Item 85](work-item-85-viddown-vimeo-token-repair.md).
