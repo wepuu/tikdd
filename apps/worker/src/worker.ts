@@ -213,7 +213,10 @@ if (pinterestVideoDownloaderActivation.enabled) {
   providers.push(new PinterestVideoDownloaderProvider({ enabled: true }));
 }
 if (vidDownActivation.enabled) {
-  providers.push(new VidDownProvider({ enabled: true }));
+  providers.push(new VidDownProvider({
+    enabled: true,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

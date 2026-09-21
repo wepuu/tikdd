@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ProviderFailureCode } from "@tikdd/contracts";
 import { ProviderResolutionSchema } from "@tikdd/delivery-core";
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
@@ -20,9 +21,10 @@ const MEDIA_HOST_POLICY_ID = "viddown-net-vimeo-media-v1";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const MAXIMUM_PAGE_BYTES = 256_000;
 const MAXIMUM_RESPONSE_BYTES = 512_000;
+const MAXIMUM_PAGE_TOKEN_LENGTH = 4_096;
 
 const TokenResponseSchema = z.object({
-  token: z.string().min(1).max(512)
+  token: z.string().min(1).max(MAXIMUM_PAGE_TOKEN_LENGTH)
 }).passthrough();
 
 const LoaderResponseSchema = z.object({
@@ -32,11 +34,39 @@ const LoaderResponseSchema = z.object({
 }).passthrough();
 
 const VIMEO_URL_PATTERN = /\.mp4(?:$|[?#])/i;
-const PAGE_TOKEN_PATTERN = /(?:window\.)?__VID_DOWN_DYNAMIC_PAGE_JWT__\s*[:=]\s*["']([A-Za-z0-9._~+\/=:-]{32,512})["']/;
+const PAGE_TOKEN_NAME = "__VID_DOWN_DYNAMIC_PAGE_JWT__";
+
+export type VidDownDiagnosticPhase =
+  | "landing"
+  | "legacy-token"
+  | "loader"
+  | "parse"
+  | "completed";
+
+export type VidDownContentType = "json" | "html" | "text" | "other" | "missing";
+
+export interface VidDownDiagnosticEvent {
+  event: "viddown_resolution_diagnostic";
+  taskId: string;
+  platform: "vimeo";
+  phase: VidDownDiagnosticPhase;
+  outcome: "success" | "failure";
+  httpStatus: number | null;
+  contentType: VidDownContentType;
+  responseBytes: number | null;
+  challengeDetected: boolean;
+  tokenSource: "inline" | "legacy" | "none";
+  tokenValid: boolean;
+  sessionCookiePresent: boolean;
+  validMediaCount: number;
+  failureCode: ProviderFailureCode | null;
+  durationMs: number;
+}
 
 export interface VidDownProviderOptions {
   enabled?: boolean;
   fetchImpl?: ProviderFetch;
+  diagnosticSink?: (event: VidDownDiagnosticEvent) => void;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -72,8 +102,72 @@ function reviewedMediaUrl(value: unknown): string | null {
   }
 }
 
-function extractPageToken(body: string): string | null {
-  return body.match(PAGE_TOKEN_PATTERN)?.[1] ?? null;
+function contentTypeCategory(headers: Headers): VidDownContentType {
+  const contentType = headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+  if (!contentType) return "missing";
+  if (contentType === "application/json" || contentType.endsWith("+json")) return "json";
+  if (contentType === "text/html") return "html";
+  if (contentType.startsWith("text/")) return "text";
+  return "other";
+}
+
+function challengeMarker(body: string): boolean {
+  return /attention required|sorry, you have been blocked|cf-turnstile|challenge-platform|access denied|just a moment/i.test(body);
+}
+
+function diagnosticFailureCode(error: unknown): ProviderFailureCode {
+  if (error instanceof ProviderError) return error.failureCode;
+  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
+    return "provider_timeout";
+  }
+  return "internal_error";
+}
+
+function decodeInlineToken(value: string, quotedWith: "double" | "single"): string {
+  if (quotedWith === "double") {
+    try {
+      return JSON.parse(`"${value}"`) as string;
+    } catch {
+      return "";
+    }
+  }
+  return value.replace(/\\([\\'])/g, "$1");
+}
+
+function extractPageToken(body: string): {
+  token: string | null;
+  marker: "absent" | "valid" | "invalid";
+} {
+  const prefix = `(?:window\\.)?${PAGE_TOKEN_NAME}\\s*[:=]\\s*`;
+  const double = body.match(new RegExp(`${prefix}\\"((?:\\\\.|[^\\"])*)\\"`));
+  const single = body.match(new RegExp(`${prefix}'((?:\\\\.|[^'])*)'`));
+  const match = double ?? single;
+  if (!match?.[1]) return { token: null, marker: "absent" };
+  const raw = decodeInlineToken(match[1], double ? "double" : "single").trim();
+  if (
+    raw.length < 32 ||
+    raw.length > MAXIMUM_PAGE_TOKEN_LENGTH ||
+    !/^[A-Za-z0-9._~+\/:=-]+$/.test(raw)
+  ) {
+    return { token: null, marker: "invalid" };
+  }
+  return { token: raw, marker: "valid" };
+}
+
+function mergeCookieHeaders(...headers: Array<string | null | undefined>): string {
+  const values = new Map<string, string>();
+  for (const header of headers) {
+    for (const part of header?.split(";") ?? []) {
+      const separator = part.indexOf("=");
+      if (separator <= 0) continue;
+      const name = part.slice(0, separator).trim();
+      const value = part.slice(separator + 1).trim();
+      if (/^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/.test(name) && value) {
+        values.set(name, value);
+      }
+    }
+  }
+  return [...values].map(([name, value]) => `${name}=${value}`).join("; ");
 }
 
 function readQuality(value: Record<string, unknown>): string {
@@ -247,9 +341,11 @@ export function parseVidDownResponse(body: string, httpStatus = 200) {
 export class VidDownProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly fetchImpl: ProviderFetch;
+  private readonly diagnosticSink: ((event: VidDownDiagnosticEvent) => void) | null;
 
   constructor(options: VidDownProviderOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.diagnosticSink = options.diagnosticSink ?? null;
     this.manifest = {
       id: "viddown-net",
       displayName: "VidDown.net",
@@ -277,84 +373,152 @@ export class VidDownProvider implements ResolverProvider {
       );
     }
 
-    const page = await requestText(
-      this.fetchImpl,
-      new URL("/download-vimeo-video", PAGE_ORIGIN),
-      {
-        method: "GET",
-        redirect: "manual",
-        ...(input.signal ? { signal: input.signal } : {}),
-        headers: {
-          accept: "text/html",
-          "accept-language": "en",
-          "user-agent": "TikDD/viddown-vimeo"
-        }
+    const startedAt = Date.now();
+    let phase: VidDownDiagnosticPhase = "landing";
+    let httpStatus: number | null = null;
+    let contentType: VidDownContentType = "missing";
+    let responseBytes: number | null = null;
+    let challengeDetected = false;
+    let tokenSource: VidDownDiagnosticEvent["tokenSource"] = "none";
+    let tokenValid = false;
+    let sessionCookiePresent = false;
+    let validMediaCount = 0;
+    const emit = (outcome: VidDownDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
+      try {
+        this.diagnosticSink?.({
+          event: "viddown_resolution_diagnostic",
+          taskId: input.taskId,
+          platform: "vimeo",
+          phase,
+          outcome,
+          httpStatus,
+          contentType,
+          responseBytes,
+          challengeDetected,
+          tokenSource,
+          tokenValid,
+          sessionCookiePresent,
+          validMediaCount,
+          failureCode,
+          durationMs: Math.max(0, Date.now() - startedAt)
+        });
+      } catch {
+        // Diagnostics must never change Provider behavior.
+      }
+    };
+    const observer = {
+      onResponse: (observation: { status: number; headers: Headers }) => {
+        httpStatus = observation.status;
+        contentType = contentTypeCategory(observation.headers);
+        challengeDetected = observation.status === 403;
       },
-      PAGE_HOSTS,
-      { expectedContentTypes: ["text/html"], maximumBytes: MAXIMUM_PAGE_BYTES }
-    );
-    let token = extractPageToken(page.body);
-    let providerCookie = page.cookie;
-    if (!token) {
-      const tokenResponse = await requestText(
+      onBody: (observation: { body: string }) => {
+        responseBytes = new TextEncoder().encode(observation.body).byteLength;
+        challengeDetected ||= challengeMarker(observation.body);
+      }
+    };
+
+    try {
+      const page = await requestText(
         this.fetchImpl,
-        new URL("/api/get-page-token", PAGE_ORIGIN),
+        new URL("/download-vimeo-video", PAGE_ORIGIN),
         {
           method: "GET",
           redirect: "manual",
           ...(input.signal ? { signal: input.signal } : {}),
           headers: {
-            accept: "application/json",
+            accept: "text/html",
             "accept-language": "en",
-            ...(page.cookie ? { cookie: page.cookie } : {}),
-            referer: page.response.url || `${PAGE_ORIGIN}/download-vimeo-video`,
             "user-agent": "TikDD/viddown-vimeo"
           }
         },
         PAGE_HOSTS,
-        { expectedContentTypes: ["application/json"], maximumBytes: 64_000 }
+        { expectedContentTypes: ["text/html"], maximumBytes: MAXIMUM_PAGE_BYTES, observer }
       );
-      try {
-        token = TokenResponseSchema.parse(JSON.parse(tokenResponse.body)).token;
-        providerCookie = [page.cookie, tokenResponse.cookie].filter(Boolean).join("; ");
-      } catch {
-        throw new ProviderError("VidDown did not return a valid page token.", "provider_schema_changed", true, true);
+      sessionCookiePresent = Boolean(page.cookie);
+      const pageToken = extractPageToken(page.body);
+      if (pageToken.marker === "invalid") {
+        throw new ProviderError("VidDown returned an invalid inline page token.", "provider_schema_changed", true, true);
       }
-    }
+      let token = pageToken.token;
+      let providerCookie = mergeCookieHeaders(page.cookie);
+      if (token) {
+        tokenSource = "inline";
+        tokenValid = true;
+      } else {
+        phase = "legacy-token";
+        const tokenResponse = await requestText(
+          this.fetchImpl,
+          new URL("/api/get-page-token", PAGE_ORIGIN),
+          {
+            method: "GET",
+            redirect: "manual",
+            ...(input.signal ? { signal: input.signal } : {}),
+            headers: {
+              accept: "application/json",
+              "accept-language": "en",
+              ...(providerCookie ? { cookie: providerCookie } : {}),
+              referer: page.response.url || `${PAGE_ORIGIN}/download-vimeo-video`,
+              "user-agent": "TikDD/viddown-vimeo"
+            }
+          },
+          PAGE_HOSTS,
+          { expectedContentTypes: ["application/json"], maximumBytes: 64_000, observer }
+        );
+        try {
+          token = TokenResponseSchema.parse(JSON.parse(tokenResponse.body)).token;
+          providerCookie = mergeCookieHeaders(providerCookie, tokenResponse.cookie);
+          sessionCookiePresent ||= Boolean(tokenResponse.cookie);
+          tokenSource = "legacy";
+          tokenValid = true;
+        } catch {
+          throw new ProviderError("VidDown did not return a valid page token.", "provider_schema_changed", true, true);
+        }
+      }
 
-    const response = await requestText(
-      this.fetchImpl,
-      new URL("/vimeo/v1/getLoaderList", API_ORIGIN),
-      {
-        method: "POST",
-        redirect: "manual",
-        ...(input.signal ? { signal: input.signal } : {}),
-        headers: {
-          accept: "application/json",
-          "content-type": "application/json",
-          authorization: token,
-          "access-from": "web",
-          "accept-language": "en",
-          origin: PAGE_ORIGIN,
-          referer: page.response.url || `${PAGE_ORIGIN}/download-vimeo-video`,
-          "accept-lang": "en",
-          ...(providerCookie ? { cookie: providerCookie } : {})
+      phase = "loader";
+      const response = await requestText(
+        this.fetchImpl,
+        new URL("/vimeo/v1/getLoaderList", API_ORIGIN),
+        {
+          method: "POST",
+          redirect: "manual",
+          ...(input.signal ? { signal: input.signal } : {}),
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            authorization: token,
+            "access-from": "web",
+            "accept-language": "en",
+            origin: PAGE_ORIGIN,
+            referer: page.response.url || `${PAGE_ORIGIN}/download-vimeo-video`,
+            "accept-lang": "en",
+            "user-agent": "TikDD/viddown-vimeo",
+            ...(providerCookie ? { cookie: providerCookie } : {})
+          },
+          body: JSON.stringify({ url: input.canonicalUrl, ga: { client_id: "", events: [] } })
         },
-        body: JSON.stringify({ url: input.canonicalUrl, ga: { client_id: "", events: [] } })
-      },
-      API_HOSTS,
-      { expectedContentTypes: ["application/json"], maximumBytes: MAXIMUM_RESPONSE_BYTES }
-    );
-    const parsed = parseLoaderResponse(response.body, response.response.status);
-    return ProviderResolutionSchema.parse(createRedirectResolution(
-      this.manifest.id,
-      this.manifest.kind,
-      input,
-      {
-        ...parsed,
-        warnings: ["VidDown Vimeo support is an experimental Beta route."]
-      },
-      { hostPolicyId: MEDIA_HOST_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
-    ));
+        API_HOSTS,
+        { expectedContentTypes: ["application/json"], maximumBytes: MAXIMUM_RESPONSE_BYTES, observer }
+      );
+      phase = "parse";
+      const parsed = parseLoaderResponse(response.body, response.response.status);
+      validMediaCount = parsed.formats.length;
+      phase = "completed";
+      emit("success", null);
+      return ProviderResolutionSchema.parse(createRedirectResolution(
+        this.manifest.id,
+        this.manifest.kind,
+        input,
+        {
+          ...parsed,
+          warnings: ["VidDown Vimeo support is an experimental Beta route."]
+        },
+        { hostPolicyId: MEDIA_HOST_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
+      ));
+    } catch (error) {
+      emit("failure", diagnosticFailureCode(error));
+      throw error;
+    }
   }
 }

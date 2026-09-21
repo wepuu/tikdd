@@ -74,7 +74,10 @@ export {
 export {
   VidDownProvider,
   parseVidDownResponse,
-  type VidDownProviderOptions
+  type VidDownProviderOptions,
+  type VidDownDiagnosticEvent,
+  type VidDownDiagnosticPhase,
+  type VidDownContentType
 } from "./adapters/viddown";
 export {
   SocialDownloaderRequestBudget,
