@@ -1543,3 +1543,18 @@ future release must separately audit browser handoff/save behavior; a 302 that o
 is not proof of a saved file. SaveVideo and DownBot remain deferred candidates, and existing X,
 Instagram, TikTok, Facebook, Pinterest, Admin and calibration state is unchanged. See [Work Item
 83](work-item-83-viddown-vimeo-beta.md) and [ADR-0039](architecture/adr/0039-viddown-vimeo-direct-cdn.md).
+
+### Work Item 84 — VidDown Vimeo handoff diagnostic closeout
+
+The first NL recheck returned no media because VidDown had changed its anonymous token flow and the
+page exceeded the former adapter response bound. That run is retained as a historical protocol-drift
+diagnostic; the adapter's bounded error classification remains unchanged. See [Work Item 84](work-item-84-viddown-vimeo-handoff.md).
+
+### Work Item 85 — VidDown dynamic token repair and Vimeo Beta validation
+
+Work Item 85 updates the adapter to prefer VidDown's strictly validated inline dynamic token, retain
+the legacy endpoint as a bounded fallback, and read the current page within a 256 KiB limit. The
+repaired flow was reproduced against both reviewed Vimeo samples with loader success and MP4
+candidates. Production gates and rollout remain disabled until the browser handoff/save audit,
+exact-SHA image deployment, and two one-attempt downloads complete. Vimeo remains Experimental/Beta
+and is not added to the sitemap. See [Work Item 85](work-item-85-viddown-vimeo-token-repair.md).

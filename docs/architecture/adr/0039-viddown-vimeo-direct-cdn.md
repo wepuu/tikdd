@@ -33,3 +33,16 @@ Vimeo has a bounded implementation path that can be audited without changing exi
 Instagram, TikTok, Facebook, Pinterest, Admin or calibration state. If navigation opens a player
 instead of saving a file, the route remains disabled until a separately reviewed client handoff is
 implemented.
+
+## Protocol drift addendum (Work Item 85)
+
+VidDown later moved its short-lived anonymous token into the HTML page as
+`__VID_DOWN_DYNAMIC_PAGE_JWT__` and its page grew beyond the original 64 KiB
+read bound. The adapter now prefers that strictly validated inline value and
+retains the old token endpoint only as a bounded compatibility fallback. This
+does not accept user cookies, login state or persistent tokens, and does not
+change the exact media Host policy or redirect-only Delivery behavior.
+
+Both reviewed Vimeo samples returned loader success and MP4 candidates under
+the current protocol. The production gates and rollout remain disabled until
+browser save behavior is separately proven.
