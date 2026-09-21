@@ -46,3 +46,13 @@ change the exact media Host policy or redirect-only Delivery behavior.
 Both reviewed Vimeo samples returned loader success and MP4 candidates under
 the current protocol. The production gates and rollout remain disabled until
 browser save behavior is separately proven.
+
+## Challenge-chain addendum (Work Item 86)
+
+The first authorized production handoff after Work Item 85 returned a single
+`provider_challenge` before browser download verification. Because the previous
+attempt record did not identify the request phase, Work Item 86 adds only
+internal, sanitized phase diagnostics and distinguishes an absent inline token
+from an invalid token before using the legacy fallback. It also keeps request
+chain cookies deduplicated and ephemeral. No challenge bypass, browser token,
+user cookie, proxy, public API field or Delivery policy change is introduced.

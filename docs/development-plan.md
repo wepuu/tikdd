@@ -1558,3 +1558,14 @@ repaired flow was reproduced against both reviewed Vimeo samples with loader suc
 candidates. Production gates and rollout remain disabled until the browser handoff/save audit,
 exact-SHA image deployment, and two one-attempt downloads complete. Vimeo remains Experimental/Beta
 and is not added to the sitemap. See [Work Item 85](work-item-85-viddown-vimeo-token-repair.md).
+
+### Work Item 86 — VidDown dynamic token and challenge-chain repair
+
+The first authorized production browser validation after Work Item 85 reached
+VidDown once and returned `provider_challenge`; the route was immediately
+disabled and the second sample was not submitted. Work Item 86 adds internal,
+sanitized phase diagnostics and tightens inline-token parsing, legacy fallback boundaries,
+and short-lived request-chain cookie merging. It does not bypass challenges,
+change Delivery, add a proxy, or alter existing provider traffic. VidDown stays
+disabled until a bounded NL canary and two sequential browser downloads pass.
+See [Work Item 86](work-item-86-viddown-challenge-repair.md).
