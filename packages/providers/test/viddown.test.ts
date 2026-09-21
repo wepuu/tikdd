@@ -114,6 +114,19 @@ describe("VidDown Vimeo adapter", () => {
     await expect(provider.resolve(input)).rejects.toThrow(/valid page token/i);
   });
 
+  it("rejects a VidDown page above the bounded response limit", async () => {
+    const provider = new VidDownProvider({
+      enabled: true,
+      fetchImpl: async (url) => response(
+        `<html>${"x".repeat(256_001)}</html>`,
+        "text/html",
+        url.toString()
+      )
+    });
+
+    await expect(provider.resolve(input)).rejects.toThrow(/exceeded the configured size limit/i);
+  });
+
   it("tolerates missing optional metadata while requiring a reviewed MP4", async () => {
     const parsed = parseVidDownResponse(JSON.stringify({
       state: 0,
