@@ -28,6 +28,12 @@ export interface ProviderHttpBodyObservation {
   body: string;
 }
 
+export interface ProviderChallengeObservation {
+  status: number;
+  headers: Headers;
+  body: string;
+}
+
 export interface ProviderHttpObserver {
   onRequest?(observation: ProviderHttpRequestObservation): void;
   onResponse?(observation: ProviderHttpResponseObservation): void;
@@ -196,6 +202,7 @@ export async function requestText(
     maximumRedirects?: number;
     allowNonOk?: boolean;
     observer?: ProviderHttpObserver;
+    challengeClassifier?: (observation: ProviderChallengeObservation) => boolean;
   } = {}
 ): Promise<{ body: string; cookie: string; response: Response }> {
   const maximumBytes = options.maximumBytes ?? 2_000_000;
@@ -328,7 +335,14 @@ export async function requestText(
   if (response.status === 401) {
     throw new ProviderError("The provider requires authentication.", "authentication_required", false, false);
   }
-  if (response.status === 403 || responseLooksLikeChallenge(body)) {
+  const bodyChallenge = options.challengeClassifier
+    ? options.challengeClassifier({
+        status: response.status,
+        headers: new Headers(response.headers),
+        body
+      })
+    : responseLooksLikeChallenge(body);
+  if (response.status === 403 || bodyChallenge) {
     throw new ProviderError("The provider presented an access challenge.", "provider_challenge", true, true);
   }
   if (response.status >= 500) {

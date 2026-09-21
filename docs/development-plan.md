@@ -1569,3 +1569,20 @@ and short-lived request-chain cookie merging. It does not bypass challenges,
 change Delivery, add a proxy, or alter existing provider traffic. VidDown stays
 disabled until a bounded NL canary and two sequential browser downloads pass.
 See [Work Item 86](work-item-86-viddown-challenge-repair.md).
+
+### Work Item 87 — VidDown landing challenge false-positive repair
+
+The authorized Work Item 86 production window produced three one-attempt failures at the VidDown
+landing phase. Each response was HTTP 200 HTML with the same size as the previously successful
+protocol page, and none reached token selection or the loader API. The generic challenge detector
+was treating static Cloudflare/Turnstile library references as an active interstitial.
+
+Work Item 87 keeps the shared default behavior for other Providers and gives VidDown a structural
+classifier: HTTP 403 remains blocked, while HTTP 200 requires document-level access-denied or
+Cloudflare interstitial evidence. Structural challenge evidence still wins when a token is present;
+otherwise a valid inline token is accepted when the normal page loads challenge-related libraries.
+Sanitized diagnostics now record a bounded reason enum and cookie
+presence only. Production stays at rollout revision 4 with zero allocation and all VidDown gates
+closed until the repaired exact image passes one bounded NL canary and two sequential owner browser
+downloads. See [Work Item 87](work-item-87-viddown-challenge-classifier.md) and the
+[ADR-0039 addendum](architecture/adr/0039-viddown-vimeo-direct-cdn.md#challenge-classifier-addendum-work-item-87).
