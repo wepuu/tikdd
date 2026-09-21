@@ -77,6 +77,94 @@ describe("VidDown Vimeo adapter", () => {
     expect(resolution.result.formats).toHaveLength(2);
   });
 
+  it("accepts a valid landing page that references challenge libraries", async () => {
+    const page = await fixture("viddown-vimeo-normal-with-challenge-library.html");
+    const body = await fixture("viddown-vimeo-success.json");
+    const events: unknown[] = [];
+    const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+    const provider = new VidDownProvider({
+      enabled: true,
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async (url, init) => {
+        calls.push({ url: url.toString(), init });
+        if (url.toString().includes("/download-vimeo-video")) {
+          return response(page, "text/html", url.toString(), 200, {
+            "set-cookie": "fixture_session=page; Path=/"
+          });
+        }
+        return response(body, "application/json", url.toString());
+      }
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(calls).toHaveLength(2);
+    expect(calls.some(({ url }) => url.includes("/api/get-page-token"))).toBe(false);
+    expect(resolution.result.formats).toHaveLength(2);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      phase: "completed",
+      outcome: "success",
+      challengeDetected: false,
+      challengeReason: "none",
+      tokenSource: "inline",
+      tokenValid: true,
+      sessionCookiePresent: true,
+      validMediaCount: 2
+    });
+  });
+
+  it("rejects a structural Cloudflare interstitial without treating static strings as sufficient", async () => {
+    const page = (await fixture("viddown-vimeo-cloudflare-interstitial.html")).replace(
+      "</body>",
+      '<script>window.__VID_DOWN_DYNAMIC_PAGE_JWT__ = "fixture-inline-token-123456789012345678901234567890";</script></body>'
+    );
+    const events: unknown[] = [];
+    const calls: string[] = [];
+    const provider = new VidDownProvider({
+      enabled: true,
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async (url) => {
+        calls.push(url.toString());
+        return response(page, "text/html", url.toString());
+      }
+    });
+
+    await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_challenge" });
+    expect(calls).toHaveLength(1);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      phase: "landing",
+      outcome: "failure",
+      httpStatus: 200,
+      challengeDetected: true,
+      challengeReason: "cloudflare_interstitial",
+      tokenSource: "none",
+      tokenValid: false,
+      failureCode: "provider_challenge"
+    });
+  });
+
+  it("classifies an HTTP 200 access-denied document as a landing challenge", async () => {
+    const page = await fixture("viddown-vimeo-challenge.html");
+    const events: unknown[] = [];
+    const provider = new VidDownProvider({
+      enabled: true,
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async (url) => response(page, "text/html", url.toString())
+    });
+
+    await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_challenge" });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      phase: "landing",
+      outcome: "failure",
+      httpStatus: 200,
+      challengeDetected: true,
+      challengeReason: "access_denied_document",
+      failureCode: "provider_challenge"
+    });
+  });
+
   it("uses the anonymous page-token flow once and returns opaque Vimeo candidates", async () => {
     const body = await fixture("viddown-vimeo-success.json");
     const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
@@ -85,9 +173,15 @@ describe("VidDown Vimeo adapter", () => {
       fetchImpl: async (url, init) => {
         calls.push({ url: url.toString(), init });
         if (url.toString().includes("/download-vimeo-video")) {
-          return response("<html>fixture</html>", "text/html", url.toString(), 200, {
-            "set-cookie": "fixture_session=page; Path=/"
-          });
+          return response(
+            '<html><script src="/cdn-cgi/challenge-platform/library.js"></script></html>',
+            "text/html",
+            url.toString(),
+            200,
+            {
+              "set-cookie": "fixture_session=page; Path=/"
+            }
+          );
         }
         if (url.toString().includes("/api/get-page-token")) {
           return response(JSON.stringify({ token: "fixture-token" }), "application/json", url.toString(), 200, {
@@ -161,7 +255,9 @@ describe("VidDown Vimeo adapter", () => {
             url.toString()
           );
         }
-        return response(challengeBody, "text/html", url.toString(), 403);
+        return response(challengeBody, "text/html", url.toString(), 403, {
+          "set-cookie": "challenge_session=fixture; Path=/"
+        });
       }
     });
 
@@ -173,8 +269,10 @@ describe("VidDown Vimeo adapter", () => {
       outcome: "failure",
       httpStatus: 403,
       challengeDetected: true,
+      challengeReason: "http_403",
       tokenSource: "inline",
       tokenValid: true,
+      sessionCookiePresent: true,
       failureCode: "provider_challenge"
     });
     expect(JSON.stringify(events[0])).not.toContain(inlineToken);

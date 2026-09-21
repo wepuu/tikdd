@@ -8,6 +8,7 @@ import {
   requestText,
   reviewedThumbnailUrl,
   type ParsedFormat,
+  type ProviderChallengeObservation,
   type ProviderFetch
 } from "./shared";
 
@@ -44,6 +45,11 @@ export type VidDownDiagnosticPhase =
   | "completed";
 
 export type VidDownContentType = "json" | "html" | "text" | "other" | "missing";
+export type VidDownChallengeReason =
+  | "http_403"
+  | "access_denied_document"
+  | "cloudflare_interstitial"
+  | "none";
 
 export interface VidDownDiagnosticEvent {
   event: "viddown_resolution_diagnostic";
@@ -55,6 +61,7 @@ export interface VidDownDiagnosticEvent {
   contentType: VidDownContentType;
   responseBytes: number | null;
   challengeDetected: boolean;
+  challengeReason: VidDownChallengeReason;
   tokenSource: "inline" | "legacy" | "none";
   tokenValid: boolean;
   sessionCookiePresent: boolean;
@@ -111,10 +118,6 @@ function contentTypeCategory(headers: Headers): VidDownContentType {
   return "other";
 }
 
-function challengeMarker(body: string): boolean {
-  return /attention required|sorry, you have been blocked|cf-turnstile|challenge-platform|access denied|just a moment/i.test(body);
-}
-
 function diagnosticFailureCode(error: unknown): ProviderFailureCode {
   if (error instanceof ProviderError) return error.failureCode;
   if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
@@ -152,6 +155,47 @@ function extractPageToken(body: string): {
     return { token: null, marker: "invalid" };
   }
   return { token: raw, marker: "valid" };
+}
+
+function htmlTitle(body: string): string {
+  const title = body.match(/<title(?:\s[^>]*)?>([\s\S]{0,300}?)<\/title>/i)?.[1] ?? "";
+  return title.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function classifyVidDownChallenge(
+  observation: ProviderChallengeObservation,
+  phase: VidDownDiagnosticPhase
+): VidDownChallengeReason {
+  if (observation.status === 403) return "http_403";
+
+  const contentType = observation.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+  if (contentType !== "text/html") return "none";
+
+  const title = htmlTitle(observation.body);
+  if (/access denied|attention required|sorry, you have been blocked/i.test(title)) {
+    return "access_denied_document";
+  }
+  if (/<(?:h1|h2|p)\b[^>]*>[^<]{0,160}sorry,? you have been blocked/i.test(observation.body)) {
+    return "access_denied_document";
+  }
+
+  const hasCloudflareTitle = /just a moment/i.test(title);
+  const hasChallengeForm = /<form\b[^>]*\baction\s*=\s*["'][^"']*\/cdn-cgi\/challenge-platform\//i.test(
+    observation.body
+  );
+  const hasChallengeContainer = /\bid\s*=\s*["'](?:challenge-running|challenge-stage|cf-chl-widget)["']/i.test(
+    observation.body
+  );
+  const hasTurnstileWidget = /<(?:div|form)\b[^>]*\bclass\s*=\s*["'][^"']*\bcf-turnstile\b/i.test(
+    observation.body
+  );
+  if ((hasCloudflareTitle || hasTurnstileWidget) && (hasChallengeForm || hasChallengeContainer)) {
+    return "cloudflare_interstitial";
+  }
+  if (phase === "landing" && extractPageToken(observation.body).marker === "valid") {
+    return "none";
+  }
+  return "none";
 }
 
 function mergeCookieHeaders(...headers: Array<string | null | undefined>): string {
@@ -379,6 +423,7 @@ export class VidDownProvider implements ResolverProvider {
     let contentType: VidDownContentType = "missing";
     let responseBytes: number | null = null;
     let challengeDetected = false;
+    let challengeReason: VidDownChallengeReason = "none";
     let tokenSource: VidDownDiagnosticEvent["tokenSource"] = "none";
     let tokenValid = false;
     let sessionCookiePresent = false;
@@ -395,6 +440,7 @@ export class VidDownProvider implements ResolverProvider {
           contentType,
           responseBytes,
           challengeDetected,
+          challengeReason,
           tokenSource,
           tokenValid,
           sessionCookiePresent,
@@ -410,12 +456,18 @@ export class VidDownProvider implements ResolverProvider {
       onResponse: (observation: { status: number; headers: Headers }) => {
         httpStatus = observation.status;
         contentType = contentTypeCategory(observation.headers);
-        challengeDetected = observation.status === 403;
+        const cookieHeaders = observation.headers as Headers & { getSetCookie?: () => string[] };
+        sessionCookiePresent ||= (cookieHeaders.getSetCookie?.().length ?? 0) > 0
+          || Boolean(observation.headers.get("set-cookie"));
       },
       onBody: (observation: { body: string }) => {
         responseBytes = new TextEncoder().encode(observation.body).byteLength;
-        challengeDetected ||= challengeMarker(observation.body);
       }
+    };
+    const challengeClassifier = (observation: ProviderChallengeObservation) => {
+      challengeReason = classifyVidDownChallenge(observation, phase);
+      challengeDetected = challengeReason !== "none";
+      return challengeDetected;
     };
 
     try {
@@ -433,7 +485,12 @@ export class VidDownProvider implements ResolverProvider {
           }
         },
         PAGE_HOSTS,
-        { expectedContentTypes: ["text/html"], maximumBytes: MAXIMUM_PAGE_BYTES, observer }
+        {
+          expectedContentTypes: ["text/html"],
+          maximumBytes: MAXIMUM_PAGE_BYTES,
+          observer,
+          challengeClassifier
+        }
       );
       sessionCookiePresent = Boolean(page.cookie);
       const pageToken = extractPageToken(page.body);
@@ -463,7 +520,12 @@ export class VidDownProvider implements ResolverProvider {
             }
           },
           PAGE_HOSTS,
-          { expectedContentTypes: ["application/json"], maximumBytes: 64_000, observer }
+          {
+            expectedContentTypes: ["application/json"],
+            maximumBytes: 64_000,
+            observer,
+            challengeClassifier
+          }
         );
         try {
           token = TokenResponseSchema.parse(JSON.parse(tokenResponse.body)).token;
@@ -499,7 +561,12 @@ export class VidDownProvider implements ResolverProvider {
           body: JSON.stringify({ url: input.canonicalUrl, ga: { client_id: "", events: [] } })
         },
         API_HOSTS,
-        { expectedContentTypes: ["application/json"], maximumBytes: MAXIMUM_RESPONSE_BYTES, observer }
+        {
+          expectedContentTypes: ["application/json"],
+          maximumBytes: MAXIMUM_RESPONSE_BYTES,
+          observer,
+          challengeClassifier
+        }
       );
       phase = "parse";
       const parsed = parseLoaderResponse(response.body, response.response.status);

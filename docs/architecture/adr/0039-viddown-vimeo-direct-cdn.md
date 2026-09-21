@@ -56,3 +56,19 @@ internal, sanitized phase diagnostics and distinguishes an absent inline token
 from an invalid token before using the legacy fallback. It also keeps request
 chain cookies deduplicated and ephemeral. No challenge bypass, browser token,
 user cookie, proxy, public API field or Delivery policy change is introduced.
+
+## Challenge-classifier addendum (Work Item 87)
+
+The Work Item 86 production diagnostics showed that the generic body-marker check rejected a
+normal HTTP 200 landing page before VidDown could evaluate its valid inline token. Provider pages
+may reference Cloudflare or Turnstile libraries while still serving the normal application, so a
+bare library string is not an active challenge boundary.
+
+VidDown now opts into a provider-specific classifier while the shared default remains unchanged for
+other adapters. HTTP 403 stays terminal for the request. HTTP 200 HTML requires document-level
+challenge evidence; that structural evidence still wins when a token is present, while an otherwise
+valid inline token is accepted despite inert challenge-library references. This is a classification
+repair, not a challenge bypass: user cookies, browser state, CAPTCHA tokens, fingerprint emulation
+and persistent upstream credentials remain forbidden.
+The exact API/media hosts, redirect-only Delivery policy, one-attempt queue budget and production
+rollout gates do not change.

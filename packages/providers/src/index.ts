@@ -75,6 +75,7 @@ export {
   VidDownProvider,
   parseVidDownResponse,
   type VidDownProviderOptions,
+  type VidDownChallengeReason,
   type VidDownDiagnosticEvent,
   type VidDownDiagnosticPhase,
   type VidDownContentType
