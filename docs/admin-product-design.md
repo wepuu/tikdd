@@ -235,6 +235,24 @@ Contains site identity/default social metadata, locale registry, safe publicatio
 read-only deployment/authentication/dependency readiness. Secret values are never rendered; only
 configured/missing states are shown.
 
+### Downloads and traffic
+
+Provides one compact operational funnel: submitted user tasks, terminal resolution success,
+Provider attempts, Delivery tickets, redirect validation, and browser handoffs. Counts use the same
+selected time window. A ticket or handoff is not labelled as a completed user file save because the
+browser-to-CDN transfer is outside TikDD's observable boundary.
+
+This workspace derives platform rows from Provider manifests and catalog slugs. It must not keep a
+closed platform list in Admin. Overview retains only the small attention summary; detailed funnel
+and per-platform health belong here.
+
+### Single-owner workspace refinement
+
+The routine shell uses five workspaces: Overview, Downloads and traffic, Content, Providers, and
+Settings. Settings puts Google integrations and account actions first; low-frequency recovery data
+is collapsed. The console favors readable type, dense signal cards, and explicit draft/live labels
+over audit fields or enterprise approval workflows that a single owner does not need.
+
 ## Shared interaction and safety rules
 
 - Read state distinguishes `healthy`, `warning`, `open`, `paused`, `insufficient_data`, `stale`,

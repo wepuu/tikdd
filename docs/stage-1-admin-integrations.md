@@ -37,3 +37,11 @@ This stage was one integration branch and one PR. Targeted tests ran during deve
 one full check, GitHub image build, encrypted production backup, and manual deployment. There was no
 per-commit production deployment or repeated SaveFromIns testing. Future Admin/content changes are
 grouped into Stage 2 instead of reopening this stage.
+
+## Work Item 88 clarification
+
+The original integration pipeline remains unchanged, but Admin now distinguishes draft IDs from
+the identifiers in the active snapshot and offers the existing publication command next to the
+settings. Web loads the published tags once per localized layout and derives `/ads.txt` from the
+published AdSense ID. This closes the misleading “configured means live” gap without accepting raw
+scripts or creating a new deployment mechanism.

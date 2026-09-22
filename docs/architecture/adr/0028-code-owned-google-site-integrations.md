@@ -29,3 +29,15 @@ not become an arbitrary HTML or JavaScript injection surface.
 This requires no SQL migration or new public endpoint and keeps locale-independent tags consistent
 across all localized pages. A future integration must add a bounded identifier schema and a
 code-owned renderer; raw third-party HTML is out of scope.
+
+## Activation-truth addendum — Work Item 88
+
+Admin must not describe a saved identifier as live until it appears in the active immutable
+snapshot. The settings read model therefore exposes draft and published integration values
+separately. The Web locale layout is the single code-owned tag injection point, while `/ads.txt`
+is derived from the same published AdSense publisher ID. The UI may publish through the existing
+content publication command, but it does not introduce a second settings activation path.
+
+An active tag only proves that TikDD emitted the configured identifier. AdSense account approval,
+Auto Ads configuration, consent policy, browser blocking, and Google-side reporting remain external
+conditions and must not be reported as TikDD activation failures.

@@ -32,8 +32,8 @@ export type GrowthReadiness = {
   enabledLocaleCount: number;
   readyCellCount: number;
   missingCellCount: number;
-  analytics: "configured" | "missing";
-  adsense: "configured" | "missing";
+  analytics: "live" | "pending" | "missing";
+  adsense: "live" | "pending" | "missing";
   currentRevision: number | null;
   propagationState: AdminContentPublicationView["propagationState"] | "unavailable";
   blockers: string[];
@@ -103,14 +103,15 @@ export function deriveGrowthReadiness(input: GrowthReadinessInput): GrowthReadin
   if (publication.propagationState === "propagation_failed") blockers.push("propagation_failed");
   if (publication.propagationState === "propagating") blockers.push("publication_in_progress");
 
+  const integrationState = (draft: string | null, published: string | null) => draft !== published ? "pending" as const : published ? "live" as const : "missing" as const;
   return {
     status: blockers.length ? "partial" : "ready",
     platformPages,
     enabledLocaleCount: content.readiness.enabledLocaleCount,
     readyCellCount: content.readiness.readyCellCount,
     missingCellCount: content.readiness.missingCellCount,
-    analytics: settings.siteIntegrations.googleAnalyticsMeasurementId ? "configured" : "missing",
-    adsense: settings.siteIntegrations.googleAdsensePublisherId ? "configured" : "missing",
+    analytics: integrationState(settings.siteIntegrations.googleAnalyticsMeasurementId, settings.publishedSiteIntegrations.googleAnalyticsMeasurementId),
+    adsense: integrationState(settings.siteIntegrations.googleAdsensePublisherId, settings.publishedSiteIntegrations.googleAdsensePublisherId),
     currentRevision: publication.currentRevision,
     propagationState: publication.propagationState,
     blockers: [...new Set(blockers)]

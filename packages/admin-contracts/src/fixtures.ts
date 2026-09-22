@@ -50,9 +50,9 @@ export const ADMIN_OVERVIEW_FIXTURES = {
 
 const betaBucket: AdminBetaHealth["totals"] = {
   latestEventAt: "2026-08-11T11:59:00.000Z",
-  tasks: { total: 42, succeeded: 31, failed: 7, expired: 3, active: 1, failureCounts: { provider_timeout: 4, provider_schema_changed: 3 } },
+  tasks: { total: 42, succeeded: 31, failed: 7, expired: 3, active: 1, successRateBps: 7_561, failureCounts: { provider_timeout: 4, provider_schema_changed: 3 } },
   attempts: { total: 50, succeeded: 38, failed: 12, successRateBps: 7_600, failureCounts: { provider_timeout: 6, provider_unavailable: 6 } },
-  deliveries: { total: 37, succeeded: 35, failed: 2, successRateBps: 9_459, resultCounts: { redirect_issued: 35, invalid_ticket: 2 } }
+  deliveries: { total: 37, succeeded: 35, failed: 2, successRateBps: 9_459, ticketCount: 39, handoffCount: 35, resultCounts: { passed: 35, invalid_ticket: 2 } }
 };
 
 export const ADMIN_BETA_HEALTH_FIXTURE: AdminBetaHealth = {

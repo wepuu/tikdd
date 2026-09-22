@@ -253,6 +253,7 @@ function mapBetaReport(report: BetaHealthReport): AdminBetaHealth {
       failed: bucket.tasks.failed,
       expired: bucket.tasks.expired,
       active: bucket.tasks.active,
+      successRateBps: rateBps(bucket.tasks.succeeded + bucket.tasks.failed + bucket.tasks.expired, bucket.tasks.successRate),
       failureCounts: safeBetaCounts(bucket.tasks.failureCounts)
     },
     attempts: {
@@ -267,6 +268,8 @@ function mapBetaReport(report: BetaHealthReport): AdminBetaHealth {
       succeeded: bucket.deliveries.succeeded,
       failed: bucket.deliveries.failed,
       successRateBps: rateBps(bucket.deliveries.total, bucket.deliveries.successRate),
+      ticketCount: bucket.deliveries.ticketCount,
+      handoffCount: bucket.deliveries.handoffCount,
       resultCounts: safeBetaCounts(bucket.deliveries.resultCounts)
     }
   });
@@ -780,9 +783,12 @@ export class AdminReadService {
     if (!Number.isInteger(hours) || hours < 1 || hours > 168) {
       throw new Error("Admin Beta health window is out of bounds.");
     }
+    const platforms = [...new Set(this.options.manifests.flatMap((manifest) =>
+      manifest.platforms.map((capability) => capability.platform)
+    ))].slice(0, 32);
     const report = await withTimeout(this.options.beta.report({
       hours,
-      platforms: ["x", "instagram", "tiktok", "facebook"],
+      platforms,
       now: this.now()
     }), this.options.readTimeoutMs * 2);
     return mapBetaReport(report);
@@ -800,8 +806,9 @@ export class AdminReadService {
     const routeItems = routes.value?.routes ?? [];
     const queueCounts = queue.value ?? {};
     const handoffs = metrics.value?.deliveryHandoffCount ?? 0;
+    const deliverySuccesses = metrics.value?.deliveryValidationSuccessCount ?? 0;
     const deliveryFailures = metrics.value?.deliveryFailureCount ?? 0;
-    const deliveryDenominator = handoffs + deliveryFailures;
+    const deliveryDenominator = deliverySuccesses + deliveryFailures;
     const degradedRoutes = routeItems.filter(({ state, productionEligible }) => productionEligible && ["warning", "open", "stale", "unavailable"].includes(state)).length;
     const state = runtime.state === "unavailable"
       ? "unavailable"
@@ -823,7 +830,7 @@ export class AdminReadService {
       delivery: {
         handoffCount: handoffs,
         failureCount: deliveryFailures,
-        successRateBps: deliveryDenominator === 0 ? null : Math.round((handoffs / deliveryDenominator) * 10_000)
+        successRateBps: deliveryDenominator === 0 ? null : Math.round((deliverySuccesses / deliveryDenominator) * 10_000)
       },
       routes: {
         total: routeItems.length,

@@ -1,9 +1,8 @@
-import type { ResolveTask } from "@tikdd/contracts";
+import { PlatformIdSchema, type Platform, type ResolveTask } from "@tikdd/contracts";
 import type { Pool, QueryResultRow } from "pg";
 
-const betaPlatforms = ["x", "instagram", "tiktok", "facebook"] as const;
-export type BetaPlatform = (typeof betaPlatforms)[number];
-export const BETA_PLATFORMS: readonly BetaPlatform[] = betaPlatforms;
+export type BetaPlatform = Platform;
+export const BETA_PLATFORMS: readonly BetaPlatform[] = ["x", "instagram", "tiktok", "facebook", "pinterest", "vimeo"];
 
 type TaskStatus = ResolveTask["status"];
 
@@ -19,6 +18,7 @@ export interface BetaTaskSummary {
   failed: number;
   expired: number;
   active: number;
+  successRate: number;
   failureCounts: Record<string, number>;
 }
 
@@ -35,6 +35,8 @@ export interface BetaDeliverySummary {
   succeeded: number;
   failed: number;
   successRate: number;
+  ticketCount: number;
+  handoffCount: number;
   resultCounts: Record<string, number>;
 }
 
@@ -77,6 +79,7 @@ export interface BetaAttemptRow {
 
 export interface BetaDeliveryRow {
   platform: string;
+  stage: "ticket_creation" | "redirect_validation" | "ticket_expiry" | "browser_handoff";
   resultClass: string;
   count: number;
   latestAt: string | null;
@@ -90,7 +93,7 @@ export interface BetaReportRows {
 }
 
 function emptyTasks(): BetaTaskSummary {
-  return { total: 0, succeeded: 0, failed: 0, expired: 0, active: 0, failureCounts: {} };
+  return { total: 0, succeeded: 0, failed: 0, expired: 0, active: 0, successRate: 0, failureCounts: {} };
 }
 
 function emptyAttempts(): BetaAttemptSummary {
@@ -98,7 +101,7 @@ function emptyAttempts(): BetaAttemptSummary {
 }
 
 function emptyDeliveries(): BetaDeliverySummary {
-  return { total: 0, succeeded: 0, failed: 0, successRate: 0, resultCounts: {} };
+  return { total: 0, succeeded: 0, failed: 0, successRate: 0, ticketCount: 0, handoffCount: 0, resultCounts: {} };
 }
 
 function emptyBucket(): BetaReportBucket {
@@ -122,6 +125,8 @@ function addTaskRows(bucket: BetaReportBucket, rows: readonly BetaTaskStatusRow[
     else if (row.status === "expired") bucket.tasks.expired += count;
     else bucket.tasks.active += count;
   }
+  const terminal = bucket.tasks.succeeded + bucket.tasks.failed + bucket.tasks.expired;
+  bucket.tasks.successRate = terminal === 0 ? 0 : Number((bucket.tasks.succeeded / terminal).toFixed(4));
 }
 
 function addTaskFailures(bucket: BetaReportBucket, rows: readonly BetaTaskFailureRow[]): void {
@@ -149,13 +154,16 @@ function addAttemptRows(bucket: BetaReportBucket, rows: readonly BetaAttemptRow[
 function addDeliveryRows(bucket: BetaReportBucket, rows: readonly BetaDeliveryRow[]): void {
   for (const row of rows) {
     const count = normalizeCount(row.count);
-    bucket.deliveries.total += count;
-    if (row.resultClass === "succeeded" || row.resultClass === "passed" || row.resultClass === "redirect_issued") {
-      bucket.deliveries.succeeded += count;
-    } else {
-      bucket.deliveries.failed += count;
+    if (row.stage === "ticket_creation" && row.resultClass === "succeeded") {
+      bucket.deliveries.ticketCount += count;
+    } else if (row.stage === "redirect_validation") {
+      bucket.deliveries.total += count;
+      if (row.resultClass === "passed") bucket.deliveries.succeeded += count;
+      else bucket.deliveries.failed += count;
+      increment(bucket.deliveries.resultCounts, row.resultClass, count);
+    } else if (row.stage === "browser_handoff" && row.resultClass === "redirect_issued") {
+      bucket.deliveries.handoffCount += count;
     }
-    increment(bucket.deliveries.resultCounts, row.resultClass, count);
   }
   bucket.deliveries.successRate = bucket.deliveries.total === 0
     ? 0
@@ -196,7 +204,7 @@ export function aggregateBetaHealth(
   platforms: readonly BetaPlatform[] = BETA_PLATFORMS,
   generatedAt = new Date().toISOString()
 ): BetaHealthReport {
-  const selected = [...new Set(platforms)].filter((platform): platform is BetaPlatform => betaPlatforms.includes(platform));
+  const selected = [...new Set(platforms)].filter((platform): platform is BetaPlatform => PlatformIdSchema.safeParse(platform).success).slice(0, 32);
   const scopedRows: BetaReportRows = {
     taskStatuses: rows.taskStatuses.filter((row) => selected.includes(row.platform as BetaPlatform)),
     taskFailures: rows.taskFailures.filter((row) => selected.includes(row.platform as BetaPlatform)),
@@ -243,6 +251,7 @@ interface AttemptQueryRow extends QueryResultRow {
 
 interface DeliveryQueryRow extends QueryResultRow {
   platform: string;
+  stage: BetaDeliveryRow["stage"];
   result_class: string;
   count: number;
   latest_at: Date | null;
@@ -265,7 +274,7 @@ export class BetaOperabilityRepository {
         `SELECT platform, error->>'code' AS failure_code, count(*)::int AS count
          FROM resolve_tasks
          WHERE observation_class = 'public' AND status = 'failed'
-           AND updated_at >= $1 AND updated_at < $2
+           AND created_at >= $1 AND created_at < $2
            AND platform = ANY($3::text[])
          GROUP BY platform, error->>'code' ORDER BY platform, failure_code`, parameters),
       this.pool.query<AttemptQueryRow>(
@@ -277,17 +286,17 @@ export class BetaOperabilityRepository {
            AND pa.platform = ANY($3::text[])
          GROUP BY pa.platform, pa.status, pa.failure_code ORDER BY pa.platform, pa.status, pa.failure_code`, parameters),
       this.pool.query<DeliveryQueryRow>(
-        `SELECT platform, result_class, count(*)::int AS count, max(occurred_at) AS latest_at
+        `SELECT platform, stage, result_class, count(*)::int AS count, max(occurred_at) AS latest_at
          FROM provider_delivery_outcomes
          WHERE observation_class = 'public' AND occurred_at >= $1 AND occurred_at < $2
            AND platform = ANY($3::text[])
-         GROUP BY platform, result_class ORDER BY platform, result_class`, parameters)
+         GROUP BY platform, stage, result_class ORDER BY platform, stage, result_class`, parameters)
     ]);
     return {
       taskStatuses: taskStatuses.rows.map((row) => ({ platform: row.platform, status: row.status, count: row.count, latestAt: row.latest_at?.toISOString() ?? null })),
       taskFailures: taskFailures.rows.map((row) => ({ platform: row.platform, failureCode: row.failure_code, count: row.count })),
       attempts: attempts.rows.map((row) => ({ platform: row.platform, status: row.status, failureCode: row.failure_code, count: row.count, latestAt: row.latest_at?.toISOString() ?? null })),
-      deliveries: deliveries.rows.map((row) => ({ platform: row.platform, resultClass: row.result_class, count: row.count, latestAt: row.latest_at?.toISOString() ?? null }))
+      deliveries: deliveries.rows.map((row) => ({ platform: row.platform, stage: row.stage, resultClass: row.result_class, count: row.count, latestAt: row.latest_at?.toISOString() ?? null }))
     };
   }
 

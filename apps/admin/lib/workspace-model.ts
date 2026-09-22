@@ -1,12 +1,13 @@
-export type AdminWorkspace = "overview" | "content" | "providers" | "settings";
+export type AdminWorkspace = "overview" | "downloads" | "content" | "providers" | "settings";
 
 export const ADMIN_WORKSPACES: ReadonlyArray<{
   id: AdminWorkspace;
   label: string;
   detail: string;
-  icon: "home" | "content" | "providers" | "settings";
+  icon: "home" | "downloads" | "content" | "providers" | "settings";
 }> = [
   { id: "overview", label: "概览", detail: "今天和告警", icon: "home" },
+  { id: "downloads", label: "下载与流量", detail: "任务和交接", icon: "downloads" },
   { id: "content", label: "内容", detail: "编辑与发布", icon: "content" },
   { id: "providers", label: "Providers", detail: "能力与路由", icon: "providers" },
   { id: "settings", label: "设置", detail: "站点与账号", icon: "settings" }
@@ -18,7 +19,7 @@ export const ADMIN_WORKSPACES: ReadonlyArray<{
  */
 export const LEGACY_WORKSPACE_MAP: Readonly<Record<string, AdminWorkspace>> = {
   "operational-truth": "providers",
-  "beta-health": "providers",
+  "beta-health": "downloads",
   routing: "providers",
   coverage: "providers",
   platforms: "providers",

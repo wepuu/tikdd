@@ -13,7 +13,7 @@ import {
 const BoundedCountSchema = z.number().int().nonnegative().max(1_000_000_000);
 const RateBpsSchema = z.number().int().min(0).max(10_000);
 const DurationSchema = z.number().int().nonnegative().max(120_000);
-const BetaPlatformSchema = z.enum(["x", "instagram", "tiktok", "facebook"]);
+const BetaPlatformSchema = PlatformIdSchema;
 const BetaCodeSchema = z.string().min(1).max(80).regex(/^[a-z0-9][a-z0-9_.-]*$/);
 const BetaCountsSchema = z.record(BetaCodeSchema, BoundedCountSchema).superRefine((value, context) => {
   if (Object.keys(value).length > 16) {
@@ -27,6 +27,7 @@ const AdminBetaTaskSummarySchema = z.strictObject({
   failed: BoundedCountSchema,
   expired: BoundedCountSchema,
   active: BoundedCountSchema,
+  successRateBps: RateBpsSchema.nullable().default(null),
   failureCounts: BetaCountsSchema
 });
 
@@ -43,6 +44,8 @@ const AdminBetaDeliverySummarySchema = z.strictObject({
   succeeded: BoundedCountSchema,
   failed: BoundedCountSchema,
   successRateBps: RateBpsSchema.nullable(),
+  ticketCount: BoundedCountSchema.default(0),
+  handoffCount: BoundedCountSchema.default(0),
   resultCounts: BetaCountsSchema
 });
 
@@ -110,10 +113,12 @@ export const AdminBetaHealthSchema = z.strictObject({
     to: AdminTimestampSchema,
     hours: z.number().int().min(1).max(168)
   }),
-  platforms: z.array(BetaPlatformSchema).min(1).max(4),
+  platforms: z.array(BetaPlatformSchema).min(1).max(32),
   latestEventAt: AdminTimestampSchema.nullable(),
   totals: AdminBetaBucketSchema,
-  byPlatform: z.record(BetaPlatformSchema, AdminBetaBucketSchema)
+  byPlatform: z.record(BetaPlatformSchema, AdminBetaBucketSchema).superRefine((value, context) => {
+    if (Object.keys(value).length > 32) context.addIssue({ code: "custom", message: "Too many platform aggregates." });
+  })
 });
 
 export const AdminRouteSummarySchema = z.strictObject({

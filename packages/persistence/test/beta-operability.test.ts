@@ -21,14 +21,16 @@ describe("beta operability aggregation", () => {
         { platform: "instagram", status: "failed", failureCode: "provider_timeout", count: 1, latestAt: "2026-09-09T12:01:00.000Z" }
       ],
       deliveries: [
-        { platform: "x", resultClass: "redirect_issued", count: 2, latestAt: "2026-09-09T12:03:00.000Z" },
-        { platform: "instagram", resultClass: "host_rejected", count: 1, latestAt: "2026-09-09T12:04:00.000Z" }
+        { platform: "x", stage: "ticket_creation", resultClass: "succeeded", count: 2, latestAt: "2026-09-09T12:02:00.000Z" },
+        { platform: "x", stage: "redirect_validation", resultClass: "passed", count: 2, latestAt: "2026-09-09T12:03:00.000Z" },
+        { platform: "x", stage: "browser_handoff", resultClass: "redirect_issued", count: 2, latestAt: "2026-09-09T12:03:00.000Z" },
+        { platform: "instagram", stage: "redirect_validation", resultClass: "host_rejected", count: 1, latestAt: "2026-09-09T12:04:00.000Z" }
       ]
     }, window, ["x", "instagram"], "2026-09-10T00:00:00.000Z");
 
     expect(report.totals.tasks).toMatchObject({ total: 4, succeeded: 2, failed: 1, active: 1 });
     expect(report.totals.attempts).toMatchObject({ total: 3, succeeded: 2, failed: 1, successRate: 0.6667 });
-    expect(report.totals.deliveries).toMatchObject({ total: 3, succeeded: 2, failed: 1, successRate: 0.6667 });
+    expect(report.totals.deliveries).toMatchObject({ total: 3, succeeded: 2, failed: 1, successRate: 0.6667, ticketCount: 2, handoffCount: 2 });
     expect(report.byPlatform.instagram.tasks.failureCounts).toEqual({ provider_timeout: 1 });
     expect(report.byPlatform.x.latestEventAt).toBe("2026-09-09T12:03:00.000Z");
     expect(report.byPlatform.instagram.latestEventAt).toBe("2026-09-09T12:04:00.000Z");
@@ -77,5 +79,19 @@ describe("beta operability aggregation", () => {
 
     expect(report.platforms).toEqual(["x", "instagram", "tiktok", "facebook"]);
     expect(report.byPlatform.facebook.tasks).toMatchObject({ total: 4, succeeded: 4 });
+  });
+
+  it("accepts catalog slugs without turning the report into a closed platform enum", () => {
+    const report = aggregateBetaHealth({
+      taskStatuses: [
+        { platform: "pinterest", status: "succeeded", count: 2, latestAt: "2026-09-17T03:00:00.000Z" },
+        { platform: "vimeo", status: "failed", count: 1, latestAt: "2026-09-17T03:01:00.000Z" }
+      ],
+      taskFailures: [], attempts: [], deliveries: []
+    }, window, ["pinterest", "vimeo"]);
+
+    expect(report.platforms).toEqual(["pinterest", "vimeo"]);
+    expect(report.byPlatform.pinterest.tasks.total).toBe(2);
+    expect(report.byPlatform.vimeo.tasks.failed).toBe(1);
   });
 });

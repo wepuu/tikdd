@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartLineUp, CheckCircle, ClockCounterClockwise, WarningCircle } from "@phosphor-icons/react";
+import { ChartLineUp, WarningCircle } from "@phosphor-icons/react";
 import type { AdminBetaHealth } from "@tikdd/admin-contracts";
 import { deriveBetaCadenceSignal, formatCount, formatRate, formatTime } from "../lib/console-model";
 
@@ -8,7 +8,7 @@ type BetaHealthResource =
   | { status: "ready"; data: AdminBetaHealth }
   | { status: "unavailable"; data: null };
 
-const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook" };
+const platformLabels: Record<string, string> = { x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", pinterest: "Pinterest", vimeo: "Vimeo" };
 const failureLabels: Record<string, string> = {
   timeout: "超时",
   provider_timeout: "超时",
@@ -53,9 +53,10 @@ function PlatformCard({ platform, report, bucket }: { platform: string; report: 
       <header><span className="beta-platform-mark"><ChartLineUp size={18} /></span><div><strong>{platformLabels[platform] ?? platform}</strong><small>公开 Beta 汇总 · 最近活动 {formatTime(bucket.latestEventAt)}</small></div></header>
       <div className={`beta-cadence-strip cadence-${signal.state}`} role="status" aria-label={`${platformLabels[platform] ?? platform} 请求节奏：${signal.label}`}><span className="beta-cadence-dot" aria-hidden="true" /><div><strong>请求节奏：{signal.label}</strong><small>{signal.advice}</small></div></div>
       <div className="beta-metric-grid">
-        <div><small>任务</small><strong>{formatCount(bucket.tasks.total)}</strong><span>{formatCount(bucket.tasks.succeeded)} 成功 · {formatCount(bucket.tasks.failed)} 失败</span></div>
+        <div><small>用户任务</small><strong>{formatCount(bucket.tasks.total)}</strong><span>{rate(bucket.tasks.succeeded + bucket.tasks.failed + bucket.tasks.expired, bucket.tasks.successRateBps)} 解析成功</span></div>
         <div><small>Provider 尝试</small><strong>{rate(bucket.attempts.total, bucket.attempts.successRateBps)}</strong><span>{formatCount(bucket.attempts.total)} 次尝试</span></div>
-        <div><small>交付交接</small><strong>{rate(bucket.deliveries.total, bucket.deliveries.successRateBps)}</strong><span>{formatCount(bucket.deliveries.total)} 次交接</span></div>
+        <div><small>下载票据</small><strong>{formatCount(bucket.deliveries.ticketCount)}</strong><span>{rate(bucket.deliveries.total, bucket.deliveries.successRateBps)} 校验通过</span></div>
+        <div><small>浏览器交接</small><strong>{formatCount(bucket.deliveries.handoffCount)}</strong><span>不等于文件已保存</span></div>
       </div>
       <div className="beta-card-failures">
         <FailureList title="尝试失败" values={bucket.attempts.failureCounts} />
@@ -70,21 +71,21 @@ export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: Beta
     return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta 健康暂时不可用</strong><p>汇总读取已安全失败；没有修改流量或 Provider 状态。</p></div>;
   }
   const report = view.data;
-  const platforms = ["x", "instagram", "tiktok", "facebook"].filter((platform) => report.byPlatform[platform as keyof typeof report.byPlatform]);
+  const platforms = report.platforms.filter((platform) => report.byPlatform[platform]);
   return (
     <div className="beta-health-dashboard panel">
       <header className="beta-health-toolbar">
-        <div><small>只读运行汇总</small><strong>最近 {report.window.hours} 小时 Beta 窗口 <span>· 最近 {formatTime(report.latestEventAt)}</span></strong><p>本页汇总 X、Instagram 与 TikTok 的公开 Beta 结果，只读观察，不能修改 rollout 或门禁。</p></div>
+        <div><small>可信下载漏斗</small><strong>最近 {report.window.hours} 小时 <span>· 最近活动 {formatTime(report.latestEventAt)}</span></strong><p>任务按创建时间形成同一批次；Provider 尝试、票据和交接按各自事件时间统计，含义不再混用。</p></div>
         <label>观察窗口<select aria-label="观察窗口" value={hours} onChange={(event) => onHoursChange(Number(event.target.value))}><option value={1}>最近 1 小时</option><option value={24}>最近 24 小时</option><option value={168}>最近 7 天</option></select></label>
       </header>
-      <div className="beta-health-summary">
-        <article><span><CheckCircle size={17} /></span><div><small>任务成功</small><strong>{formatCount(report.totals.tasks.succeeded)} / {formatCount(report.totals.tasks.total)}</strong></div></article>
-        <article><span><ChartLineUp size={17} /></span><div><small>尝试成功率</small><strong>{rate(report.totals.attempts.total, report.totals.attempts.successRateBps)}</strong></div></article>
-        <article><span><ClockCounterClockwise size={17} /></span><div><small>交付成功率</small><strong>{rate(report.totals.deliveries.total, report.totals.deliveries.successRateBps)}</strong></div></article>
-        <article><span><WarningCircle size={17} /></span><div><small>过期 / 进行中</small><strong>{formatCount(report.totals.tasks.expired)} / {formatCount(report.totals.tasks.active)}</strong></div></article>
+      <div className="beta-flow" aria-label="下载链路统计">
+        <article><span>1</span><div><small>用户任务</small><strong>{formatCount(report.totals.tasks.total)}</strong><em>{formatCount(report.totals.tasks.active)} 进行中</em></div></article>
+        <article><span>2</span><div><small>解析成功</small><strong>{formatCount(report.totals.tasks.succeeded)}</strong><em>{rate(report.totals.tasks.succeeded + report.totals.tasks.failed + report.totals.tasks.expired, report.totals.tasks.successRateBps)} 终态成功率</em></div></article>
+        <article><span>3</span><div><small>下载票据</small><strong>{formatCount(report.totals.deliveries.ticketCount)}</strong><em>{rate(report.totals.deliveries.total, report.totals.deliveries.successRateBps)} 校验通过</em></div></article>
+        <article><span>4</span><div><small>浏览器交接</small><strong>{formatCount(report.totals.deliveries.handoffCount)}</strong><em>媒体请求已交给浏览器</em></div></article>
       </div>
-      <div className="beta-platform-grid">{platforms.map((platform) => <PlatformCard key={platform} platform={platform} report={report} bucket={report.byPlatform[platform as keyof typeof report.byPlatform]} />)}</div>
-      <footer className="beta-health-footer">窗口：{formatTime(report.window.from)} – {formatTime(report.window.to)} · 返回的只有脱敏汇总，不包含 URL、任务 ID、Provider 内容或媒体地址。</footer>
+      <div className="beta-platform-grid">{platforms.map((platform) => <PlatformCard key={platform} platform={platform} report={report} bucket={report.byPlatform[platform]!} />)}</div>
+      <footer className="beta-health-footer">窗口：{formatTime(report.window.from)} – {formatTime(report.window.to)} · “浏览器交接”只证明一次性票据已兑换，不声称跨域媒体文件已经保存。</footer>
     </div>
   );
 }

@@ -255,7 +255,7 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
         <nav className="workspace-nav" aria-label="工作区">
           <p className="workspace-nav-label">工作区</p>
           {ADMIN_WORKSPACES.map(({ id, label, detail, icon }) => {
-            const Icon = icon === "home" ? HouseLine : icon === "content" ? Translate : icon === "providers" ? PlugsConnected : Gear;
+            const Icon = icon === "home" ? HouseLine : icon === "downloads" ? ChartLineUp : icon === "content" ? Translate : icon === "providers" ? PlugsConnected : Gear;
             return <a aria-current={workspace === id ? "page" : undefined} aria-label={`${label}：${detail}`} className={workspace === id ? "active" : ""} href={`#${id}`} key={id}><Icon size={19} /><span><b>{label}</b><small>{detail}</small></span></a>;
           })}
         </nav>
@@ -295,6 +295,13 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </section>
           </div> : null}
 
+          {workspace === "downloads" ? <div className="workspace-view" id="downloads">
+          <section className="beta-health-section" id="beta-health">
+            <SectionHeading eyebrow="DOWNLOAD FLOW / VERIFIED COUNTS" title="下载与流量" detail="按同一时间窗口区分用户任务、Provider 尝试、下载票据和浏览器交接；浏览器交接不等于文件已保存。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读聚合</span>} />
+            <BetaHealthDashboard view={snapshot.betaHealth} hours={betaHours} onHoursChange={(next) => { setBetaHours(next); void refresh(selectedSummary ?? undefined, managedPlatform, platform, next); }} />
+          </section>
+          </div> : null}
+
           {workspace === "providers" ? <div className="workspace-view" id="providers">
           <section className="route-plan-section" id="effective-route-plan">
             <SectionHeading eyebrow="OPERATE / EFFECTIVE ROUTE PLAN" title="有效路由计划" detail="把平台、区域、Manifest、rollout、熔断和 Admin 顺序收敛为一次可读的尝试计划；不会主动请求 Provider，也不会把未配置的路线称为回退。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读投影</span>} />
@@ -305,11 +312,6 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           <section className="truth-section" id="operational-truth">
             <SectionHeading eyebrow="OPERATE / EXPLAINABLE SUPPORT" title="运营真相" detail="从可识别到可索引逐级核对；任一断点都保留具体原因，不把计划中的平台显示为可下载。" />
             <OperationalTruthDashboard view={snapshot.operationalTruth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />
-          </section>
-
-          <section className="beta-health-section" id="beta-health">
-            <SectionHeading eyebrow="OPERATE / BETA HEALTH" title="下载 Beta 运行健康" detail="只读查看 X 与 Instagram 的任务、Provider 尝试和交付聚合；不会修改 rollout、门禁或 Provider 流量。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读聚合</span>} />
-            <BetaHealthDashboard view={snapshot.betaHealth} hours={betaHours} onHoursChange={(next) => { setBetaHours(next); void refresh(selectedSummary ?? undefined, managedPlatform, platform, next); }} />
           </section>
 
           <section className="routing-section" id="routing">
@@ -383,9 +385,9 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </div> : null}
 
           {workspace === "settings" ? <div className="workspace-view" id="settings">
-          {fullWritesAllowed ? <SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : <WriteScopeNotice title="设置与恢复已关闭" detail="站点设置、快照恢复和缓存操作需要完整维护模式，当前不会执行写入。" />}
-          {contentDraftsAllowed ? <SiteIntegrationsSettings view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : null}
+          {contentDraftsAllowed ? <SiteIntegrationsSettings view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} publication={snapshot.controls.status==="ready"?snapshot.controls.data.contentPublication:null} writeMode={writeMode} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /> : null}
           <AccountSecurity />
+          {fullWritesAllowed ? <details className="settings-advanced"><summary><span>站点、语言与恢复</span><small>不常用的发布默认值、Locale 和快照恢复操作</small></summary><SettingsRecovery view={snapshot.controls.status==="ready"?snapshot.controls.data.settingsRecovery:null} content={snapshot.controls.status==="ready"?snapshot.controls.data.contentManagement:null} csrfToken={snapshot.controls.status==="ready"?snapshot.controls.data.csrf.csrfToken:null} onReload={()=>refresh(selectedSummary??undefined,managedPlatform,platform)} /></details> : <WriteScopeNotice title="设置与恢复已关闭" detail="站点设置、快照恢复和缓存操作需要完整维护模式，当前不会执行写入。" />}
           </div> : null}
           <footer className="console-build-footer" aria-label="后台构建信息">
             <span>TikDD Owner Console</span><code>{buildId}</code>

@@ -1586,3 +1586,18 @@ presence only. Production stays at rollout revision 4 with zero allocation and a
 closed until the repaired exact image passes one bounded NL canary and two sequential owner browser
 downloads. See [Work Item 87](work-item-87-viddown-challenge-classifier.md) and the
 [ADR-0039 addendum](architecture/adr/0039-viddown-vimeo-direct-cdn.md#challenge-classifier-addendum-work-item-87).
+
+### Work Item 88 — Admin growth truth and workspace refinement
+
+Work Item 88 fixes two owner-console trust gaps before further Provider expansion. Google Analytics
+and AdSense now show draft versus active-snapshot state, use the existing publication command, load
+once from the localized Web layout, and expose the published AdSense account through bounded
+metadata and `/ads.txt`. Download reporting now separates tasks, Provider attempts, tickets,
+redirect validation, and browser handoff instead of presenting unlike events as completed downloads.
+
+Admin is reorganized into five readable single-owner workspaces, with a dedicated Downloads and
+traffic view, dynamic platform rows from Provider manifests, larger type, tighter information
+density, and low-frequency recovery controls collapsed in Settings. No audit workflow, database
+migration, Provider traffic change, media proxy, or production activation is part of this item. See
+[Work Item 88](work-item-88-admin-growth-truth-ui.md) and the
+[ADR-0028 addendum](architecture/adr/0028-code-owned-google-site-integrations.md#activation-truth-addendum--work-item-88).

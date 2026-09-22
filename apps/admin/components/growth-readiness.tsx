@@ -32,8 +32,8 @@ export function GrowthReadiness({ content, publication, seo, settings }: Props) 
 
     <div className="growth-metrics panel">
       <article><span><GlobeHemisphereWest size={18} /></span><small>启用语言</small><strong>{model.enabledLocaleCount || "—"}</strong><em>{model.readyCellCount} 个内容单元已就绪</em></article>
-      <article><span><PlugsConnected size={18} /></span><small>GA4</small><strong>{model.analytics === "configured" ? "已配置" : "未配置"}</strong><em>仅发布快照后发送事件</em></article>
-      <article><span><PlugsConnected size={18} /></span><small>AdSense</small><strong>{model.adsense === "configured" ? "已配置" : "未配置"}</strong><em>未配置时不会加载脚本</em></article>
+      <article><span><PlugsConnected size={18} /></span><small>GA4</small><strong>{model.analytics === "live" ? "已生效" : model.analytics === "pending" ? "待发布" : "未配置"}</strong><em>以活动快照为准</em></article>
+      <article><span><PlugsConnected size={18} /></span><small>AdSense</small><strong>{model.adsense === "live" ? "已生效" : model.adsense === "pending" ? "待发布" : "未配置"}</strong><em>广告展示仍取决于 Google 审核</em></article>
       <article><span><ShieldCheck size={18} /></span><small>公共快照</small><strong>{model.currentRevision === null ? "—" : `r${model.currentRevision}`}</strong><em>{model.propagationState}</em></article>
     </div>
 

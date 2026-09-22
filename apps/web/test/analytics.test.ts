@@ -30,6 +30,8 @@ describe("privacy-bounded Web analytics", () => {
     expect(analyticsPlatform("provider-x")).toBeNull();
     expect(analyticsPlatform("tiktok")).toBe("tiktok");
     expect(analyticsPlatform("facebook")).toBe("facebook");
+    expect(analyticsPlatform("pinterest")).toBe("pinterest");
+    expect(analyticsPlatform("vimeo")).toBe("vimeo");
     vi.unstubAllGlobals();
   });
 
