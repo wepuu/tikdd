@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SiteIntegrationsSchema } from "@tikdd/admin-contracts";
-import { analyticsInlineScript, SiteIntegrations } from "../components/site-integrations";
+import { adsTxtLine, analyticsInlineScript, SiteIntegrations } from "../components/site-integrations";
 
 describe("site integrations", () => {
   it("accepts bounded Google identifiers and defaults them off", () => {
@@ -24,5 +24,9 @@ describe("site integrations", () => {
 
   it("keeps both tags disabled when the published snapshot has no IDs", () => {
     expect(SiteIntegrations({ integrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null } })).toBeNull();
+  });
+
+  it("derives the code-owned ads.txt record from the validated publisher ID", () => {
+    expect(adsTxtLine("ca-pub-1234567890123456")).toBe("google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0");
   });
 });

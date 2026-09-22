@@ -274,3 +274,73 @@ input:focus-visible,textarea:focus-visible{outline:3px solid rgba(57,118,255,.22
 /* Work item 75: keep the four-platform Beta view scannable at desktop widths. */
 .beta-platform-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:1100px) and (min-width:801px){.beta-platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Work Item 88: compact, readable owner signal desk. */
+.console-shell{grid-template-columns:208px minmax(0,1fr);background:#f4f7fb}
+.console-nav{background:rgba(255,255,255,.94)}
+.console-brand{height:68px;padding:0 18px}
+.console-nav nav{padding:12px 10px}
+.workspace-nav a{min-height:54px;padding:8px 10px}
+.workspace-nav a>span b{font-size:.8rem}
+.workspace-nav a>span small,.workspace-nav-label,.nav-boundary small{font-size:.68rem}
+.nav-boundary{font-size:.75rem}
+.console-topbar{height:68px;padding:0 22px}
+.console-content{max-width:1480px;padding:20px 22px 42px}
+.workspace-view>.beta-health-section:first-child,.workspace-view>.overview-section:first-child,.workspace-view>.route-plan-section:first-child{margin-top:0}
+.section-heading{min-height:0;margin:0 0 14px;align-items:flex-end}
+.section-heading h2,.publication-center-header h2{font-size:1.55rem}
+.section-heading>div>p:last-child,.publication-center-header>div>p:last-child{font-size:.82rem;line-height:1.55}
+.eyebrow{font-size:.68rem}
+.panel,.operating-brief,.attention-rail,.runway-panel,.route-inspector{border-radius:11px;box-shadow:0 5px 18px rgba(48,73,126,.035),inset 0 1px #fff}
+.console-content>section+section,.workspace-view>section+section{margin-top:22px}
+
+.console-shell .console-content :where(p,li,dt,dd){font-size:.78rem}
+.console-shell .console-content :where(label,button,input,select,textarea,th,td){font-size:.76rem}
+.console-shell .console-content small{font-size:.68rem}
+.console-shell .console-content .eyebrow{font-size:.68rem}
+.console-shell .console-content :where(.state-pill,.read-only-label,.runtime-badge,.write-mode-badge){font-size:.72rem}
+.console-shell .console-content table{line-height:1.4}
+
+.beta-health-section{margin-top:0}
+.beta-health-toolbar{padding:16px 18px;grid-template-columns:minmax(0,1fr) 170px;background:linear-gradient(110deg,#edf4ff,#fbfcff 58%,#edf8f4)}
+.beta-health-toolbar small{font-size:.68rem}.beta-health-toolbar strong{font-size:.9rem}.beta-health-toolbar p{font-size:.76rem}
+.beta-health-toolbar label,.beta-health-toolbar select{font-size:.74rem}
+.beta-flow{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line-soft);background:#fff}
+.beta-flow article{position:relative;min-height:104px;padding:17px 18px;display:grid;grid-template-columns:30px 1fr;align-items:start;gap:10px;border-right:1px solid var(--line-soft)}
+.beta-flow article:last-child{border-right:0}
+.beta-flow article:not(:last-child)::after{content:"";position:absolute;right:-5px;top:49px;width:9px;height:9px;z-index:1;background:#fff;border-top:1px solid #b7c5da;border-right:1px solid #b7c5da;transform:rotate(45deg)}
+.beta-flow article>span{width:28px;height:28px;display:grid;place-items:center;color:#fff;background:#3976ff;border-radius:8px;font-size:.72rem;font-weight:800}
+.beta-flow article:nth-child(2)>span{background:#526fe0}.beta-flow article:nth-child(3)>span{background:#6871c7}.beta-flow article:nth-child(4)>span{background:#168866}
+.beta-flow small,.beta-flow strong,.beta-flow em{display:block}.beta-flow small{color:#697b98;font-size:.72rem}.beta-flow strong{margin-top:3px;font-size:1.2rem;letter-spacing:-.03em}.beta-flow em{margin-top:5px;color:#8290a6;font-size:.68rem;font-style:normal;line-height:1.4}
+.beta-platform-grid{padding:12px;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.beta-platform-card{border-radius:9px}.beta-platform-card>header{padding:12px}.beta-platform-card header strong{font-size:.8rem}.beta-platform-card header small{font-size:.66rem}
+.beta-metric-grid{grid-template-columns:repeat(2,1fr)}
+.beta-metric-grid>div{padding:11px}.beta-metric-grid>div:nth-child(2){border-right:0}.beta-metric-grid>div:nth-child(-n+2){border-bottom:1px solid var(--line-soft)}
+.beta-metric-grid small{font-size:.66rem}.beta-metric-grid strong{font-size:.9rem}.beta-metric-grid span{font-size:.65rem}
+.beta-failures>small,.beta-failures>div,.beta-empty-line,.beta-health-footer{font-size:.65rem}
+
+.site-integrations-settings{margin-top:0}
+.site-integrations-settings>header{padding:15px 17px}
+.site-integrations-settings header small{font-size:.67rem}.site-integrations-settings header h3{font-size:1rem}
+.integration-overall{padding:6px 9px;border-radius:999px;font-size:.7rem;font-weight:800}
+.integration-overall.state-live{color:#17775b;background:#eaf7f2}.integration-overall.state-pending{color:#9a681c;background:#fff2d8}.integration-overall.state-off{color:#718099;background:#edf1f6}
+.integration-truth-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line-soft)}
+.integration-truth{padding:14px 17px;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;background:#fff}
+.integration-truth+article{border-left:1px solid var(--line-soft)}
+.integration-truth>span{width:30px;height:30px;display:grid;place-items:center;color:#8290a6;background:#f0f3f7;border-radius:8px}.integration-truth>span svg{width:18px}
+.integration-truth.state-live>span{color:#168866;background:#e9f7f1}.integration-truth.state-pending>span{color:#b27418;background:#fff3dc}
+.integration-truth small,.integration-truth strong{display:block}.integration-truth small{color:#7e8ca3;font-size:.67rem}.integration-truth strong{margin-top:2px;font-size:.87rem}.integration-truth p{margin:3px 0 0;color:#8190a7;font-size:.68rem}
+.integration-explainer{margin:12px 17px!important;font-size:.74rem!important}
+.site-integrations-fields{padding:0 17px 15px;gap:12px}.site-integrations-fields label{font-size:.73rem}.site-integrations-fields input{padding:10px;font-size:.78rem}
+.site-integrations-settings>footer{padding:12px 17px;align-items:center}.integration-publish-note strong,.integration-publish-note span{display:block}.integration-publish-note strong{font-size:.74rem}.integration-publish-note span{margin-top:3px;color:#7b899f;font-size:.68rem}
+.integration-actions{display:flex;gap:8px}.integration-actions button{min-height:38px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font-size:.74rem}.integration-actions button.quiet{color:#4f6385;background:#fff;border:1px solid #d5dfed}
+.settings-advanced{margin-top:18px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.78);overflow:hidden}
+.settings-advanced>summary{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;list-style:none}.settings-advanced>summary::-webkit-details-marker{display:none}
+.settings-advanced>summary span{font-size:.84rem;font-weight:800}.settings-advanced>summary small{color:#8190a7;font-size:.7rem}
+.settings-advanced[open]>summary{border-bottom:1px solid var(--line-soft);background:#f8faff}.settings-advanced .settings-section{margin-top:0}
+
+@media(max-width:1000px){.console-shell{grid-template-columns:178px minmax(0,1fr)}.beta-platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.beta-flow{grid-template-columns:1fr 1fr}.beta-flow article:nth-child(2){border-right:0}.beta-flow article:nth-child(-n+2){border-bottom:1px solid var(--line-soft)}.beta-flow article::after{display:none}.integration-truth-grid{grid-template-columns:1fr}.integration-truth+article{border-left:0;border-top:1px solid var(--line-soft)}}
+@media(max-width:680px){.console-content{padding:16px 14px 34px}.beta-platform-grid{grid-template-columns:1fr}.site-integrations-settings>footer{align-items:stretch}.integration-actions{display:grid;grid-template-columns:1fr 1fr}.settings-advanced>summary{align-items:flex-start;flex-direction:column;gap:3px}}
+@media(max-width:480px){.beta-flow{grid-template-columns:1fr}.beta-flow article{min-height:86px;border-right:0;border-bottom:1px solid var(--line-soft)}.integration-actions{grid-template-columns:1fr}}
+@media(max-width:620px){.console-nav nav a:nth-of-type(n+5){display:flex}}

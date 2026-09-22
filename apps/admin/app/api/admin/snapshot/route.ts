@@ -31,7 +31,7 @@ function platformScopeFrom(request: NextRequest): string | undefined {
 function betaHoursFrom(request: NextRequest): number {
   const value = request.nextUrl.searchParams.get("betaHours");
   if (value === null) return 24;
-  return /^(?:24|168)$/.test(value) ? Number(value) : 24;
+  return /^(?:1|24|168)$/.test(value) ? Number(value) : 24;
 }
 
 const responseHeaders = {

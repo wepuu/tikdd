@@ -14,7 +14,7 @@ export const WEB_ANALYTICS_EVENTS = [
 ] as const;
 
 export type WebAnalyticsEvent = (typeof WEB_ANALYTICS_EVENTS)[number];
-export type WebAnalyticsPlatform = "x" | "instagram" | "tiktok" | "facebook";
+export type WebAnalyticsPlatform = Platform;
 export type WebAnalyticsLocale = "en" | "zh-CN";
 export type WebAnalyticsPageType = "homepage" | "platform";
 export type WebAnalyticsFailureClass = "retryable" | "unavailable" | "rate_limited" | "expired";
@@ -33,11 +33,12 @@ type Gtag = (command: "event", event: WebAnalyticsEvent, parameters: Record<stri
 
 const commonKeys = new Set(["platform", "locale", "page_type"]);
 const failureKeys = new Set([...commonKeys, "failure_class"]);
+const analyticsPlatforms = new Set(listPlatformDefinitions().map(({ id }) => id));
 
 function isCommonParameters(value: unknown): value is CommonParameters {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
-  const platformValid = candidate.platform === "x" || candidate.platform === "instagram" || candidate.platform === "tiktok" || candidate.platform === "facebook";
+  const platformValid = typeof candidate.platform === "string" && analyticsPlatforms.has(candidate.platform);
   const localeValid = candidate.locale === "en" || candidate.locale === "zh-CN";
   const pageTypeValid = candidate.page_type === "homepage" || candidate.page_type === "platform";
   return platformValid && localeValid && pageTypeValid;
@@ -69,7 +70,7 @@ export function trackWebEvent(event: WebAnalyticsEvent, parameters: WebAnalytics
 }
 
 export function analyticsPlatform(value: string | null | undefined): WebAnalyticsPlatform | null {
-  return value === "x" || value === "instagram" || value === "tiktok" || value === "facebook" ? value : null;
+  return value && analyticsPlatforms.has(value) ? value : null;
 }
 
 export function analyticsFailureClass(code: string | null | undefined, retryable: boolean): WebAnalyticsFailureClass {
@@ -78,3 +79,5 @@ export function analyticsFailureClass(code: string | null | undefined, retryable
   if (normalized.includes("EXPIRED")) return "expired";
   return retryable ? "retryable" : "unavailable";
 }
+import type { Platform } from "@tikdd/contracts";
+import { listPlatformDefinitions } from "@tikdd/platform";

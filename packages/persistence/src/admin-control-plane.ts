@@ -77,6 +77,7 @@ interface PlatformPresentationRow extends QueryResultRow {
 
 interface AdminOverviewMetricsRow extends QueryResultRow {
   delivery_handoff_count: number;
+  delivery_validation_success_count: number;
   delivery_failure_count: number;
   pending_draft_count: number;
   locale_gap_count: number;
@@ -86,6 +87,7 @@ interface AdminOverviewMetricsRow extends QueryResultRow {
 
 export interface AdminOverviewPersistenceMetrics {
   deliveryHandoffCount: number;
+  deliveryValidationSuccessCount: number;
   deliveryFailureCount: number;
   pendingDraftCount: number;
   localeGapCount: number;
@@ -326,8 +328,11 @@ export class AdminControlPlaneReadRepository {
           WHERE occurred_at >= $1 AND stage = 'browser_handoff' AND result_class = 'redirect_issued')
            AS delivery_handoff_count,
          (SELECT count(*)::int FROM provider_delivery_outcomes
-          WHERE occurred_at >= $1 AND stage IN ('ticket_creation', 'redirect_validation')
-            AND result_class NOT IN ('succeeded', 'passed')) AS delivery_failure_count,
+          WHERE occurred_at >= $1 AND stage = 'redirect_validation' AND result_class = 'passed')
+           AS delivery_validation_success_count,
+         (SELECT count(*)::int FROM provider_delivery_outcomes
+          WHERE occurred_at >= $1 AND stage = 'redirect_validation'
+            AND result_class <> 'passed') AS delivery_failure_count,
          (SELECT count(*)::int FROM admin_page_heads WHERE draft_revision IS NOT NULL)
            AS pending_draft_count,
          (SELECT count(*)::int
@@ -362,6 +367,7 @@ export class AdminControlPlaneReadRepository {
     if (!row) throw new Error("Admin overview metrics are unavailable.");
     return {
       deliveryHandoffCount: row.delivery_handoff_count,
+      deliveryValidationSuccessCount: row.delivery_validation_success_count,
       deliveryFailureCount: row.delivery_failure_count,
       pendingDraftCount: row.pending_draft_count,
       localeGapCount: row.locale_gap_count,

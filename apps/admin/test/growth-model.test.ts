@@ -28,7 +28,10 @@ const base = {
       { pageId: "page_instagram", locale: "zh-CN", canonicalPath: "/zh-CN/instagram-downloader", indexableEligible: false, sitemapEligible: false }
     ]
   },
-  settings: { siteIntegrations: { googleAnalyticsMeasurementId: "G-TEST1234", googleAdsensePublisherId: null } }
+  settings: {
+    siteIntegrations: { googleAnalyticsMeasurementId: "G-TEST1234", googleAdsensePublisherId: null },
+    publishedSiteIntegrations: { googleAnalyticsMeasurementId: "G-TEST1234", googleAdsensePublisherId: null }
+  }
 } as unknown as Parameters<typeof deriveGrowthReadiness>[0];
 
 describe("growth readiness model", () => {
@@ -36,12 +39,23 @@ describe("growth readiness model", () => {
     const model = deriveGrowthReadiness(base);
     expect(model.status).toBe("partial");
     expect(model.currentRevision).toBe(4);
-    expect(model.analytics).toBe("configured");
+    expect(model.analytics).toBe("live");
     expect(model.adsense).toBe("missing");
     expect(model.platformPages.map(({ platform }) => platform)).toEqual(["x", "instagram"]);
     expect(model.platformPages[0]?.noindexLocales).toBe(2);
     expect(model.platformPages[1]?.readyLocales).toBe(1);
     expect(model.blockers).toContain("content_gaps");
+  });
+
+  it("does not call a draft-only Google ID live", () => {
+    const model = deriveGrowthReadiness({
+      ...base,
+      settings: {
+        ...(base.settings as object),
+        publishedSiteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }
+      }
+    } as Parameters<typeof deriveGrowthReadiness>[0]);
+    expect(model.analytics).toBe("pending");
   });
 
   it("fails closed when one read model is unavailable", () => {

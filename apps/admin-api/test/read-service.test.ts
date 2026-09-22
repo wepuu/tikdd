@@ -110,7 +110,7 @@ function options(overrides: Partial<AdminReadServiceOptions> = {}): AdminReadSer
       async listPages() { return [ADMIN_HOMEPAGE_FIXTURE]; },
       async getActivePublishedSnapshot() { return ADMIN_PUBLISHED_SNAPSHOT_FIXTURE; },
       async getOverviewMetrics() {
-        return { deliveryHandoffCount: 10, deliveryFailureCount: 1, pendingDraftCount: 0, localeGapCount: 0, seoBlockerCount: 0, activeSnapshotRevision: 1 };
+        return { deliveryHandoffCount: 10, deliveryValidationSuccessCount: 9, deliveryFailureCount: 1, pendingDraftCount: 0, localeGapCount: 0, seoBlockerCount: 0, activeSnapshotRevision: 1 };
       }
     },
     queue: { async getJobCounts() { return { waiting: 1, active: 2, completed: 10, failed: 1 }; } },
@@ -162,7 +162,7 @@ describe("Admin read composition", () => {
     expect(() => assertAdminSafeValue(report)).not.toThrow();
   });
 
-  it("requests the four supported public Beta platforms", async () => {
+  it("derives the observed platform set from provider manifests", async () => {
     let requestedPlatforms: readonly string[] | undefined;
     const service = new AdminReadService(options({
       beta: {
@@ -174,7 +174,7 @@ describe("Admin read composition", () => {
     }));
 
     await service.getBetaHealth();
-    expect(requestedPlatforms).toEqual(["x", "instagram", "tiktok", "facebook"]);
+    expect(requestedPlatforms).toEqual(["x"]);
   });
 
   it("explains support as a seven-stage ladder without confusing catalog recognition with availability", async () => {
