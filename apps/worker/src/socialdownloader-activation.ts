@@ -1,13 +1,5 @@
 import type { Platform } from "@tikdd/contracts";
-
-const SUPPORTED_SOCIALDOWNLOADER_PLATFORMS = new Set<Platform>([
-  "facebook",
-  "x",
-  "tiktok",
-  "instagram",
-  "youtube"
-]);
-const DELIVERY_VERIFIED_SOCIALDOWNLOADER_PLATFORMS = new Set<Platform>(["facebook", "x", "tiktok"]);
+import { parseSocialDownloaderPlatformConfiguration } from "@tikdd/providers";
 
 export interface SocialDownloaderActivationConfiguration {
   enabled: boolean;
@@ -23,27 +15,10 @@ export interface SocialDownloaderActivationConfiguration {
 export function loadSocialDownloaderActivationConfiguration(
   environment: NodeJS.ProcessEnv = process.env
 ): SocialDownloaderActivationConfiguration {
-  const parsePlatforms = (value: string | undefined, variableName: string): Platform[] => (value ?? "facebook")
-    .split(",")
-    .map((value) => value.trim())
-    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index)
-    .map((value) => {
-      if (!SUPPORTED_SOCIALDOWNLOADER_PLATFORMS.has(value as Platform)) {
-        throw new Error(`${variableName} contains unsupported platform: ${value}.`);
-      }
-      return value as Platform;
-    });
-  const approvedPlatforms = parsePlatforms(environment.SOCIALDOWNLOADER_APPROVED_PLATFORMS, "SOCIALDOWNLOADER_APPROVED_PLATFORMS");
-  const deliveryVerifiedPlatforms = parsePlatforms(
-    environment.SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS,
-    "SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS"
-  );
-  if (deliveryVerifiedPlatforms.some((platform) => !DELIVERY_VERIFIED_SOCIALDOWNLOADER_PLATFORMS.has(platform))) {
-    throw new Error("SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS contains a platform without a reviewed Delivery policy.");
-  }
-  if (deliveryVerifiedPlatforms.some((platform) => !approvedPlatforms.includes(platform))) {
-    throw new Error("SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS must be a subset of SOCIALDOWNLOADER_APPROVED_PLATFORMS.");
-  }
+  const { approvedPlatforms, deliveryVerifiedPlatforms } = parseSocialDownloaderPlatformConfiguration({
+    approvedPlatforms: environment.SOCIALDOWNLOADER_APPROVED_PLATFORMS,
+    deliveryVerifiedPlatforms: environment.SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS
+  });
   const configuration = {
     enabled: (environment.ENABLE_SOCIALDOWNLOADER_PROVIDER ?? "false") === "true",
     termsApproved: (environment.SOCIALDOWNLOADER_TERMS_APPROVED ?? "false") === "true",

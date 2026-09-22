@@ -53,6 +53,47 @@ export interface SocialDownloaderProviderOptions {
   requestBudgetOptions?: SocialDownloaderRequestBudgetOptions;
 }
 
+export interface SocialDownloaderPlatformConfiguration {
+  approvedPlatforms: readonly Platform[];
+  deliveryVerifiedPlatforms: readonly Platform[];
+}
+
+/**
+ * Parse the platform-scoped SocialDownloader runtime boundary once so Worker and Admin project
+ * the same capabilities. This is intentionally narrower than the Provider's marketing surface.
+ */
+export function parseSocialDownloaderPlatformConfiguration(input: {
+  approvedPlatforms?: string | undefined;
+  deliveryVerifiedPlatforms?: string | undefined;
+}): SocialDownloaderPlatformConfiguration {
+  const parse = (value: string | undefined, variableName: string): Platform[] => (value ?? "facebook")
+    .split(",")
+    .map((platform) => platform.trim())
+    .filter((platform, index, platforms) => platform.length > 0 && platforms.indexOf(platform) === index)
+    .map((platform) => {
+      if (!SUPPORTED_PLATFORMS.includes(platform as (typeof SUPPORTED_PLATFORMS)[number])) {
+        throw new Error(`${variableName} contains unsupported platform: ${platform}.`);
+      }
+      return platform as Platform;
+    });
+  const approvedPlatforms = parse(input.approvedPlatforms, "SOCIALDOWNLOADER_APPROVED_PLATFORMS");
+  const deliveryVerifiedPlatforms = parse(
+    input.deliveryVerifiedPlatforms,
+    "SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS"
+  );
+  if (deliveryVerifiedPlatforms.some((platform) => !DELIVERY_POLICY_PLATFORMS.has(platform))) {
+    throw new Error(
+      "SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS contains a platform without a reviewed Delivery policy."
+    );
+  }
+  if (deliveryVerifiedPlatforms.some((platform) => !approvedPlatforms.includes(platform))) {
+    throw new Error(
+      "SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS must be a subset of SOCIALDOWNLOADER_APPROVED_PLATFORMS."
+    );
+  }
+  return { approvedPlatforms, deliveryVerifiedPlatforms };
+}
+
 export type SocialDownloaderDiagnosticPhase = "request" | "payload" | "resources" | "completed";
 export type SocialDownloaderContentType = "json" | "html" | "text" | "other" | "missing";
 

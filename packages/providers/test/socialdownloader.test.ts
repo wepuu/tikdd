@@ -6,6 +6,7 @@ import {
   ProviderRouter,
   SocialDownloaderRequestBudget,
   SocialDownloaderProvider,
+  parseSocialDownloaderPlatformConfiguration,
   parseSocialDownloaderResponse,
   type ResolveInput
 } from "../src/index";
@@ -30,6 +31,19 @@ function jsonResponse(body: string, status = 200, url = "https://www.socialdownl
 }
 
 describe("SocialDownloaderProvider", () => {
+  it("shares one validated platform boundary between runtime consumers", () => {
+    expect(parseSocialDownloaderPlatformConfiguration({
+      approvedPlatforms: "facebook,x",
+      deliveryVerifiedPlatforms: "facebook,x"
+    })).toEqual({ approvedPlatforms: ["facebook", "x"], deliveryVerifiedPlatforms: ["facebook", "x"] });
+    expect(() => parseSocialDownloaderPlatformConfiguration({
+      approvedPlatforms: "facebook",
+      deliveryVerifiedPlatforms: "facebook,x"
+    })).toThrow(/must be a subset/);
+    expect(() => parseSocialDownloaderPlatformConfiguration({ approvedPlatforms: "facebook,unknown" }))
+      .toThrow(/unsupported platform/);
+  });
+
   it("normalizes the observed provider stream and deduplicates duplicate fields", async () => {
     const success = await fixture("socialdownloader-success.json");
     const calls: Array<{ url: string; init?: RequestInit }> = [];
