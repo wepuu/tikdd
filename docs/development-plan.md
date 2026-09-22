@@ -1601,3 +1601,16 @@ density, and low-frequency recovery controls collapsed in Settings. No audit wor
 migration, Provider traffic change, media proxy, or production activation is part of this item. See
 [Work Item 88](work-item-88-admin-growth-truth-ui.md) and the
 [ADR-0028 addendum](architecture/adr/0028-code-owned-google-site-integrations.md#activation-truth-addendum--work-item-88).
+
+### Work Item 89 — Production operations and route closeout
+
+Work Item 89 accepts the Work Item 88 Admin and Google integration behavior against production
+facts, reconciles the download funnel with PostgreSQL, and removes empty capability-only cards from
+the event-focused Downloads workspace. It also makes the Admin API and Worker share the same
+validated SocialDownloader platform boundary so the control-plane manifest matches the live
+`facebook,x` configuration.
+
+The current route order is frozen by tests as SSSTwitter → SocialDownloader for X, SaveFromIns for
+Instagram, SnapTik Monster → TikCD for TikTok, FDown Isuru → SocialDownloader for Facebook, and
+VidDown for Vimeo. Pinterest remains disabled at its existing unique revision-2 rule until the one
+remaining owner-authorized production window. See [Work Item 89](work-item-89-production-operations-route-closeout.md).

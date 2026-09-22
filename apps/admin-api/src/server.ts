@@ -27,6 +27,7 @@ import {
   SaveFromInsProvider,
   SnapTikMonsterProvider,
   SocialDownloaderProvider,
+  parseSocialDownloaderPlatformConfiguration,
   TikCDProvider,
   SSSTwitterProvider,
   TikVidProvider,
@@ -74,7 +75,13 @@ const providerAdapters = [
   new TikVidProvider({ enabled: process.env.ENABLE_TIKVID_PROVIDER === "true" }),
   new SnapInstaProvider({ enabled: process.env.ENABLE_SNAPINSTA_PROVIDER === "true" }),
   new FDownIsuruProvider({ enabled: process.env.ENABLE_FDOWN_ISURU_PROVIDER === "true" }),
-  new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }),
+  new SocialDownloaderProvider({
+    enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true",
+    ...parseSocialDownloaderPlatformConfiguration({
+      approvedPlatforms: process.env.SOCIALDOWNLOADER_APPROVED_PLATFORMS,
+      deliveryVerifiedPlatforms: process.env.SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS
+    })
+  }),
   new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }),
   new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" })
 ];

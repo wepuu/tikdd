@@ -3,6 +3,7 @@
 import { ChartLineUp, WarningCircle } from "@phosphor-icons/react";
 import type { AdminBetaHealth } from "@tikdd/admin-contracts";
 import { deriveBetaCadenceSignal, formatCount, formatRate, formatTime } from "../lib/console-model";
+import { visibleDownloadPlatforms } from "../lib/beta-health-model";
 
 type BetaHealthResource =
   | { status: "ready"; data: AdminBetaHealth }
@@ -71,7 +72,7 @@ export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: Beta
     return <div className="panel unavailable-panel beta-health-unavailable"><WarningCircle size={28} /><strong>Beta 健康暂时不可用</strong><p>汇总读取已安全失败；没有修改流量或 Provider 状态。</p></div>;
   }
   const report = view.data;
-  const platforms = report.platforms.filter((platform) => report.byPlatform[platform]);
+  const platforms = visibleDownloadPlatforms(report);
   return (
     <div className="beta-health-dashboard panel">
       <header className="beta-health-toolbar">
@@ -84,7 +85,9 @@ export function BetaHealthDashboard({ view, hours, onHoursChange }: { view: Beta
         <article><span>3</span><div><small>下载票据</small><strong>{formatCount(report.totals.deliveries.ticketCount)}</strong><em>{rate(report.totals.deliveries.total, report.totals.deliveries.successRateBps)} 校验通过</em></div></article>
         <article><span>4</span><div><small>浏览器交接</small><strong>{formatCount(report.totals.deliveries.handoffCount)}</strong><em>媒体请求已交给浏览器</em></div></article>
       </div>
-      <div className="beta-platform-grid">{platforms.map((platform) => <PlatformCard key={platform} platform={platform} report={report} bucket={report.byPlatform[platform]!} />)}</div>
+      {platforms.length > 0
+        ? <div className="beta-platform-grid">{platforms.map((platform) => <PlatformCard key={platform} platform={platform} report={report} bucket={report.byPlatform[platform]!} />)}</div>
+        : <div className="beta-platform-empty"><ChartLineUp size={24} /><strong>当前窗口还没有下载事件</strong><span>等待真实用户流量；Provider 能力与启用状态请在 Providers 工作区查看。</span></div>}
       <footer className="beta-health-footer">窗口：{formatTime(report.window.from)} – {formatTime(report.window.to)} · “浏览器交接”只证明一次性票据已兑换，不声称跨域媒体文件已经保存。</footer>
     </div>
   );

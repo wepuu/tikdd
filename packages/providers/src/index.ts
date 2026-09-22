@@ -61,7 +61,9 @@ export { TikCDProvider, type TikCDProviderOptions } from "./adapters/tikcd";
 export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
+  parseSocialDownloaderPlatformConfiguration,
   type SocialDownloaderProviderOptions,
+  type SocialDownloaderPlatformConfiguration,
   type SocialDownloaderDiagnosticEvent,
   type SocialDownloaderDiagnosticPhase,
   type SocialDownloaderContentType
