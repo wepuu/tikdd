@@ -5,10 +5,9 @@ page URL, the control plane creates an asynchronous task, and a worker routes th
 providers in priority order until one returns valid normalized metadata and formats. A separate
 delivery service turns reviewed internal candidates into controlled browser delivery.
 
-The local scaffold uses a development-only mock provider. TwitterSaver and SSSTwitter have
-delivery-verified X redirect capabilities; SaveFromIns has a delivery-verified Instagram Beta
-redirect capability; DLPanda has multi-platform resolution-only capabilities; SnapTik Monster has
-a reviewed TikTok redirect adapter enabled in the NL production route. All real adapters
+The local scaffold uses a development-only mock provider. The reviewed NL production routes cover
+X, Instagram, TikTok, Facebook, Vimeo, and Pinterest. TikTok is stable; the other five platform
+families remain Beta. Multi-provider routes stay sequential and bounded, and all real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
 media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
@@ -296,12 +295,12 @@ through the asynchronous mock route.
 ## Safety and product constraints
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
-- The current live product consists of experimental X and Instagram Betas backed by `ssstwitter`
-  and `savefromins` in `nl`, plus the stable TikTok route backed by SnapTik Monster with TikCD as a
-  bounded secondary route. Work Item 50 publishes the reviewed bilingual TikTok snapshot to the
-  sitemap. Work Item 54 records TikCD activation; Work Item 55 records the technical deferral of
-  GramSnap because its protocol requires browser-held tokens. No other Provider or calibration
-  profile is started by these promotions; Admin remains the owner control plane.
+- The current live product consists of the stable TikTok route plus bounded X, Instagram,
+  Facebook, Vimeo, and Pinterest Betas. The production order is SSSTwitter → SocialDownloader for
+  X, SaveFromIns for Instagram, SnapTik Monster → TikCD for TikTok, FDown Isuru → SocialDownloader
+  for Facebook, VidDown for Vimeo, and Pinterest Video Downloader for Pinterest. Only TikTok is
+  promoted into the sitemap; all Beta pages remain noindex. Calibration remains stopped and Admin
+  remains the always-available owner control plane.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

@@ -34,16 +34,16 @@ describe("delivery handoff copy", () => {
     expect(homepage).toBeDefined();
     const current = copyForPage(homepage!);
 
-    expect(current.hero.badge).toContain("TikTok supported");
-    expect(current.hero.badge).toContain("X, Instagram & Facebook Public Beta");
-    expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok", "Facebook"]);
-    expect(current.faq.items[0]?.[1]).toContain("stable supported route");
-    expect(current.faq.items[0]?.[1]).not.toContain("Pinterest Pins");
-    expect(current.faq.items[0]?.[1]).toContain("x.com");
+    expect(current.hero.badge).toContain("TikTok stable");
+    expect(current.hero.badge).toContain("five platforms in Public Beta");
+    expect(current.supported.platforms).toEqual(["X", "Instagram", "TikTok", "Facebook", "Vimeo", "Pinterest"]);
+    expect(current.faq.items[0]?.[1]).toContain("TikTok is stable");
+    expect(current.faq.items[0]?.[1]).toContain("Pinterest");
+    expect(current.faq.items[0]?.[1]).toContain("Vimeo");
     expect(current.faq.items[0]?.[1]).toContain("Instagram");
     expect(current.form.label).toBe("Public video page URL");
     expect(current.trust.description).toContain("third-party processing service");
-    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X, Instagram, TikTok, Facebook, or Pinterest.");
+    expect(current.legal).toBe("TikDD is an independent tool and is not affiliated with X, Instagram, TikTok, Facebook, Vimeo, or Pinterest.");
   });
 
   it("states the public-only and credential-free Instagram boundary in both locales", () => {

@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@c59dc0d201a384d4965ea85c14a86a79ac4758f0` (Work Item 79 Pinterest/Vimeo provider expansion)
-- Roadmap revision date: 2026-09-20
+- Repository checkpoint: `main@f5fc9a20b532487f432047dcc5480508f6e445a1` (Work Item 89 production operations closeout)
+- Roadmap revision date: 2026-09-23
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -1612,5 +1612,22 @@ validated SocialDownloader platform boundary so the control-plane manifest match
 
 The current route order is frozen by tests as SSSTwitter → SocialDownloader for X, SaveFromIns for
 Instagram, SnapTik Monster → TikCD for TikTok, FDown Isuru → SocialDownloader for Facebook, and
-VidDown for Vimeo. Pinterest remains disabled at its existing unique revision-2 rule until the one
-remaining owner-authorized production window. See [Work Item 89](work-item-89-production-operations-route-closeout.md).
+VidDown for Vimeo. The owner-authorized production window then enabled Pinterest at full allocation
+on the existing unique revision-3 rule. Two public Pins each produced one Provider attempt and a
+validated `206 video/mp4` response from the exact reviewed `v1.pinimg.com` host; the circuit remained
+closed and the core services remained healthy. Pinterest stays Experimental/Beta and outside the
+sitemap. See [Work Item 89](work-item-89-production-operations-route-closeout.md).
+
+### Work Item 90 — Multi-platform Beta productization and support truth
+
+Work Item 90 aligns the six currently usable production platform families before another Provider
+expansion batch. Facebook and Vimeo move from `planned` to `experimental`; Pinterest remains
+experimental and TikTok remains the only stable platform. The code-owned bilingual content set adds
+noindex Facebook, Vimeo, and Pinterest pages, while the release-owned homepage and shared copy name
+all six supported platforms. Only the homepage and TikTok remain sitemap-eligible.
+
+Admin gains a compact read-only support-truth ledger derived from existing sanitized catalog,
+route, natural-event, content, and SEO models. It highlights cross-authority drift without probing a
+Provider, changing traffic, or claiming that a browser handoff proves a saved file. This batch adds
+no public API, migration, Provider, Delivery mode, rollout, gate, or calibration change. See
+[Work Item 90](work-item-90-multiplatform-beta-productization.md).

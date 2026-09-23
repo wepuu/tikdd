@@ -11,12 +11,18 @@ describe("starter content", () => {
   it("provides a complete bilingual structured set with only reviewed public pages indexed", () => {
     const pages = starterPageRecords();
     expect(STARTER_LOCALES).toEqual(["en", "zh-CN"]);
-    expect(pages).toHaveLength(16);
+    expect(pages).toHaveLength(22);
     expect(pages.filter((page) => page.seo.indexable)).toHaveLength(4);
     expect(pages.filter((page) => page.pageId === "page_home" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(2);
     expect(pages.filter((page) => page.pageId === "page_home" && page.seo.includeInSitemap)).toHaveLength(2);
     expect(pages.filter((page) => page.pageId === "page_tiktok" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(2);
     expect(pages.filter((page) => page.pageId === "page_tiktok" && page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toHaveLength(2);
+    for (const platform of ["facebook", "vimeo", "pinterest"] as const) {
+      const betaPages = pages.filter((page) => page.platform === platform);
+      expect(betaPages.map(({ locale }) => locale)).toEqual(["en", "zh-CN"]);
+      expect(betaPages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+      expect(betaPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+    }
     for (const page of pages) {
       expect(AdminPageDraftCommandSchema.parse({
         ...page,
