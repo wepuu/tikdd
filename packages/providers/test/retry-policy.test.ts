@@ -5,21 +5,21 @@ import {
 } from "../src/retry-policy";
 
 describe("provider automatic retry policy", () => {
-  it("limits Instagram SaveFromIns jobs to one retry", () => {
-    expect(resolveJobAttemptsForPlatform("instagram")).toBe(2);
+  it("limits Instagram jobs to one execution", () => {
+    expect(resolveJobAttemptsForPlatform("instagram")).toBe(1);
     expect(resolveJobAttemptsForPlatform("x")).toBe(3);
     expect(resolveJobAttemptsForPlatform("facebook")).toBe(1);
     expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
-    "allows one automatic retry for transient Instagram failure %s",
+    "does not automatically replay transient SaveFromIns failure %s",
     (failureCode) => {
       expect(shouldAutomaticallyRetryProviderFailure({
         platform: "instagram",
         providerId: "savefromins",
         failureCode
-      })).toBe(true);
+      })).toBe(false);
     }
   );
 
@@ -48,6 +48,14 @@ describe("provider automatic retry policy", () => {
       providerId: "other-provider",
       failureCode: "provider_schema_changed"
     })).toBe(true);
+  });
+
+  it("does not replay SaveFromIns even when a mismatched platform reaches the policy", () => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "x",
+      providerId: "savefromins",
+      failureCode: "provider_timeout"
+    })).toBe(false);
   });
 
   it.each([

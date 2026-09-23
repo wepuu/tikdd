@@ -179,3 +179,18 @@ Provider replacement. SaveFromIns remains experimental, public-content-only, and
 existing timeout, retry, circuit, and emergency-stop boundaries. A future free Provider supplied by
 the owner will receive a separate feasibility record; no paid Provider account or secret is part of
 the current route.
+
+## 2026-09-23 Work Item 91 recovery boundary
+
+The seven-day production ledger contained six SaveFromIns attempts and no success. The unique
+Instagram/NL rollout was CAS-disabled at revision 16 with zero allocation while the route is
+repaired. One disabled-route observation returned the existing successful `data.resources` shape
+and one reviewed direct MP4, showing content/time variability rather than a global replacement of
+the success schema.
+
+Work Item 91 separates explicit Provider failures from malformed envelopes, adds bounded structural
+diagnostics, tolerates omitted optional quality and redundant success markers, and reduces
+Instagram to one queue execution. The existing version-2 Delivery host policy is unchanged. A
+SocialDownloader secondary was not promoted because one of two current samples timed out. See
+[ADR-0040](../architecture/adr/0040-instagram-single-attempt-recovery.md) and the
+[Work Item 91 record](../work-item-91-instagram-recovery.md).

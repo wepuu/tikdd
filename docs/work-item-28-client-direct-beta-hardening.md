@@ -17,6 +17,10 @@ TikDD does not fetch media into a Blob, expose the upstream URL, or promise a un
 
 ## Instagram retry boundary
 
+> Superseded for production retry behavior by
+> [ADR-0040](architecture/adr/0040-instagram-single-attempt-recovery.md): Work Item 91 reduces
+> Instagram to one queue execution after repeated Provider failures and rate-control evidence.
+
 SaveFromIns remains an NL-only, redirect-capable Instagram Beta Provider. Each Instagram task has
 at most two BullMQ attempts (the initial run plus one retry). The retry is reserved for
 `provider_unavailable` and `provider_timeout`, covering network failures, HTTP 5xx, and HTTP 408.

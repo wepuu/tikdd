@@ -67,6 +67,13 @@ and per-platform activity freshness to the Admin Beta view; it does not probe Pr
 traffic. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md) and [Work Item 34
 record](docs/work-item-34-admin-provider-cadence.md).
 
+Work Item 91 temporarily disables the exact Instagram rollout after a seven-day zero-success
+SaveFromIns window. It reduces Instagram to one upstream attempt, improves sanitized response
+classification, and keeps SocialDownloader Instagram in the Lab after a one-success/one-timeout
+recheck. The existing Delivery host policy is unchanged; reopening requires two sequential
+exact-image browser downloads. See the [Work Item 91 record](docs/work-item-91-instagram-recovery.md)
+and [ADR-0040](docs/architecture/adr/0040-instagram-single-attempt-recovery.md).
+
 Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
 explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
 deliberate local or maintenance operations. The UI displays the active scope and hides or disables

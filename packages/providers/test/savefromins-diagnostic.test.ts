@@ -47,6 +47,13 @@ describe("SaveFromIns diagnostics", () => {
       contentType: "json",
       resourceCount: 1,
       validDirectMp4Count: 1,
+      envelopeVariant: "observed-instagram-resources",
+      providerOutcome: "success",
+      resourcePath: "data.resources",
+      rejectedMalformedCount: 0,
+      rejectedNonVideoCount: 0,
+      rejectedNonMp4Count: 0,
+      rejectedNonDirectCount: 0,
       failureCode: null
     });
     const serialized = JSON.stringify(events);
@@ -72,6 +79,9 @@ describe("SaveFromIns diagnostics", () => {
       contentType: "text",
       resourceCount: null,
       validDirectMp4Count: 0,
+      envelopeVariant: "unrecognized",
+      providerOutcome: "unknown",
+      resourcePath: "none",
       failureCode: "provider_rate_limited"
     });
     const serialized = JSON.stringify(events);
@@ -92,6 +102,8 @@ describe("SaveFromIns diagnostics", () => {
     expect(events[0]).toMatchObject({
       httpStatus: 200,
       contentType: "html",
+      envelopeVariant: "unrecognized",
+      providerOutcome: "unknown",
       failureCode: "invalid_result"
     });
   });
@@ -130,7 +142,111 @@ describe("SaveFromIns diagnostics", () => {
       contentType: "missing",
       resourceCount: null,
       validDirectMp4Count: 0,
+      envelopeVariant: "unrecognized",
+      providerOutcome: "unknown",
+      resourcePath: "none",
       failureCode: "provider_timeout"
     });
+  });
+
+  it("classifies an explicit unknown Provider failure without calling it a schema change", async () => {
+    const events: unknown[] = [];
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async () => response(JSON.stringify({
+        status: 0,
+        status_code: "temporary_error",
+        message: "Opaque upstream failure that must not be logged"
+      }))
+    });
+
+    await expect(provider.resolve(input)).rejects.toMatchObject({
+      failureCode: "provider_unavailable",
+      retryable: true,
+      fallbackAllowed: true
+    });
+    expect(events[0]).toMatchObject({
+      phase: "payload",
+      envelopeVariant: "provider-error",
+      providerOutcome: "failure",
+      resourcePath: "none",
+      failureCode: "provider_unavailable"
+    });
+    expect(JSON.stringify(events)).not.toContain("Opaque upstream failure");
+  });
+
+  it("reports bounded resource rejection counts without exposing resource data", async () => {
+    const events: unknown[] = [];
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async () => response(JSON.stringify({
+        status: 1,
+        data: {
+          resources: [
+            { quality: null, format: "mp4", type: "video", download_mode: "direct", download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/video.mp4" },
+            { quality: "Audio", format: "mp3", type: "audio", download_mode: "direct", download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/audio.mp3" },
+            { quality: "Preview", format: "webm", type: "video", download_mode: "direct", download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/preview.webm" },
+            { quality: "720P", format: "mp4", type: "video", download_mode: "proxy", download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/proxy.mp4" },
+            { type: "video" }
+          ]
+        }
+      }))
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(resolution.result.formats[0]?.quality).toBe("Original");
+    expect(events[0]).toMatchObject({
+      envelopeVariant: "observed-instagram-resources",
+      providerOutcome: "success",
+      resourcePath: "data.resources",
+      resourceCount: 5,
+      validDirectMp4Count: 1,
+      rejectedMalformedCount: 1,
+      rejectedNonVideoCount: 1,
+      rejectedNonMp4Count: 1,
+      rejectedNonDirectCount: 1
+    });
+    const serialized = JSON.stringify(events);
+    expect(serialized).not.toContain("cdninstagram.com");
+    expect(serialized).not.toContain("video.mp4");
+  });
+
+  it("accepts the observed nested media resource path and reports it without payload data", async () => {
+    const events: unknown[] = [];
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async () => response(JSON.stringify({
+        status: 1,
+        status_code: "success",
+        data: {
+          media: [{
+            type: "video",
+            resources: [{
+              format: "mp4",
+              type: "video",
+              download_mode: "direct",
+              download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/nested.mp4"
+            }]
+          }]
+        }
+      }))
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(resolution.result.formats).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      envelopeVariant: "observed-instagram-resources",
+      providerOutcome: "success",
+      resourcePath: "data.media[].resources",
+      resourceCount: 1,
+      validDirectMp4Count: 1
+    });
+    expect(JSON.stringify(events)).not.toContain("nested.mp4");
   });
 });
