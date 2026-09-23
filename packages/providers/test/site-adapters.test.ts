@@ -283,6 +283,48 @@ describe("SaveFromInsProvider", () => {
     expect(JSON.stringify(resolution)).not.toContain("resource_content");
   });
 
+  it("accepts an omitted success status code and missing video quality when the reviewed resource is valid", async () => {
+    const success = JSON.parse(await fixture("savefromins-success.json"));
+    delete success.status_code;
+    delete success.data.resources[0].quality;
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(JSON.stringify(success), input.toString(), {
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.result.formats[0]?.quality).toBe("Original");
+    expect(resolution.candidates).toHaveLength(1);
+  });
+
+  it("normalizes the observed nested media resources and removes duplicate candidates", async () => {
+    const resource = {
+      quality: "720P",
+      format: "mp4",
+      type: "video",
+      download_mode: "direct",
+      download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/nested.mp4"
+    };
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(JSON.stringify({
+        status: 1,
+        data: {
+          resources: [resource],
+          media: [{ resources: [resource] }]
+        }
+      }), input.toString(), { headers: { "content-type": "application/json" } })
+    });
+
+    const resolution = await provider.resolve(instagramInput);
+    expect(resolution.result.formats).toHaveLength(1);
+    expect(resolution.candidates).toHaveLength(1);
+  });
+
   it("skips a malformed direct-video sibling when another reviewed MP4 is valid", async () => {
     const success = JSON.parse(await fixture("savefromins-success.json"));
     success.data.resources.unshift({
@@ -354,6 +396,23 @@ describe("SaveFromInsProvider", () => {
       failureCode,
       retryable,
       fallbackAllowed
+    });
+  });
+
+  it("maps an explicit but unknown Provider error to availability rather than schema drift", async () => {
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      fetchImpl: async (input) => response(
+        JSON.stringify({ status: 0, status_code: "temporary_error", message: "Please retry later" }),
+        input.toString(),
+        { headers: { "content-type": "application/json" } }
+      )
+    });
+    await expect(provider.resolve(instagramInput)).rejects.toMatchObject({
+      failureCode: "provider_unavailable",
+      retryable: true,
+      fallbackAllowed: true
     });
   });
 

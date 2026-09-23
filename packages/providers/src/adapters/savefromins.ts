@@ -17,27 +17,37 @@ const ALLOWED_HOSTS = new Set(["api.savefromins.com"]);
 const THUMBNAIL_HOSTS = new Set(["api-ak.savefromins.com"]);
 const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
+const MAXIMUM_RESOURCE_COUNT = 40;
 
 const ResourceSchema = z.object({
-  quality: z.string().max(80),
+  quality: z.string().max(80).nullish(),
   format: z.string().min(1).max(24),
   type: z.string().min(1).max(24),
   download_mode: z.string().min(1).max(24),
   download_url: z.string().url().max(16_384)
 });
 
-const ResponseSchema = z.object({
-  status: z.union([z.number(), z.string()]),
-  status_code: z.string().max(120).optional(),
-  message: z.string().max(500).nullish(),
-  msg: z.string().max(500).nullish(),
-  data: z.object({
-    title: z.string().max(500).nullish(),
-    duration: z.number().int().nonnegative().max(86_400).nullish(),
-    thumbnail: z.unknown().optional(),
-    resources: z.array(z.unknown()).max(20)
-  }).nullish()
-});
+const ResponseEnvelopeSchema = z.object({
+  status: z.unknown().optional(),
+  status_code: z.unknown().optional(),
+  success: z.unknown().optional(),
+  message: z.unknown().optional(),
+  msg: z.unknown().optional(),
+  error: z.unknown().optional(),
+  data: z.unknown().optional()
+}).passthrough();
+
+const ResponseDataSchema = z.object({
+  title: z.string().max(500).nullish(),
+  duration: z.number().int().nonnegative().max(86_400).nullish(),
+  thumbnail: z.unknown().optional(),
+  resources: z.array(z.unknown()).max(20).optional(),
+  media: z.array(z.unknown()).max(20).optional()
+}).passthrough();
+
+const MediaResourceGroupSchema = z.object({
+  resources: z.array(z.unknown()).max(20)
+}).passthrough();
 
 export interface SaveFromInsProviderOptions {
   enabled?: boolean;
@@ -48,6 +58,16 @@ export interface SaveFromInsProviderOptions {
 
 export type SaveFromInsDiagnosticPhase = "request" | "payload" | "resources" | "completed";
 export type SaveFromInsContentType = "json" | "html" | "text" | "other" | "missing";
+export type SaveFromInsEnvelopeVariant =
+  | "observed-instagram-resources"
+  | "provider-error"
+  | "unrecognized";
+export type SaveFromInsProviderOutcome = "success" | "failure" | "unknown";
+export type SaveFromInsResourcePath =
+  | "data.resources"
+  | "data.media[].resources"
+  | "data.resources+data.media[].resources"
+  | "none";
 
 export interface SaveFromInsDiagnosticEvent {
   event: "savefromins_resolution_diagnostic";
@@ -58,6 +78,13 @@ export interface SaveFromInsDiagnosticEvent {
   contentType: SaveFromInsContentType;
   resourceCount: number | null;
   validDirectMp4Count: number;
+  envelopeVariant: SaveFromInsEnvelopeVariant;
+  providerOutcome: SaveFromInsProviderOutcome;
+  resourcePath: SaveFromInsResourcePath;
+  rejectedMalformedCount: number;
+  rejectedNonVideoCount: number;
+  rejectedNonMp4Count: number;
+  rejectedNonDirectCount: number;
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -77,6 +104,59 @@ function contentTypeCategory(headers: Headers): SaveFromInsContentType {
   if (contentType === "text/html") return "html";
   if (contentType.startsWith("text/")) return "text";
   return "other";
+}
+
+function boundedText(value: unknown, maximumLength: number): string {
+  return typeof value === "string" ? value.slice(0, maximumLength) : "";
+}
+
+function normalizedMarker(value: unknown): string {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+    return "";
+  }
+  return String(value).trim().toLowerCase();
+}
+
+function hasExplicitFailureMarker(envelope: z.infer<typeof ResponseEnvelopeSchema>): boolean {
+  const status = normalizedMarker(envelope.status);
+  const statusCode = normalizedMarker(envelope.status_code);
+  return envelope.success === false || ["0", "error", "failed", "fail"].includes(status) ||
+    ["0", "error", "failed", "fail"].includes(statusCode);
+}
+
+function hasSuccessMarker(envelope: z.infer<typeof ResponseEnvelopeSchema>): boolean {
+  const status = normalizedMarker(envelope.status);
+  const statusCode = normalizedMarker(envelope.status_code);
+  return envelope.success === true || ["1", "success", "ok"].includes(status) ||
+    ["1", "success", "ok"].includes(statusCode);
+}
+
+function extractResources(data: z.infer<typeof ResponseDataSchema>): {
+  path: SaveFromInsResourcePath;
+  resources: unknown[];
+} {
+  const direct = data.resources ?? [];
+  const nested = (data.media ?? []).flatMap((item) => {
+    const parsed = MediaResourceGroupSchema.safeParse(item);
+    return parsed.success ? parsed.data.resources : [];
+  });
+  const path: SaveFromInsResourcePath = direct.length > 0 && nested.length > 0
+    ? "data.resources+data.media[].resources"
+    : direct.length > 0
+      ? "data.resources"
+      : nested.length > 0
+        ? "data.media[].resources"
+        : "none";
+  const resources = [...direct, ...nested];
+  if (resources.length > MAXIMUM_RESOURCE_COUNT) {
+    throw new ProviderError(
+      "SaveFromIns returned too many media resources.",
+      "provider_schema_changed",
+      true,
+      true
+    );
+  }
+  return { path, resources };
 }
 
 function mapProviderFailure(code: string, message: string): never {
@@ -107,7 +187,7 @@ function mapProviderFailure(code: string, message: string): never {
   if (/unsupported|invalid.?url/i.test(detail)) {
     throw new ProviderError("SaveFromIns does not support this Instagram URL.", "unsupported_url", false, true);
   }
-  throw new ProviderError("SaveFromIns changed its response schema.", "provider_schema_changed", true, true);
+  throw new ProviderError("SaveFromIns returned an unsuccessful response.", "provider_unavailable", true, true);
 }
 
 export class SaveFromInsProvider implements ResolverProvider {
@@ -151,6 +231,13 @@ export class SaveFromInsProvider implements ResolverProvider {
     let contentType: SaveFromInsContentType = "missing";
     let resourceCount: number | null = null;
     let validDirectMp4Count = 0;
+    let envelopeVariant: SaveFromInsEnvelopeVariant = "unrecognized";
+    let providerOutcome: SaveFromInsProviderOutcome = "unknown";
+    let resourcePath: SaveFromInsResourcePath = "none";
+    let rejectedMalformedCount = 0;
+    let rejectedNonVideoCount = 0;
+    let rejectedNonMp4Count = 0;
+    let rejectedNonDirectCount = 0;
     const emit = (outcome: SaveFromInsDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -162,6 +249,13 @@ export class SaveFromInsProvider implements ResolverProvider {
           contentType,
           resourceCount,
           validDirectMp4Count,
+          envelopeVariant,
+          providerOutcome,
+          resourcePath,
+          rejectedMalformedCount,
+          rejectedNonVideoCount,
+          rejectedNonMp4Count,
+          rejectedNonDirectCount,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -206,9 +300,9 @@ export class SaveFromInsProvider implements ResolverProvider {
       );
 
       phase = "payload";
-      let payload: z.infer<typeof ResponseSchema>;
+      let envelope: z.infer<typeof ResponseEnvelopeSchema>;
       try {
-        payload = ResponseSchema.parse(JSON.parse(response.body));
+        envelope = ResponseEnvelopeSchema.parse(JSON.parse(response.body));
       } catch {
         throw new ProviderError(
           "SaveFromIns changed its response schema.",
@@ -218,22 +312,62 @@ export class SaveFromInsProvider implements ResolverProvider {
         );
       }
 
-      if ((payload.status !== 1 && payload.status !== "1") || payload.status_code !== "success" || !payload.data) {
-        mapProviderFailure(payload.status_code ?? "", payload.message ?? payload.msg ?? "");
+      const statusCode = boundedText(envelope.status_code, 120);
+      const message = boundedText(envelope.message, 500) || boundedText(envelope.msg, 500) ||
+        boundedText(envelope.error, 500);
+      if (hasExplicitFailureMarker(envelope)) {
+        envelopeVariant = "provider-error";
+        providerOutcome = "failure";
+        mapProviderFailure(statusCode, message);
       }
 
-      resourceCount = payload.data.resources.length;
-      phase = "resources";
-      const formats: ParsedFormat[] = payload.data.resources.flatMap((resource) => {
-        const parsed = ResourceSchema.safeParse(resource);
-        if (!parsed.success) return [];
-        if (
-          parsed.data.type.toLowerCase() !== "video" ||
-          parsed.data.format.toLowerCase() !== "mp4" ||
-          parsed.data.download_mode.toLowerCase() !== "direct"
-        ) return [];
+      const payloadData = ResponseDataSchema.safeParse(envelope.data);
+      if (!hasSuccessMarker(envelope) || !payloadData.success) {
+        throw new ProviderError(
+          "SaveFromIns changed its response schema.",
+          "provider_schema_changed",
+          true,
+          true
+        );
+      }
 
-        const quality = parsed.data.quality.trim() || "Original";
+      const extracted = extractResources(payloadData.data);
+      if (extracted.path === "none") {
+        throw new ProviderError(
+          "SaveFromIns changed its response schema.",
+          "provider_schema_changed",
+          true,
+          true
+        );
+      }
+      envelopeVariant = "observed-instagram-resources";
+      providerOutcome = "success";
+      resourcePath = extracted.path;
+      resourceCount = extracted.resources.length;
+      phase = "resources";
+      const seenUrls = new Set<string>();
+      const formats: ParsedFormat[] = extracted.resources.flatMap((resource) => {
+        const parsed = ResourceSchema.safeParse(resource);
+        if (!parsed.success) {
+          rejectedMalformedCount += 1;
+          return [];
+        }
+        if (parsed.data.type.toLowerCase() !== "video") {
+          rejectedNonVideoCount += 1;
+          return [];
+        }
+        if (parsed.data.format.toLowerCase() !== "mp4") {
+          rejectedNonMp4Count += 1;
+          return [];
+        }
+        if (parsed.data.download_mode.toLowerCase() !== "direct") {
+          rejectedNonDirectCount += 1;
+          return [];
+        }
+        if (seenUrls.has(parsed.data.download_url)) return [];
+        seenUrls.add(parsed.data.download_url);
+
+        const quality = parsed.data.quality?.trim() || "Original";
         return [{
           url: parsed.data.download_url,
           label: `${quality} MP4`,
@@ -260,9 +394,9 @@ export class SaveFromInsProvider implements ResolverProvider {
           this.manifest.kind,
           input,
           {
-            title: payload.data.title ?? null,
-            thumbnailUrl: reviewedThumbnailUrl(payload.data.thumbnail, THUMBNAIL_HOSTS),
-            durationSeconds: payload.data.duration ?? null,
+            title: payloadData.data.title ?? null,
+            thumbnailUrl: reviewedThumbnailUrl(payloadData.data.thumbnail, THUMBNAIL_HOSTS),
+            durationSeconds: payloadData.data.duration ?? null,
             formats,
             warnings: ["SaveFromIns is limited to public Instagram posts."]
           },

@@ -1631,3 +1631,17 @@ route, natural-event, content, and SEO models. It highlights cross-authority dri
 Provider, changing traffic, or claiming that a browser handoff proves a saved file. This batch adds
 no public API, migration, Provider, Delivery mode, rollout, gate, or calibration change. See
 [Work Item 90](work-item-90-multiplatform-beta-productization.md).
+
+### Work Item 91 — Instagram recovery and bounded fallback decision
+
+Work Item 91 responds to a seven-day window with no successful SaveFromIns attempts. Production
+containment CAS-disables only the Instagram/NL rule at revision 16. The adapter now distinguishes
+explicit upstream failures from schema drift, records only bounded structural diagnostics, accepts
+missing optional quality, and uses one Provider execution per Instagram task. The existing Delivery
+host policy and public contracts remain unchanged.
+
+A current two-sample SocialDownloader Instagram recheck produced one reviewed 206 MP4 stream and
+one timeout, so it remains Lab-only and no fallback rule or policy is created. Instagram reopens
+only after the exact GitHub image passes two sequential one-attempt browser downloads. See
+[Work Item 91](work-item-91-instagram-recovery.md) and
+[ADR-0040](architecture/adr/0040-instagram-single-attempt-recovery.md).
