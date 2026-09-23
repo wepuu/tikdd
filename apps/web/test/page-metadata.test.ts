@@ -5,8 +5,8 @@ import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("published page metadata", () => {
   it.each([
-    ["en", ["X", "Instagram", "TikTok", "Facebook", "Pinterest"]],
-    ["zh-CN", ["X", "Instagram", "TikTok", "Facebook", "Pinterest"]]
+    ["en", ["X", "Instagram", "TikTok", "Facebook", "Vimeo", "Pinterest"]],
+    ["zh-CN", ["X", "Instagram", "TikTok", "Facebook", "Vimeo", "Pinterest"]]
   ] as const)("describes all currently supported platforms for the %s homepage", (locale, platforms) => {
     const page = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(
       (candidate) => candidate.locale === locale && candidate.pageType === "homepage"

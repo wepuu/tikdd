@@ -28,6 +28,16 @@ describe("public published-content loader", () => {
     expect(tiktokPages.every((page) => page.content.template === "platform" && page.content.eyebrow.includes("TikTok") && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
 
+  it("bundles Facebook, Vimeo, and Pinterest as bilingual noindex Beta pages", () => {
+    for (const platform of ["facebook", "vimeo", "pinterest"] as const) {
+      const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === platform);
+      expect(pages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+      expect(pages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+      expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+    }
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(4);
+  });
+
   it("uses only a runtime-validated active snapshot", async () => {
     resetPublishedContentStateForTest();
     const source: PublicContentSource = { loadActive: async () => BUNDLED_PUBLIC_CONTENT_SNAPSHOT, loadCandidate: async () => null };

@@ -32,9 +32,9 @@ const shared = (locale: StarterLocale): AdminSharedContent => AdminSharedContent
         siteName: "TikDD",
         navigationLabel: "Home",
         footerTagline: "Clear formats. Controlled delivery.",
-        legalNoticeMarkdown: "TikDD is an independent tool and is not affiliated with X, Instagram, TikTok, Facebook, or Pinterest.",
-        defaultSocialTitle: "TikDD TikTok, X, Instagram, and Facebook video downloader",
-        defaultSocialDescription: "Resolve public X, Instagram, TikTok, and Facebook posts with TikDD.",
+        legalNoticeMarkdown: "TikDD is an independent tool and is not affiliated with X, Instagram, TikTok, Facebook, Vimeo, or Pinterest.",
+        defaultSocialTitle: "TikDD public video downloader for six supported platforms",
+        defaultSocialDescription: "Resolve public X, Instagram, TikTok, Facebook, Vimeo, and Pinterest videos with TikDD.",
         defaultSocialImageAssetId: null,
         siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }
       }
@@ -42,9 +42,9 @@ const shared = (locale: StarterLocale): AdminSharedContent => AdminSharedContent
         siteName: "TikDD",
         navigationLabel: "首页",
         footerTagline: "格式清晰，受控交付。",
-        legalNoticeMarkdown: "TikDD 是独立工具，与 X、Instagram、TikTok、Facebook 或 Pinterest 不存在隶属关系。",
-        defaultSocialTitle: "TikDD TikTok、X、Instagram 与 Facebook 视频下载",
-        defaultSocialDescription: "使用 TikDD 解析公开的 X、Instagram、TikTok 与 Facebook 帖子。",
+        legalNoticeMarkdown: "TikDD 是独立工具，与 X、Instagram、TikTok、Facebook、Vimeo 或 Pinterest 不存在隶属关系。",
+        defaultSocialTitle: "TikDD 六个平台的公开视频下载工具",
+        defaultSocialDescription: "使用 TikDD 解析公开的 X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频。",
         defaultSocialImageAssetId: null,
         siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }
       }
@@ -54,12 +54,12 @@ const homepageContent = (locale: StarterLocale): AdminPageContent => AdminPageCo
   locale === "en"
     ? {
         template: "homepage",
-        heroTitle: "Download public videos from X, Instagram, TikTok, and Facebook",
-        heroSubtitle: "Paste a public X post, Instagram Reel, Instagram post, TikTok video, or Facebook Reel URL. TikDD resolves clear format choices and creates a short-lived download link.",
+        heroTitle: "Download public videos from six supported platforms",
+        heroSubtitle: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, or Pinterest video URL. TikDD resolves available formats and creates a short-lived download link.",
         inputLabel: "Public video page URL",
-        inputPlaceholder: "Paste an x.com, instagram.com, tiktok.com, or facebook.com URL",
+        inputPlaceholder: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, or Pinterest URL",
         primaryActionLabel: "Resolve",
-        supportedPlatformsTitle: "TikTok supported · X, Instagram & Facebook Public Beta",
+        supportedPlatformsTitle: "TikTok stable · five platforms in Public Beta",
         howItWorksTitle: "How it works",
         howItWorksSteps: [
           { title: "Paste URL", description: "Copy a public video page link into the field above." },
@@ -68,19 +68,19 @@ const homepageContent = (locale: StarterLocale): AdminPageContent => AdminPageCo
         ],
         faqTitle: "Frequently asked questions",
         faqItems: [
-          { question: "Which links can I use?", answerMarkdown: "TikDD accepts public X posts, Instagram Reels or posts, TikTok video pages, and public Facebook Reels. TikTok is a stable supported route; X, Instagram, and Facebook remain in public Beta." },
+          { question: "Which links can I use?", answerMarkdown: "TikDD accepts public X, Instagram, TikTok, Facebook, Vimeo, and Pinterest video pages. TikTok is stable; the other five platforms remain in public Beta." },
           { question: "Do I need an account?", answerMarkdown: "No. TikDD does not request your account, cookies, or access to private content." },
           { question: "Why can a recognized link fail?", answerMarkdown: "Private, paid, restricted, or recently changed pages may not resolve." }
         ]
       }
     : {
         template: "homepage",
-        heroTitle: "下载 X、Instagram、TikTok 与 Facebook 的公开视频",
-        heroSubtitle: "粘贴公开的 X 帖子、Instagram Reel、Instagram 帖子、TikTok 视频或 Facebook Reel 链接。TikDD 会解析可用格式并生成短期下载链接。",
+        heroTitle: "下载六个平台的公开视频",
+        heroSubtitle: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo 或 Pinterest 视频链接。TikDD 会解析可用格式并生成短期下载链接。",
         inputLabel: "公开视频页面链接",
-        inputPlaceholder: "粘贴 x.com、instagram.com、tiktok.com 或 facebook.com 链接",
+        inputPlaceholder: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo 或 Pinterest 链接",
         primaryActionLabel: "解析",
-        supportedPlatformsTitle: "TikTok 已支持 · X、Instagram 与 Facebook 公开测试",
+        supportedPlatformsTitle: "TikTok 稳定支持 · 其余五个平台公开测试",
         howItWorksTitle: "使用方式",
         howItWorksSteps: [
           { title: "粘贴链接", description: "将公开的视频页面链接粘贴到上方输入框。" },
@@ -89,26 +89,38 @@ const homepageContent = (locale: StarterLocale): AdminPageContent => AdminPageCo
         ],
         faqTitle: "常见问题",
         faqItems: [
-          { question: "可以使用哪些链接？", answerMarkdown: "TikDD 支持公开的 X 帖子、Instagram Reel 或帖子、TikTok 视频页面以及公开的 Facebook Reel。TikTok 已稳定支持，X、Instagram 与 Facebook 仍处于公开测试。" },
+          { question: "可以使用哪些链接？", answerMarkdown: "TikDD 支持公开的 X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频页面。TikTok 已稳定支持，其余五个平台仍处于公开测试。" },
           { question: "需要创建账号吗？", answerMarkdown: "不需要。TikDD 不会索取你的账号、Cookie，也不会访问私密内容。" },
           { question: "为什么识别后的链接仍可能失败？", answerMarkdown: "私密、付费、受限或近期结构变化的页面可能无法解析。" }
         ]
       }
 );
 
-const platformContent = (locale: StarterLocale, platform: "x" | "instagram" | "tiktok"): AdminPageContent => {
-  const name = platform === "x" ? "X" : platform === "instagram" ? "Instagram" : "TikTok";
+type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest";
+
+const PLATFORM_NAMES: Record<StarterPlatform, string> = {
+  x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", vimeo: "Vimeo", pinterest: "Pinterest"
+};
+
+const PLATFORM_LINK_LABELS: Record<StarterPlatform, { en: string; zh: string }> = {
+  x: { en: "post", zh: "帖子" },
+  instagram: { en: "Reel or post", zh: "Reel 或帖子" },
+  tiktok: { en: "video", zh: "视频" },
+  facebook: { en: "Reel or video", zh: "Reel 或视频" },
+  vimeo: { en: "video", zh: "视频" },
+  pinterest: { en: "video Pin", zh: "视频 Pin" }
+};
+
+const platformContent = (locale: StarterLocale, platform: StarterPlatform): AdminPageContent => {
+  const name = PLATFORM_NAMES[platform];
   const stage = platform === "tiktok" ? "Stable" : "Beta";
+  const linkLabel = PLATFORM_LINK_LABELS[platform];
   if (locale === "en") {
     return AdminPageContentSchema.parse({
       template: "platform",
       eyebrow: `${name} ${stage}`,
       title: `${name} video downloader${stage === "Beta" ? " Beta" : ""}`,
-      introduction: platform === "x"
-        ? "Paste a public X post link. TikDD checks the available formats and hands a short-lived download link to your browser."
-        : platform === "instagram"
-          ? "Paste a public Instagram Reel or post link. TikDD resolves the available formats and creates a short-lived download link."
-          : "Paste a public TikTok video link. TikDD checks the available formats and hands a short-lived download link to your browser.",
+      introduction: `Paste a public ${name} ${linkLabel.en} link. TikDD checks the available formats and hands a short-lived download link to your browser.`,
       limitationsMarkdown: "Public links only. Private, paid, restricted, deleted, or recently changed posts may not resolve.",
       howToSteps: [
         { title: `Paste a ${name} link`, description: "Copy a public video page link into the resolver." },
@@ -121,14 +133,16 @@ const platformContent = (locale: StarterLocale, platform: "x" | "instagram" | "t
         { question: "Why might a recognized link fail?", answerMarkdown: "The upstream post may be private, restricted, removed, or temporarily unavailable." }
       ],
       geo: {
-        directAnswer: platform === "x"
-          ? "TikDD's X Beta accepts public X post links and can return a short-lived MP4 download link when the public post is accessible."
-          : platform === "instagram"
-            ? "TikDD's Instagram Beta accepts public Reel and post links and can return a short-lived MP4 download link when the upstream page is accessible."
-          : "TikDD's TikTok stable route accepts public TikTok video links and can return a short-lived MP4 download link when the public page is accessible.",
+        directAnswer: `TikDD's ${name} ${stage} route accepts public ${linkLabel.en} links and can return a short-lived MP4 download link when the public page is accessible.`,
         reviewStatus: platform === "tiktok" ? "reviewed" : "draft",
         reviewedAt: platform === "tiktok" ? "2026-09-13T00:00:00.000Z" : null,
-        sourceRefs: ["tikdd-workflow", platform === "x" ? "x-public-content" : platform === "instagram" ? "instagram-public-content" : "tiktok-public-content"]
+        sourceRefs: platform === "tiktok"
+          ? ["tikdd-workflow", "tiktok-public-content"]
+          : platform === "x"
+            ? ["tikdd-workflow", "x-public-content"]
+            : platform === "instagram"
+              ? ["tikdd-workflow", "instagram-public-content"]
+              : ["tikdd-workflow"]
       }
     });
   }
@@ -136,11 +150,7 @@ const platformContent = (locale: StarterLocale, platform: "x" | "instagram" | "t
     template: "platform",
     eyebrow: `${name} ${stage === "Stable" ? "稳定支持" : "Beta"}`,
     title: `${name} 视频下载${stage === "Beta" ? " Beta" : ""}`,
-    introduction: platform === "x"
-      ? "粘贴公开的 X 帖子链接。TikDD 会检查可用格式，并将短期下载链接交给浏览器。"
-      : platform === "instagram"
-        ? "粘贴公开的 Instagram Reel 或帖子链接。TikDD 会解析可用格式并生成短期下载链接。"
-        : "粘贴公开的 TikTok 视频链接。TikDD 会检查可用格式，并将短期下载链接交给浏览器。",
+    introduction: `粘贴公开的 ${name} ${linkLabel.zh}链接。TikDD 会检查可用格式，并将短期下载链接交给浏览器。`,
     limitationsMarkdown: "仅支持公开链接。私密、付费、受限、已删除或近期结构变化的帖子可能无法解析。",
     howToSteps: [
       { title: `粘贴 ${name} 链接`, description: "将公开的视频页面链接粘贴到解析器。" },
@@ -153,14 +163,16 @@ const platformContent = (locale: StarterLocale, platform: "x" | "instagram" | "t
       { question: "为什么识别后仍可能失败？", answerMarkdown: "上游帖子可能私密、受限、已删除或暂时无法访问。" }
     ],
     geo: {
-      directAnswer: platform === "x"
-        ? "TikDD X Beta 支持公开的 X 帖子链接；当公开帖子可访问时，可返回短期有效的 MP4 下载链接。"
-        : platform === "instagram"
-          ? "TikDD Instagram Beta 支持公开的 Reel 和帖子链接；当上游页面可访问时，可返回短期有效的 MP4 下载链接。"
-          : "TikDD TikTok 稳定支持公开的 TikTok 视频链接；当公开页面可访问时，可返回短期有效的 MP4 下载链接。",
+      directAnswer: `TikDD ${name}${stage === "Stable" ? "稳定支持" : " Beta"}公开的${linkLabel.zh}链接；当公开页面可访问时，可返回短期有效的 MP4 下载链接。`,
       reviewStatus: platform === "tiktok" ? "reviewed" : "draft",
       reviewedAt: platform === "tiktok" ? "2026-09-13T00:00:00.000Z" : null,
-      sourceRefs: ["tikdd-workflow", platform === "x" ? "x-public-content" : platform === "instagram" ? "instagram-public-content" : "tiktok-public-content"]
+      sourceRefs: platform === "tiktok"
+        ? ["tikdd-workflow", "tiktok-public-content"]
+        : platform === "x"
+          ? ["tikdd-workflow", "x-public-content"]
+          : platform === "instagram"
+            ? ["tikdd-workflow", "instagram-public-content"]
+            : ["tikdd-workflow"]
     }
   });
 };
@@ -170,9 +182,9 @@ const faqContent = (locale: StarterLocale): AdminPageContent => AdminPageContent
     ? {
         template: "faq",
         title: "Frequently asked questions",
-        introduction: "A short guide to TikDD's public X, Instagram, TikTok, and Facebook workflow.",
+        introduction: "A short guide to TikDD's six supported public-video workflows.",
         items: [
-          { question: "What does TikDD support?", answerMarkdown: "TikDD accepts public X posts, Instagram Reels or posts, TikTok video pages, and public Facebook Reels. TikTok is stable; X, Instagram, and Facebook remain in public Beta." },
+          { question: "What does TikDD support?", answerMarkdown: "TikDD accepts public X, Instagram, TikTok, Facebook, Vimeo, and Pinterest video pages. TikTok is stable; the other five platforms remain in public Beta." },
           { question: "Does TikDD store my video?", answerMarkdown: "TikDD keeps only the short-lived task and delivery state needed to complete a request. Your browser receives the media from the approved delivery host." },
           { question: "Why did a request fail?", answerMarkdown: "Upstream availability, privacy settings, rate limits, or a changed page can prevent a result. Try again later or use another public post." }
         ]
@@ -180,9 +192,9 @@ const faqContent = (locale: StarterLocale): AdminPageContent => AdminPageContent
     : {
         template: "faq",
         title: "常见问题",
-        introduction: "这里介绍 TikDD 公开 X、Instagram 与 TikTok 的使用方式。",
+        introduction: "这里介绍 TikDD 六个平台的公开视频解析方式。",
         items: [
-          { question: "TikDD 支持什么？", answerMarkdown: "TikDD 支持公开的 X 帖子、Instagram Reel 或帖子，以及 TikTok 视频页面。TikTok 已稳定支持，X 与 Instagram 仍处于公开测试。" },
+          { question: "TikDD 支持什么？", answerMarkdown: "TikDD 支持公开的 X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频页面。TikTok 已稳定支持，其余五个平台仍处于公开测试。" },
           { question: "TikDD 会保存我的视频吗？", answerMarkdown: "TikDD 只保留完成请求所需的短期任务与交付状态，浏览器会从受审交付主机接收媒体。" },
           { question: "为什么请求会失败？", answerMarkdown: "上游可用性、隐私设置、频率限制或页面结构变化都可能导致失败。可以稍后重试或更换公开帖子。" }
         ]
@@ -196,7 +208,7 @@ const guideContent = (locale: StarterLocale): AdminPageContent => AdminPageConte
         title: "How to use TikDD",
         introduction: "Resolve a public video page in three bounded steps.",
         sections: [
-          { id: "paste", heading: "1. Paste a public link", bodyMarkdown: "Copy a public X post, Instagram Reel or post, or TikTok video link into the home page." },
+          { id: "paste", heading: "1. Paste a public link", bodyMarkdown: "Copy a supported public X, Instagram, TikTok, Facebook, Vimeo, or Pinterest video link into the home page." },
           { id: "choose", heading: "2. Choose a format", bodyMarkdown: "Review the formats returned by the resolver and select an available MP4 option." },
           { id: "download", heading: "3. Download in your browser", bodyMarkdown: "Request the short-lived delivery link. Your browser is sent to the approved media host for the file transfer." }
         ]
@@ -206,7 +218,7 @@ const guideContent = (locale: StarterLocale): AdminPageContent => AdminPageConte
         title: "如何使用 TikDD",
         introduction: "用三个受控步骤解析公开的视频页面。",
         sections: [
-          { id: "paste", heading: "1. 粘贴公开链接", bodyMarkdown: "将公开的 X 帖子、Instagram Reel 或帖子，以及 TikTok 视频链接复制到首页。" },
+          { id: "paste", heading: "1. 粘贴公开链接", bodyMarkdown: "将支持的 X、Instagram、TikTok、Facebook、Vimeo 或 Pinterest 公共视频链接复制到首页。" },
           { id: "choose", heading: "2. 选择格式", bodyMarkdown: "查看解析器返回的格式，并选择可用的 MP4 选项。" },
           { id: "download", heading: "3. 在浏览器中下载", bodyMarkdown: "申请短期有效的交付链接。浏览器会前往受审媒体主机完成文件传输。" }
         ]
@@ -249,28 +261,30 @@ const legalContent = (locale: StarterLocale, kind: "privacy" | "terms"): AdminPa
       }
 );
 
-const seo = (locale: StarterLocale, page: "home" | "x" | "instagram" | "tiktok" | "faq" | "help" | "privacy" | "terms"): AdminSeoFields => {
+type StarterPageKey = "home" | StarterPlatform | "faq" | "help" | "privacy" | "terms";
+
+const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
   const labels = locale === "en"
-    ? { home: "TikDD TikTok, X, Instagram, Facebook, and Pinterest video downloader", x: "TikDD X video downloader Beta", instagram: "TikDD Instagram video downloader Beta", tiktok: "TikDD TikTok video downloader", faq: "TikDD frequently asked questions", help: "How to use TikDD", privacy: "TikDD privacy", terms: "TikDD terms of use" }
-    : { home: "TikDD TikTok、X、Instagram、Facebook 与 Pinterest 视频下载", x: "TikDD X 视频下载 Beta", instagram: "TikDD Instagram 视频下载 Beta", tiktok: "TikDD TikTok 视频下载", faq: "TikDD 常见问题", help: "如何使用 TikDD", privacy: "TikDD 隐私说明", terms: "TikDD 使用条款" };
-  const paths = { home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms" } as const;
+    ? { home: "TikDD X, Instagram, TikTok, Facebook, Vimeo, Pinterest downloader", x: "TikDD X video downloader Beta", instagram: "TikDD Instagram video downloader Beta", tiktok: "TikDD TikTok video downloader", facebook: "TikDD Facebook video downloader Beta", vimeo: "TikDD Vimeo video downloader Beta", pinterest: "TikDD Pinterest video downloader Beta", faq: "TikDD frequently asked questions", help: "How to use TikDD", privacy: "TikDD privacy", terms: "TikDD terms of use" }
+    : { home: "TikDD X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频下载", x: "TikDD X 视频下载 Beta", instagram: "TikDD Instagram 视频下载 Beta", tiktok: "TikDD TikTok 视频下载", facebook: "TikDD Facebook 视频下载 Beta", vimeo: "TikDD Vimeo 视频下载 Beta", pinterest: "TikDD Pinterest 视频下载 Beta", faq: "TikDD 常见问题", help: "如何使用 TikDD", privacy: "TikDD 隐私说明", terms: "TikDD 使用条款" };
+  const paths = { home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader", facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms" } as const;
   const title = labels[page];
   return AdminSeoFieldsSchema.parse({
     localPath: paths[page],
     searchTitle: title,
     searchDescription: locale === "en"
       ? page === "home"
-        ? "Resolve public X, Instagram, TikTok, Facebook, and Pinterest videos through TikDD's reviewed download workflow and choose an available format."
+        ? "Resolve public X, Instagram, TikTok, Facebook, Vimeo, and Pinterest videos through TikDD's reviewed workflow and choose an available format."
         : page === "tiktok"
           ? "Read the reviewed TikDD TikTok downloader content and usage guidance for stable public support."
           : `Read the reviewed TikDD ${page} content and usage guidance, including the public Beta boundaries and steps.`
       : page === "home"
-        ? "使用 TikDD 解析公开的 X、Instagram、TikTok、Facebook 与 Pinterest 视频，阅读结构化说明并选择可用格式。"
+        ? "使用 TikDD 解析公开的 X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频，阅读结构化说明并选择可用格式。"
         : page === "tiktok"
           ? "阅读 TikDD TikTok 下载页面的结构化说明与使用指引，了解稳定支持的边界、步骤和注意事项。"
           : `阅读 TikDD ${title}的结构化说明与使用指引，了解公开 Beta 的边界、步骤和注意事项。`,
     socialTitle: page === "home" ? title : null,
-    socialDescription: page === "home" ? (locale === "en" ? "Resolve public X, Instagram, TikTok, Facebook, and Pinterest posts with TikDD." : "使用 TikDD 解析公开的 X、Instagram、TikTok、Facebook 与 Pinterest 帖子。") : null,
+    socialDescription: page === "home" ? (locale === "en" ? "Resolve public X, Instagram, TikTok, Facebook, Vimeo, and Pinterest videos with TikDD." : "使用 TikDD 解析公开的 X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频。") : null,
     socialImageAssetId: null,
     indexable: page === "home" || page === "tiktok",
     includeInSitemap: page === "home" || page === "tiktok",
@@ -287,7 +301,10 @@ export function starterPages(locale: StarterLocale): readonly StarterPageRecord[
     { pageId: "page_terms", locale, pageType: "legal", platform: null, content: legalContent(locale, "terms"), seo: seo(locale, "terms") },
     { pageId: "page_x", locale, pageType: "platform", platform: "x", content: platformContent(locale, "x"), seo: seo(locale, "x") },
     { pageId: "page_instagram", locale, pageType: "platform", platform: "instagram", content: platformContent(locale, "instagram"), seo: seo(locale, "instagram") },
-    { pageId: "page_tiktok", locale, pageType: "platform", platform: "tiktok", content: platformContent(locale, "tiktok"), seo: seo(locale, "tiktok") }
+    { pageId: "page_tiktok", locale, pageType: "platform", platform: "tiktok", content: platformContent(locale, "tiktok"), seo: seo(locale, "tiktok") },
+    { pageId: "page_facebook", locale, pageType: "platform", platform: "facebook", content: platformContent(locale, "facebook"), seo: seo(locale, "facebook") },
+    { pageId: "page_vimeo", locale, pageType: "platform", platform: "vimeo", content: platformContent(locale, "vimeo"), seo: seo(locale, "vimeo") },
+    { pageId: "page_pinterest", locale, pageType: "platform", platform: "pinterest", content: platformContent(locale, "pinterest"), seo: seo(locale, "pinterest") }
   ];
 }
 

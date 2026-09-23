@@ -55,6 +55,20 @@ revision 2 to full allocation, and run the two previously reviewed Pins once eac
 browser. Any failure disables the rollout first, then the three gates. Success keeps Pinterest
 Experimental/Beta; it does not add a sitemap entry or stable status.
 
+## Production closeout
+
+PR #125 was merged and deployed as `main@f5fc9a20b532487f432047dcc5480508f6e445a1` from exact-SHA
+GitHub images after an encrypted PostgreSQL/configuration backup. The six application containers
+remained healthy with zero restarts and Admin remained available.
+
+The owner-authorized Pinterest window then applied configuration revision
+`wi89-pinterest-beta-f5fc9a2`, enabled the three existing activation gates, and CAS-updated the
+unique rule to revision 3 with full allocation. Two reviewed public Pins each produced exactly one
+successful Provider attempt. Their Delivery tickets resolved through the reviewed redirect path to
+`v1.pinimg.com`; bounded client verification received `206 video/mp4` and non-zero bytes. The
+Pinterest circuit remained closed and no API or Delivery 5xx was observed during the extended
+post-change check. Pinterest remains Experimental/Beta, noindex, and outside the sitemap.
+
 ## Verification
 
 Run targeted Provider, Worker, Admin model and API tests, then `pnpm check`, `git diff --check`, and

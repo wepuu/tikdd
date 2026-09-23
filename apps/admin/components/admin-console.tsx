@@ -53,6 +53,7 @@ import { OperationalTruthDashboard } from "./operational-truth-dashboard";
 import { BetaHealthDashboard } from "./beta-health";
 import { ProviderRoutePlan } from "./provider-route-plan";
 import { RouteOperationsPulse } from "./route-operations-pulse";
+import { SupportTruthLedger } from "./support-truth-ledger";
 import { ADMIN_WORKSPACES, workspaceFromHash, type AdminWorkspace } from "../lib/workspace-model";
 
 type RefreshState = "idle" | "refreshing" | "failed";
@@ -303,6 +304,11 @@ export function AdminConsole({ initialSnapshot, buildId }: { initialSnapshot: Ad
           </div> : null}
 
           {workspace === "providers" ? <div className="workspace-view" id="providers">
+          <section className="support-truth-section" id="support-truth">
+            <SectionHeading eyebrow="OPERATE / SUPPORT ALIGNMENT" title="支持事实" detail="把产品目录、生产路由、自然下载事件、公开页面和搜索边界放在同一张账本中；偏差只提示，不自动改流量。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读 · 不探测</span>} />
+            <SupportTruthLedger snapshot={snapshot} plans={effectiveRoutePlans} />
+          </section>
+
           <section className="route-plan-section" id="effective-route-plan">
             <SectionHeading eyebrow="OPERATE / EFFECTIVE ROUTE PLAN" title="有效路由计划" detail="把平台、区域、Manifest、rollout、熔断和 Admin 顺序收敛为一次可读的尝试计划；不会主动请求 Provider，也不会把未配置的路线称为回退。" aside={<span className="read-only-label"><ShieldCheck size={15} />只读投影</span>} />
             <RouteOperationsPulse routes={allRoutes} plans={effectiveRoutePlans} betaHealth={snapshot.betaHealth} selectedPlatform={platform} onSelectPlatform={selectPlatform} />

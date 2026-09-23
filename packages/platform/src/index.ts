@@ -60,7 +60,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "facebook",
     displayName: "Facebook",
-    status: "planned",
+    status: "experimental",
     source: "yt-dlp",
     hosts: [host("facebook.com"), host("fb.watch", false)],
     extractorKeys: ["facebook", "facebook:reel"]
@@ -68,7 +68,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "vimeo",
     displayName: "Vimeo",
-    status: "planned",
+    status: "experimental",
     source: "yt-dlp",
     hosts: [host("vimeo.com")],
     extractorKeys: ["vimeo", "vimeo:channel", "vimeo:user"]
