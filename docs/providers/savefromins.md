@@ -194,3 +194,19 @@ Instagram to one queue execution. The existing version-2 Delivery host policy is
 SocialDownloader secondary was not promoted because one of two current samples timed out. See
 [ADR-0040](../architecture/adr/0040-instagram-single-attempt-recovery.md) and the
 [Work Item 91 record](../work-item-91-instagram-recovery.md).
+
+## 2026-09-24 Work Item 92 latency and direct-first boundary
+
+The current public client still prefers a direct `download_url` after parse. It also contains an
+asynchronous `resource_content` path using a second download endpoint and an SSE task, but four
+bounded current Reel checks all returned a valid top-level direct MP4. The selected resources passed
+the existing CDN Range, MIME, and browser-direct checks on reviewed `cdninstagram.com` or
+`fna.fbcdn.net` host families.
+
+The checks ranged from sub-second to approximately twenty seconds. The former ten-second TikDD
+timeout could therefore classify a valid upstream response as `provider_timeout`. Work Item 92 sets
+the SaveFromIns manifest timeout to 25 seconds, keeps the 30-second global route deadline and
+single-attempt boundary, prefers top-level direct resources over popup siblings, and records only
+sanitized header/body timing. It does not add the asynchronous SSE flow, widen Delivery policy, or
+change the disabled production rollout. See [ADR-0041](../architecture/adr/0041-savefromins-direct-first-latency-boundary.md)
+and the [Work Item 92 record](../work-item-92-savefromins-latency.md).

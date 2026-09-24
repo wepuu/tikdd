@@ -40,6 +40,7 @@
 - [ADR-0038: Pinterest Video Downloader direct CDN delivery](0038-pinterest-videodownloader-direct-cdn.md)
 - [ADR-0039: VidDown Vimeo direct CDN delivery](0039-viddown-vimeo-direct-cdn.md)
 - [ADR-0040: Single-attempt Instagram recovery and evidence-gated fallback](0040-instagram-single-attempt-recovery.md)
+- [ADR-0041: SaveFromIns direct-first latency boundary](0041-savefromins-direct-first-latency-boundary.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

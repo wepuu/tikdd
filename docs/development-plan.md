@@ -1645,3 +1645,16 @@ one timeout, so it remains Lab-only and no fallback rule or policy is created. I
 only after the exact GitHub image passes two sequential one-attempt browser downloads. See
 [Work Item 91](work-item-91-instagram-recovery.md) and
 [ADR-0040](architecture/adr/0040-instagram-single-attempt-recovery.md).
+
+### Work Item 92 — SaveFromIns latest strategy and latency recovery
+
+Current public protocol checks show that SaveFromIns still returns a direct top-level MP4 for the
+supported Reel path, while its UI also has a separate asynchronous `resource_content`/SSE flow for
+popup resources. Four bounded samples passed the existing reviewed CDN boundary, but one valid parse
+required approximately twenty seconds; the previous ten-second TikDD timeout caused false
+`provider_timeout` failures. Work Item 92 raises only the SaveFromIns manifest timeout to 25 seconds,
+keeps one execution and the 30-second route deadline, prefers direct resources, and adds sanitized
+header/body timing. It does not add Provider-page handoff, async SSE delivery, a media proxy, or a
+new host policy. Instagram remains disabled until the exact image passes two sequential browser
+downloads. See [Work Item 92](work-item-92-savefromins-latency.md) and
+[ADR-0041](architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
