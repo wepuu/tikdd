@@ -26,6 +26,7 @@ import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/
 import { ClientDownloadError, downloadCorsBlob } from "../lib/client-download";
 import { navigateToDelivery } from "../lib/delivery-navigation";
 import { suggestedDownloadFilename } from "../lib/download-filename";
+import { RESOLVE_POLL_INTERVAL_MS, RESOLVE_POLL_MAX_ATTEMPTS } from "../lib/resolve-polling";
 import { displayThumbnailUrl, formatMediaDuration, publicResultTitle } from "../lib/result-presentation";
 import { isDeliveryExpired, publicFailureDescription, publicFailureIntent } from "../lib/task-presentation";
 
@@ -317,8 +318,8 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   }, [focusKey]);
 
   async function pollTask(taskId: string): Promise<void> {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 750));
+    for (let attempt = 0; attempt < RESOLVE_POLL_MAX_ATTEMPTS; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, RESOLVE_POLL_INTERVAL_MS));
       const response = await fetch(`${apiBaseUrl}/v1/resolve-tasks/${taskId}`, { cache: "no-store" });
       if (!response.ok) {
         throw {

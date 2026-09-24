@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@f5fc9a20b532487f432047dcc5480508f6e445a1` (Work Item 89 production operations closeout)
-- Roadmap revision date: 2026-09-23
+- Repository checkpoint: `main@fc5fac8ceb94a333eb5a653fdfa4e260b7e4ed0f` (Work Item 92 deployed; Instagram contained)
+- Roadmap revision date: 2026-09-24
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -33,6 +33,12 @@ Beta operations view and its UI closeout are merged in Work Item 31. Work Item 3
 on-demand NL preview: the owner logged in through `admin.tikdd.cc`, inspected the read-only Beta view,
 and Admin was stopped afterward. Admin remains an on-demand, stopped production profile. Work Item 33
 addresses the release-script executable bit and stage-gate false positives found during that preview.
+
+Current containment overrides the historical Instagram-live wording above: the Work Item 92 image
+is healthy, but its first bounded Instagram validation timed out at 25 seconds. The unique rollout
+is disabled at revision 20 and all three SaveFromIns gates are false. Work Item 93 aligns one
+SaveFromIns request with a 40-second Provider deadline, a 45-second Instagram-only route budget,
+and a 60-second Web polling window before another bounded two-sample release check.
 
 ## Baseline classification
 
@@ -1658,3 +1664,14 @@ header/body timing. It does not add Provider-page handoff, async SSE delivery, a
 new host policy. Instagram remains disabled until the exact image passes two sequential browser
 downloads. See [Work Item 92](work-item-92-savefromins-latency.md) and
 [ADR-0041](architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
+
+### Work Item 93 — SaveFromIns single-attempt deadline alignment
+
+The exact Work Item 92 deployment produced one 25-second `provider_timeout`; containment disabled
+the rollout and gates before any second request. A later single no-retry NL diagnostic returned the
+reviewed direct-first success shape in about five seconds, so Work Item 93 treats the event as
+intermittent upstream latency rather than a parser or Delivery defect. It extends SaveFromIns to
+40 seconds, Instagram routing to 45 seconds, and Web polling to 60 seconds while keeping every
+Instagram task single-attempt. Other platform route budgets are unchanged. See the
+[Work Item 93 record](work-item-93-savefromins-single-attempt-deadline.md) and
+[ADR-0042](architecture/adr/0042-instagram-single-attempt-deadline.md).

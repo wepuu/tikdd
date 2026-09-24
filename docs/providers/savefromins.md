@@ -210,3 +210,17 @@ single-attempt boundary, prefers top-level direct resources over popup siblings,
 sanitized header/body timing. It does not add the asynchronous SSE flow, widen Delivery policy, or
 change the disabled production rollout. See [ADR-0041](../architecture/adr/0041-savefromins-direct-first-latency-boundary.md)
 and the [Work Item 92 record](../work-item-92-savefromins-latency.md).
+
+## 2026-09-24 Work Item 93 single-attempt deadline alignment
+
+The first exact-image Work Item 92 validation ended as one `provider_timeout` at the 25-second
+manifest boundary. The rollout was disabled before the three gates were closed; no second sample or
+Delivery request was sent. A later single no-retry diagnostic completed the same anonymous
+direct-first protocol in about five seconds with one valid top-level resource, confirming that the
+current contract can still succeed but has intermittent latency.
+
+Work Item 93 increases the SaveFromIns manifest deadline to 40 seconds, gives only Instagram a
+45-second total route budget, and extends Web polling to 60 seconds. It does not add retries, the
+asynchronous SSE path, a new host, or another media transport. See
+[ADR-0042](../architecture/adr/0042-instagram-single-attempt-deadline.md) and the
+[Work Item 93 record](../work-item-93-savefromins-single-attempt-deadline.md).

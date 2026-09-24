@@ -10,11 +10,27 @@ import { UnrecoverableError } from "bullmq";
 import { describe, expect, it, vi } from "vitest";
 import {
   handleExhaustedResolveJob,
+  INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS,
   processResolveJob,
+  routeTimeoutMsForPlatform,
   taskCompletionFailedError,
   type ResolveJobProcessorDependencies,
   type ResolveJobTasks
 } from "../src/resolve-job-processor";
+
+describe("resolve route timeout budget", () => {
+  it("gives Instagram enough room for one bounded slow Provider request", () => {
+    expect(routeTimeoutMsForPlatform("instagram", 30_000)).toBe(
+      INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS
+    );
+    expect(routeTimeoutMsForPlatform("instagram", 60_000)).toBe(60_000);
+  });
+
+  it("does not extend other platform routes", () => {
+    expect(routeTimeoutMsForPlatform("x", 30_000)).toBe(30_000);
+    expect(routeTimeoutMsForPlatform("facebook", 30_000)).toBe(30_000);
+  });
+});
 
 const taskId = "tsk_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const data: ResolveJobData = {

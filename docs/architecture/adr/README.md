@@ -41,6 +41,7 @@
 - [ADR-0039: VidDown Vimeo direct CDN delivery](0039-viddown-vimeo-direct-cdn.md)
 - [ADR-0040: Single-attempt Instagram recovery and evidence-gated fallback](0040-instagram-single-attempt-recovery.md)
 - [ADR-0041: SaveFromIns direct-first latency boundary](0041-savefromins-direct-first-latency-boundary.md)
+- [ADR-0042: Instagram single-attempt deadline alignment](0042-instagram-single-attempt-deadline.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

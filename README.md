@@ -81,6 +81,13 @@ policy, single-attempt boundary, and Instagram route containment remain unchange
 [Work Item 92 record](docs/work-item-92-savefromins-latency.md) and
 [ADR-0041](docs/architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
 
+Work Item 93 responds to the first exact-image validation timing out at the 25-second boundary.
+SaveFromIns remains single-attempt, but its Provider deadline is 40 seconds, the Instagram route
+budget is 45 seconds, and Web waits 60 seconds. Other platforms keep their current route budget;
+the parser, Delivery policy, and no-retry boundary are unchanged. See the
+[Work Item 93 record](docs/work-item-93-savefromins-single-attempt-deadline.md) and
+[ADR-0042](docs/architecture/adr/0042-instagram-single-attempt-deadline.md).
+
 Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
 explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
 deliberate local or maintenance operations. The UI displays the active scope and hides or disables
