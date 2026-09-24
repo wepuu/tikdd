@@ -74,6 +74,13 @@ recheck. The existing Delivery host policy is unchanged; reopening requires two 
 exact-image browser downloads. See the [Work Item 91 record](docs/work-item-91-instagram-recovery.md)
 and [ADR-0040](docs/architecture/adr/0040-instagram-single-attempt-recovery.md).
 
+Work Item 92 aligns SaveFromIns with its current direct-first response strategy and raises only its
+Provider timeout to 25 seconds after bounded samples showed valid parses taking nearly twenty
+seconds. The asynchronous Provider SSE path is intentionally not added; the existing Delivery
+policy, single-attempt boundary, and Instagram route containment remain unchanged. See the
+[Work Item 92 record](docs/work-item-92-savefromins-latency.md) and
+[ADR-0041](docs/architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
+
 Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
 explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
 deliberate local or maintenance operations. The UI displays the active scope and hides or disables

@@ -18,6 +18,7 @@ const THUMBNAIL_HOSTS = new Set(["api-ak.savefromins.com"]);
 const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const MAXIMUM_RESOURCE_COUNT = 40;
+const PROVIDER_TIMEOUT_MS = 25_000;
 
 const ResourceSchema = z.object({
   quality: z.string().max(80).nullish(),
@@ -85,6 +86,8 @@ export interface SaveFromInsDiagnosticEvent {
   rejectedNonVideoCount: number;
   rejectedNonMp4Count: number;
   rejectedNonDirectCount: number;
+  timeToHeadersMs: number | null;
+  bodyReadMs: number | null;
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -140,14 +143,16 @@ function extractResources(data: z.infer<typeof ResponseDataSchema>): {
     const parsed = MediaResourceGroupSchema.safeParse(item);
     return parsed.success ? parsed.data.resources : [];
   });
-  const path: SaveFromInsResourcePath = direct.length > 0 && nested.length > 0
-    ? "data.resources+data.media[].resources"
-    : direct.length > 0
-      ? "data.resources"
-      : nested.length > 0
-        ? "data.media[].resources"
-        : "none";
-  const resources = [...direct, ...nested];
+  // SaveFromIns now returns both a direct list and UI-only popup resources for
+  // some Reels. The public site always prefers download_url when it exists;
+  // keep that same direct-first boundary and do not let incomplete popup
+  // siblings poison an otherwise valid direct MP4.
+  const path: SaveFromInsResourcePath = direct.length > 0
+    ? "data.resources"
+    : nested.length > 0
+      ? "data.media[].resources"
+      : "none";
+  const resources = direct.length > 0 ? direct : nested;
   if (resources.length > MAXIMUM_RESOURCE_COUNT) {
     throw new ProviderError(
       "SaveFromIns returned too many media resources.",
@@ -206,7 +211,7 @@ export class SaveFromInsProvider implements ResolverProvider {
       kind: "site-adapter",
       enabled: options.enabled ?? false,
       regions: ["nl"],
-      timeoutMs: 10_000,
+      timeoutMs: PROVIDER_TIMEOUT_MS,
       costWeight: 20,
       platforms: [{
         platform: "instagram",
@@ -238,6 +243,9 @@ export class SaveFromInsProvider implements ResolverProvider {
     let rejectedNonVideoCount = 0;
     let rejectedNonMp4Count = 0;
     let rejectedNonDirectCount = 0;
+    let responseHeadersAt: number | null = null;
+    let timeToHeadersMs: number | null = null;
+    let bodyReadMs: number | null = null;
     const emit = (outcome: SaveFromInsDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -256,6 +264,8 @@ export class SaveFromInsProvider implements ResolverProvider {
           rejectedNonVideoCount,
           rejectedNonMp4Count,
           rejectedNonDirectCount,
+          timeToHeadersMs,
+          bodyReadMs,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -294,6 +304,11 @@ export class SaveFromInsProvider implements ResolverProvider {
               phase = "payload";
               httpStatus = observation.status;
               contentType = contentTypeCategory(observation.headers);
+              responseHeadersAt = Date.now();
+              timeToHeadersMs = Math.max(0, responseHeadersAt - startedAt);
+            },
+            onBody: () => {
+              bodyReadMs = Math.max(0, Date.now() - (responseHeadersAt ?? startedAt));
             }
           }
         }

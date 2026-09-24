@@ -37,6 +37,7 @@ describe("SaveFromIns diagnostics", () => {
     });
 
     await provider.resolve(input);
+    expect(provider.manifest.timeoutMs).toBe(25_000);
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       event: "savefromins_resolution_diagnostic",
@@ -56,6 +57,11 @@ describe("SaveFromIns diagnostics", () => {
       rejectedNonDirectCount: 0,
       failureCode: null
     });
+    expect(events[0]).toEqual(expect.objectContaining({
+      timeToHeadersMs: expect.any(Number),
+      bodyReadMs: expect.any(Number),
+      durationMs: expect.any(Number)
+    }));
     const serialized = JSON.stringify(events);
     expect(serialized).not.toContain("cdninstagram.com");
     expect(serialized).not.toContain("fixtureauth123");
@@ -248,5 +254,44 @@ describe("SaveFromIns diagnostics", () => {
       validDirectMp4Count: 1
     });
     expect(JSON.stringify(events)).not.toContain("nested.mp4");
+  });
+
+  it("prefers direct resources when the same response includes popup siblings", async () => {
+    const events: unknown[] = [];
+    const provider = new SaveFromInsProvider({
+      enabled: true,
+      requestAuth: "fixtureauth123",
+      diagnosticSink: (event) => events.push(event),
+      fetchImpl: async () => response(JSON.stringify({
+        status: "success",
+        data: {
+          resources: [{
+            format: "mp4",
+            type: "video",
+            download_mode: "direct",
+            download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/direct.mp4"
+          }],
+          media: [{
+            resources: [{
+              format: "mp4",
+              download_mode: "popup",
+              download_url: "https://scontent-iad3-1.cdninstagram.com/fixture/popup.mp4",
+              resource_content: "opaque-popup-content"
+            }]
+          }]
+        }
+      }))
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(resolution.result.formats).toHaveLength(1);
+    expect(resolution.result.formats[0]?.quality).toBe("Original");
+    expect(events[0]).toMatchObject({
+      resourceCount: 1,
+      resourcePath: "data.resources",
+      validDirectMp4Count: 1,
+      rejectedMalformedCount: 0,
+      rejectedNonDirectCount: 0
+    });
   });
 });
