@@ -37,7 +37,7 @@ describe("SaveFromIns diagnostics", () => {
     });
 
     await provider.resolve(input);
-    expect(provider.manifest.timeoutMs).toBe(25_000);
+    expect(provider.manifest.timeoutMs).toBe(40_000);
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       event: "savefromins_resolution_diagnostic",

@@ -25,6 +25,17 @@ export const taskCompletionFailedError: TaskError = {
 
 type CompletionStage = "candidate_preparation" | "completion_persistence";
 
+export const INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS = 45_000;
+
+export function routeTimeoutMsForPlatform(
+  platform: ResolveJobData["platform"],
+  configuredTimeoutMs: number
+): number {
+  return platform === "instagram"
+    ? Math.max(configuredTimeoutMs, INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS)
+    : configuredTimeoutMs;
+}
+
 export interface ResolveJobTasks {
   markResolving(id: string): Promise<void>;
   completeWithResolution: TaskRepository["completeWithResolution"];
@@ -140,7 +151,9 @@ export async function processResolveJob(
       sourceUrl: data.sourceUrl,
       canonicalUrl: detected.canonicalUrl,
       platform: detected.platform,
-      signal: AbortSignal.timeout(dependencies.routeTimeoutMs)
+      signal: AbortSignal.timeout(
+        routeTimeoutMsForPlatform(data.platform, dependencies.routeTimeoutMs)
+      )
     });
   } catch (error) {
     if (!(error instanceof ProviderRoutingError)) throw error;

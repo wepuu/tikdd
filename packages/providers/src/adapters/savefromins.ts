@@ -18,7 +18,9 @@ const THUMBNAIL_HOSTS = new Set(["api-ak.savefromins.com"]);
 const MEDIA_HOST_POLICY_ID = "savefromins-instagram-media-v2";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 4 * 60 * 1000;
 const MAXIMUM_RESOURCE_COUNT = 40;
-const PROVIDER_TIMEOUT_MS = 25_000;
+// SaveFromIns is deliberately single-attempt. Allow a slow anonymous parse to
+// finish without multiplying upstream traffic through retries.
+const PROVIDER_TIMEOUT_MS = 40_000;
 
 const ResourceSchema = z.object({
   quality: z.string().max(80).nullish(),
