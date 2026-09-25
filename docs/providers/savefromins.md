@@ -224,3 +224,19 @@ Work Item 93 increases the SaveFromIns manifest deadline to 40 seconds, gives on
 asynchronous SSE path, a new host, or another media transport. See
 [ADR-0042](../architecture/adr/0042-instagram-single-attempt-deadline.md) and the
 [Work Item 93 record](../work-item-93-savefromins-single-attempt-deadline.md).
+
+## 2026-09-25 WI93 production closeout
+
+The exact GitHub-built `main@1a3b28518cde9d87b1ca3d47af63ab2874777f83` images were deployed with
+the existing route and Delivery policy. The unique `savefromins / instagram / nl` rule is enabled
+at revision 23 with full allocation, and the three SaveFromIns gates are true. The owner-supplied
+Reel `DdXmservnNE` completed one Provider attempt in 669 ms, one Delivery ticket, and a bounded
+`206 video/mp4` transfer from the reviewed `cdninstagram.com` family. The owner then completed
+multiple manual Instagram downloads successfully.
+
+The public response intentionally reports the normalized TikDD provenance; the internal sanitized
+attempt ledger remains the source of Provider identity and records exactly one `savefromins`
+attempt for the controlled sample. SaveFromIns remains a public-content-only, experimental Beta
+with a single attempt, 40-second Provider deadline, 45-second Instagram route budget, and no
+automatic retry. No stable promotion, new Provider, or additional upstream test traffic is
+authorized by this closeout.

@@ -138,6 +138,8 @@ export const AdminRouteSummarySchema = z.strictObject({
   rolloutRevision: AdminRevisionSchema.nullable(),
   policyRevision: AdminRevisionSchema.nullable(),
   circuitState: z.enum(["closed", "open", "half_open", "unknown"]),
+  /** Number of successful half-open recovery probes observed by the circuit. */
+  recoverySuccessCount: BoundedCountSchema.optional(),
   successRateBps: RateBpsSchema.nullable(),
   /** Optional for compatibility with older Admin snapshots. */
   accessFrictionRateBps: RateBpsSchema.nullable().optional(),

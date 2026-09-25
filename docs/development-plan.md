@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@fc5fac8ceb94a333eb5a653fdfa4e260b7e4ed0f` (Work Item 92 deployed; Instagram contained)
-- Roadmap revision date: 2026-09-24
+- Repository checkpoint: `main@1a3b28518cde9d87b1ca3d47af63ab2874777f83` (Work Item 93 deployed; Instagram reopened)
+- Roadmap revision date: 2026-09-25
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -34,11 +34,12 @@ on-demand NL preview: the owner logged in through `admin.tikdd.cc`, inspected th
 and Admin was stopped afterward. Admin remains an on-demand, stopped production profile. Work Item 33
 addresses the release-script executable bit and stage-gate false positives found during that preview.
 
-Current containment overrides the historical Instagram-live wording above: the Work Item 92 image
-is healthy, but its first bounded Instagram validation timed out at 25 seconds. The unique rollout
-is disabled at revision 20 and all three SaveFromIns gates are false. Work Item 93 aligns one
-SaveFromIns request with a 40-second Provider deadline, a 45-second Instagram-only route budget,
-and a 60-second Web polling window before another bounded two-sample release check.
+The Work Item 93 image is deployed from the exact GitHub SHA. The unique SaveFromIns/Instagram/NL
+rollout is enabled at revision 23 with full allocation and all three runtime gates true. The
+post-deploy owner-supplied Reel completed one SaveFromIns attempt, one Delivery redirect, and a
+non-zero `206 video/mp4` transfer from the reviewed Instagram CDN family. The owner subsequently
+completed multiple manual Instagram downloads successfully. SaveFromIns remains an experimental,
+single-attempt Beta route; no stable promotion or new Provider traffic is implied by these checks.
 
 ## Baseline classification
 
@@ -1661,8 +1662,8 @@ required approximately twenty seconds; the previous ten-second TikDD timeout cau
 `provider_timeout` failures. Work Item 92 raises only the SaveFromIns manifest timeout to 25 seconds,
 keeps one execution and the 30-second route deadline, prefers direct resources, and adds sanitized
 header/body timing. It does not add Provider-page handoff, async SSE delivery, a media proxy, or a
-new host policy. Instagram remains disabled until the exact image passes two sequential browser
-downloads. See [Work Item 92](work-item-92-savefromins-latency.md) and
+new host policy. At that historical point Instagram remained disabled pending the next release
+validation. See [Work Item 92](work-item-92-savefromins-latency.md) and
 [ADR-0041](architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
 
 ### Work Item 93 — SaveFromIns single-attempt deadline alignment
@@ -1675,3 +1676,17 @@ intermittent upstream latency rather than a parser or Delivery defect. It extend
 Instagram task single-attempt. Other platform route budgets are unchanged. See the
 [Work Item 93 record](work-item-93-savefromins-single-attempt-deadline.md) and
 [ADR-0042](architecture/adr/0042-instagram-single-attempt-deadline.md).
+
+### Work Item 94 — Production metrics and route-health closeout
+
+Work Item 94 is the next consolidated maintenance release after the Instagram recovery. It fixes
+the read-only Admin aggregate so cleanup-expired tasks with a retained normalized result or error
+remain counted as successful or failed outcomes; only tasks with neither payload are genuine
+uncompleted expirations. It also exposes the sanitized half-open recovery count in the existing
+route view so an operator can distinguish a waiting recovery probe from an open circuit.
+
+The change does not add a migration, Provider request, route, retry, Delivery mode, or rollout
+authority. Existing six-platform routing and the enabled SaveFromIns/Instagram/NL revision 23 rule
+remain unchanged. Production verification compares the Admin aggregate with direct PostgreSQL
+results and checks container/rollout health without synthetic Provider traffic. See the
+[Work Item 94 record](work-item-94-production-metrics-route-closeout.md).

@@ -67,26 +67,31 @@ and per-platform activity freshness to the Admin Beta view; it does not probe Pr
 traffic. See the [Work Item 33 record](docs/work-item-33-admin-lifecycle-gate-fix.md) and [Work Item 34
 record](docs/work-item-34-admin-provider-cadence.md).
 
-Work Item 91 temporarily disables the exact Instagram rollout after a seven-day zero-success
-SaveFromIns window. It reduces Instagram to one upstream attempt, improves sanitized response
-classification, and keeps SocialDownloader Instagram in the Lab after a one-success/one-timeout
-recheck. The existing Delivery host policy is unchanged; reopening requires two sequential
-exact-image browser downloads. See the [Work Item 91 record](docs/work-item-91-instagram-recovery.md)
-and [ADR-0040](docs/architecture/adr/0040-instagram-single-attempt-recovery.md).
+Work Item 91 temporarily disabled the exact Instagram rollout after a seven-day zero-success
+SaveFromIns window. It reduced Instagram to one upstream attempt and improved sanitized response
+classification. The historical containment is closed; the current route state is recorded in the
+Work Item 93 closeout.
 
-Work Item 92 aligns SaveFromIns with its current direct-first response strategy and raises only its
+Work Item 92 aligned SaveFromIns with its current direct-first response strategy and raised only its
 Provider timeout to 25 seconds after bounded samples showed valid parses taking nearly twenty
-seconds. The asynchronous Provider SSE path is intentionally not added; the existing Delivery
-policy, single-attempt boundary, and Instagram route containment remain unchanged. See the
+seconds. The asynchronous Provider SSE path was intentionally not added; the existing Delivery
+policy and single-attempt boundary remain unchanged. See the
 [Work Item 92 record](docs/work-item-92-savefromins-latency.md) and
 [ADR-0041](docs/architecture/adr/0041-savefromins-direct-first-latency-boundary.md).
 
-Work Item 93 responds to the first exact-image validation timing out at the 25-second boundary.
-SaveFromIns remains single-attempt, but its Provider deadline is 40 seconds, the Instagram route
-budget is 45 seconds, and Web waits 60 seconds. Other platforms keep their current route budget;
-the parser, Delivery policy, and no-retry boundary are unchanged. See the
+Work Item 93 responded to the first exact-image validation timing out at the 25-second boundary.
+SaveFromIns remains single-attempt, with a 40-second Provider deadline, a 45-second Instagram route
+budget, and 60-second Web polling. It is deployed from `main@1a3b285`; the Instagram rollout is
+enabled at revision 23 and the owner has completed multiple successful manual downloads. Other
+platforms keep their current route budget; the parser, Delivery policy, and no-retry boundary are
+unchanged. See the
 [Work Item 93 record](docs/work-item-93-savefromins-single-attempt-deadline.md) and
 [ADR-0042](docs/architecture/adr/0042-instagram-single-attempt-deadline.md).
+
+Work Item 94 corrects the read-only Admin metrics so cleanup-expired tasks with a retained result or
+error keep their original outcome, and exposes the sanitized half-open recovery count in the route
+view. It adds no migration, Provider traffic, route, retry, Delivery mode, or calibration change.
+See the [Work Item 94 record](docs/work-item-94-production-metrics-route-closeout.md).
 
 Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
 explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for

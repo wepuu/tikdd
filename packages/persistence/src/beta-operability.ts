@@ -6,6 +6,22 @@ export const BETA_PLATFORMS: readonly BetaPlatform[] = ["x", "instagram", "tikto
 
 type TaskStatus = ResolveTask["status"];
 
+/**
+ * Cleanup changes a task's live status to `expired`, but it deliberately keeps
+ * the normalized result/error payload. Preserve that terminal outcome in
+ * read-only aggregates so successful tasks do not slowly turn into failures as
+ * their delivery TTL elapses.
+ */
+export function normalizeTaskStatus(
+  status: TaskStatus,
+  hasResult: boolean,
+  hasError: boolean
+): TaskStatus {
+  if (hasResult) return "succeeded";
+  if (hasError) return "failed";
+  return status;
+}
+
 export interface BetaReportWindow {
   from: string;
   to: string;
@@ -265,7 +281,13 @@ export class BetaOperabilityRepository {
     const parameters = [from, to, selected];
     const [taskStatuses, taskFailures, attempts, deliveries] = await Promise.all([
       this.pool.query<TaskStatusQueryRow>(
-        `SELECT platform, status, count(*)::int AS count, max(updated_at) AS latest_at
+        `SELECT platform,
+           CASE
+             WHEN result IS NOT NULL THEN 'succeeded'
+             WHEN error IS NOT NULL THEN 'failed'
+             ELSE status
+           END AS status,
+           count(*)::int AS count, max(updated_at) AS latest_at
          FROM resolve_tasks
          WHERE observation_class = 'public' AND created_at >= $1 AND created_at < $2
            AND platform = ANY($3::text[])
@@ -273,7 +295,7 @@ export class BetaOperabilityRepository {
       this.pool.query<TaskFailureQueryRow>(
         `SELECT platform, error->>'code' AS failure_code, count(*)::int AS count
          FROM resolve_tasks
-         WHERE observation_class = 'public' AND status = 'failed'
+         WHERE observation_class = 'public' AND error IS NOT NULL
            AND created_at >= $1 AND created_at < $2
            AND platform = ANY($3::text[])
          GROUP BY platform, error->>'code' ORDER BY platform, failure_code`, parameters),
