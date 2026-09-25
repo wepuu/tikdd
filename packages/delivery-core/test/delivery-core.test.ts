@@ -187,6 +187,31 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only the exact 9xBuddy xHamster artifact host", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "9xbuddy",
+      mode: "redirect",
+      hostPolicyId: "9xbuddy-xhamster-artifact-v1",
+      targetUrl: "https://ab.9xbud.com/download/fixture.mp4?token=fixture"
+    }).hostname).toBe("ab.9xbud.com");
+    for (const targetUrl of [
+      "https://9xbud.com/download/fixture.mp4",
+      "https://evil.ab.9xbud.com/download/fixture.mp4",
+      "https://ab.9xbud.com.attacker.example/download/fixture.mp4",
+      "http://ab.9xbud.com/download/fixture.mp4",
+      "https://user:pass@ab.9xbud.com/download/fixture.mp4",
+      "https://ab.9xbud.com:8443/download/fixture.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "9xbuddy",
+        mode: "redirect",
+        hostPolicyId: "9xbuddy-xhamster-artifact-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("limits LocoLoader delivery to reviewed xhcdn hosts", () => {

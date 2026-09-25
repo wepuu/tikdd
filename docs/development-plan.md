@@ -1751,3 +1751,19 @@ policy and remain Lab-only until independent protocol fixtures and browser Deliv
 complete. Existing platform Providers retain their priority, and no new production rollout rule,
 database migration, public contract, SEO surface, or media proxy is introduced. See [Work Item 99](work-item-99-locoloader-low-quota-routing.md)
 and [ADR-0045](architecture/adr/0045-locoloader-shared-extraction-budget.md).
+
+### Work Item 100 — 9xBuddy xHamster primary route
+
+Work Item 100 adds 9xBuddy as a disabled-by-default xHamster Provider candidate above the
+quota-limited LocoLoader route. The adapter follows the current dynamic bootstrap, token, signed
+extract, conversion, and progress protocol; it prepares one MP4 artifact near 720p and returns a
+one-time Delivery redirect to the exact `ab.9xbud.com` host. TikDD and the NL VPS do not proxy
+media bytes, and Provider URLs, tokens, signatures, and conversion descriptors remain internal.
+
+The 9xBuddy route has a 90-second xHamster timeout floor, one in-flight request, and a two-second
+minimum spacing. Queue replay is disabled. Dailymotion is manifest-visible Lab capability only
+until a separate two-sample Delivery audit. The existing LocoLoader xHamster route remains the
+sequential fallback with its shared two-extraction/six-hour budget. Production enablement requires
+two distinct public xHamster browser downloads after CI, exact-SHA image verification, backup, and
+an explicit `9xbuddy / xhamster / nl` rollout rule. See [Work Item 100](work-item-100-9xbuddy-xhamster-primary.md)
+and [ADR-0046](architecture/adr/0046-9xbuddy-xhamster-provider-artifact.md).

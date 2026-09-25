@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   handleExhaustedResolveJob,
   INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS,
+  XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS,
   processResolveJob,
   routeTimeoutMsForPlatform,
   taskCompletionFailedError,
@@ -29,6 +30,11 @@ describe("resolve route timeout budget", () => {
   it("does not extend other platform routes", () => {
     expect(routeTimeoutMsForPlatform("x", 30_000)).toBe(30_000);
     expect(routeTimeoutMsForPlatform("facebook", 30_000)).toBe(30_000);
+  });
+
+  it("gives xHamster conversion Providers enough room for one bounded artifact job", () => {
+    expect(routeTimeoutMsForPlatform("xhamster", 30_000)).toBe(XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS);
+    expect(routeTimeoutMsForPlatform("xhamster", 120_000)).toBe(120_000);
   });
 });
 

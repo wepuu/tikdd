@@ -8,7 +8,8 @@ import {
   SSSTwitterProvider,
   TikCDProvider,
   VidDownProvider,
-  LocoLoaderProvider
+  LocoLoaderProvider,
+  NineXBuddyProvider
 } from "../src/index";
 
 function priority(provider: { manifest: { platforms: readonly { platform: string; priority: number }[] } }, platform: string) {
@@ -28,12 +29,14 @@ describe("production route matrix", () => {
       deliveryVerifiedPlatforms: ["facebook", "x"]
     });
     const viddown = new VidDownProvider({ enabled: true });
+    const nineXBuddy = new NineXBuddyProvider({ enabled: true });
 
     expect([priority(ssstwitter, "x"), priority(social, "x")]).toEqual([800, 650]);
     expect(priority(savefromins, "instagram")).toBe(900);
     expect([priority(snaptik, "tiktok"), priority(tikcd, "tiktok")]).toEqual([850, 760]);
     expect([priority(fdown, "facebook"), priority(social, "facebook")]).toEqual([700, 650]);
     expect(priority(viddown, "vimeo")).toBe(760);
+    expect([priority(nineXBuddy, "xhamster"), priority(new LocoLoaderProvider({ enabled: true }), "xhamster")]).toEqual([700, 480]);
   });
 
   it("keeps Pinterest implemented but default-off until the production gate is approved", () => {
@@ -51,6 +54,15 @@ describe("production route matrix", () => {
       expect.objectContaining({ platform: "xhamster", priority: 480, deliveryModes: ["redirect"] }),
       expect.objectContaining({ platform: "tiktok", deliveryModes: [] }),
       expect.objectContaining({ platform: "facebook", deliveryModes: [] })
+    ]));
+  });
+
+  it("keeps 9xBuddy xHamster primary and Dailymotion Lab-only", () => {
+    const provider = new NineXBuddyProvider();
+    expect(provider.manifest.enabled).toBe(false);
+    expect(provider.manifest.platforms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ platform: "xhamster", priority: 700, deliveryModes: ["redirect"] }),
+      expect.objectContaining({ platform: "dailymotion", deliveryModes: [] })
     ]));
   });
 });

@@ -5,7 +5,7 @@ import {
 } from "./free-provider-qualification";
 
 /**
- * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65 and 71. These records are intentionally
+ * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65, 71 and 100. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
@@ -1262,6 +1262,25 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 0,
     technicalState: "reachable",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "9xbuddy",
+    displayName: "9xBuddy",
+    platforms: ["xhamster", "dailymotion"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "redirect",
+    deliveryVerified: false,
+    successFixtureCount: 1,
+    failureFixtureCount: 1,
+    technicalState: "resolved",
     evidenceState: "evaluating"
   }
 ] as const;

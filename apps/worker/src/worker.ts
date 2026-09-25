@@ -33,6 +33,7 @@ import {
   TwitterSaverProvider,
   VidDownProvider,
   LocoLoaderProvider,
+  NineXBuddyProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -65,6 +66,7 @@ import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-
 import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "./viddown-activation";
 import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
+import { loadNineXBuddyActivationConfiguration } from "./nine-x-buddy-activation";
 import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
@@ -87,6 +89,7 @@ const socialDownloaderActivation = loadSocialDownloaderActivationConfiguration()
 const pinterestVideoDownloaderActivation = loadPinterestVideoDownloaderActivationConfiguration();
 const vidDownActivation = loadVidDownActivationConfiguration();
 const locoLoaderActivation = loadLocoLoaderActivationConfiguration();
+const nineXBuddyActivation = loadNineXBuddyActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -234,6 +237,16 @@ if (locoLoaderActivation.enabled) {
       maxConcurrency: locoLoaderActivation.maxConcurrency,
       minIntervalMs: locoLoaderActivation.minIntervalMs
     })
+  }));
+}
+if (nineXBuddyActivation.enabled) {
+  providers.push(new NineXBuddyProvider({
+    enabled: true,
+    approvedPlatforms: nineXBuddyActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: nineXBuddyActivation.deliveryVerifiedPlatforms,
+    maxConcurrency: nineXBuddyActivation.maxConcurrency,
+    minIntervalMs: nineXBuddyActivation.minIntervalMs,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }
 if (enableMockProvider) {

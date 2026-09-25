@@ -28,6 +28,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "locoloader") {
     return false;
   }
+  if (input.providerId === "9xbuddy") {
+    return false;
+  }
   return true;
 }
 
