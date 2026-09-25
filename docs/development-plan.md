@@ -1705,3 +1705,20 @@ release adds no migration, Provider adapter, public endpoint, route policy, or c
 Production application must use the official release path and verify the Worker-loaded policy before
 waiting for the next distinct natural request. See the [Work Item 95 record](work-item-95-low-traffic-circuit-recovery.md)
 and [ADR-0043](architecture/adr/0043-low-traffic-circuit-recovery.md).
+
+### Work Item 97 — Production truth repair and secondary-provider qualification
+
+Work Item 97 fixes a production-readiness defect in the read-only Beta aggregate. The task-status
+query now computes cleanup-aware terminal state in a CTE before grouping, so PostgreSQL accepts the
+query and Admin/`pnpm beta:report` can again be compared with the retained task, Provider-attempt,
+and Delivery records. No migration, endpoint, Provider capability, rollout, or Delivery mode is
+added.
+
+The existing SocialDownloader Instagram capability was rechecked from NL with two sequential
+anonymous requests. Both returned HTTP 403 without a media resource, so it does not qualify as an
+Instagram fallback. SaveFromIns remains the only Instagram production route; its request budget
+and current rollout are unchanged. Previously rejected Vimeo and Pinterest candidates are not
+retested. A future secondary route still requires two public samples, direct/transparent Delivery
+evidence, and an independent Provider/platform/region rollout rule.
+
+See the [Work Item 97 record](work-item-97-operability-provider-redundancy.md).
