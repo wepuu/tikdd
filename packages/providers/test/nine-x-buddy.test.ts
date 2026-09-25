@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   NineXBuddyProvider,
   createNineXBuddyAuthToken,
+  isNineXBuddyLandingChallenge,
   parseNineXBuddyResponse,
+  type NineXBuddyDiagnosticEvent,
   type ResolveInput
 } from "../src/index";
 
@@ -13,7 +15,7 @@ const input: ResolveInput = {
   platform: "xhamster"
 };
 
-const bootstrapHtml = `<html><head><link href="/build/main.9b0c5d2fd8241a25652e.css"></head><body><script>window.__INIT__ = ${JSON.stringify({
+const bootstrapHtml = `<html><head><link href="/build/main.9b0c5d2fd8241a25652e.css"></head><body><script src="/challenge-platform.js"></script><script>window.__INIT__ = ${JSON.stringify({
   apiBase: "https://ab.9xbud.com",
   appVersion: "12.18.7",
   ua: "VGlrREQtcHJvdmlkZXJMYWIvMS4w",
@@ -43,11 +45,13 @@ describe("9xBuddy xHamster adapter", () => {
     const responseToken = "response-token-fixture";
     const descriptor = encodeDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
     const calls: Array<{ url: string; init: RequestInit }> = [];
+    const diagnostics: NineXBuddyDiagnosticEvent[] = [];
     const provider = new NineXBuddyProvider({
       enabled: true,
       approvedPlatforms: ["xhamster"],
       deliveryVerifiedPlatforms: ["xhamster"],
       pollIntervalMs: 0,
+      diagnosticSink: (event) => diagnostics.push(event),
       fetchImpl: async (url, init) => {
         const requestUrl = typeof url === "string" || url instanceof URL ? new URL(url) : new URL(url.url);
         calls.push({ url: requestUrl.toString(), init: init ?? {} });
@@ -88,6 +92,25 @@ describe("9xBuddy xHamster adapter", () => {
     });
     expect(JSON.stringify(resolution.result)).not.toContain("ab.9xbud.com");
     expect(JSON.stringify(resolution.candidates)).toContain("ab.9xbud.com");
+    expect(diagnostics[0]).toMatchObject({
+      phase: "completed",
+      contentType: "application/json",
+      bootstrapPresent: true,
+      challengeMarker: "embedded"
+    });
+  });
+
+  it("does not treat the normal embedded challenge-platform bundle marker as a challenge", () => {
+    expect(isNineXBuddyLandingChallenge({
+      status: 200,
+      headers: new Headers({ "content-type": "text/html" }),
+      body: bootstrapHtml
+    })).toBe(false);
+    expect(isNineXBuddyLandingChallenge({
+      status: 200,
+      headers: new Headers({ "content-type": "text/html" }),
+      body: "<html><body><script src=\"/challenge-platform.js\"></script></body></html>"
+    })).toBe(true);
   });
 
   it("exposes the token vector and rejects a malformed descriptor", () => {

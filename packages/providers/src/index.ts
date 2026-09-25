@@ -86,6 +86,7 @@ export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type 
 export {
   NineXBuddyProvider,
   createNineXBuddyAuthToken,
+  isNineXBuddyLandingChallenge,
   parseNineXBuddyResponse,
   type NineXBuddyDiagnosticEvent,
   type NineXBuddyDiagnosticPhase,
