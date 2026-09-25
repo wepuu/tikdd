@@ -19,5 +19,6 @@ describe("public sitemap", () => {
     });
     expect(entries.some((entry) => entry.url.includes("x-downloader"))).toBe(false);
     expect(entries.some((entry) => entry.url.includes("instagram-downloader"))).toBe(false);
+    expect(entries.some((entry) => entry.url.includes("xhamster-downloader"))).toBe(false);
   });
 });

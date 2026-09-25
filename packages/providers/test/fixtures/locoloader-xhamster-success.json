@@ -1,0 +1,15 @@
+{
+  "err": 0,
+  "class_name": "ExtractXhamster",
+  "final_urls": [
+    {
+      "title": "redacted fixture title",
+      "thumb": "https://video7.xhcdn.com/fixture/thumb.jpg",
+      "links": [
+        { "link_url": "https://video7.xhcdn.com/fixture/video-720.mp4?token=redacted", "file_quality": "720p" },
+        { "link_url": "https://video7.xhcdn.com/fixture/video-480.mp4?token=redacted", "file_quality": "480p" },
+        { "link_url": "https://video7.xhcdn.com/fixture/video-480.mp4?token=redacted", "file_quality": "480p duplicate" }
+      ]
+    }
+  ]
+}

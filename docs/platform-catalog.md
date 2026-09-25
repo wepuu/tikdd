@@ -33,7 +33,8 @@ The source of truth is `DEFAULT_PLATFORM_CATALOG` in `@tikdd/platform`. Each ent
 Recognition and availability are intentionally different. The public catalog endpoint reports both
 status and the count of active production providers once the registry snapshot is wired to the API.
 
-The current product lifecycle has TikTok as `stable`; X, Instagram, Facebook, Vimeo, and Pinterest
+The current product lifecycle has TikTok as `stable`; X, Instagram, Facebook, Vimeo, Pinterest, and
+xHamster
 as `experimental`; and the remaining recognized families as planned or paused. Experimental pages
 may be published for honest Beta guidance, but they remain noindex and outside the sitemap until a
 separate stable-promotion review.

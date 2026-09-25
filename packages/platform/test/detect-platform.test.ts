@@ -34,6 +34,7 @@ describe("detectPlatform", () => {
     ["https://www.instagram.com/reel/example/", "instagram"],
     ["https://www.bilibili.com/video/BV1xx411c7mD", "bilibili"],
     ["https://vimeo.com/123456", "vimeo"],
+    ["https://xhamster.com/videos/fixture-video", "xhamster"],
     ["https://www.xiaohongshu.com/explore/example", "xiaohongshu"],
     ["https://xhslink.com/a/example", "xiaohongshu"],
     ["https://www.snapchat.com/spotlight/example", "snapchat"],
@@ -79,6 +80,12 @@ describe("detectPlatform", () => {
   it("reports Pinterest as an experimental Beta after Delivery qualification", () => {
     const pinterest = listPlatformDefinitions().find((platform) => platform.id === "pinterest");
     expect(pinterest).toMatchObject({ status: "experimental", source: "yt-dlp" });
+  });
+
+  it("reports xHamster as a curated experimental platform without stable SEO status", () => {
+    const xhamster = listPlatformDefinitions().find((platform) => platform.id === "xhamster");
+    expect(xhamster).toMatchObject({ status: "experimental", source: "curated" });
+    expect(isSupportedPlatformUrl("https://xhamster.com.attacker.example/videos/1")).toBe(false);
   });
 
   it("rejects non-http schemes", () => {

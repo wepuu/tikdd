@@ -1722,3 +1722,17 @@ retested. A future secondary route still requires two public samples, direct/tra
 evidence, and an independent Provider/platform/region rollout rule.
 
 See the [Work Item 97 record](work-item-97-operability-provider-redundancy.md).
+
+### Work Item 98 — xHamster hidden homepage promotion and public Beta page
+
+Work Item 98 adds explicit xHamster recognition and a disabled-by-default LocoLoader adapter for
+public links. The adapter uses the upstream landing cookie and dynamic form key, accepts only
+reviewed HTTPS `*.xhcdn.com` MP4 resources, and performs one bounded attempt because the free
+upstream route is quota-limited. Delivery remains a normal one-time redirect and never exposes the
+upstream URL in public results.
+
+The bilingual xHamster page is directly reachable for Beta guidance, but the stable-only SEO rule
+is unchanged: it is noindex, outside the sitemap, and excluded from hreflang and structured-data
+index eligibility. Homepage, FAQ, and help copy do not promote it. Provider gates, rollout, and
+production traffic remain unchanged and disabled. See [Work Item 98](work-item-98-xhamster-locoloader.md)
+and [ADR-0044](architecture/adr/0044-xhamster-beta-nonindexable.md).

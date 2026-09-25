@@ -82,6 +82,7 @@ export {
   type VidDownDiagnosticPhase,
   type VidDownContentType
 } from "./adapters/viddown";
+export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
 export {
   SocialDownloaderRequestBudget,
   type SocialDownloaderBudgetPermit,

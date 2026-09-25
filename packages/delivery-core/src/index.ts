@@ -287,6 +287,15 @@ export const VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.pars
   hosts: ["player.vimeo.com"]
 });
 
+export const LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "locoloader-xhamster-media-v1",
+  providerId: "locoloader",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["xhcdn.com"],
+  browserHandoff: "navigate"
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -303,7 +312,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [SOCIALDOWNLOADER_SPACE_X_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_X_MEDIA_HOST_POLICY],
   [SOCIALDOWNLOADER_SPACE_TIKTOK_MEDIA_HOST_POLICY.id, SOCIALDOWNLOADER_SPACE_TIKTOK_MEDIA_HOST_POLICY],
   [PINTEREST_VIDEODOWNLOADER_PINTEREST_MEDIA_HOST_POLICY.id, PINTEREST_VIDEODOWNLOADER_PINTEREST_MEDIA_HOST_POLICY],
-  [VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY.id, VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY]
+  [VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY.id, VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY],
+  [LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY.id, LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -327,7 +337,7 @@ export function assertDeliveryTargetPolicy(input: {
   }
   const hostname = url.hostname.toLowerCase();
   const exactMatch = policy.hosts.includes(hostname);
-  const suffixMatch = policy.hostSuffixes.some((suffix) => hostname.endsWith(`.${suffix}`));
+  const suffixMatch = policy.hostSuffixes.some((suffix) => hostname !== suffix && hostname.endsWith(`.${suffix}`));
   if (!exactMatch && !suffixMatch) {
     throw new Error("The delivery target host is not allowed by its reviewed policy.");
   }

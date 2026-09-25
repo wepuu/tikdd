@@ -10,6 +10,7 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("x")).toBe(3);
     expect(resolveJobAttemptsForPlatform("facebook")).toBe(1);
     expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("xhamster")).toBe(1);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
@@ -54,6 +55,14 @@ describe("provider automatic retry policy", () => {
     expect(shouldAutomaticallyRetryProviderFailure({
       platform: "x",
       providerId: "savefromins",
+      failureCode: "provider_timeout"
+    })).toBe(false);
+  });
+
+  it("does not replay LocoLoader after a bounded attempt", () => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "xhamster",
+      providerId: "locoloader",
       failureCode: "provider_timeout"
     })).toBe(false);
   });

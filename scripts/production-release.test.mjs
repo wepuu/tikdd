@@ -58,6 +58,11 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/VIDDOWN_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"VidDown"/);
     expect(releaseScript).toMatch(/viddown_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_LOCOLOADER_PROVIDER/);
+    expect(releaseScript).toMatch(/LOCOLOADER_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/LOCOLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"LocoLoader"/);
+    expect(releaseScript).toMatch(/locoloader_enabled=/);
   });
 
   it("passes the configured host resource thresholds to every stage gate", () => {

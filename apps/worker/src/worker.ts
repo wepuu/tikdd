@@ -32,6 +32,7 @@ import {
   TikVidProvider,
   TwitterSaverProvider,
   VidDownProvider,
+  LocoLoaderProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -63,6 +64,7 @@ import { loadFDownIsuruActivationConfiguration } from "./fdown-isuru-activation"
 import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "./viddown-activation";
+import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -83,6 +85,7 @@ const fdownIsuruActivation = loadFDownIsuruActivationConfiguration();
 const socialDownloaderActivation = loadSocialDownloaderActivationConfiguration();
 const pinterestVideoDownloaderActivation = loadPinterestVideoDownloaderActivationConfiguration();
 const vidDownActivation = loadVidDownActivationConfiguration();
+const locoLoaderActivation = loadLocoLoaderActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -217,6 +220,9 @@ if (vidDownActivation.enabled) {
     enabled: true,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
+}
+if (locoLoaderActivation.enabled) {
+  providers.push(new LocoLoaderProvider({ enabled: true }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

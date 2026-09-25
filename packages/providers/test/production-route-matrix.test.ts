@@ -7,7 +7,8 @@ import {
   SocialDownloaderProvider,
   SSSTwitterProvider,
   TikCDProvider,
-  VidDownProvider
+  VidDownProvider,
+  LocoLoaderProvider
 } from "../src/index";
 
 function priority(provider: { manifest: { platforms: readonly { platform: string; priority: number }[] } }, platform: string) {
@@ -40,6 +41,14 @@ describe("production route matrix", () => {
     expect(pinterest.manifest.enabled).toBe(false);
     expect(pinterest.manifest.platforms).toEqual([
       expect.objectContaining({ platform: "pinterest", priority: 760, deliveryModes: ["redirect"] })
+    ]);
+  });
+
+  it("keeps xHamster implemented but default-off until the production gate is approved", () => {
+    const xhamster = new LocoLoaderProvider();
+    expect(xhamster.manifest.enabled).toBe(false);
+    expect(xhamster.manifest.platforms).toEqual([
+      expect.objectContaining({ platform: "xhamster", priority: 480, deliveryModes: ["redirect"] })
     ]);
   });
 });

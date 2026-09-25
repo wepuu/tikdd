@@ -186,6 +186,30 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("limits LocoLoader delivery to reviewed xhcdn hosts", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "locoloader",
+      mode: "redirect",
+      hostPolicyId: "locoloader-xhamster-media-v1",
+      targetUrl: "https://video7.xhcdn.com/path/video.mp4?token=redacted"
+    }).hostname).toBe("video7.xhcdn.com");
+    for (const targetUrl of [
+      "https://xhcdn.com/path/video.mp4",
+      "https://video7.xhcdn.com.attacker.example/path/video.mp4",
+      "http://video7.xhcdn.com/path/video.mp4",
+      "https://user:pass@video7.xhcdn.com/path/video.mp4",
+      "https://video7.xhcdn.com:8443/path/video.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "locoloader",
+        mode: "redirect",
+        hostPolicyId: "locoloader-xhamster-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("allows only the exact reviewed VidDown Vimeo media host", () => {

@@ -143,6 +143,11 @@ verify_worker_runtime_config() {
     ENABLE_VIDDOWN_PROVIDER \
     VIDDOWN_TERMS_APPROVED \
     VIDDOWN_DELIVERY_AUDIT_APPROVED)"
+  locoloader_enabled="$(verify_provider_gate_triplet \
+    "LocoLoader" \
+    ENABLE_LOCOLOADER_PROVIDER \
+    LOCOLOADER_TERMS_APPROVED \
+    LOCOLOADER_DELIVERY_AUDIT_APPROVED)"
   expected_socialdownloader_platforms="$(release_value SOCIALDOWNLOADER_APPROVED_PLATFORMS "facebook")"
   expected_socialdownloader_verified="$(release_value SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS "facebook")"
   for platform_key in SOCIALDOWNLOADER_APPROVED_PLATFORMS SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS; do
@@ -155,7 +160,7 @@ verify_worker_runtime_config() {
       return 78
     fi
   done
-  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled"
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled"
 }
 
 validate() {

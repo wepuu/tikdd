@@ -4,6 +4,7 @@ import { loadSnapInstaActivationConfiguration } from "../src/snapinsta-activatio
 import { loadTikVidActivationConfiguration } from "../src/tikvid-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "../src/pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "../src/viddown-activation";
+import { loadLocoLoaderActivationConfiguration } from "../src/locoloader-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -104,6 +105,27 @@ describe("Work Item 83 VidDown Vimeo activation", () => {
       ENABLE_VIDDOWN_PROVIDER: "true",
       VIDDOWN_TERMS_APPROVED: "true",
       VIDDOWN_DELIVERY_AUDIT_APPROVED: "true"
+    }).enabled).toBe(true);
+  });
+});
+
+describe("Work Item 98 LocoLoader xHamster activation", () => {
+  it("is disabled by default and requires both gates", () => {
+    expect(loadLocoLoaderActivationConfiguration({})).toEqual({
+      enabled: false,
+      termsApproved: false,
+      deliveryAuditApproved: false
+    });
+    expect(() => loadLocoLoaderActivationConfiguration({ ENABLE_LOCOLOADER_PROVIDER: "true" }))
+      .toThrow(/LOCOLOADER_TERMS_APPROVED/);
+    expect(() => loadLocoLoaderActivationConfiguration({
+      ENABLE_LOCOLOADER_PROVIDER: "true",
+      LOCOLOADER_TERMS_APPROVED: "true"
+    })).toThrow(/LOCOLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(loadLocoLoaderActivationConfiguration({
+      ENABLE_LOCOLOADER_PROVIDER: "true",
+      LOCOLOADER_TERMS_APPROVED: "true",
+      LOCOLOADER_DELIVERY_AUDIT_APPROVED: "true"
     }).enabled).toBe(true);
   });
 });
