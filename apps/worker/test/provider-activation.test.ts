@@ -4,6 +4,8 @@ import { loadSnapInstaActivationConfiguration } from "../src/snapinsta-activatio
 import { loadTikVidActivationConfiguration } from "../src/tikvid-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "../src/pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "../src/viddown-activation";
+import { loadLocoLoaderActivationConfiguration } from "../src/locoloader-activation";
+import { loadNineXBuddyActivationConfiguration } from "../src/nine-x-buddy-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -105,5 +107,69 @@ describe("Work Item 83 VidDown Vimeo activation", () => {
       VIDDOWN_TERMS_APPROVED: "true",
       VIDDOWN_DELIVERY_AUDIT_APPROVED: "true"
     }).enabled).toBe(true);
+  });
+});
+
+describe("Work Item 98 LocoLoader xHamster activation", () => {
+  it("is disabled by default and requires both gates", () => {
+    expect(loadLocoLoaderActivationConfiguration({})).toEqual({
+      enabled: false,
+      termsApproved: false,
+      deliveryAuditApproved: false,
+      approvedPlatforms: ["xhamster"],
+      deliveryVerifiedPlatforms: ["xhamster"],
+      maxExtractions: 2,
+      quotaWindowMs: 6 * 60 * 60 * 1_000,
+      maxConcurrency: 1,
+      minIntervalMs: 1_000
+    });
+    expect(() => loadLocoLoaderActivationConfiguration({ ENABLE_LOCOLOADER_PROVIDER: "true" }))
+      .toThrow(/LOCOLOADER_TERMS_APPROVED/);
+    expect(() => loadLocoLoaderActivationConfiguration({
+      ENABLE_LOCOLOADER_PROVIDER: "true",
+      LOCOLOADER_TERMS_APPROVED: "true"
+    })).toThrow(/LOCOLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(loadLocoLoaderActivationConfiguration({
+      ENABLE_LOCOLOADER_PROVIDER: "true",
+      LOCOLOADER_TERMS_APPROVED: "true",
+      LOCOLOADER_DELIVERY_AUDIT_APPROVED: "true"
+    }).enabled).toBe(true);
+    expect(loadLocoLoaderActivationConfiguration({
+      LOCOLOADER_APPROVED_PLATFORMS: "xhamster,tiktok",
+      LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS: "xhamster",
+      LOCOLOADER_MAX_EXTRACTIONS: "2",
+      LOCOLOADER_QUOTA_WINDOW_MS: "21600000"
+    }).approvedPlatforms).toEqual(["xhamster", "tiktok"]);
+    expect(() => loadLocoLoaderActivationConfiguration({
+      LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS: "tiktok"
+    })).toThrow(/may only contain xhamster/);
+  });
+});
+
+describe("Work Item 100 9xBuddy xHamster activation", () => {
+  it("is disabled by default and keeps Dailymotion Lab-only", () => {
+    expect(loadNineXBuddyActivationConfiguration({})).toEqual({
+      enabled: false,
+      automationUseApproved: false,
+      deliveryAuditApproved: false,
+      approvedPlatforms: ["xhamster"],
+      deliveryVerifiedPlatforms: ["xhamster"],
+      maxConcurrency: 1,
+      minIntervalMs: 2_000
+    });
+    expect(() => loadNineXBuddyActivationConfiguration({ ENABLE_9XBUDDY_PROVIDER: "true" }))
+      .toThrow(/NINE_X_BUDDY_AUTOMATION_USE_APPROVED/);
+    expect(() => loadNineXBuddyActivationConfiguration({
+      ENABLE_9XBUDDY_PROVIDER: "true",
+      NINE_X_BUDDY_AUTOMATION_USE_APPROVED: "true"
+    })).toThrow(/NINE_X_BUDDY_DELIVERY_AUDIT_APPROVED/);
+    expect(loadNineXBuddyActivationConfiguration({
+      ENABLE_9XBUDDY_PROVIDER: "true",
+      NINE_X_BUDDY_AUTOMATION_USE_APPROVED: "true",
+      NINE_X_BUDDY_DELIVERY_AUDIT_APPROVED: "true"
+    }).enabled).toBe(true);
+    expect(() => loadNineXBuddyActivationConfiguration({
+      NINE_X_BUDDY_DELIVERY_VERIFIED_PLATFORMS: "dailymotion"
+    })).toThrow(/may only contain xhamster/);
   });
 });

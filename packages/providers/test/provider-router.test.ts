@@ -110,6 +110,24 @@ describe("ProviderRouter", () => {
     await router.resolve(input);expect(calls).toEqual(["primary","secondary"]);
   });
 
+  it("keeps the 9xBuddy-style xHamster primary ahead of LocoLoader fallback", async () => {
+    const calls: string[] = [];
+    const xhamsterInput: ResolveInput = {
+      taskId: "tsk_1123456789abcdef0123456789abcdef",
+      sourceUrl: "https://xhamster.com/videos/fixture",
+      canonicalUrl: "https://xhamster.com/videos/fixture",
+      platform: "xhamster"
+    };
+    const router = new ProviderRouter([
+      new TestProvider("9xbuddy", 700, "retryable", calls, "xhamster"),
+      new TestProvider("locoloader", 480, "success", calls, "xhamster")
+    ]);
+    const routed = await router.resolve(xhamsterInput);
+    expect(calls).toEqual(["9xbuddy", "locoloader"]);
+    expect(routed.resolution.result.provenance.provider).toBe("locoloader");
+    expect(routed.attempts.map((attempt) => attempt.providerId)).toEqual(["9xbuddy", "locoloader"]);
+  });
+
   it("renormalizes first-choice shares across currently eligible Providers",async()=>{
     const calls:string[]=[];
     const router=new ProviderRouter([new TestProvider("open",900,"success",calls),new TestProvider("available",800,"success",calls)],{

@@ -25,6 +25,12 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "savefromins") {
     return false;
   }
+  if (input.providerId === "locoloader") {
+    return false;
+  }
+  if (input.providerId === "9xbuddy") {
+    return false;
+  }
   return true;
 }
 
@@ -32,5 +38,6 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
 export function resolveJobAttemptsForPlatform(platform: string): number {
   if (platform === "instagram") return 1;
   if (platform === "facebook" || platform === "pinterest") return 1;
+  if (platform === "xhamster") return 1;
   return 3;
 }

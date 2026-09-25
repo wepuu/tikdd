@@ -82,6 +82,21 @@ export {
   type VidDownDiagnosticPhase,
   type VidDownContentType
 } from "./adapters/viddown";
+export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
+export {
+  NineXBuddyProvider,
+  createNineXBuddyAuthToken,
+  parseNineXBuddyResponse,
+  type NineXBuddyDiagnosticEvent,
+  type NineXBuddyDiagnosticPhase,
+  type NineXBuddyProviderOptions
+} from "./adapters/nine-x-buddy";
+export {
+  MemoryLocoLoaderRequestBudget,
+  type LocoLoaderBudgetPermit,
+  type LocoLoaderRequestBudget,
+  type MemoryLocoLoaderRequestBudgetOptions
+} from "./locoloader-budget";
 export {
   SocialDownloaderRequestBudget,
   type SocialDownloaderBudgetPermit,

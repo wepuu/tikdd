@@ -32,6 +32,8 @@ import {
   TikVidProvider,
   TwitterSaverProvider,
   VidDownProvider,
+  LocoLoaderProvider,
+  NineXBuddyProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -63,6 +65,9 @@ import { loadFDownIsuruActivationConfiguration } from "./fdown-isuru-activation"
 import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-activation";
 import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "./viddown-activation";
+import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
+import { loadNineXBuddyActivationConfiguration } from "./nine-x-buddy-activation";
+import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -83,6 +88,8 @@ const fdownIsuruActivation = loadFDownIsuruActivationConfiguration();
 const socialDownloaderActivation = loadSocialDownloaderActivationConfiguration();
 const pinterestVideoDownloaderActivation = loadPinterestVideoDownloaderActivationConfiguration();
 const vidDownActivation = loadVidDownActivationConfiguration();
+const locoLoaderActivation = loadLocoLoaderActivationConfiguration();
+const nineXBuddyActivation = loadNineXBuddyActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -215,6 +222,30 @@ if (pinterestVideoDownloaderActivation.enabled) {
 if (vidDownActivation.enabled) {
   providers.push(new VidDownProvider({
     enabled: true,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
+}
+if (locoLoaderActivation.enabled) {
+  providers.push(new LocoLoaderProvider({
+    enabled: true,
+    approvedPlatforms: locoLoaderActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: locoLoaderActivation.deliveryVerifiedPlatforms,
+    requestBudget: new RedisLocoLoaderRequestBudget(redis, {
+      region: workerRegion,
+      maxExtractions: locoLoaderActivation.maxExtractions,
+      windowMs: locoLoaderActivation.quotaWindowMs,
+      maxConcurrency: locoLoaderActivation.maxConcurrency,
+      minIntervalMs: locoLoaderActivation.minIntervalMs
+    })
+  }));
+}
+if (nineXBuddyActivation.enabled) {
+  providers.push(new NineXBuddyProvider({
+    enabled: true,
+    approvedPlatforms: nineXBuddyActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: nineXBuddyActivation.deliveryVerifiedPlatforms,
+    maxConcurrency: nineXBuddyActivation.maxConcurrency,
+    minIntervalMs: nineXBuddyActivation.minIntervalMs,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

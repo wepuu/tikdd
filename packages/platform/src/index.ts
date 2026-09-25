@@ -138,6 +138,14 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
     extractorKeys: ["Pinterest", "PinterestCollection"]
   },
   {
+    id: "xhamster",
+    displayName: "xHamster",
+    status: "experimental",
+    source: "curated",
+    hosts: [host("xhamster.com")],
+    extractorKeys: []
+  },
+  {
     id: "vk",
     displayName: "VK",
     status: "planned",

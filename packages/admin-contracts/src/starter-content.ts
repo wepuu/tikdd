@@ -96,13 +96,13 @@ const homepageContent = (locale: StarterLocale): AdminPageContent => AdminPageCo
       }
 );
 
-type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest";
+type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "xhamster";
 
 const PLATFORM_NAMES: Record<StarterPlatform, string> = {
-  x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", vimeo: "Vimeo", pinterest: "Pinterest"
+  x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", vimeo: "Vimeo", pinterest: "Pinterest", xhamster: "xHamster"
 };
 
-const PLATFORM_LINK_LABELS: Record<StarterPlatform, { en: string; zh: string }> = {
+const PLATFORM_LINK_LABELS: Partial<Record<StarterPlatform, { en: string; zh: string }>> = {
   x: { en: "post", zh: "帖子" },
   instagram: { en: "Reel or post", zh: "Reel 或帖子" },
   tiktok: { en: "video", zh: "视频" },
@@ -114,7 +114,7 @@ const PLATFORM_LINK_LABELS: Record<StarterPlatform, { en: string; zh: string }> 
 const platformContent = (locale: StarterLocale, platform: StarterPlatform): AdminPageContent => {
   const name = PLATFORM_NAMES[platform];
   const stage = platform === "tiktok" ? "Stable" : "Beta";
-  const linkLabel = PLATFORM_LINK_LABELS[platform];
+  const linkLabel = PLATFORM_LINK_LABELS[platform] ?? { en: "video page", zh: "xHamster video page" };
   if (locale === "en") {
     return AdminPageContentSchema.parse({
       template: "platform",
@@ -265,9 +265,9 @@ type StarterPageKey = "home" | StarterPlatform | "faq" | "help" | "privacy" | "t
 
 const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
   const labels = locale === "en"
-    ? { home: "TikDD X, Instagram, TikTok, Facebook, Vimeo, Pinterest downloader", x: "TikDD X video downloader Beta", instagram: "TikDD Instagram video downloader Beta", tiktok: "TikDD TikTok video downloader", facebook: "TikDD Facebook video downloader Beta", vimeo: "TikDD Vimeo video downloader Beta", pinterest: "TikDD Pinterest video downloader Beta", faq: "TikDD frequently asked questions", help: "How to use TikDD", privacy: "TikDD privacy", terms: "TikDD terms of use" }
-    : { home: "TikDD X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频下载", x: "TikDD X 视频下载 Beta", instagram: "TikDD Instagram 视频下载 Beta", tiktok: "TikDD TikTok 视频下载", facebook: "TikDD Facebook 视频下载 Beta", vimeo: "TikDD Vimeo 视频下载 Beta", pinterest: "TikDD Pinterest 视频下载 Beta", faq: "TikDD 常见问题", help: "如何使用 TikDD", privacy: "TikDD 隐私说明", terms: "TikDD 使用条款" };
-  const paths = { home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader", facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms" } as const;
+    ? { home: "TikDD X, Instagram, TikTok, Facebook, Vimeo, Pinterest downloader", x: "TikDD X video downloader Beta", instagram: "TikDD Instagram video downloader Beta", tiktok: "TikDD TikTok video downloader", facebook: "TikDD Facebook video downloader Beta", vimeo: "TikDD Vimeo video downloader Beta", pinterest: "TikDD Pinterest video downloader Beta", xhamster: "TikDD xHamster video downloader Beta", faq: "TikDD frequently asked questions", help: "How to use TikDD", privacy: "TikDD privacy", terms: "TikDD terms of use" }
+    : { home: "TikDD X、Instagram、TikTok、Facebook、Vimeo 与 Pinterest 视频下载", x: "TikDD X 视频下载 Beta", instagram: "TikDD Instagram 视频下载 Beta", tiktok: "TikDD TikTok 视频下载", facebook: "TikDD Facebook 视频下载 Beta", vimeo: "TikDD Vimeo 视频下载 Beta", pinterest: "TikDD Pinterest 视频下载 Beta", xhamster: "TikDD xHamster 视频下载 Beta", faq: "TikDD 常见问题", help: "如何使用 TikDD", privacy: "TikDD 隐私说明", terms: "TikDD 使用条款" };
+  const paths = { home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader", facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", xhamster: "/xhamster-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms" } as const;
   const title = labels[page];
   return AdminSeoFieldsSchema.parse({
     localPath: paths[page],
@@ -304,7 +304,8 @@ export function starterPages(locale: StarterLocale): readonly StarterPageRecord[
     { pageId: "page_tiktok", locale, pageType: "platform", platform: "tiktok", content: platformContent(locale, "tiktok"), seo: seo(locale, "tiktok") },
     { pageId: "page_facebook", locale, pageType: "platform", platform: "facebook", content: platformContent(locale, "facebook"), seo: seo(locale, "facebook") },
     { pageId: "page_vimeo", locale, pageType: "platform", platform: "vimeo", content: platformContent(locale, "vimeo"), seo: seo(locale, "vimeo") },
-    { pageId: "page_pinterest", locale, pageType: "platform", platform: "pinterest", content: platformContent(locale, "pinterest"), seo: seo(locale, "pinterest") }
+    { pageId: "page_pinterest", locale, pageType: "platform", platform: "pinterest", content: platformContent(locale, "pinterest"), seo: seo(locale, "pinterest") },
+    { pageId: "page_xhamster", locale, pageType: "platform", platform: "xhamster", content: platformContent(locale, "xhamster"), seo: seo(locale, "xhamster") }
   ];
 }
 

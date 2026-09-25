@@ -26,14 +26,15 @@ export const taskCompletionFailedError: TaskError = {
 type CompletionStage = "candidate_preparation" | "completion_persistence";
 
 export const INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS = 45_000;
+export const XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS = 90_000;
 
 export function routeTimeoutMsForPlatform(
   platform: ResolveJobData["platform"],
   configuredTimeoutMs: number
 ): number {
-  return platform === "instagram"
-    ? Math.max(configuredTimeoutMs, INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS)
-    : configuredTimeoutMs;
+  if (platform === "instagram") return Math.max(configuredTimeoutMs, INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS);
+  if (platform === "xhamster") return Math.max(configuredTimeoutMs, XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS);
+  return configuredTimeoutMs;
 }
 
 export interface ResolveJobTasks {

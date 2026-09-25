@@ -46,4 +46,13 @@ describe("published page metadata", () => {
     expect(page?.seo.indexable).toBe(false);
     expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toEqual({});
   });
+
+  it("keeps the xHamster Beta page noindex and out of hreflang", () => {
+    const page = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(
+      (candidate) => candidate.pageId === "page_xhamster" && candidate.locale === "en"
+    );
+    expect(page?.seo.indexable).toBe(false);
+    expect(page?.seo.includeInSitemap).toBe(false);
+    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toEqual({});
+  });
 });

@@ -29,13 +29,20 @@ describe("public published-content loader", () => {
   });
 
   it("bundles Facebook, Vimeo, and Pinterest as bilingual noindex Beta pages", () => {
-    for (const platform of ["facebook", "vimeo", "pinterest"] as const) {
+    for (const platform of ["facebook", "vimeo", "pinterest", "xhamster"] as const) {
       const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === platform);
       expect(pages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
       expect(pages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
       expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
     }
     expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(4);
+  });
+
+  it("keeps xHamster publicly reachable but outside stable SEO surfaces", () => {
+    const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "xhamster");
+    expect(pages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+    expect(pages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(pages.every((page) => page.seo.localPath === "/xhamster-downloader")).toBe(true);
   });
 
   it("uses only a runtime-validated active snapshot", async () => {

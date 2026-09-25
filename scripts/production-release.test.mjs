@@ -58,6 +58,19 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/VIDDOWN_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"VidDown"/);
     expect(releaseScript).toMatch(/viddown_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_LOCOLOADER_PROVIDER/);
+    expect(releaseScript).toMatch(/LOCOLOADER_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/LOCOLOADER_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"LocoLoader"/);
+    expect(releaseScript).toMatch(/locoloader_enabled=/);
+    expect(releaseScript).toMatch(/LOCOLOADER_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/ENABLE_9XBUDDY_PROVIDER/);
+    expect(releaseScript).toMatch(/NINE_X_BUDDY_AUTOMATION_USE_APPROVED/);
+    expect(releaseScript).toMatch(/NINE_X_BUDDY_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/NINE_X_BUDDY_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/NINE_X_BUDDY_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 
   it("passes the configured host resource thresholds to every stage gate", () => {

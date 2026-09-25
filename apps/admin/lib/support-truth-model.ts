@@ -7,7 +7,7 @@ import type {
 } from "@tikdd/admin-contracts";
 import type { AdminEffectiveRoutePlanView } from "./console-model";
 
-export const PUBLIC_SUPPORTED_PLATFORMS = ["x", "instagram", "tiktok", "facebook", "vimeo", "pinterest"] as const;
+export const PUBLIC_SUPPORTED_PLATFORMS = ["x", "instagram", "tiktok", "facebook", "vimeo", "pinterest", "xhamster"] as const;
 
 export type SupportTruthDrift =
   | "catalog_route_mismatch"

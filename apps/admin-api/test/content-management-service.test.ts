@@ -26,9 +26,9 @@ describe("Admin content management",()=>{
     const publication:any={getActive:vi.fn(async()=>null),getLatest:vi.fn(async()=>null),listRecent:vi.fn(async()=>[])};
     const instance=new AdminContentManagementService({commandSecret:'command-secret-with-at-least-32-characters',platforms:listPlatformDefinitions(),writes,publication,deployment:'tikdd',now:()=>new Date(now)});
     const initial=await instance.getStarterPreview();
-    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:22,expectedSharedCount:2});
+    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:24,expectedSharedCount:2});
     const result=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0001'},'owner_tikdd');
-    expect(result).toMatchObject({createdPageCount:22,createdSharedCount:2,preview:{state:'ready',readyPageCount:22,readySharedCount:2}});
+    expect(result).toMatchObject({createdPageCount:24,createdSharedCount:2,preview:{state:'ready',readyPageCount:24,readySharedCount:2}});
     expect(writes.savePageDraft).toHaveBeenCalledTimes(starterPageRecords().length);
     const repeat=await instance.bootstrapStarterContent({reason:'Initialize the reviewed bilingual starter content set.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0002'},'owner_tikdd');
     expect(repeat).toMatchObject({createdPageCount:0,createdSharedCount:0,preview:{state:'ready'}});
