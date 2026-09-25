@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateBetaHealth } from "../src/beta-operability";
+import { aggregateBetaHealth, normalizeTaskStatus } from "../src/beta-operability";
 
 const window = {
   from: "2026-09-09T00:00:00.000Z",
@@ -8,6 +8,13 @@ const window = {
 };
 
 describe("beta operability aggregation", () => {
+  it("preserves a terminal result or error after cleanup marks the task expired", () => {
+    expect(normalizeTaskStatus("expired", true, false)).toBe("succeeded");
+    expect(normalizeTaskStatus("expired", false, true)).toBe("failed");
+    expect(normalizeTaskStatus("expired", false, false)).toBe("expired");
+    expect(normalizeTaskStatus("resolving", false, false)).toBe("resolving");
+  });
+
   it("returns platform and total aggregates without identifiers or provider details", () => {
     const report = aggregateBetaHealth({
       taskStatuses: [
