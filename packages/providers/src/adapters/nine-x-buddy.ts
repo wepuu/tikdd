@@ -6,7 +6,8 @@ import {
   requestText,
   reviewedThumbnailUrl,
   type ParsedFormat,
-  type ProviderFetch
+  type ProviderFetch,
+  type ProviderChallengeObservation
 } from "./shared";
 
 const LANDING_ORIGIN = "https://9xbuddy.com";
@@ -43,6 +44,9 @@ export interface NineXBuddyDiagnosticEvent {
   formatCount: number;
   prepared: boolean;
   progressPolls: number;
+  contentType: string | null;
+  bootstrapPresent: boolean;
+  challengeMarker: "none" | "embedded" | "strong";
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -79,6 +83,20 @@ interface DownloadDescriptor {
 }
 
 const DELIVERY_POLICY_PLATFORMS = new Set<Platform>(["xhamster"]);
+
+function hasBootstrapMarkers(body: string): boolean {
+  return body.includes("window.__INIT__") && /\/build\/(?:assets\/)?main\.[A-Za-z0-9_-]+\.css/.test(body);
+}
+
+/**
+ * 9xBuddy's normal application bundle contains the literal `challenge-platform`
+ * string. The shared classifier treats that token as a challenge marker, so the
+ * landing page needs a stronger, bootstrap-aware classifier of its own.
+ */
+export function isNineXBuddyLandingChallenge(observation: ProviderChallengeObservation): boolean {
+  if (hasBootstrapMarkers(observation.body)) return false;
+  return /attention required|sorry, you have been blocked|cf-turnstile|challenge-platform/i.test(observation.body);
+}
 
 function contentTypeCategory(headers: Headers): string {
   return headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? "missing";
@@ -411,6 +429,9 @@ export class NineXBuddyProvider implements ResolverProvider {
     const startedAt = Date.now();
     let phase: NineXBuddyDiagnosticPhase = "bootstrap";
     let httpStatus: number | null = null;
+    let contentType: string | null = null;
+    let bootstrapPresent = false;
+    let challengeMarker: NineXBuddyDiagnosticEvent["challengeMarker"] = "none";
     let formatCount = 0;
     let prepared = false;
     let progressPolls = 0;
@@ -426,6 +447,9 @@ export class NineXBuddyProvider implements ResolverProvider {
           formatCount,
           prepared,
           progressPolls,
+          contentType,
+          bootstrapPresent,
+          challengeMarker,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -440,7 +464,23 @@ export class NineXBuddyProvider implements ResolverProvider {
         redirect: "manual",
         ...(input.signal ? { signal: input.signal } : {}),
         headers: { accept: "text/html,application/xhtml+xml" }
-      }, new Set([LANDING_HOST]), { maximumBytes: MAXIMUM_RESPONSE_BYTES });
+      }, new Set([LANDING_HOST]), {
+        maximumBytes: MAXIMUM_RESPONSE_BYTES,
+        observer: {
+          onResponse: (observation) => {
+            httpStatus = observation.status;
+            contentType = observation.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? null;
+          }
+        },
+        challengeClassifier: (observation) => {
+          bootstrapPresent = hasBootstrapMarkers(observation.body);
+          const strongMarker = /attention required|sorry, you have been blocked|cf-turnstile/i.test(observation.body);
+          const embeddedMarker = /challenge-platform/i.test(observation.body);
+          challengeMarker = strongMarker ? "strong" : embeddedMarker ? "embedded" : "none";
+          return isNineXBuddyLandingChallenge(observation);
+        }
+      });
+      bootstrapPresent = hasBootstrapMarkers(landing.body);
       const bootstrap = parseBootstrap(landing.body, landing.cookie);
       const authToken = createNineXBuddyAuthToken(bootstrap);
       const headers: Record<string, string> = {
@@ -466,7 +506,12 @@ export class NineXBuddyProvider implements ResolverProvider {
           expectedContentTypes: ["application/json"],
           maximumRedirects: 0,
           allowNonOk: true,
-          observer: { onResponse: (observation) => { httpStatus = observation.status; } }
+          observer: {
+            onResponse: (observation) => {
+              httpStatus = observation.status;
+              contentType = observation.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? null;
+            }
+          }
         });
         return parseJsonResponse(result);
       };

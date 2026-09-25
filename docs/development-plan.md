@@ -1767,3 +1767,16 @@ sequential fallback with its shared two-extraction/six-hour budget. Production e
 two distinct public xHamster browser downloads after CI, exact-SHA image verification, backup, and
 an explicit `9xbuddy / xhamster / nl` rollout rule. See [Work Item 100](work-item-100-9xbuddy-xhamster-primary.md)
 and [ADR-0046](architecture/adr/0046-9xbuddy-xhamster-provider-artifact.md).
+
+### Work Item 101 — 9xBuddy bootstrap challenge classification and xHamster fallback
+
+Work Item 101 fixes a false-positive 9xBuddy bootstrap challenge: the normal landing bundle
+contains the literal `challenge-platform` string, which the generic response classifier previously
+treated as an access challenge before parsing `window.__INIT__`. The adapter now uses a
+bootstrap-aware landing classifier, records only redacted bootstrap/content-type diagnostics, and
+keeps real 403/Turnstile/blocked pages fail-closed. The 9xBuddy primary route, exact artifact host
+policy, one-attempt queue boundary, and conversion limits are unchanged.
+
+After the adapter fix, the existing LocoLoader xHamster capability may be activated as the bounded
+priority-480 fallback under its shared two-extraction/six-hour budget. It requires its own gates and
+unique `locoloader / xhamster / nl` rule; no other platform is enabled. See [Work Item 101](work-item-101-9xbuddy-bootstrap-challenge-fix.md).
