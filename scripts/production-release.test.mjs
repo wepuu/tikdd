@@ -63,6 +63,9 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/LOCOLOADER_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"LocoLoader"/);
     expect(releaseScript).toMatch(/locoloader_enabled=/);
+    expect(releaseScript).toMatch(/LOCOLOADER_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 
   it("passes the configured host resource thresholds to every stage gate", () => {

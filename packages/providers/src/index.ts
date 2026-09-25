@@ -84,6 +84,12 @@ export {
 } from "./adapters/viddown";
 export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
 export {
+  MemoryLocoLoaderRequestBudget,
+  type LocoLoaderBudgetPermit,
+  type LocoLoaderRequestBudget,
+  type MemoryLocoLoaderRequestBudgetOptions
+} from "./locoloader-budget";
+export {
   SocialDownloaderRequestBudget,
   type SocialDownloaderBudgetPermit,
   type SocialDownloaderRequestBudgetOptions

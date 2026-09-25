@@ -1736,3 +1736,18 @@ is unchanged: it is noindex, outside the sitemap, and excluded from hreflang and
 index eligibility. Homepage, FAQ, and help copy do not promote it. Provider gates, rollout, and
 production traffic remain unchanged and disabled. See [Work Item 98](work-item-98-xhamster-locoloader.md)
 and [ADR-0044](architecture/adr/0044-xhamster-beta-nonindexable.md).
+
+### Work Item 99 — LocoLoader low-quota multi-platform routing
+
+Work Item 99 adds the shared Redis extraction budget for the existing LocoLoader adapter. The NL
+Worker fleet reserves at most two anonymous extraction POSTs per six-hour window by default, keeps
+one in-flight lease, spaces calls by one second, and never returns a consumed token. Queue replay is
+disabled; a locally exhausted budget is a typed fallback-eligible failure and does not call the
+upstream. The values are environment configuration, not per-user limits or quota bypass controls.
+
+The manifest now describes xHamster, X, TikTok, and Facebook as separate capabilities. Only
+xHamster is approved and Delivery-verified; the other capabilities have no Delivery mode or host
+policy and remain Lab-only until independent protocol fixtures and browser Delivery evidence are
+complete. Existing platform Providers retain their priority, and no new production rollout rule,
+database migration, public contract, SEO surface, or media proxy is introduced. See [Work Item 99](work-item-99-locoloader-low-quota-routing.md)
+and [ADR-0045](architecture/adr/0045-locoloader-shared-extraction-budget.md).

@@ -114,7 +114,13 @@ describe("Work Item 98 LocoLoader xHamster activation", () => {
     expect(loadLocoLoaderActivationConfiguration({})).toEqual({
       enabled: false,
       termsApproved: false,
-      deliveryAuditApproved: false
+      deliveryAuditApproved: false,
+      approvedPlatforms: ["xhamster"],
+      deliveryVerifiedPlatforms: ["xhamster"],
+      maxExtractions: 2,
+      quotaWindowMs: 6 * 60 * 60 * 1_000,
+      maxConcurrency: 1,
+      minIntervalMs: 1_000
     });
     expect(() => loadLocoLoaderActivationConfiguration({ ENABLE_LOCOLOADER_PROVIDER: "true" }))
       .toThrow(/LOCOLOADER_TERMS_APPROVED/);
@@ -127,5 +133,14 @@ describe("Work Item 98 LocoLoader xHamster activation", () => {
       LOCOLOADER_TERMS_APPROVED: "true",
       LOCOLOADER_DELIVERY_AUDIT_APPROVED: "true"
     }).enabled).toBe(true);
+    expect(loadLocoLoaderActivationConfiguration({
+      LOCOLOADER_APPROVED_PLATFORMS: "xhamster,tiktok",
+      LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS: "xhamster",
+      LOCOLOADER_MAX_EXTRACTIONS: "2",
+      LOCOLOADER_QUOTA_WINDOW_MS: "21600000"
+    }).approvedPlatforms).toEqual(["xhamster", "tiktok"]);
+    expect(() => loadLocoLoaderActivationConfiguration({
+      LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS: "tiktok"
+    })).toThrow(/may only contain xhamster/);
   });
 });

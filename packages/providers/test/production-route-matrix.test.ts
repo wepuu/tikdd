@@ -47,8 +47,10 @@ describe("production route matrix", () => {
   it("keeps xHamster implemented but default-off until the production gate is approved", () => {
     const xhamster = new LocoLoaderProvider();
     expect(xhamster.manifest.enabled).toBe(false);
-    expect(xhamster.manifest.platforms).toEqual([
-      expect.objectContaining({ platform: "xhamster", priority: 480, deliveryModes: ["redirect"] })
-    ]);
+    expect(xhamster.manifest.platforms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ platform: "xhamster", priority: 480, deliveryModes: ["redirect"] }),
+      expect.objectContaining({ platform: "tiktok", deliveryModes: [] }),
+      expect.objectContaining({ platform: "facebook", deliveryModes: [] })
+    ]));
   });
 });

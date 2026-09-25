@@ -65,6 +65,7 @@ import { loadSocialDownloaderActivationConfiguration } from "./socialdownloader-
 import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest-videodownloader-activation";
 import { loadVidDownActivationConfiguration } from "./viddown-activation";
 import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
+import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
@@ -222,7 +223,18 @@ if (vidDownActivation.enabled) {
   }));
 }
 if (locoLoaderActivation.enabled) {
-  providers.push(new LocoLoaderProvider({ enabled: true }));
+  providers.push(new LocoLoaderProvider({
+    enabled: true,
+    approvedPlatforms: locoLoaderActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: locoLoaderActivation.deliveryVerifiedPlatforms,
+    requestBudget: new RedisLocoLoaderRequestBudget(redis, {
+      region: workerRegion,
+      maxExtractions: locoLoaderActivation.maxExtractions,
+      windowMs: locoLoaderActivation.quotaWindowMs,
+      maxConcurrency: locoLoaderActivation.maxConcurrency,
+      minIntervalMs: locoLoaderActivation.minIntervalMs
+    })
+  }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

@@ -160,6 +160,18 @@ verify_worker_runtime_config() {
       return 78
     fi
   done
+  expected_locoloader_platforms="$(release_value LOCOLOADER_APPROVED_PLATFORMS "xhamster")"
+  expected_locoloader_verified="$(release_value LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS "xhamster")"
+  for platform_key in LOCOLOADER_APPROVED_PLATFORMS LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS; do
+    expected_platforms="$expected_locoloader_platforms"
+    [ "$platform_key" = LOCOLOADER_DELIVERY_VERIFIED_PLATFORMS ] && expected_platforms="$expected_locoloader_verified"
+    actual_platforms="$(printf '%s\n' "$env_dump" | awk -F= -v key="$platform_key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+    [ -n "$actual_platforms" ] || actual_platforms="xhamster"
+    if [ "$actual_platforms" != "$expected_platforms" ]; then
+      echo "Worker LocoLoader platform binding mismatch for $platform_key." >&2
+      return 78
+    fi
+  done
   echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled"
 }
 

@@ -5,6 +5,7 @@ import {
   LocoLoaderProvider,
   createLocoLoaderKey,
   parseLocoLoaderResponse,
+  MemoryLocoLoaderRequestBudget,
   type ResolveInput
 } from "../src/index";
 
@@ -66,5 +67,35 @@ describe("LocoLoader xHamster adapter", () => {
   it("maps challenge and terminal errors without leaking the upstream response", () => {
     expect(() => parseLocoLoaderResponse(JSON.stringify({ err: true, err_num: 13 }))).toThrow(/challenge/i);
     expect(() => parseLocoLoaderResponse(JSON.stringify({ err: true, err_num: 14 }))).toThrow(/supported/i);
+  });
+
+  it("enforces a shared extraction budget before the upstream POST", async () => {
+    let now = 1_700_000_000_000;
+    const budget = new MemoryLocoLoaderRequestBudget({ maxExtractions: 2, minIntervalMs: 0, now: () => now });
+    let posts = 0;
+    const provider = new LocoLoaderProvider({
+      enabled: true,
+      requestBudget: budget,
+      fetchImpl: async (url, init) => {
+        if (init?.method === "POST") posts += 1;
+        return init?.method === "POST"
+          ? response(JSON.stringify({ err: 0, final_urls: [{ links: [{ url: "https://video7.xhcdn.com/fixture/video.mp4" }] }] }))
+          : response("<html>fixture</html>", "text/html", url.toString());
+      }
+    });
+    await provider.resolve(input);
+    now += 1_000;
+    await provider.resolve(input);
+    now += 1_000;
+    await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_rate_limited" });
+    expect(posts).toBe(2);
+  });
+
+  it("exposes non-xHamster capabilities without granting an unreviewed Delivery policy", () => {
+    const provider = new LocoLoaderProvider({ enabled: true, approvedPlatforms: ["xhamster", "tiktok"] });
+    expect(provider.manifest.platforms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ platform: "xhamster", deliveryModes: ["redirect"] }),
+      expect.objectContaining({ platform: "tiktok", deliveryModes: [] })
+    ]));
   });
 });
