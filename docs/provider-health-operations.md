@@ -40,6 +40,9 @@ interval is controlled separately by `PROVIDER_HEALTH_REFRESH_MS` and must be at
 - Open circuits remain isolated to one provider/platform/region key.
 - After cooldown, Redis grants one half-open probe lease. Normalized success closes according to the
   configured recovery count; a provider fault reopens with bounded cooldown growth.
+- A cache hit is not a health observation and never counts as recovery evidence. In the low-traffic
+  production policy (`production-low-traffic-v2`), one successful natural half-open probe closes the
+  circuit; release checks and synthetic requests do not.
 - Missing or unavailable Redis state degrades to neutral static routing. Existing route deadlines,
   provider timeouts, attempt budgets, and terminal-error rules still apply.
 

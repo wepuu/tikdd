@@ -150,7 +150,7 @@ function RouteInspector({ snapshot, summary }: { snapshot: AdminConsoleSnapshot;
         <article><small>有效分配</small><strong>{formatRate(summary.allocationBps)}</strong><span>{verificationStatus.replaceAll("_", " ")} · rollout r{summary.rolloutRevision ?? "—"}</span></article>
         <article><small>成功率</small><strong>{formatRate(summary.successRateBps)}</strong><span>{formatCount(summary.sampleCount)} 个样本</span></article>
         <article><small>P95 延迟</small><strong>{formatLatency(summary.p95LatencyMs)}</strong><span>最近聚合窗口</span></article>
-        <article><small>熔断</small><strong>{summary.circuitState === "half_open" ? "半开" : summary.circuitState === "closed" ? "闭合" : summary.circuitState === "open" ? "开启" : "未知"}</strong><span>{summary.circuitState === "half_open" && (summary.recoverySuccessCount ?? 0) > 0 ? `恢复探针 ${summary.recoverySuccessCount} 次 · ` : ""}{formatTime(summary.observedAt)}</span></article>
+        <article><small>熔断</small><strong>{summary.circuitState === "half_open" ? "半开" : summary.circuitState === "closed" ? "闭合" : summary.circuitState === "open" ? "开启" : "未知"}</strong><span>{summary.circuitState === "half_open" ? (summary.recoverySuccessCount ?? 0) > 0 ? `恢复探针 ${summary.recoverySuccessCount} 次 · ` : "等待自然恢复探针 · " : ""}{formatTime(summary.observedAt)}</span></article>
       </div>
       <section className="next-step"><span><ShieldCheck size={18} /></span><div><strong>建议下一步</strong><p>{routeNextStep(summary)}</p></div></section>
       <section className="failure-list">

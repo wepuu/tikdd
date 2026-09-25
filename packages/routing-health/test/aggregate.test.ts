@@ -172,6 +172,38 @@ describe("routing health aggregation", () => {
     expect(recovered.consecutiveOpenCount).toBe(0);
   });
 
+  it("closes a low-traffic half-open circuit after one successful probe", () => {
+    const lowTrafficPolicy: CircuitPolicy = {
+      ...policy,
+      recoverySuccesses: 1
+    };
+    const opened = aggregateCircuitHealth({
+      key,
+      policy: lowTrafficPolicy,
+      now: new Date(now.getTime() - 5_000),
+      observations: [
+        observation(11, "failed", "invalid_result"),
+        observation(12, "failed", "provider_schema_changed"),
+        observation(13, "succeeded", null)
+      ]
+    });
+    const recovered = aggregateCircuitHealth({
+      key,
+      policy: lowTrafficPolicy,
+      previous: halfOpen(opened),
+      now,
+      observations: [
+        observation(14, "succeeded", null, {
+          finishedAt: new Date(now.getTime() - 1_000).toISOString()
+        })
+      ]
+    });
+
+    expect(recovered.state).toBe("closed");
+    expect(recovered.recoverySuccessCount).toBe(1);
+    expect(recovered.consecutiveOpenCount).toBe(0);
+  });
+
   it("reopens on a probe provider fault with bounded cooldown growth", () => {
     const opened = aggregateCircuitHealth({
       key,
