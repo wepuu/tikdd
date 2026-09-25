@@ -10,6 +10,7 @@ import {
   IdempotencyKeySchema,
   loadResolveQueueName,
   ResolveJobDataSchema,
+  loadPublicWebOrigin,
   type ResolveJobData,
   type TaskError
 } from "@tikdd/contracts";
@@ -58,7 +59,7 @@ const port = Number.parseInt(process.env.API_PORT ?? "4000", 10);
 const taskTtlHours = Number.parseInt(process.env.TASK_TTL_HOURS ?? "24", 10);
 const activeSourceTtlMs = Number.parseInt(process.env.ACTIVE_SOURCE_TTL_MS ?? "300000", 10);
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:16379";
-const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+const webOrigin = loadPublicWebOrigin();
 const providerDiagnosticsToken = process.env.PROVIDER_DIAGNOSTICS_TOKEN || null;
 const pilotEvidenceDiagnosticsToken = process.env.PILOT_EVIDENCE_DIAGNOSTICS_TOKEN || null;
 const pilotEvidenceDiagnosticsActorId = process.env.PILOT_EVIDENCE_DIAGNOSTICS_ACTOR_ID || null;

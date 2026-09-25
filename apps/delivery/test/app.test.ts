@@ -105,6 +105,25 @@ async function appFor(address: string, fixture: DeliveryFixture = defaultFixture
 }
 
 describe("delivery application", () => {
+  it("returns the configured public Web origin for browser preflight", async () => {
+    const app = await appFor("8.8.8.8");
+    try {
+      const preflight = await app.inject({
+        method: "OPTIONS",
+        url: "/v1/deliveries",
+        headers: {
+          origin: "https://tikdd.test",
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type"
+        }
+      });
+      expect(preflight.statusCode).toBe(204);
+      expect(preflight.headers["access-control-allow-origin"]).toBe("https://tikdd.test");
+    } finally {
+      await app.close();
+    }
+  });
+
   it.each([
     {
       providerId: "twittersaver",

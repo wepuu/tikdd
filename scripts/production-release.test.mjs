@@ -4,6 +4,14 @@ import { describe, expect, it } from "vitest";
 const releaseScript = readFileSync(new URL("./production-release.sh", import.meta.url), "utf8");
 
 describe("production release Admin lifecycle", () => {
+  it("validates the browser-facing public origin independently of Admin's internal Web origin", () => {
+    expect(releaseScript).toMatch(/validate_public_web_origin\(\)/);
+    expect(releaseScript).toMatch(/release_value TIKDD_WEB_PUBLIC_ORIGIN/);
+    expect(releaseScript).toMatch(/TIKDD_WEB_PUBLIC_ORIGIN must be an HTTPS origin/);
+    expect(releaseScript).toMatch(/TIKDD_WEB_PUBLIC_ORIGIN must be a public exact origin/);
+    expect(releaseScript).toMatch(/validate_public_web_origin\n  compose --profile admin/);
+  });
+
   it("binds Compose env_file to the selected release environment", () => {
     expect(releaseScript).toMatch(/TIKDD_PRODUCTION_ENV_FILE="\$release_env"[\s\\]+docker compose --env-file "\$release_env"/);
   });

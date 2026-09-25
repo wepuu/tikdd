@@ -1,9 +1,10 @@
 import { createStaticCandidateCipher } from "@tikdd/delivery-core";
+import { loadPublicWebOrigin } from "@tikdd/contracts";
 import { createDatabasePool, TaskRepository } from "@tikdd/persistence";
 import { createDeliveryApp } from "./app";
 
 const port = Number.parseInt(process.env.DELIVERY_PORT ?? "4002", 10);
-const webOrigin = process.env.WEB_ORIGIN ?? "http://localhost:3000";
+const webOrigin = loadPublicWebOrigin();
 const publicBaseUrl = process.env.DELIVERY_PUBLIC_BASE_URL ?? `http://localhost:${port}`;
 const keyId = process.env.DELIVERY_ENCRYPTION_KEY_ID;
 const encodedKey = process.env.DELIVERY_ENCRYPTION_KEY_BASE64URL;

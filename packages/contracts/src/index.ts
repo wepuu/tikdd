@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { loadPublicWebOrigin, type PublicOriginEnvironment } from "./public-origin";
 
 export const PlatformIdSchema = z
   .string()

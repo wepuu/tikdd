@@ -45,6 +45,7 @@
 - [ADR-0043: Low-traffic circuit recovery](0043-low-traffic-circuit-recovery.md)
 - [ADR-0045: LocoLoader shared extraction budget and platform-scoped routing](0045-locoloader-shared-extraction-budget.md)
 - [ADR-0046: 9xBuddy xHamster provider-hosted MP4 artifact](0046-9xbuddy-xhamster-provider-artifact.md)
+- [ADR-0047: Separate browser CORS and Admin Web origins](0047-public-web-origin-binding.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
