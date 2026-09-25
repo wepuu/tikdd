@@ -93,6 +93,13 @@ error keep their original outcome, and exposes the sanitized half-open recovery 
 view. It adds no migration, Provider traffic, route, retry, Delivery mode, or calibration change.
 See the [Work Item 94 record](docs/work-item-94-production-metrics-route-closeout.md).
 
+Work Item 95 versions the low-traffic production health policy so one successful natural half-open
+probe closes a recovered route. Cached results, synthetic release checks, and manual Redis resets do
+not count as recovery evidence; failure thresholds, cooldowns, sequential routing, and Provider
+gates remain unchanged. Admin explicitly shows when a half-open route is waiting for its first
+natural probe. See the [Work Item 95 record](docs/work-item-95-low-traffic-circuit-recovery.md) and
+[ADR-0043](docs/architecture/adr/0043-low-traffic-circuit-recovery.md).
+
 Work Item 35 adds a server-enforced Admin write scope: production defaults to `readonly`, while an
 explicit `content-draft` mode permits only non-public content drafts and `full` is reserved for
 deliberate local or maintenance operations. The UI displays the active scope and hides or disables

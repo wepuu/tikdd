@@ -93,6 +93,7 @@
     "verify:work-item-13": "node scripts/verify-work-item-13.mjs",
     "verify:work-item-16": "node scripts/verify-work-item-16.mjs",
     "verify:work-item-17": "node scripts/verify-work-item-17.mjs",
+    "verify:work-item-95": "node scripts/verify-work-item-95-static.mjs",
     "test:work-item-18": "vitest run apps/admin-api/test/qualification-service.test.ts packages/persistence/test/qualification-admin-migration.test.ts packages/admin-contracts/test/qualification-contract.test.ts packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/app.test.ts apps/admin/test/admin-api-client.test.ts",
     "verify:work-item-18": "pnpm --filter @tikdd/persistence db:verify-admin-qualification && pnpm test:work-item-18",
     "test:work-item-19": "vitest run packages/admin-contracts/test/admin-contracts.test.ts apps/admin-api/test/read-service.test.ts apps/admin-api/test/app.test.ts apps/admin/test/admin-api-client.test.ts apps/admin/test/console-model.test.ts",

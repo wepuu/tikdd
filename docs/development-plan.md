@@ -1690,3 +1690,18 @@ authority. Existing six-platform routing and the enabled SaveFromIns/Instagram/N
 remain unchanged. Production verification compares the Admin aggregate with direct PostgreSQL
 results and checks container/rollout health without synthetic Provider traffic. See the
 [Work Item 94 record](work-item-94-production-metrics-route-closeout.md).
+
+### Work Item 95 — Low-traffic circuit recovery and operational closeout
+
+Work Item 95 is the grouped follow-up to the metrics correction. The production health policy is
+versioned as `production-low-traffic-v2` and closes a half-open route after one successful natural
+probe, matching the project's small request volume. The single probe lease, bounded cooldowns,
+failure thresholds, sequential fallback, no-retry Provider boundaries, rollout allocations, and
+gates remain unchanged. Cache hits and synthetic release checks are explicitly excluded from health
+evidence.
+
+Admin now makes a zero-count half-open route readable as waiting for a natural recovery probe. The
+release adds no migration, Provider adapter, public endpoint, route policy, or calibration activity.
+Production application must use the official release path and verify the Worker-loaded policy before
+waiting for the next distinct natural request. See the [Work Item 95 record](work-item-95-low-traffic-circuit-recovery.md)
+and [ADR-0043](architecture/adr/0043-low-traffic-circuit-recovery.md).
