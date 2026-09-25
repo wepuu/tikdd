@@ -273,6 +273,30 @@ interface DeliveryQueryRow extends QueryResultRow {
   latest_at: Date | null;
 }
 
+/**
+ * Resolve the effective terminal state before aggregating. PostgreSQL does not allow
+ * grouping by the SELECT-list alias when that alias is an expression, so this is
+ * deliberately a CTE rather than `GROUP BY platform, status` on the outer query.
+ * Keeping the query named also makes the cleanup/result precedence auditable in tests.
+ */
+export const BETA_TASK_STATUS_QUERY = `WITH effective_tasks AS (
+           SELECT platform,
+             CASE
+               WHEN result IS NOT NULL THEN 'succeeded'
+               WHEN error IS NOT NULL THEN 'failed'
+               ELSE status
+             END AS effective_status,
+             updated_at
+           FROM resolve_tasks
+           WHERE observation_class = 'public' AND created_at >= $1 AND created_at < $2
+             AND platform = ANY($3::text[])
+         )
+         SELECT platform, effective_status AS status,
+           count(*)::int AS count, max(updated_at) AS latest_at
+         FROM effective_tasks
+         GROUP BY platform, effective_status
+         ORDER BY platform, effective_status`;
+
 export class BetaOperabilityRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -281,17 +305,8 @@ export class BetaOperabilityRepository {
     const parameters = [from, to, selected];
     const [taskStatuses, taskFailures, attempts, deliveries] = await Promise.all([
       this.pool.query<TaskStatusQueryRow>(
-        `SELECT platform,
-           CASE
-             WHEN result IS NOT NULL THEN 'succeeded'
-             WHEN error IS NOT NULL THEN 'failed'
-             ELSE status
-           END AS status,
-           count(*)::int AS count, max(updated_at) AS latest_at
-         FROM resolve_tasks
-         WHERE observation_class = 'public' AND created_at >= $1 AND created_at < $2
-           AND platform = ANY($3::text[])
-         GROUP BY platform, status ORDER BY platform, status`, parameters),
+        BETA_TASK_STATUS_QUERY,
+        parameters),
       this.pool.query<TaskFailureQueryRow>(
         `SELECT platform, error->>'code' AS failure_code, count(*)::int AS count
          FROM resolve_tasks

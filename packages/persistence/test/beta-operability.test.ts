@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { aggregateBetaHealth, normalizeTaskStatus } from "../src/beta-operability";
+import { describe, expect, it, vi } from "vitest";
+import {
+  aggregateBetaHealth,
+  BETA_TASK_STATUS_QUERY,
+  BetaOperabilityRepository,
+  normalizeTaskStatus
+} from "../src/beta-operability";
 
 const window = {
   from: "2026-09-09T00:00:00.000Z",
@@ -8,6 +13,18 @@ const window = {
 };
 
 describe("beta operability aggregation", () => {
+  it("groups the effective task status in a CTE so PostgreSQL accepts cleanup precedence", async () => {
+    const query = vi.fn().mockResolvedValue({ rows: [] });
+    const repository = new BetaOperabilityRepository({ query } as never);
+
+    await repository.report({ hours: 24, now: new Date("2026-09-10T00:00:00.000Z") });
+
+    expect(BETA_TASK_STATUS_QUERY).toContain("WITH effective_tasks AS");
+    expect(BETA_TASK_STATUS_QUERY).toContain("GROUP BY platform, effective_status");
+    expect(BETA_TASK_STATUS_QUERY).not.toContain("GROUP BY platform, status");
+    expect(query).toHaveBeenCalledWith(BETA_TASK_STATUS_QUERY, expect.any(Array));
+  });
+
   it("preserves a terminal result or error after cleanup marks the task expired", () => {
     expect(normalizeTaskStatus("expired", true, false)).toBe("succeeded");
     expect(normalizeTaskStatus("expired", false, true)).toBe("failed");
