@@ -153,6 +153,11 @@ verify_worker_runtime_config() {
     ENABLE_9XBUDDY_PROVIDER \
     NINE_X_BUDDY_AUTOMATION_USE_APPROVED \
     NINE_X_BUDDY_DELIVERY_AUDIT_APPROVED)"
+  getxhamster_enabled="$(verify_provider_gate_triplet \
+    "GetXHamster" \
+    ENABLE_GETXHAMSTER_PROVIDER \
+    GETXHAMSTER_AUTOMATION_USE_APPROVED \
+    GETXHAMSTER_DELIVERY_AUDIT_APPROVED)"
   expected_socialdownloader_platforms="$(release_value SOCIALDOWNLOADER_APPROVED_PLATFORMS "facebook")"
   expected_socialdownloader_verified="$(release_value SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS "facebook")"
   for platform_key in SOCIALDOWNLOADER_APPROVED_PLATFORMS SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS; do
@@ -189,7 +194,19 @@ verify_worker_runtime_config() {
       return 78
     fi
   done
-  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled"
+  expected_getxhamster_platforms="$(release_value GETXHAMSTER_APPROVED_PLATFORMS "xhamster")"
+  expected_getxhamster_verified="$(release_value GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS "xhamster")"
+  for platform_key in GETXHAMSTER_APPROVED_PLATFORMS GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS; do
+    expected_platforms="$expected_getxhamster_platforms"
+    [ "$platform_key" = GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS ] && expected_platforms="$expected_getxhamster_verified"
+    actual_platforms="$(printf '%s\n' "$env_dump" | awk -F= -v key="$platform_key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+    [ -n "$actual_platforms" ] || actual_platforms="xhamster"
+    if [ "$actual_platforms" != "$expected_platforms" ]; then
+      echo "Worker GetXHamster platform binding mismatch for $platform_key." >&2
+      return 78
+    fi
+  done
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled"
 }
 
 validate_public_web_origin() {

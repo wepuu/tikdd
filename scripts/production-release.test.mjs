@@ -78,6 +78,11 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/NINE_X_BUDDY_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/NINE_X_BUDDY_APPROVED_PLATFORMS/);
     expect(releaseScript).toMatch(/NINE_X_BUDDY_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/ENABLE_GETXHAMSTER_PROVIDER/);
+    expect(releaseScript).toMatch(/GETXHAMSTER_AUTOMATION_USE_APPROVED/);
+    expect(releaseScript).toMatch(/GETXHAMSTER_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/GETXHAMSTER_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

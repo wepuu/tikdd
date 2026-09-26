@@ -304,6 +304,15 @@ export const NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY = DeliveryHostPolicySche
   browserHandoff: "navigate"
 });
 
+export const GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "getxhamster-xhamster-media-v1",
+  providerId: "getxhamster",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["xhcdn.com", "ahcdn.com"],
+  browserHandoff: "cors-download"
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -322,7 +331,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [PINTEREST_VIDEODOWNLOADER_PINTEREST_MEDIA_HOST_POLICY.id, PINTEREST_VIDEODOWNLOADER_PINTEREST_MEDIA_HOST_POLICY],
   [VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY.id, VIDDOWN_NET_VIMEO_MEDIA_HOST_POLICY],
   [LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY.id, LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY],
-  [NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY.id, NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY]
+  [NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY.id, NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY],
+  [GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY.id, GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

@@ -1,0 +1,47 @@
+{
+  "title": "Fixture xHamster video",
+  "width": 1280,
+  "height": 720,
+  "duration": 42,
+  "media": [
+    {
+      "height": 720,
+      "quality": "720p",
+      "sizeLabel": "12.0 MB",
+      "url": "https://video7.xhcdn.com/fixture/720.mp4?token=fixture-720",
+      "proxy": "/f?token=fixture-720",
+      "filename": "fixture-720.mp4"
+    },
+    {
+      "height": 480,
+      "quality": "480p",
+      "sizeLabel": "8.0 MB",
+      "url": "https://video7.xhcdn.com/fixture/480.mp4?token=fixture-480",
+      "proxy": "/f?token=fixture-480",
+      "filename": "fixture-480.mp4"
+    },
+    {
+      "height": 240,
+      "quality": "240p",
+      "url": "https://video7.xhcdn.com/fixture/240.mp4?token=fixture-240",
+      "proxy": "/f?token=fixture-240",
+      "filename": "fixture-240.mp4"
+    },
+    {
+      "height": 144,
+      "quality": "144p",
+      "sizeLabel": "3.0 MB",
+      "url": "https://video7.xhcdn.com/fixture/144.mp4?token=fixture-144",
+      "proxy": "/f?token=fixture-144",
+      "filename": "fixture-144.mp4"
+    }
+  ],
+  "streams": [
+    {
+      "height": 1080,
+      "quality": "1080p",
+      "playlist": "https://video7.xhcdn.com/fixture/stream.m3u8",
+      "filename": "fixture-1080.mp4"
+    }
+  ]
+}

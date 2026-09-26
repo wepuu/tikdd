@@ -31,6 +31,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "9xbuddy") {
     return false;
   }
+  if (input.providerId === "getxhamster") {
+    return false;
+  }
   return true;
 }
 

@@ -1282,6 +1282,25 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     failureFixtureCount: 1,
     technicalState: "resolved",
     evidenceState: "evaluating"
+  },
+  {
+    id: "getxhamster",
+    displayName: "GetXHamster",
+    platforms: ["xhamster"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "redirect",
+    deliveryVerified: false,
+    successFixtureCount: 1,
+    failureFixtureCount: 4,
+    technicalState: "resolved",
+    evidenceState: "evaluating"
   }
 ] as const;
 

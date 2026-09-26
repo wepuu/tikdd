@@ -6,6 +6,7 @@ import { loadPinterestVideoDownloaderActivationConfiguration } from "../src/pint
 import { loadVidDownActivationConfiguration } from "../src/viddown-activation";
 import { loadLocoLoaderActivationConfiguration } from "../src/locoloader-activation";
 import { loadNineXBuddyActivationConfiguration } from "../src/nine-x-buddy-activation";
+import { loadGetXHamsterActivationConfiguration } from "../src/getxhamster-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -171,5 +172,35 @@ describe("Work Item 100 9xBuddy xHamster activation", () => {
     expect(() => loadNineXBuddyActivationConfiguration({
       NINE_X_BUDDY_DELIVERY_VERIFIED_PLATFORMS: "dailymotion"
     })).toThrow(/may only contain xhamster/);
+  });
+});
+
+describe("Work Item 105 GetXHamster xHamster activation", () => {
+  it("is disabled by default and requires both approvals", () => {
+    expect(loadGetXHamsterActivationConfiguration({})).toEqual({
+      enabled: false,
+      automationUseApproved: false,
+      deliveryAuditApproved: false,
+      approvedPlatforms: ["xhamster"],
+      deliveryVerifiedPlatforms: ["xhamster"],
+      maxConcurrency: 1,
+      minIntervalMs: 2_000
+    });
+    expect(() => loadGetXHamsterActivationConfiguration({ ENABLE_GETXHAMSTER_PROVIDER: "true" }))
+      .toThrow(/GETXHAMSTER_AUTOMATION_USE_APPROVED/);
+    expect(() => loadGetXHamsterActivationConfiguration({
+      ENABLE_GETXHAMSTER_PROVIDER: "true",
+      GETXHAMSTER_AUTOMATION_USE_APPROVED: "true"
+    })).toThrow(/GETXHAMSTER_DELIVERY_AUDIT_APPROVED/);
+    expect(loadGetXHamsterActivationConfiguration({
+      ENABLE_GETXHAMSTER_PROVIDER: "true",
+      GETXHAMSTER_AUTOMATION_USE_APPROVED: "true",
+      GETXHAMSTER_DELIVERY_AUDIT_APPROVED: "true",
+      GETXHAMSTER_MAX_CONCURRENCY: "1",
+      GETXHAMSTER_MIN_INTERVAL_MS: "2000"
+    }).enabled).toBe(true);
+    expect(() => loadGetXHamsterActivationConfiguration({
+      GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS: "tiktok"
+    })).toThrow(/contains unsupported platform/i);
   });
 });
