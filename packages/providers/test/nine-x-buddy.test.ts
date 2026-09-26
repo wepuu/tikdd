@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   NineXBuddyProvider,
@@ -14,6 +15,11 @@ const input: ResolveInput = {
   canonicalUrl: "https://xhamster.com/videos/fixture-video",
   platform: "xhamster"
 };
+
+const emptyFormatsFixture = readFileSync(
+  new URL("./fixtures/nine-x-buddy-empty-formats.json", import.meta.url),
+  "utf8"
+);
 
 const bootstrapHtml = `<html><head><link href="/build/main.9b0c5d2fd8241a25652e.css"></head><body><script src="/challenge-platform.js"></script><script>window.__INIT__ = ${JSON.stringify({
   apiBase: "https://ab.9xbud.com",
@@ -51,6 +57,7 @@ describe("9xBuddy xHamster adapter", () => {
       approvedPlatforms: ["xhamster"],
       deliveryVerifiedPlatforms: ["xhamster"],
       pollIntervalMs: 0,
+      extractRetryDelayMs: 0,
       diagnosticSink: (event) => diagnostics.push(event),
       fetchImpl: async (url, init) => {
         const requestUrl = typeof url === "string" || url instanceof URL ? new URL(url) : new URL(url.url);
@@ -94,6 +101,7 @@ describe("9xBuddy xHamster adapter", () => {
     expect(JSON.stringify(resolution.candidates)).toContain("ab.9xbud.com");
     expect(diagnostics[0]).toMatchObject({
       phase: "completed",
+      extractAttempts: 1,
       contentType: "application/json",
       bootstrapPresent: true,
       challengeMarker: "embedded"
@@ -124,6 +132,53 @@ describe("9xBuddy xHamster adapter", () => {
       token: "token",
       formats: [{ ext: "mp4", quality: "720", url: "not-hex" }]
     } }), "9b0c5d2fd8241a25652e")).toThrow(/descriptor|MP4/i);
+  });
+
+  it("classifies an empty success envelope as transient instead of unsupported content", () => {
+    expect(() => parseNineXBuddyResponse(emptyFormatsFixture, "9b0c5d2fd8241a25652e")).toThrow(expect.objectContaining({
+      failureCode: "provider_unavailable",
+      retryable: true,
+      fallbackAllowed: true
+    }));
+  });
+
+  it("retries one transient empty extract response inside the same bounded execution", async () => {
+    const cssHash = "9b0c5d2fd8241a25652e";
+    const responseToken = "response-token-fixture";
+    const descriptor = encodeDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
+    let extractCalls = 0;
+    const diagnostics: NineXBuddyDiagnosticEvent[] = [];
+    const provider = new NineXBuddyProvider({
+      enabled: true,
+      pollIntervalMs: 0,
+      extractRetryDelayMs: 0,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async (url, init) => {
+        const path = new URL(typeof url === "string" || url instanceof URL ? url : url.url).pathname;
+        if (path === "/") return new Response(bootstrapHtml, { status: 200, headers: { "content-type": "text/html" } });
+        if (path === "/token") return jsonResponse({ status: true, access_token: "access-token-fixture" }, url.toString());
+        if (path === "/extract") {
+          extractCalls += 1;
+          return extractCalls === 1
+            ? jsonResponse({ status: "1", response: { token: responseToken, formats: [] } }, url.toString())
+            : jsonResponse({ status: "1", response: {
+                token: responseToken,
+                formats: [{ ext: "mp4", quality: "720", url: descriptor }]
+              } }, url.toString());
+        }
+        if (path === "/download") return jsonResponse({ status: true, uid: "prepared-uid" }, url.toString());
+        if (path === "/progress") return jsonResponse({ status: true, response: { url: "https://ab.9xbud.com/download/fixture.mp4" } }, url.toString());
+        throw new Error(`Unexpected endpoint ${path}: ${String(init?.method)}`);
+      }
+    });
+
+    await expect(provider.resolve(input)).resolves.toMatchObject({ result: { provenance: { provider: "9xbuddy" } } });
+    expect(extractCalls).toBe(2);
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "success",
+      extractAttempts: 2,
+      formatCount: 1
+    })]);
   });
 
   it("does not spend the fallback route on private or invalid content", () => {
