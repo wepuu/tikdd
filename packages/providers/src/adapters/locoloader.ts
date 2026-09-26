@@ -164,7 +164,7 @@ export class LocoLoaderProvider implements ResolverProvider {
     const requestBody = new URLSearchParams({ url: input.canonicalUrl, key: createLocoLoaderKey(input.canonicalUrl, this.now()) });
     const permit = this.requestBudget ? await this.requestBudget.acquire() : null;
     if (this.requestBudget && !permit) {
-      throw new ProviderError("LocoLoader extraction capacity is temporarily exhausted.", "provider_rate_limited", false, true);
+      throw new ProviderError("LocoLoader extraction capacity is temporarily exhausted.", "provider_rate_limited", true, true);
     }
     try {
       const response = await requestText(this.fetchImpl, endpoint, {

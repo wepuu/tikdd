@@ -10,10 +10,11 @@ const unavailableCodes = new Set([
   "UNSUPPORTED_URL"
 ]);
 
-export type PublicFailureIntent = "retryable" | "unavailable" | "expired";
+export type PublicFailureIntent = "retryable" | "rate_limited" | "unavailable" | "expired";
 
 export interface PublicFailureCopy {
   retryableDescription: string;
+  providerRateLimitedDescription: string;
   unavailableDescription: string;
   expiredDescription: string;
   resolveError: string;
@@ -27,6 +28,7 @@ export function publicFailureIntent(
   const taskError = task?.status === "failed" ? task.error : null;
   const error = taskError ?? admissionError;
   if (!error) return null;
+  if (error.code === "PROVIDER_RATE_LIMITED") return "rate_limited";
   if (error.retryable) return "retryable";
   return unavailableCodes.has(error.code) ? "unavailable" : "unavailable";
 }
@@ -36,6 +38,7 @@ export function publicFailureDescription(
   copy: PublicFailureCopy
 ): string {
   if (intent === "retryable") return copy.retryableDescription;
+  if (intent === "rate_limited") return copy.providerRateLimitedDescription;
   if (intent === "expired") return copy.expiredDescription;
   if (intent === "unavailable") return copy.unavailableDescription;
   return copy.resolveError;

@@ -87,7 +87,11 @@ describe("LocoLoader xHamster adapter", () => {
     now += 1_000;
     await provider.resolve(input);
     now += 1_000;
-    await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_rate_limited" });
+    await expect(provider.resolve(input)).rejects.toMatchObject({
+      failureCode: "provider_rate_limited",
+      retryable: true,
+      fallbackAllowed: true
+    });
     expect(posts).toBe(2);
   });
 

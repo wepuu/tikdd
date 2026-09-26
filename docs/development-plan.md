@@ -1802,3 +1802,17 @@ transient Provider failure, retries only `/extract` once inside the existing bou
 and preserves the `9xbuddy -> locoloader` sequential route. Explicit content errors remain
 terminal, queue replay stays disabled, and no Delivery or public contract boundary changes. See
 [Work Item 103](work-item-103-9xbuddy-empty-extract-recovery.md).
+
+### Work Item 104 — 9xBuddy dynamic descriptor repair
+
+Work Item 104 restores the xHamster primary route after 9xBuddy changed the descriptor envelope to
+hex-encoded reversed Base64 ciphertext. TikDD now recognizes that current encoding before applying
+the unchanged bootstrap-derived cipher key and retains the earlier binary-reversal envelope as a
+bounded compatibility path. Only a transient empty formats array receives one in-execution retry;
+deterministic token, MP4, encoding, decrypt, and path failures do not repeat upstream work.
+
+The same item corrects exhausted LocoLoader shared capacity to remain retryable and presents a
+provider-capacity message instead of an unsupported-content message. Provider priority, the exact
+9xBuddy artifact host, one-time Delivery redirects, queue replay, public contracts, persistence, and
+SEO status remain unchanged. See [Work Item 104](work-item-104-9xbuddy-descriptor-repair.md) and
+[ADR-0046](architecture/adr/0046-9xbuddy-xhamster-provider-artifact.md).
