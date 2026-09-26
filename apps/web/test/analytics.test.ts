@@ -24,6 +24,7 @@ describe("privacy-bounded Web analytics", () => {
     vi.stubGlobal("window", { gtag });
     expect(trackWebEvent("resolve_failed", { platform: "instagram", locale: "zh-CN", page_type: "platform", failure_class: "rate_limited" })).toBe(true);
     expect(trackWebEvent("resolve_submit", { platform: "tiktok", locale: "en", page_type: "platform" })).toBe(true);
+    expect(trackWebEvent("resolve_submit", { platform: "vimeo", locale: "ja", page_type: "platform" })).toBe(true);
     expect(analyticsFailureClass("PROVIDER_TIMEOUT", true)).toBe("retryable");
     expect(analyticsFailureClass("RATE_LIMITED", false)).toBe("rate_limited");
     expect(analyticsFailureClass("RESOLUTION_EXPIRED", false)).toBe("expired");

@@ -23,6 +23,7 @@ import {
   DLPandaProvider,
   PinterestVideoDownloaderProvider,
   FDownIsuruProvider,
+  GetXHamsterProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
@@ -83,7 +84,8 @@ const providerAdapters = [
     })
   }),
   new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }),
-  new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" })
+  new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" }),
+  new GetXHamsterProvider({ enabled: process.env.ENABLE_GETXHAMSTER_PROVIDER === "true" })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();
@@ -170,7 +172,7 @@ const contentManagement = new AdminContentManagementService({
   platforms: listPlatformDefinitions(),
   writes: new AdminContentManagementRepository(pool),
   publication: new AdminContentPublicationRepository(pool),
-  seoEligibility: async()=>{const routes=await reads.listRoutes();return listPlatformDefinitions().filter(platform=>platform.status==="stable"&&routes.routes.some(route=>route.tuple.platform===platform.id&&route.tuple.region===configuration.region&&route.manifestEnabled&&route.allocationBps>0&&!["open","paused","unavailable","stale"].includes(route.state))).map(platform=>platform.id);},
+  seoEligibility: async()=>{const routes=await reads.listRoutes();return listPlatformDefinitions().filter(platform=>["stable","experimental"].includes(platform.status)&&routes.routes.some(route=>route.tuple.platform===platform.id&&route.tuple.region===configuration.region&&route.manifestEnabled&&route.productionEligible&&route.allocationBps>0&&!["open","paused","unavailable","stale"].includes(route.state))).map(platform=>platform.id);},
   revalidator: (paths,snapshotId) => webContentRevalidator.revalidate(paths,snapshotId)
   ,runtime:()=>reads.getRuntime()
   ,settings:{edge:configuration.edge,secretPresence:{originProof:Boolean(configuration.auth.originProof),csrfSigning:configuration.csrfSecret.length>=32,commandSigning:configuration.commandSecret.length>=32,webRevalidation:Boolean(configuration.webContent.revalidationSecret&&configuration.webContent.revalidationSecret.length>=32)}}

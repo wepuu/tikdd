@@ -38,21 +38,29 @@ describe("published page metadata", () => {
     });
   });
 
-  it("keeps the noindex Instagram review page out of hreflang", () => {
+  it("publishes the Instagram Beta page with all reciprocal hreflang variants", () => {
     const page = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(
       (candidate) => candidate.pageId === "page_instagram" && candidate.locale === "en"
     );
     expect(page).toBeDefined();
-    expect(page?.seo.indexable).toBe(false);
-    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toEqual({});
+    expect(page?.seo.indexable).toBe(true);
+    expect(Object.keys(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!))).toHaveLength(10);
+    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toMatchObject({
+      en: "/en/instagram-downloader", es: "/es/instagram-downloader", ja: "/ja/instagram-downloader",
+      "x-default": "/en/instagram-downloader"
+    });
   });
 
-  it("keeps the xHamster Beta page noindex and out of hreflang", () => {
+  it("publishes the dedicated xHamster Beta page without adding it to homepage copy", () => {
     const page = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find(
       (candidate) => candidate.pageId === "page_xhamster" && candidate.locale === "en"
     );
-    expect(page?.seo.indexable).toBe(false);
-    expect(page?.seo.includeInSitemap).toBe(false);
-    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toEqual({});
+    expect(page?.seo.indexable).toBe(true);
+    expect(page?.seo.includeInSitemap).toBe(true);
+    expect(alternatesForPage(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, page!)).toMatchObject({
+      en: "/en/xhamster-downloader", ja: "/ja/xhamster-downloader", "x-default": "/en/xhamster-downloader"
+    });
+    const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((candidate) => candidate.pageId === "page_home" && candidate.locale === "en");
+    expect(JSON.stringify(homepage?.content)).not.toContain("xHamster");
   });
 });

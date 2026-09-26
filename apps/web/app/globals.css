@@ -85,18 +85,20 @@ nav a:hover, nav a.is-active { color: var(--blue-dark); }
 nav a.is-active::after { content: ""; height: 2px; position: absolute; left: 0; right: 0; bottom: 0; background: var(--blue); border-radius: 999px; }
 .header-actions { justify-self: end; display: flex; align-items: center; gap: 12px; }
 .language-switch {
+  position: relative;
   min-height: 44px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid var(--line);
   border-radius: 12px;
 }
-.language-switch a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 0.72rem; text-decoration: none; }
+.language-switch summary { min-width: 96px; min-height: 42px; padding: 0 14px; display: flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 0.72rem; font-weight: 680; cursor: pointer; list-style: none; }
+.language-switch summary::-webkit-details-marker { display: none; }
+.language-switch summary::after { content: "▾"; margin-left: 8px; color: var(--blue); }
+.language-switch[open] summary::after { transform: rotate(180deg); }
+.language-switch > div { width: 184px; max-height: min(70vh, 420px); padding: 6px; position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; display: grid; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 45px rgba(36, 58, 110, 0.16); }
+.language-switch a { min-height: 40px; padding: 0 10px; display: flex; align-items: center; color: var(--ink-soft); border-radius: 8px; font-size: 0.72rem; text-decoration: none; }
+.language-switch a:hover { color: var(--blue-dark); background: #f2f6ff; }
 .language-switch a.is-active { color: var(--ink); font-weight: 720; }
-.language-switch > span { width: 1px; height: 15px; background: var(--line-strong); }
 .header-cta {
   min-width: 108px;
   min-height: 44px;

@@ -1,6 +1,7 @@
 import {
   PublishedContentSnapshotSchema,
   STARTER_LOCALES,
+  STARTER_LOCALE_DEFINITIONS,
   starterPages,
   starterSharedContent,
   type PublishedContentSnapshot
@@ -17,15 +18,12 @@ export const BUNDLED_PUBLIC_CONTENT_SNAPSHOT: PublishedContentSnapshot = Publish
   revision: 1,
   previousSnapshotId: null,
   contentHash: "0".repeat(64),
-  locales: [
-    { locale: "en", displayName: "English", direction: "ltr", fallbackLocale: null, isDefault: true },
-    { locale: "zh-CN", displayName: "简体中文", direction: "ltr", fallbackLocale: "en", isDefault: false }
-  ],
+  locales: STARTER_LOCALES.map((locale) => ({ locale, ...STARTER_LOCALE_DEFINITIONS[locale] })),
   pages: STARTER_LOCALES.flatMap((locale) => starterPages(locale).map(({ pageId, pageType, platform, content, seo }) => ({ pageId, locale, pageType, platform, content, seo }))),
   sharedContent: STARTER_LOCALES.map((locale) => {
     const { siteIntegrations: _siteIntegrations, ...localized } = starterSharedContent(locale);
     return { locale, ...localized };
   }),
   siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null },
-  generatedAt: "2026-08-12T00:00:00.000Z"
+  generatedAt: "2026-09-26T00:00:00.000Z"
 });

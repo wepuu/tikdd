@@ -6,7 +6,8 @@ It never calls Admin API and never reads drafts or editorial heads.
 Set `PUBLIC_CONTENT_DATABASE_URL` to a PostgreSQL identity with read-only access to
 `admin_published_snapshot_heads` and `admin_published_snapshots`. `PUBLIC_CONTENT_DEPLOYMENT_ID`
 selects the exact deployment. During an outage the process retains the last known-good snapshot;
-a bundled reviewed English/Chinese seed protects cold startup.
+a bundled reviewed nine-locale seed protects cold startup. Canonical URLs, reciprocal hreflang,
+and sitemap membership are derived only from the immutable snapshot's index flags.
 
 Admin publication acknowledgement uses `PUBLIC_CONTENT_REVALIDATION_SECRET` on both Web and Admin
 API. The internal endpoint accepts only current HMAC-signed commands containing a named snapshot

@@ -22,7 +22,7 @@ describe("Admin platform management",()=>{
   it("projects code-owned hosts and extractor keys as read-only readiness facts",async()=>{
     const {instance}=setup();const view=await instance.getView("x","nl");
     expect(view.catalog).toMatchObject({status:"experimental",recognizedHosts:[{hostname:"x.com"}],extractorKeys:["twitter"]});
-    expect(view.readiness.blockers).toContain("catalog_not_stable");
+    expect(view.readiness.blockers).not.toContain("catalog_not_stable");
     expect(view.readiness.indexableEligible).toBe(false);
   });
   it("saves a preview draft but rejects arbitrary page associations",async()=>{

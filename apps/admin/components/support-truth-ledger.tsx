@@ -8,7 +8,6 @@ const availabilityLabels = { listed: "已公开", preview: "预览", hidden: "�
 const driftLabels: Record<SupportTruthDrift, string> = {
   catalog_route_mismatch: "目录仍未开放",
   public_page_missing: "公开页未发布",
-  beta_in_sitemap: "Beta 误入 Sitemap",
   route_not_listed: "路由已开但未公开",
   listed_without_route: "已公开但无运行路由",
   public_copy_missing: "首页未声明支持"
@@ -47,7 +46,7 @@ export function SupportTruthLedger({ snapshot, plans }: { snapshot: AdminConsole
         <td><strong>{count(row.tasks)}</strong><small>成功率 {rate(row.taskSuccessRateBps)} · 尝试 {count(row.attempts)}</small></td>
         <td><strong>{count(row.handoffs)}</strong><small>浏览器交接，不代表文件已保存</small></td>
         <td><strong>{row.pageId ?? "无代码页面"}</strong><small>{count(row.publishedLocaleCount)}/{count(row.pageLocaleCount)} 个语言已发布</small></td>
-        <td><strong>{row.catalogStatus === "stable" ? `${count(row.indexableLocaleCount)} 个语言可索引` : "Beta · noindex"}</strong><small>Sitemap {count(row.sitemapLocaleCount)}</small></td>
+        <td><strong>{count(row.indexableLocaleCount)} 个语言可索引</strong><small>{catalogLabels[row.catalogStatus]} · Sitemap {count(row.sitemapLocaleCount)}</small></td>
         <td>{row.drifts.length ? <div className="support-drift-list">{row.drifts.map((drift) => <span key={drift}>{driftLabels[drift]}</span>)}</div> : <span className="support-row-clear"><CheckCircle size={14} weight="fill" />已对齐</span>}</td>
       </tr>)}</tbody>
     </table></div>

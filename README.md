@@ -1,13 +1,15 @@
 # TikDD
 
-TikDD is a multilingual, provider-agnostic public media resolver. A user submits a recognized public
+TikDD is a nine-locale, provider-agnostic public media downloader. A user submits a recognized public
 page URL, the control plane creates an asynchronous task, and a worker routes through eligible
 providers in priority order until one returns valid normalized metadata and formats. A separate
 delivery service turns reviewed internal candidates into controlled browser delivery.
 
 The local scaffold uses a development-only mock provider. The reviewed NL production routes cover
-X, Instagram, TikTok, Facebook, Vimeo, and Pinterest. TikTok is stable; the other five platform
-families remain Beta. Multi-provider routes stay sequential and bounded, and all real adapters
+X, Instagram, TikTok, Facebook, Vimeo, Pinterest, and xHamster. TikTok is stable; other platform
+families keep their honest Beta labels. Search publication is route-qualified rather than status-only:
+only a delivery-verified, allocated, operational route with complete reviewed locale content can
+publish an indexable downloader page. Multi-provider routes stay sequential and bounded, and all real adapters
 remain behind deployment enablement, approval, rollout, region, health, and delivery gates.
 Candidate URLs stay encrypted server-side and opaque one-use tickets redirect only to reviewed
 media hosts. The browser follows the redirect and downloads media directly from the reviewed host,
@@ -156,10 +158,10 @@ URL is submitted. Both capabilities are therefore `canary_failed`; neither propo
 is active in production. See the [Work Item 51 record](docs/work-item-51-free-provider-fallback-batch.md)
 and [Work Item 52 record](docs/work-item-52-free-provider-delivery-qualification.md).
 
-Stage 4 / Work Item 38 adds a code-owned bilingual starter content set and a guarded Admin
-first-run bootstrap. It is merged and deployed from `main@8f6eb9b`; the action creates only `ready`
-drafts before the first immutable snapshot, while the owner still reviews and publishes through the
-existing `full` maintenance mode. Stage 5 / Work Item 39 is complete: the first immutable snapshot
+Stage 4 / Work Item 38 originally added a bilingual first-run content bootstrap. Work Item 108
+supersedes that one-time limit with an explicit versioned nine-locale content-pack action; it still
+creates only `ready` drafts, while the owner reviews and publishes through the existing `full`
+maintenance mode. Stage 5 / Work Item 39 is complete: the first immutable snapshot
 was published at `r1`, acknowledged by Web, and Admin was returned to `readonly` and stopped. Web
 fallback and Admin bootstrap share the same contracts, with no Provider or rollout change. Stage 6 /
 Work Item 40 now hardens the publication control room and release-script Admin lifecycle as one
@@ -329,10 +331,11 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of the stable TikTok route plus bounded X, Instagram,
-  Facebook, Vimeo, and Pinterest Betas. The production order is SSSTwitter → SocialDownloader for
+  Facebook, Vimeo, Pinterest, and xHamster Betas. The production order includes SSSTwitter → SocialDownloader for
   X, SaveFromIns for Instagram, SnapTik Monster → TikCD for TikTok, FDown Isuru → SocialDownloader
-  for Facebook, VidDown for Vimeo, and Pinterest Video Downloader for Pinterest. Only TikTok is
-  promoted into the sitemap; all Beta pages remain noindex. Calibration remains stopped and Admin
+  for Facebook, VidDown for Vimeo, Pinterest Video Downloader for Pinterest, and GetXHamster for
+  xHamster. Platform pages enter the sitemap only after production-route, delivery, content, and
+  reviewed GEO gates pass; Beta status remains visible and is not itself a noindex rule. Calibration remains stopped and Admin
   remains the always-available owner control plane.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.

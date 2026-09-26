@@ -120,7 +120,7 @@ export const AdminSharedContentDraftCommandSchema = CommandBaseSchema.extend({
   if (command.confirmation !== command.locale) context.addIssue({ code: "custom", message: "Shared-content confirmation must match the exact locale.", path: ["confirmation"] });
 });
 
-/** Read-only readiness for the one-time code-owned content bootstrap. */
+/** Read-only readiness for the reviewed, versioned code-owned content pack. */
 export const AdminStarterContentPreviewSchema = z.strictObject({
   schemaVersion: AdminSchemaVersionSchema,
   generatedAt: z.iso.datetime({ offset: true }),

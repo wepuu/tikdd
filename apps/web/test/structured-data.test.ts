@@ -24,14 +24,15 @@ describe("published structured data", () => {
     expect(JSON.stringify(faq)).toContain("Which links can I use?");
   });
 
-  it("keeps experimental noindex Instagram pages free of structured data", () => {
+  it("builds structured data for a route-qualified Instagram Beta page", () => {
     const document = buildStructuredData({
       page: instagram,
       copy: copyForPage(instagram),
       siteName: "TikDD",
       siteUrl: "https://www.tikdd.cc"
     });
-    expect(document).toBeNull();
+    expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
+    expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/instagram-downloader");
   });
 
   it("builds structured data for the stable TikTok landing page", () => {

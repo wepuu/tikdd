@@ -15,7 +15,7 @@ export const WEB_ANALYTICS_EVENTS = [
 
 export type WebAnalyticsEvent = (typeof WEB_ANALYTICS_EVENTS)[number];
 export type WebAnalyticsPlatform = Platform;
-export type WebAnalyticsLocale = "en" | "zh-CN";
+export type WebAnalyticsLocale = "en" | "zh-CN" | "es" | "fr" | "de" | "it" | "tr" | "pl" | "ja";
 export type WebAnalyticsPageType = "homepage" | "platform";
 export type WebAnalyticsFailureClass = "retryable" | "unavailable" | "rate_limited" | "expired";
 
@@ -39,7 +39,7 @@ function isCommonParameters(value: unknown): value is CommonParameters {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   const platformValid = typeof candidate.platform === "string" && analyticsPlatforms.has(candidate.platform);
-  const localeValid = candidate.locale === "en" || candidate.locale === "zh-CN";
+  const localeValid = ["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"].includes(String(candidate.locale));
   const pageTypeValid = candidate.page_type === "homepage" || candidate.page_type === "platform";
   return platformValid && localeValid && pageTypeValid;
 }

@@ -1,10 +1,10 @@
 import type { PublishedContentSnapshot } from "@tikdd/admin-contracts";
-import { getCopy, type Locale, type SiteCopy } from "./copy";
+import { getCopy, isLocale, type SiteCopy } from "./copy";
 
 type PublishedPage = PublishedContentSnapshot["pages"][number];
 
 export function copyForPage(page: PublishedPage): SiteCopy {
-  const base = structuredClone(getCopy((page.locale === "zh-CN" ? "zh-CN" : "en") as Locale));
+  const base = structuredClone(getCopy(isLocale(page.locale) ? page.locale : "en"));
   if (page.content.template !== "homepage") return base;
   // The public Beta copy is release-owned while Admin remains off. This also prevents a
   // previously published homepage snapshot from restoring the removed submission gate.

@@ -28,6 +28,7 @@ import {
   ,starterPageRecords
   ,starterSharedRecords
   ,STARTER_LOCALES
+  ,STARTER_LOCALE_DEFINITIONS
   ,type AdminPageRevision
   ,type AdminSharedContent
   ,type StarterPageRecord
@@ -107,12 +108,12 @@ export class AdminContentManagementService {
       else if(current.state==="ready"||current.state==="published")readySharedCount++;
       else pendingSharedCount++;
     }
-    const uniqueConflicts=[...new Set(conflicts)].sort();
-    const blockReason=latest?"published_snapshot_exists":missingLocales.length>0?"missing_locale":unsupportedPageDefinition?"unsupported_page_definition":uniqueConflicts.length>0?"content_conflict":null;
-    const eligible=!latest&&missingLocales.length===0&&uniqueConflicts.length===0;
+    const uniqueConflicts=[...new Set(conflicts)].sort().slice(0,100);
+    const blockReason=unsupportedPageDefinition?"unsupported_page_definition":null;
+    const eligible=!unsupportedPageDefinition;
     const complete=readyPageCount===records.length&&readySharedCount===starterSharedRecords().length;
     const anyExisting=existingPageCount>0||existingSharedCount>0;
-    const state=latest?"published":!eligible?"blocked":complete?"ready":anyExisting?"partial":"empty";
+    const state=!eligible?"blocked":complete?"ready":anyExisting||latest?"partial":"empty";
     return AdminStarterContentPreviewSchema.parse({schemaVersion:"1",generatedAt:this.now().toISOString(),state,eligible,expectedPageCount:records.length,expectedSharedCount:starterSharedRecords().length,existingPageCount,existingSharedCount,readyPageCount,readySharedCount,pendingPageCount,pendingSharedCount,missingLocales,conflicts:uniqueConflicts,blockReason});
   }
   async bootstrapStarterContent(raw:unknown,actor:string){
@@ -122,6 +123,12 @@ export class AdminContentManagementService {
     const view=await this.getView();
     const receipts=[];
     let createdPageCount=0;let createdSharedCount=0;let index=0;
+    for(const locale of STARTER_LOCALES){
+      if(view.locales.some((item)=>item.locale===locale))continue;
+      const definition=STARTER_LOCALE_DEFINITIONS[locale];
+      const commandValue=AdminLocaleDraftCommandSchema.parse({locale,displayName:definition.displayName,direction:definition.direction,fallbackLocale:definition.fallbackLocale,enabled:true,isDefault:definition.isDefault,state:"ready",expectedRevision:null,reason:command.reason,confirmation:locale,idempotencyKey:`${command.idempotencyKey}_l${index++}`});
+      receipts.push(AdminMutationReceiptSchema.parse(await this.options.writes.saveLocaleDraft(commandValue,this.identity(commandValue.idempotencyKey,commandValue,actor))));
+    }
     for(const record of starterPageRecords()){
       const current=view.pages.find((page)=>page.pageId===record.pageId&&page.locale===record.locale);
       if(current&&samePageContent(current,record)&&(current.state==="ready"||current.state==="published"))continue;

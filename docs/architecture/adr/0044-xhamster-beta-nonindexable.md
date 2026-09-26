@@ -1,5 +1,8 @@
 # ADR-0044: xHamster Beta page remains non-indexable
 
+> Superseded by ADR-0049 after GetXHamster production delivery and owner browser validation made
+> xHamster eligible for the shared route-qualified search boundary. The homepage exclusion remains.
+
 ## Decision
 
 TikDD may expose a directly reachable `/xhamster-downloader` page for honest Beta guidance,

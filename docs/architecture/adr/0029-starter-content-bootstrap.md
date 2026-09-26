@@ -1,5 +1,8 @@
 # ADR-0029: First-run code-owned content bootstrap
 
+> The first-run-only restriction is superseded by ADR-0049's explicit versioned content-pack
+> action. Immutable publication and preservation of Admin-owned integration settings remain.
+
 - Status: Accepted
 - Date: 2026-09-11
 - Scope: Work Item 38 first bilingual content snapshot

@@ -79,7 +79,7 @@ export class AdminPlatformManagementService {
     const associated = associatedPageId === null ? [] : published.filter(({ pageId }) => pageId === associatedPageId);
     const seoReady = associated.length > 0 && associated.every(({ seo }) => seo.indexable && seo.includeInSitemap);
     const blockers: AdminPlatformManagementView["readiness"]["blockers"] = [];
-    if (definition.status !== "stable") blockers.push("catalog_not_stable");
+    if (definition.status === "planned" || definition.status === "paused") blockers.push("catalog_not_stable");
     if (routeResult.failed || localeResult.failed || pageResult.failed) blockers.push("operational_data_unavailable");
     if (monitoredEligible.length === 0) blockers.push("no_monitored_eligible_route");
     if (associatedPageId === null) blockers.push("page_not_associated");

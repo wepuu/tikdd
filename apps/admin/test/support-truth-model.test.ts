@@ -50,6 +50,6 @@ describe("support truth ledger", () => {
       sitemapPaths: ["/en/x-downloader"],
       passports: [{ schemaVersion: "1", pageId: "page_x", locale: "en", canonicalPath: "/en/x-downloader", hreflang: [], search: { title: "TikDD X video downloader Beta", description: "A public Beta page that remains bounded for this model fixture." }, social: { title: "X", description: "X", imageAssetId: null }, sitemapEligible: true, indexableEligible: true, structuredDataTemplates: [], redirects: [], blockers: [] }]
     };
-    expect(derive(snapshot)[0]?.drifts).toContain("beta_in_sitemap");
+    expect(derive(snapshot)[0]?.drifts).not.toContain("beta_in_sitemap");
   });
 });
