@@ -15,7 +15,7 @@ const stepLabels: Record<AdminSupportStep["id"], { short: string; detail: string
 };
 
 const reasonLabels: Record<AdminSupportReasonCode, string> = {
-  catalog_not_stable: "平台尚未进入稳定生命周期",
+  catalog_not_stable: "平台尚未进入可公开生命周期",
   no_provider_capability: "没有声明该平台能力的 Provider",
   provider_disabled: "Provider 生产开关关闭",
   region_mismatch: "Provider 不支持当前区域",

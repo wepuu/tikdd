@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCopy } from "../lib/copy";
+import { getCopy, locales } from "../lib/copy";
 import { copyForPage } from "../lib/content-presentation";
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
@@ -16,6 +16,17 @@ describe("delivery handoff copy", () => {
     expect(chinese.deliveryHandedOff).toContain("浏览器");
     expect(english.deliveryHandedOff).not.toContain("new tab");
     expect(chinese.deliveryHandedOff).not.toContain("新标签页");
+  });
+
+  it("uses a localized Download intent for every public locale", () => {
+    expect(locales).toEqual(["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"]);
+    for (const locale of locales) {
+      expect(getCopy(locale).form.action).not.toBe("Resolve");
+      expect(getCopy(locale).form.action.length).toBeGreaterThan(1);
+    }
+    expect(getCopy("es").form.action).toBe("Descargar");
+    expect(getCopy("fr").form.action).toBe("Télécharger");
+    expect(getCopy("ja").form.action).toBe("ダウンロード");
   });
 
   it("does not expose provider or routing details in handoff copy", () => {

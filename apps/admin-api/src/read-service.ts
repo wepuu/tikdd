@@ -509,7 +509,7 @@ export class AdminReadService {
           healthyRouteCount,
           publicAvailability,
           contentCoverageBps,
-          seoReady: platform.status === "stable" && healthyRouteCount > 0 && contentCoverageBps === 10_000
+          seoReady: ["stable", "experimental"].includes(platform.status) && healthyRouteCount > 0 && contentCoverageBps === 10_000
         };
       })
     });
@@ -560,7 +560,7 @@ export class AdminReadService {
         displayName: presentation?.publicDisplayName ?? catalog.displayName,
         publicAvailability,
         contentCoverageBps,
-        seoReady: catalog.status === "stable" && healthyRouteCount > 0 && contentCoverageBps === 10_000
+        seoReady: ["stable", "experimental"].includes(catalog.status) && healthyRouteCount > 0 && contentCoverageBps === 10_000
       }] as const;
     }));
     const canaries = new Map((canaryResult.value ?? []).map((item) => [key(item.providerId, item.platform, item.region), item]));
@@ -626,7 +626,7 @@ export class AdminReadService {
       const reasonRows: AdminOperationalTruth["platforms"][number]["reasons"] = providers.flatMap((provider) =>
         provider.reasons.map((code) => ({ code, providerId: provider.tuple.providerId })));
       if (providers.length === 0) reasonRows.push({ code: "no_provider_capability" as const, providerId: null });
-      if (catalog.status !== "stable") reasonRows.push({ code: "catalog_not_stable" as const, providerId: null });
+      if (catalog.status === "planned" || catalog.status === "paused") reasonRows.push({ code: "catalog_not_stable" as const, providerId: null });
       if (!editorialUnavailable && (!row || row.publicAvailability !== "listed")) reasonRows.push({ code: "platform_not_listed" as const, providerId: null });
       if (!editorialUnavailable && (!row || row.contentCoverageBps < 10_000)) reasonRows.push({ code: "content_incomplete" as const, providerId: null });
       if (!editorialUnavailable && !row?.seoReady) reasonRows.push({ code: "seo_ineligible" as const, providerId: null });

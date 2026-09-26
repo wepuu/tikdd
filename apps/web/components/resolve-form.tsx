@@ -194,7 +194,7 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   const analyticsTaskRef = useRef<string | null>(null);
   const analyticsFailureRef = useRef<string | null>(null);
 
-  const analyticsLocale = locale === "zh-CN" ? "zh-CN" : "en";
+  const analyticsLocale = (["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"] as const).find((item) => item === locale) ?? "en";
   const analyticsPageType = pageType === "platform" ? "platform" : "homepage";
 
   const detectedPlatform = useMemo(() => {

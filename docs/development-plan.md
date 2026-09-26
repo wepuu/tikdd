@@ -198,8 +198,9 @@ Stage 3 / Work Item 37 is merged and deployed from `main@f25c516c8dbdefc90a4f1cc
 It groups bilingual X/Instagram Beta content, a read-only Admin growth-readiness view, and a fixed
 privacy-safe GA event catalog. It adds no Google reporting API, analytics database, Provider,
 rollout change, calibration profile, media delivery mode, or permanent Admin process. X and Instagram
-remain Beta/noindex and integration identifiers remain disabled until an owner publishes a validated
-snapshot. See the [Stage 3 record](stage-3-growth-content-measurement.md).
+were Beta/noindex at that release and integration identifiers remained disabled until an owner
+published a validated snapshot. Work Item 108 supersedes that historical indexing boundary. See the
+[Stage 3 record](stage-3-growth-content-measurement.md).
 
 ### Stage 4 current status
 
@@ -1731,11 +1732,12 @@ reviewed HTTPS `*.xhcdn.com` MP4 resources, and performs one bounded attempt bec
 upstream route is quota-limited. Delivery remains a normal one-time redirect and never exposes the
 upstream URL in public results.
 
-The bilingual xHamster page is directly reachable for Beta guidance, but the stable-only SEO rule
-is unchanged: it is noindex, outside the sitemap, and excluded from hreflang and structured-data
-index eligibility. Homepage, FAQ, and help copy do not promote it. Provider gates, rollout, and
-production traffic remain unchanged and disabled. See [Work Item 98](work-item-98-xhamster-locoloader.md)
-and [ADR-0044](architecture/adr/0044-xhamster-beta-nonindexable.md).
+At that release the bilingual xHamster page was directly reachable but noindex. Work Item 108 and
+ADR-0049 supersede that historical stable-only rule: the homepage still does not promote xHamster,
+while its dedicated localized page may be indexed only after the same production-route, delivery,
+content, and publication gates as every other Beta platform. See
+[Work Item 98](work-item-98-xhamster-locoloader.md), [ADR-0044](architecture/adr/0044-xhamster-beta-nonindexable.md),
+and [ADR-0049](architecture/adr/0049-route-qualified-multilingual-seo.md).
 
 ### Work Item 99 — LocoLoader low-quota multi-platform routing
 
@@ -1829,3 +1831,34 @@ fallback. Production gates and rollout stay disabled until CI, image verificatio
 distinct browser downloads complete. xHamster remains Experimental/Beta and is not added to stable
 SEO surfaces. See [Work Item 105](work-item-105-getxhamster-primary.md) and
 [ADR-0048](architecture/adr/0048-getxhamster-direct-cdn.md).
+
+### Work Item 107 — AnyLoader xHamster POC closeout
+
+Work Item 107 evaluated AnyLoader as a possible xHamster secondary route. The anonymous
+`/api/v1/proxy/fetch` endpoint could obtain an xHamster page and expose progressive MP4 and HLS
+candidates, but the progressive MP4 responses had no CORS or attachment disposition. The existing
+browser handoff therefore cannot save them automatically; HLS would require a new client-side
+playlist and segment assembly mode. The bounded POC was rejected at the browser-delivery gate.
+
+No AnyLoader adapter, host policy, gate, rollout rule, server media proxy, HLS stitcher, database
+migration, public contract, or production change was introduced. GetXHamster remains primary,
+9xBuddy remains disabled, and LocoLoader remains the existing fallback. See [Work Item 107](work-item-107-anyloader-xhamster-poc-closeout.md).
+
+### Work Item 108 — Multilingual SEO/GEO publication
+
+Work Item 108 expands the reviewed public content pack from two to nine locales: English,
+Simplified Chinese, Spanish, French, German, Italian, Turkish, Polish, and Japanese. The user-facing
+primary action is localized as “Download”; internal resolve-task contracts remain unchanged.
+
+Search eligibility now follows proven production capability instead of requiring the catalog's
+stable label. Stable and experimental platforms can publish localized downloader pages only when
+their manifest, Delivery verification, rollout allocation, runtime state, reviewed GEO content,
+and locale coverage pass the existing gates. Beta labels remain visible. xHamster stays off the
+homepage while its dedicated page follows the same route-qualified index policy.
+
+The sitemap is generated from the immutable published snapshot using absolute canonical URLs,
+reciprocal hreflang variants, English `x-default`, and the snapshot timestamp. Private and
+non-product pages stay excluded. The Admin versioned content-pack action writes ready drafts and
+preserves analytics/advertising IDs; the owner must publish a new snapshot explicitly. See
+[Work Item 108](work-item-108-multilingual-seo-publication.md) and
+[ADR-0049](architecture/adr/0049-route-qualified-multilingual-seo.md).

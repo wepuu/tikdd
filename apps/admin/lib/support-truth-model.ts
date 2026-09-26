@@ -12,7 +12,6 @@ export const PUBLIC_SUPPORTED_PLATFORMS = ["x", "instagram", "tiktok", "facebook
 export type SupportTruthDrift =
   | "catalog_route_mismatch"
   | "public_page_missing"
-  | "beta_in_sitemap"
   | "route_not_listed"
   | "listed_without_route"
   | "public_copy_missing";
@@ -81,7 +80,6 @@ export function deriveSupportTruth(input: {
 
       if (activeRoutes.length > 0 && (platform.catalogStatus === "planned" || platform.catalogStatus === "paused")) drifts.push("catalog_route_mismatch");
       if (publicCopyListed && publishedLocaleCount !== null && publishedLocaleCount === 0) drifts.push("public_page_missing");
-      if (platform.catalogStatus === "experimental" && (sitemapLocaleCount ?? 0) > 0) drifts.push("beta_in_sitemap");
       if (activeRoutes.length > 0 && (platform.publicAvailability === "hidden" || platform.publicAvailability === "paused")) drifts.push("route_not_listed");
       if (activeRoutes.length === 0 && platform.publicAvailability === "listed") drifts.push("listed_without_route");
       if (activeRoutes.length > 0 && !publicCopyListed) drifts.push("public_copy_missing");

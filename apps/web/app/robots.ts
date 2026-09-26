@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
   const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+  const origin = new URL(siteUrl).origin;
   return {
     rules: {
       userAgent: "*",
@@ -18,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         "/tickets/"
       ]
     },
-    sitemap: `${siteUrl}/sitemap.xml`
+    sitemap: new URL("/sitemap.xml", origin).toString(),
+    host: origin
   };
 }

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AdminConsoleSnapshot } from "../lib/console-contract";
 
 const blockerLabels: Record<string, string> = {
-  catalog_not_stable: "代码目录尚未标记为稳定",
+  catalog_not_stable: "代码目录尚未进入可公开生命周期",
   no_monitored_eligible_route: "没有受监控且可承载流量的生产路线",
   no_healthy_route: "没有健康路线",
   page_not_associated: "尚未关联平台页面",

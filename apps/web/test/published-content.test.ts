@@ -4,44 +4,44 @@ import { PublishedContentLoader, findPublishedPage, resetPublishedContentStateFo
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("public published-content loader", () => {
-  it("bundles a reviewed bilingual Instagram page without making it indexable", () => {
+  it("bundles a reviewed multilingual Instagram page in the public index set", () => {
     const instagramPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "instagram");
-    expect(instagramPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
-    expect(instagramPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(instagramPages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
+    expect(instagramPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
-    expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(4);
+    expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(72);
   });
 
-  it("bundles the X Beta landing page with the same noindex boundary", () => {
+  it("bundles the X Beta landing page with the same route-gated index intent", () => {
     const xPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "x");
-    expect(xPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
-    expect(xPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(xPages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
+    expect(xPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     expect(xPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
-    expect(xPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+    expect(xPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
 
   it("bundles the TikTok stable landing page in the public index set", () => {
     const tiktokPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "tiktok");
-    expect(tiktokPages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
+    expect(tiktokPages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
     expect(tiktokPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     expect(tiktokPages.every((page) => page.content.template === "platform" && page.content.eyebrow.includes("TikTok") && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
 
-  it("bundles Facebook, Vimeo, and Pinterest as bilingual noindex Beta pages", () => {
+  it("bundles the remaining available Beta platforms as multilingual index pages", () => {
     for (const platform of ["facebook", "vimeo", "pinterest", "xhamster"] as const) {
       const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === platform);
-      expect(pages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
-      expect(pages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
-      expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "draft")).toBe(true);
+      expect(pages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
+      expect(pages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+      expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
     }
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(4);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(72);
   });
 
-  it("keeps xHamster publicly reachable but outside stable SEO surfaces", () => {
+  it("keeps xHamster off homepage promotion while publishing its dedicated search page", () => {
     const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "xhamster");
-    expect(pages.map((page) => page.locale)).toEqual(["en", "zh-CN"]);
-    expect(pages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
+    expect(pages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
+    expect(pages.every((page) => page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     expect(pages.every((page) => page.seo.localPath === "/xhamster-downloader")).toBe(true);
   });
 
@@ -67,12 +67,12 @@ describe("public published-content loader", () => {
     expect(loader.health().source).toBe("database");
   });
 
-  it("falls back to the bundled English and Chinese seed on a cold outage", async () => {
+  it("falls back to the bundled nine-locale seed on a cold outage", async () => {
     resetPublishedContentStateForTest();
     const source: PublicContentSource = { loadActive: async () => { throw new Error("offline"); }, loadCandidate: async () => null };
     const loader = new PublishedContentLoader(source);
     const snapshot = await loader.load();
-    expect(snapshot.locales.map(({ locale }) => locale)).toEqual(["en", "zh-CN"]);
+    expect(snapshot.locales.map(({ locale }) => locale)).toEqual(["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"]);
     expect(loader.health()).toMatchObject({ status: "seed", source: "bundled-seed" });
   });
 
