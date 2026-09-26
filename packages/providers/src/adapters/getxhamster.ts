@@ -191,7 +191,7 @@ export class GetXHamsterProvider implements ResolverProvider {
         priority: 820,
         deliveryModes: this.deliveryVerifiedPlatforms.has("xhamster") ? ["redirect"] : [],
         verificationStatus: this.deliveryVerifiedPlatforms.has("xhamster")
-          ? "fixture_verified"
+          ? "delivery_verified"
           : "unverified"
       }]
     };

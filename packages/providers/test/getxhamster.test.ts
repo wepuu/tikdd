@@ -108,4 +108,12 @@ describe("GetXHamster xHamster adapter", () => {
     const provider = new GetXHamsterProvider({ enabled: true, deliveryVerifiedPlatforms: [] });
     expect(provider.manifest.platforms[0]).toMatchObject({ platform: "xhamster", deliveryModes: [] });
   });
+
+  it("marks the reviewed xHamster binding delivery verified", () => {
+    const provider = new GetXHamsterProvider({ enabled: true, deliveryVerifiedPlatforms: ["xhamster"] });
+    expect(provider.manifest.platforms[0]).toMatchObject({
+      deliveryModes: ["redirect"],
+      verificationStatus: "delivery_verified"
+    });
+  });
 });
