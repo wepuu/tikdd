@@ -188,6 +188,37 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
+  });
+
+  it("limits GetXHamster media to reviewed xhcdn and ahcdn subdomains", () => {
+    for (const targetUrl of [
+      "https://video7.xhcdn.com/fixture/video.mp4?token=fixture",
+      "https://ip123.ahcdn.com/fixture/video.mp4?token=fixture"
+    ]) {
+      expect(assertDeliveryTargetPolicy({
+        providerId: "getxhamster",
+        mode: "redirect",
+        hostPolicyId: "getxhamster-xhamster-media-v1",
+        targetUrl
+      }).protocol).toBe("https:");
+    }
+    for (const targetUrl of [
+      "https://xhcdn.com/fixture/video.mp4",
+      "https://ahcdn.com/fixture/video.mp4",
+      "https://video7.xhcdn.com.attacker.example/fixture/video.mp4",
+      "https://ip123.ahcdn.com.attacker.example/fixture/video.mp4",
+      "http://video7.xhcdn.com/fixture/video.mp4",
+      "https://user:pass@video7.xhcdn.com/fixture/video.mp4",
+      "https://video7.xhcdn.com:8443/fixture/video.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "getxhamster",
+        mode: "redirect",
+        hostPolicyId: "getxhamster-xhamster-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("allows only the exact 9xBuddy xHamster artifact host", () => {

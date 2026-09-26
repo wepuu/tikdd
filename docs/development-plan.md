@@ -1816,3 +1816,16 @@ provider-capacity message instead of an unsupported-content message. Provider pr
 9xBuddy artifact host, one-time Delivery redirects, queue replay, public contracts, persistence, and
 SEO status remain unchanged. See [Work Item 104](work-item-104-9xbuddy-descriptor-repair.md) and
 [ADR-0046](architecture/adr/0046-9xbuddy-xhamster-provider-artifact.md).
+
+### Work Item 105 — GetXHamster primary Provider
+
+Work Item 105 adds GetXHamster as a disabled-by-default xHamster primary candidate. The adapter
+uses only the anonymous `/api/video` endpoint, accepts reviewed progressive MP4 entries, ignores
+HLS and the Provider's own relay path, and keeps upstream URLs out of public results. The versioned
+Delivery policy allows only `*.xhcdn.com` and `*.ahcdn.com` with the existing browser-owned
+`cors-download` handoff. GetXHamster is bounded to one in-flight request with configurable spacing
+and queue replay disabled; 9xBuddy remains the next route and LocoLoader remains the sequential
+fallback. Production gates and rollout stay disabled until CI, image verification, backup, and two
+distinct browser downloads complete. xHamster remains Experimental/Beta and is not added to stable
+SEO surfaces. See [Work Item 105](work-item-105-getxhamster-primary.md) and
+[ADR-0048](architecture/adr/0048-getxhamster-direct-cdn.md).

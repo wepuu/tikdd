@@ -34,6 +34,7 @@ import {
   VidDownProvider,
   LocoLoaderProvider,
   NineXBuddyProvider,
+  GetXHamsterProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -67,6 +68,7 @@ import { loadPinterestVideoDownloaderActivationConfiguration } from "./pinterest
 import { loadVidDownActivationConfiguration } from "./viddown-activation";
 import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
 import { loadNineXBuddyActivationConfiguration } from "./nine-x-buddy-activation";
+import { loadGetXHamsterActivationConfiguration } from "./getxhamster-activation";
 import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
@@ -90,6 +92,7 @@ const pinterestVideoDownloaderActivation = loadPinterestVideoDownloaderActivatio
 const vidDownActivation = loadVidDownActivationConfiguration();
 const locoLoaderActivation = loadLocoLoaderActivationConfiguration();
 const nineXBuddyActivation = loadNineXBuddyActivationConfiguration();
+const getXHamsterActivation = loadGetXHamsterActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -247,6 +250,15 @@ if (nineXBuddyActivation.enabled) {
     maxConcurrency: nineXBuddyActivation.maxConcurrency,
     minIntervalMs: nineXBuddyActivation.minIntervalMs,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
+}
+if (getXHamsterActivation.enabled) {
+  providers.push(new GetXHamsterProvider({
+    enabled: true,
+    approvedPlatforms: getXHamsterActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: getXHamsterActivation.deliveryVerifiedPlatforms,
+    maxConcurrency: getXHamsterActivation.maxConcurrency,
+    minIntervalMs: getXHamsterActivation.minIntervalMs
   }));
 }
 if (enableMockProvider) {

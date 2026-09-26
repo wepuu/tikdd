@@ -128,6 +128,23 @@ describe("ProviderRouter", () => {
     expect(routed.attempts.map((attempt) => attempt.providerId)).toEqual(["9xbuddy", "locoloader"]);
   });
 
+  it("ranks GetXHamster ahead of 9xBuddy and LocoLoader for xHamster", async () => {
+    const calls: string[] = [];
+    const xhamsterInput: ResolveInput = {
+      taskId: "tsk_2123456789abcdef0123456789abcdef",
+      sourceUrl: "https://xhamster.com/videos/fixture",
+      canonicalUrl: "https://xhamster.com/videos/fixture",
+      platform: "xhamster"
+    };
+    const router = new ProviderRouter([
+      new TestProvider("getxhamster", 820, "success", calls, "xhamster"),
+      new TestProvider("9xbuddy", 700, "success", calls, "xhamster"),
+      new TestProvider("locoloader", 480, "success", calls, "xhamster")
+    ]);
+    await router.resolve(xhamsterInput);
+    expect(calls).toEqual(["getxhamster"]);
+  });
+
   it("renormalizes first-choice shares across currently eligible Providers",async()=>{
     const calls:string[]=[];
     const router=new ProviderRouter([new TestProvider("open",900,"success",calls),new TestProvider("available",800,"success",calls)],{

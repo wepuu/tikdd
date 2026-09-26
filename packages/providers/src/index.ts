@@ -84,6 +84,11 @@ export {
 } from "./adapters/viddown";
 export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
 export {
+  GetXHamsterProvider,
+  parseGetXHamsterResponse,
+  type GetXHamsterProviderOptions
+} from "./adapters/getxhamster";
+export {
   NineXBuddyProvider,
   createNineXBuddyAuthToken,
   isNineXBuddyLandingChallenge,

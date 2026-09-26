@@ -53,3 +53,12 @@ Current 9xBuddy MP4 descriptors are hex-encoded reversed Base64 ciphertext. Deco
 before applying the bootstrap-derived cipher key; retain the previous binary-reversal envelope as
 a bounded compatibility fallback. Retry only an empty formats array. Token, MP4, encoding,
 decryption, and path failures are deterministic and must not trigger another upstream extract.
+
+## GetXHamster xHamster primary
+
+Work Item 105 adds `getxhamster` as a disabled-by-default xHamster adapter. It calls the anonymous
+`getxhamster.com/api/video` endpoint, normalizes only progressive MP4 entries, and rejects adaptive
+streams and the Provider's `/f` relay. Its versioned Delivery policy accepts only `*.xhcdn.com` and
+`*.ahcdn.com` and uses the reviewed browser `cors-download` handoff. The adapter is bounded to one
+in-flight request with configurable spacing and has no queue replay; 9xBuddy and LocoLoader remain
+explicit sequential fallbacks until a separate rollout audit enables GetXHamster.
