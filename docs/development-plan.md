@@ -1780,3 +1780,14 @@ policy, one-attempt queue boundary, and conversion limits are unchanged.
 After the adapter fix, the existing LocoLoader xHamster capability may be activated as the bounded
 priority-480 fallback under its shared two-extraction/six-hour budget. It requires its own gates and
 unique `locoloader / xhamster / nl` rule; no other platform is enabled. See [Work Item 101](work-item-101-9xbuddy-bootstrap-challenge-fix.md).
+
+### Work Item 102 — Public Origin binding repair
+
+The production outage affecting xHamster, TikTok, and Instagram submissions was traced to a shared
+`WEB_ORIGIN=http://web:3000` value being used for browser CORS. The browser rejected the preflight,
+so no new resolve task or Provider attempt was created; this was not a simultaneous Provider
+failure. API and Delivery now prefer the explicit `TIKDD_WEB_PUBLIC_ORIGIN`, while Admin content
+revalidation may use `ADMIN_CONTENT_WEB_ORIGIN` on the private Compose network. Production release
+validation rejects a missing, non-HTTPS, or internal public Origin. Provider gates, rollout rules,
+task contracts, and media delivery behavior remain unchanged. See [Work Item 102](work-item-102-public-origin-binding.md)
+and [ADR-0047](architecture/adr/0047-public-web-origin-binding.md).

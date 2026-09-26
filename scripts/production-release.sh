@@ -192,7 +192,27 @@ verify_worker_runtime_config() {
   echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled"
 }
 
+validate_public_web_origin() {
+  public_origin="$(release_value TIKDD_WEB_PUBLIC_ORIGIN "")"
+  case "$public_origin" in
+    https://*) ;;
+    *)
+      echo "TIKDD_WEB_PUBLIC_ORIGIN must be an HTTPS origin." >&2
+      return 78
+      ;;
+  esac
+  public_host="${public_origin#https://}"
+  case "$public_host" in
+    ""|*/*|*\?*|*\#*|localhost|127.0.0.1|\[::1\]|web|web:*)
+      echo "TIKDD_WEB_PUBLIC_ORIGIN must be a public exact origin." >&2
+      return 78
+      ;;
+  esac
+  echo "public_web_origin=PASS origin=$public_origin"
+}
+
 validate() {
+  validate_public_web_origin
   compose --profile admin --profile ops --profile admin-ops config --quiet
 }
 
