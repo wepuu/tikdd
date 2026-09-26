@@ -1829,3 +1829,15 @@ fallback. Production gates and rollout stay disabled until CI, image verificatio
 distinct browser downloads complete. xHamster remains Experimental/Beta and is not added to stable
 SEO surfaces. See [Work Item 105](work-item-105-getxhamster-primary.md) and
 [ADR-0048](architecture/adr/0048-getxhamster-direct-cdn.md).
+
+### Work Item 107 — AnyLoader xHamster POC closeout
+
+Work Item 107 evaluated AnyLoader as a possible xHamster secondary route. The anonymous
+`/api/v1/proxy/fetch` endpoint could obtain an xHamster page and expose progressive MP4 and HLS
+candidates, but the progressive MP4 responses had no CORS or attachment disposition. The existing
+browser handoff therefore cannot save them automatically; HLS would require a new client-side
+playlist and segment assembly mode. The bounded POC was rejected at the browser-delivery gate.
+
+No AnyLoader adapter, host policy, gate, rollout rule, server media proxy, HLS stitcher, database
+migration, public contract, or production change was introduced. GetXHamster remains primary,
+9xBuddy remains disabled, and LocoLoader remains the existing fallback. See [Work Item 107](work-item-107-anyloader-xhamster-poc-closeout.md).
