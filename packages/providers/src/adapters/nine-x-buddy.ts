@@ -21,6 +21,8 @@ const MAXIMUM_RESPONSE_BYTES = 512 * 1024;
 const PROVIDER_TIMEOUT_MS = 90_000;
 const POLL_INTERVAL_MS = 5_000;
 const MAX_PROGRESS_POLLS = 15;
+const EXTRACT_RETRY_DELAY_MS = 1_000;
+const MAX_EXTRACT_ATTEMPTS = 2;
 const SUPPORTED_PLATFORMS = ["xhamster", "dailymotion"] as const;
 
 type NineXBuddyPlatform = (typeof SUPPORTED_PLATFORMS)[number];
@@ -44,6 +46,7 @@ export interface NineXBuddyDiagnosticEvent {
   formatCount: number;
   prepared: boolean;
   progressPolls: number;
+  extractAttempts: number;
   contentType: string | null;
   bootstrapPresent: boolean;
   challengeMarker: "none" | "embedded" | "strong";
@@ -60,6 +63,7 @@ export interface NineXBuddyProviderOptions {
   maxConcurrency?: number;
   minIntervalMs?: number;
   pollIntervalMs?: number;
+  extractRetryDelayMs?: number;
   now?: () => number;
 }
 
@@ -347,14 +351,17 @@ export function parseNineXBuddyResponse(
   const formats = Array.isArray(response.formats)
     ? response.formats.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
     : [];
-  if (!responseToken || formats.length === 0) {
-    throw providerFailure("9xBuddy returned no downloadable formats.", "unsupported_url", false, true);
+  if (formats.length === 0) {
+    throw providerFailure("9xBuddy temporarily returned no downloadable formats.", "provider_unavailable", true, true);
+  }
+  if (!responseToken) {
+    throw providerFailure("9xBuddy omitted the descriptor token.", "provider_schema_changed", true, true);
   }
   const selected = selectFormat(formats);
   const descriptorPath = selected ? decodeMediaDescriptor(selected.url, responseToken, cssHash) : null;
   const descriptor = descriptorPath ? descriptorFromPath(descriptorPath) : null;
   if (!descriptor) {
-    throw providerFailure("9xBuddy returned no prepared MP4 descriptor.", "unsupported_url", false, true);
+    throw providerFailure("9xBuddy returned an unreadable MP4 descriptor.", "provider_schema_changed", true, true);
   }
   return {
     title: stringValue(response.title, 1_000),
@@ -374,6 +381,7 @@ export class NineXBuddyProvider implements ResolverProvider {
   private readonly minIntervalMs: number;
   private readonly now: () => number;
   private readonly pollIntervalMs: number;
+  private readonly extractRetryDelayMs: number;
   private activeRequests = 0;
   private lastRequestAt = 0;
 
@@ -386,6 +394,7 @@ export class NineXBuddyProvider implements ResolverProvider {
     this.minIntervalMs = Math.max(0, Math.min(60_000, Math.floor(options.minIntervalMs ?? 2_000)));
     this.now = options.now ?? Date.now;
     this.pollIntervalMs = Math.max(0, Math.min(60_000, Math.floor(options.pollIntervalMs ?? POLL_INTERVAL_MS)));
+    this.extractRetryDelayMs = Math.max(0, Math.min(10_000, Math.floor(options.extractRetryDelayMs ?? EXTRACT_RETRY_DELAY_MS)));
     const unsupported = [...new Set([...this.approvedPlatforms, ...this.deliveryVerifiedPlatforms])]
       .find((platform) => !SUPPORTED_PLATFORMS.includes(platform as NineXBuddyPlatform));
     if (unsupported) throw new Error(`9xBuddy does not support the configured platform: ${unsupported}.`);
@@ -435,6 +444,7 @@ export class NineXBuddyProvider implements ResolverProvider {
     let formatCount = 0;
     let prepared = false;
     let progressPolls = 0;
+    let extractAttempts = 0;
     const emit = (outcome: NineXBuddyDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -447,6 +457,7 @@ export class NineXBuddyProvider implements ResolverProvider {
           formatCount,
           prepared,
           progressPolls,
+          extractAttempts,
           contentType,
           bootstrapPresent,
           challengeMarker,
@@ -523,10 +534,25 @@ export class NineXBuddyProvider implements ResolverProvider {
       headers["x-access-token"] = accessToken;
       const encodedUrl = encodeURIComponent(input.canonicalUrl);
       const signature = encodeNineXBuddy(encodedUrl, `${authToken}jv7g2_DAMNN_DUDE`);
-      const extractResponse = await apiRequest("/extract", { url: encodedUrl, _sig: signature }, "extract");
-      const parsed = parseNineXBuddyResponse(JSON.stringify(extractResponse.payload), bootstrap.cssHash);
-      const responseRecordValue = responseRecord(extractResponse.payload);
-      formatCount = Array.isArray(responseRecordValue.formats) ? responseRecordValue.formats.length : 0;
+      let parsed: ReturnType<typeof parseNineXBuddyResponse> | null = null;
+      let extractResponse: JsonResponse | null = null;
+      while (extractAttempts < MAX_EXTRACT_ATTEMPTS && !parsed) {
+        extractAttempts += 1;
+        extractResponse = await apiRequest("/extract", { url: encodedUrl, _sig: signature }, "extract");
+        const responseRecordValue = responseRecord(extractResponse.payload);
+        formatCount = Array.isArray(responseRecordValue.formats) ? responseRecordValue.formats.length : 0;
+        try {
+          parsed = parseNineXBuddyResponse(JSON.stringify(extractResponse.payload), bootstrap.cssHash);
+        } catch (error) {
+          const retryableExtractionFailure = error instanceof ProviderError &&
+            (error.failureCode === "provider_unavailable" || error.failureCode === "provider_schema_changed");
+          if (!retryableExtractionFailure || extractAttempts >= MAX_EXTRACT_ATTEMPTS) throw error;
+          await delay(this.extractRetryDelayMs, input.signal);
+        }
+      }
+      if (!parsed || !extractResponse) {
+        throw providerFailure("9xBuddy extraction did not complete.", "provider_unavailable", true, true);
+      }
       const inspect = await apiRequest("/download", { uid: parsed.descriptor.uid, url: parsed.descriptor.url, mode: "inspect" }, "inspect");
       let activeUid = stringValue(inspect.payload.uid, 256) ?? parsed.descriptor.uid;
       let preparedResponse = inspect.payload;

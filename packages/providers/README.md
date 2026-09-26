@@ -39,3 +39,12 @@ Work Item 79 adds `pinterest-videodownloader` as a Pinterest-only adapter. Its d
 is the exact `v1.pinimg.com` host and the adapter is registered with three default-off activation
 gates. Vimeo candidates from the same batch remain evidence-only; no adapter may infer Vimeo
 support from a multi-platform Provider's landing page.
+
+## 9xBuddy xHamster recovery
+
+9xBuddy may intermittently return an HTTP 200 extraction envelope with no formats. Treat that
+shape as a transient Provider failure, not evidence that the xHamster page is private or
+unsupported. The adapter may repeat `/extract` once inside the same bounded Worker execution;
+BullMQ must not replay the task. If the second response is still empty, the router may continue
+sequentially to an eligible LocoLoader xHamster route. Explicit invalid, private, removed, and
+unsupported responses remain terminal.

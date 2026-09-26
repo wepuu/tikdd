@@ -1791,3 +1791,14 @@ revalidation may use `ADMIN_CONTENT_WEB_ORIGIN` on the private Compose network. 
 validation rejects a missing, non-HTTPS, or internal public Origin. Provider gates, rollout rules,
 task contracts, and media delivery behavior remain unchanged. See [Work Item 102](work-item-102-public-origin-binding.md)
 and [ADR-0047](architecture/adr/0047-public-web-origin-binding.md).
+
+### Work Item 103 — 9xBuddy empty-extract recovery
+
+Production evidence after the public-Origin repair showed three xHamster tasks reaching 9xBuddy
+but receiving HTTP 200 extraction envelopes with zero formats. The adapter incorrectly labeled
+that ambiguous upstream result as `unsupported_url`, displayed a private/removed/unsupported
+message, and had no eligible secondary route. Work Item 103 classifies the empty envelope as a
+transient Provider failure, retries only `/extract` once inside the existing bounded execution,
+and preserves the `9xbuddy -> locoloader` sequential route. Explicit content errors remain
+terminal, queue replay stays disabled, and no Delivery or public contract boundary changes. See
+[Work Item 103](work-item-103-9xbuddy-empty-extract-recovery.md).

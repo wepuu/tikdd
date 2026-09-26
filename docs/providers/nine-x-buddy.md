@@ -15,3 +15,9 @@ The default protection is one in-flight request and a two-second spacing interva
 may require up to 90 seconds, so xHamster has a platform-specific route timeout floor. Queue replay
 is disabled and retryable failures fall back sequentially to LocoLoader. Dailymotion is currently
 manifest-visible Lab capability only; it has no Delivery policy or production route.
+
+An HTTP 200 extraction envelope with no formats is not treated as proof that the source content is
+unsupported. The adapter retries only the extract call once after a short delay and records the
+bounded attempt count without logging the source URL or response body. If the second envelope is
+still empty, it returns a retryable, fallback-eligible Provider failure. Explicit private, removed,
+invalid URL, and unsupported messages remain terminal.
