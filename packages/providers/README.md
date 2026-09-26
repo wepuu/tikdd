@@ -48,3 +48,8 @@ unsupported. The adapter may repeat `/extract` once inside the same bounded Work
 BullMQ must not replay the task. If the second response is still empty, the router may continue
 sequentially to an eligible LocoLoader xHamster route. Explicit invalid, private, removed, and
 unsupported responses remain terminal.
+
+Current 9xBuddy MP4 descriptors are hex-encoded reversed Base64 ciphertext. Decode that envelope
+before applying the bootstrap-derived cipher key; retain the previous binary-reversal envelope as
+a bounded compatibility fallback. Retry only an empty formats array. Token, MP4, encoding,
+decryption, and path failures are deterministic and must not trigger another upstream extract.

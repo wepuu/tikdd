@@ -156,7 +156,13 @@ function submissionFailureMessage(error: Pick<TaskError, "code" | "retryable">, 
     return admissionMessage(error.code, copy);
   }
   return publicFailureDescription(
-    error.code === "RESOLUTION_EXPIRED" ? "expired" : error.retryable ? "retryable" : "unavailable",
+    error.code === "RESOLUTION_EXPIRED"
+      ? "expired"
+      : error.code === "PROVIDER_RATE_LIMITED"
+        ? "rate_limited"
+        : error.retryable
+          ? "retryable"
+          : "unavailable",
     copy
   );
 }
@@ -561,7 +567,9 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
   const resultFormats = result?.formats ?? [];
   const selectedFormat = resultFormats.find((format) => format.id === selectedFormatId) ?? resultFormats[0];
   const failureIntent = publicFailureIntent(task, submissionError);
-  const failureTitle = failureIntent === "retryable"
+  const failureTitle = failureIntent === "rate_limited"
+    ? copy.providerRateLimitedTitle
+    : failureIntent === "retryable"
     ? copy.retryableTitle
     : failureIntent === "expired"
       ? copy.expiredTitle

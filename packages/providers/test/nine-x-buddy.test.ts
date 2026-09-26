@@ -28,12 +28,24 @@ const bootstrapHtml = `<html><head><link href="/build/main.9b0c5d2fd8241a25652e.
   searchProviders: { xh: "xhamster" }
 })};</script></body></html>`;
 
-function encodeDescriptor(value: string, responseToken: string, cssHash: string): string {
+function encryptedDescriptor(value: string, responseToken: string, cssHash: string): string {
   const key = `SORRY_MATE${"9xbuddy.com".length}${cssHash}${responseToken}`;
   const bytes = [...value].map((character, index) =>
     character.charCodeAt(0) + key.substr((index % key.length) - 1, 1).charCodeAt(0)
   );
-  return Buffer.from(bytes.reverse()).toString("hex");
+  return Buffer.from(bytes).toString("base64");
+}
+
+function encodeCurrentDescriptor(value: string, responseToken: string, cssHash: string): string {
+  return Buffer.from(
+    encryptedDescriptor(value, responseToken, cssHash).split("").reverse().join(""),
+    "latin1"
+  ).toString("hex");
+}
+
+function encodeLegacyDescriptor(value: string, responseToken: string, cssHash: string): string {
+  const encrypted = Buffer.from(encryptedDescriptor(value, responseToken, cssHash), "base64");
+  return Buffer.from([...encrypted].reverse()).toString("hex");
 }
 
 function jsonResponse(body: unknown, url: string): Response {
@@ -49,7 +61,7 @@ describe("9xBuddy xHamster adapter", () => {
   it("recreates the dynamic token and prepares one anonymous MP4 artifact", async () => {
     const cssHash = "9b0c5d2fd8241a25652e";
     const responseToken = "response-token-fixture";
-    const descriptor = encodeDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
+    const descriptor = encodeCurrentDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
     const calls: Array<{ url: string; init: RequestInit }> = [];
     const diagnostics: NineXBuddyDiagnosticEvent[] = [];
     const provider = new NineXBuddyProvider({
@@ -104,7 +116,21 @@ describe("9xBuddy xHamster adapter", () => {
       extractAttempts: 1,
       contentType: "application/json",
       bootstrapPresent: true,
-      challengeMarker: "embedded"
+      challengeMarker: "embedded",
+      extractState: "current_descriptor"
+    });
+  });
+
+  it("keeps the previous descriptor encoding as a bounded compatibility fallback", () => {
+    const cssHash = "9b0c5d2fd8241a25652e";
+    const responseToken = "response-token-fixture";
+    const descriptor = encodeLegacyDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
+    expect(parseNineXBuddyResponse(JSON.stringify({ response: {
+      token: responseToken,
+      formats: [{ ext: "mp4", quality: "720", url: descriptor }]
+    } }), cssHash)).toMatchObject({
+      descriptor: { uid: "source-uid", url: "opaque-descriptor" },
+      extractState: "legacy_descriptor"
     });
   });
 
@@ -145,7 +171,7 @@ describe("9xBuddy xHamster adapter", () => {
   it("retries one transient empty extract response inside the same bounded execution", async () => {
     const cssHash = "9b0c5d2fd8241a25652e";
     const responseToken = "response-token-fixture";
-    const descriptor = encodeDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
+    const descriptor = encodeCurrentDescriptor("/download/source-uid/opaque-descriptor", responseToken, cssHash);
     let extractCalls = 0;
     const diagnostics: NineXBuddyDiagnosticEvent[] = [];
     const provider = new NineXBuddyProvider({
@@ -177,7 +203,40 @@ describe("9xBuddy xHamster adapter", () => {
     expect(diagnostics).toEqual([expect.objectContaining({
       outcome: "success",
       extractAttempts: 2,
-      formatCount: 1
+      formatCount: 1,
+      extractState: "current_descriptor"
+    })]);
+  });
+
+  it("does not retry a deterministic descriptor decoding failure", async () => {
+    let extractCalls = 0;
+    const diagnostics: NineXBuddyDiagnosticEvent[] = [];
+    const provider = new NineXBuddyProvider({
+      enabled: true,
+      pollIntervalMs: 0,
+      extractRetryDelayMs: 0,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async (url) => {
+        const path = new URL(typeof url === "string" || url instanceof URL ? url : url.url).pathname;
+        if (path === "/") return new Response(bootstrapHtml, { status: 200, headers: { "content-type": "text/html" } });
+        if (path === "/token") return jsonResponse({ status: true, access_token: "access-token-fixture" }, url.toString());
+        if (path === "/extract") {
+          extractCalls += 1;
+          return jsonResponse({ status: true, response: {
+            token: "response-token-fixture",
+            formats: [{ ext: "mp4", quality: "720", url: "not-hex" }]
+          } }, url.toString());
+        }
+        throw new Error(`Unexpected endpoint ${path}`);
+      }
+    });
+
+    await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "provider_schema_changed" });
+    expect(extractCalls).toBe(1);
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "failure",
+      extractAttempts: 1,
+      extractState: "encoding_unknown"
     })]);
   });
 

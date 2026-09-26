@@ -36,6 +36,17 @@ export type NineXBuddyDiagnosticPhase =
   | "progress"
   | "completed";
 
+export type NineXBuddyExtractState =
+  | "not_observed"
+  | "formats_empty"
+  | "token_missing"
+  | "no_mp4"
+  | "encoding_unknown"
+  | "decode_failed"
+  | "path_invalid"
+  | "current_descriptor"
+  | "legacy_descriptor";
+
 export interface NineXBuddyDiagnosticEvent {
   event: "nine_x_buddy_resolution_diagnostic";
   taskId: string;
@@ -47,6 +58,7 @@ export interface NineXBuddyDiagnosticEvent {
   prepared: boolean;
   progressPolls: number;
   extractAttempts: number;
+  extractState: NineXBuddyExtractState;
   contentType: string | null;
   bootstrapPresent: boolean;
   challengeMarker: "none" | "embedded" | "strong";
@@ -84,6 +96,21 @@ interface JsonResponse {
 interface DownloadDescriptor {
   uid: string;
   url: string;
+}
+
+class NineXBuddyExtractionError extends ProviderError {
+  readonly extractState: NineXBuddyExtractState;
+
+  constructor(
+    message: string,
+    failureCode: ProviderFailureCode,
+    extractState: NineXBuddyExtractState,
+    retryable = true,
+    fallbackAllowed = true
+  ) {
+    super(message, failureCode, retryable, fallbackAllowed);
+    this.extractState = extractState;
+  }
 }
 
 const DELIVERY_POLICY_PLATFORMS = new Set<Platform>(["xhamster"]);
@@ -218,19 +245,37 @@ export function createNineXBuddyAuthToken(bootstrap: Pick<Bootstrap, "appVersion
   return encodeNineXBuddy(input, cssKey);
 }
 
-function decodeMediaDescriptor(value: unknown, responseToken: string, cssHash: string): string | null {
+function printableAscii(value: string): boolean {
+  return /^[\x20-\x7e]+$/.test(value);
+}
+
+function decodeMediaDescriptor(
+  value: unknown,
+  responseToken: string,
+  cssHash: string
+): { path: string | null; state: NineXBuddyExtractState } {
   if (typeof value !== "string" || value.length === 0 || value.length > 32_768 || !/^[a-f0-9]+$/i.test(value) || value.length % 2 !== 0) {
-    return null;
+    return { path: null, state: "encoding_unknown" };
   }
+  const key = `SORRY_MATE${LANDING_HOST.length}${cssHash}${responseToken}`;
   try {
     const reversedBytes = Buffer.from(value, "hex").toString("latin1").split("").reverse().join("");
-    const decoded = decodeNineXBuddy(
-      Buffer.from(reversedBytes, "latin1").toString("base64"),
-      `SORRY_MATE${LANDING_HOST.length}${cssHash}${responseToken}`
-    );
-    return decoded.startsWith("/download/") ? decoded : null;
+    const candidates: Array<{ decoded: string; state: NineXBuddyExtractState }> = [];
+    if (reversedBytes.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(reversedBytes)) {
+      candidates.push({ decoded: decodeNineXBuddy(reversedBytes, key), state: "current_descriptor" });
+    }
+    candidates.push({
+      decoded: decodeNineXBuddy(Buffer.from(reversedBytes, "latin1").toString("base64"), key),
+      state: "legacy_descriptor"
+    });
+    const valid = candidates.find(({ decoded }) => decoded.startsWith("/download/"));
+    if (valid) return { path: valid.decoded, state: valid.state };
+    return {
+      path: null,
+      state: candidates.some(({ decoded }) => printableAscii(decoded)) ? "path_invalid" : "decode_failed"
+    };
   } catch {
-    return null;
+    return { path: null, state: "decode_failed" };
   }
 }
 
@@ -322,7 +367,7 @@ function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
 export function parseNineXBuddyResponse(
   body: string,
   cssHash: string
-): { title: string | null; thumbnailUrl: string | null; descriptor: DownloadDescriptor; quality: string } {
+): { title: string | null; thumbnailUrl: string | null; descriptor: DownloadDescriptor; quality: string; extractState: NineXBuddyExtractState } {
   let payload: unknown;
   try {
     payload = JSON.parse(body);
@@ -352,22 +397,59 @@ export function parseNineXBuddyResponse(
     ? response.formats.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
     : [];
   if (formats.length === 0) {
-    throw providerFailure("9xBuddy temporarily returned no downloadable formats.", "provider_unavailable", true, true);
+    throw new NineXBuddyExtractionError(
+      "9xBuddy temporarily returned no downloadable formats.",
+      "provider_unavailable",
+      "formats_empty",
+      true,
+      true
+    );
   }
   if (!responseToken) {
-    throw providerFailure("9xBuddy omitted the descriptor token.", "provider_schema_changed", true, true);
+    throw new NineXBuddyExtractionError(
+      "9xBuddy omitted the descriptor token.",
+      "provider_schema_changed",
+      "token_missing",
+      true,
+      true
+    );
   }
   const selected = selectFormat(formats);
-  const descriptorPath = selected ? decodeMediaDescriptor(selected.url, responseToken, cssHash) : null;
-  const descriptor = descriptorPath ? descriptorFromPath(descriptorPath) : null;
+  if (!selected) {
+    throw new NineXBuddyExtractionError(
+      "9xBuddy returned no MP4 descriptor.",
+      "provider_schema_changed",
+      "no_mp4",
+      true,
+      true
+    );
+  }
+  const decoded = decodeMediaDescriptor(selected.url, responseToken, cssHash);
+  if (!decoded.path) {
+    throw new NineXBuddyExtractionError(
+      "9xBuddy returned an unreadable MP4 descriptor.",
+      "provider_schema_changed",
+      decoded.state,
+      true,
+      true
+    );
+  }
+  const descriptor = descriptorFromPath(decoded.path);
   if (!descriptor) {
-    throw providerFailure("9xBuddy returned an unreadable MP4 descriptor.", "provider_schema_changed", true, true);
+    throw new NineXBuddyExtractionError(
+      "9xBuddy returned an invalid MP4 descriptor path.",
+      "provider_schema_changed",
+      "path_invalid",
+      true,
+      true
+    );
   }
   return {
     title: stringValue(response.title, 1_000),
     thumbnailUrl: reviewedThumbnailUrl(response.thumbnail, new Set([LANDING_HOST, MEDIA_HOST])),
     descriptor,
-    quality: stringValue(selected?.quality, 80) ?? "720"
+    quality: stringValue(selected.quality, 80) ?? "720",
+    extractState: decoded.state
   };
 }
 
@@ -445,6 +527,7 @@ export class NineXBuddyProvider implements ResolverProvider {
     let prepared = false;
     let progressPolls = 0;
     let extractAttempts = 0;
+    let extractState: NineXBuddyExtractState = "not_observed";
     const emit = (outcome: NineXBuddyDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -458,6 +541,7 @@ export class NineXBuddyProvider implements ResolverProvider {
           prepared,
           progressPolls,
           extractAttempts,
+          extractState,
           contentType,
           bootstrapPresent,
           challengeMarker,
@@ -543,9 +627,11 @@ export class NineXBuddyProvider implements ResolverProvider {
         formatCount = Array.isArray(responseRecordValue.formats) ? responseRecordValue.formats.length : 0;
         try {
           parsed = parseNineXBuddyResponse(JSON.stringify(extractResponse.payload), bootstrap.cssHash);
+          extractState = parsed.extractState;
         } catch (error) {
-          const retryableExtractionFailure = error instanceof ProviderError &&
-            (error.failureCode === "provider_unavailable" || error.failureCode === "provider_schema_changed");
+          if (error instanceof NineXBuddyExtractionError) extractState = error.extractState;
+          const retryableExtractionFailure = error instanceof NineXBuddyExtractionError &&
+            error.extractState === "formats_empty";
           if (!retryableExtractionFailure || extractAttempts >= MAX_EXTRACT_ATTEMPTS) throw error;
           await delay(this.extractRetryDelayMs, input.signal);
         }

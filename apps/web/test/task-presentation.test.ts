@@ -36,14 +36,27 @@ describe("public task presentation", () => {
     expect(publicFailureIntent(null, admissionError)).toBe("retryable");
   });
 
+  it("keeps provider capacity exhaustion distinct from unavailable content", () => {
+    expect(publicFailureIntent({
+      ...baseTask,
+      error: { code: "PROVIDER_RATE_LIMITED", message: "Budget exhausted", retryable: true }
+    }, null)).toBe("rate_limited");
+    expect(publicFailureIntent({
+      ...baseTask,
+      error: { code: "PROVIDER_RATE_LIMITED", message: "Legacy task", retryable: false }
+    }, null)).toBe("rate_limited");
+  });
+
   it("maps public intents to actionable, provider-neutral copy", () => {
     const copy = {
       retryableDescription: "retry",
+      providerRateLimitedDescription: "capacity",
       unavailableDescription: "unavailable",
       expiredDescription: "expired",
       resolveError: "generic"
     };
     expect(publicFailureDescription("retryable", copy)).toBe("retry");
+    expect(publicFailureDescription("rate_limited", copy)).toBe("capacity");
     expect(publicFailureDescription("unavailable", copy)).toBe("unavailable");
     expect(publicFailureDescription("expired", copy)).toBe("expired");
     expect(publicFailureDescription(null, copy)).toBe("generic");
