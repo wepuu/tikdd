@@ -249,7 +249,7 @@ describe("Work Item 110 NoAdsDL YouTube activation", () => {
       maxConcurrency: 1,
       minIntervalMs: 5_000,
       pollIntervalMs: 2_000,
-      maxPolls: 10
+      pollBudgetMs: 40_000
     });
     expect(() => loadNoAdsDLActivationConfiguration({ ENABLE_NOADSDL_PROVIDER: "true" }))
       .toThrow(/NOADSDL_TERMS_APPROVED/);
@@ -264,7 +264,7 @@ describe("Work Item 110 NoAdsDL YouTube activation", () => {
       NOADSDL_MAX_CONCURRENCY: "2",
       NOADSDL_MIN_INTERVAL_MS: "10000",
       NOADSDL_POLL_INTERVAL_MS: "1000",
-      NOADSDL_MAX_POLLS: "5"
+      NOADSDL_POLL_BUDGET_MS: "20000"
     })).toEqual({
       enabled: true,
       termsApproved: true,
@@ -272,9 +272,9 @@ describe("Work Item 110 NoAdsDL YouTube activation", () => {
       maxConcurrency: 2,
       minIntervalMs: 10_000,
       pollIntervalMs: 1_000,
-      maxPolls: 5
+      pollBudgetMs: 20_000
     });
-    expect(() => loadNoAdsDLActivationConfiguration({ NOADSDL_MAX_POLLS: "11" }))
+    expect(() => loadNoAdsDLActivationConfiguration({ NOADSDL_POLL_BUDGET_MS: "40001" }))
       .toThrow(/outside its allowed range/);
   });
 });

@@ -96,6 +96,8 @@ describe("NoAdsDL YouTube adapter", () => {
       selectedFormat: true,
       jobCreated: true,
       pollCount: 1,
+      jobStatusCategory: "completed",
+      progressBucket: "missing",
       failureCode: null
     })]);
     const serialized = JSON.stringify(diagnostics);
@@ -125,6 +127,13 @@ describe("NoAdsDL YouTube adapter", () => {
     expect(parseNoAdsJobResponse(processing)).toMatchObject({ status: "processing", statusUrl: null, directUrl: null });
   });
 
+  it("rejects a completed job that omits its reviewed media URL", () => {
+    expect(() => parseNoAdsJobResponse(JSON.stringify({
+      status: "completed",
+      status_url: "https://noadsdl.com/api/free-download/status/0123456789abcdef"
+    }))).toThrow(expect.objectContaining({ failureCode: "provider_schema_changed" }));
+  });
+
   it("continues a job across a processing response without status_url", async () => {
     const [info, queued, processing, ready] = await Promise.all([
       fixture("noadsdl-video-info-sparse.json"),
@@ -146,5 +155,39 @@ describe("NoAdsDL YouTube adapter", () => {
     const resolution = await provider.resolve(input);
     expect(requests).toBe(4);
     expect(resolution.candidates).toHaveLength(1);
+  });
+
+  it("allows a single job to complete after more than ten bounded polls", async () => {
+    const [info, queued, processing, ready] = await Promise.all([
+      fixture("noadsdl-video-info-sparse.json"),
+      fixture("noadsdl-job-queued.json"),
+      fixture("noadsdl-status-processing.json"),
+      fixture("noadsdl-status-ready.json")
+    ]);
+    let requests = 0;
+    const diagnostics: NoAdsDiagnosticEvent[] = [];
+    const provider = new NoAdsDLProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      pollIntervalMs: 0,
+      pollBudgetMs: 40_000,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async () => {
+        requests += 1;
+        if (requests === 1) return response(info);
+        if (requests === 2) return response(queued);
+        return response(requests < 14 ? processing : ready);
+      }
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(requests).toBe(14);
+    expect(resolution.candidates).toHaveLength(1);
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "success",
+      pollCount: 12,
+      jobStatusCategory: "completed"
+    })]);
   });
 });

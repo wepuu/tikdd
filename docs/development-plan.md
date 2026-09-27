@@ -1920,3 +1920,18 @@ Both YouTube adapters remain independently gated, with NoAdsDL priority 740 and 
 requires exact-SHA images, isolated NoAdsDL and SnapYT browser checks, then one sequential-route
 check; any failure closes the relevant rollout before its three gates. See [Work Item 112](work-item-112-youtube-format-routing.md)
 and [ADR-0053](architecture/adr/0053-youtube-format-composition-boundary.md).
+
+### Work Item 113 — YouTube asynchronous completion and stateless delivery repair
+
+Production evidence confirmed that Work Item 112 fixed format parsing but exposed two downstream
+failures: NoAdsDL could outlive its ten-poll assumption, and SnapYT now redirects through a dynamic
+Googlevideo chain that returns 403 from NL. The two existing YouTube rollout rules were CAS-disabled
+at revision 2 with zero allocation before repair work began.
+
+NoAdsDL now retains one job while polling for at most 40 seconds and twenty requests. The YouTube
+route receives a 75-second floor and the Web waits 90 seconds; other platforms are unchanged.
+Typed Provider failures are no longer overwritten by a simultaneous shared deadline. SnapYT keeps
+its exact v1 policy and gains rejection-category diagnostics, but no Googlevideo suffix is added
+and its rollout remains closed. NoAdsDL may complete a separate two-sample browser qualification
+without SnapYT. See [Work Item 113](work-item-113-youtube-async-delivery-repair.md) and
+[ADR-0054](architecture/adr/0054-youtube-async-budget-and-stateless-handoff.md).

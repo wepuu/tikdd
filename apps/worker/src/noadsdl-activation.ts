@@ -5,7 +5,7 @@ export interface NoAdsDLActivationConfiguration {
   maxConcurrency: number;
   minIntervalMs: number;
   pollIntervalMs: number;
-  maxPolls: number;
+  pollBudgetMs: number;
 }
 
 function boundedInteger(
@@ -32,7 +32,7 @@ export function loadNoAdsDLActivationConfiguration(
     maxConcurrency: boundedInteger(environment, "NOADSDL_MAX_CONCURRENCY", 1, 1, 2),
     minIntervalMs: boundedInteger(environment, "NOADSDL_MIN_INTERVAL_MS", 5_000, 0, 60_000),
     pollIntervalMs: boundedInteger(environment, "NOADSDL_POLL_INTERVAL_MS", 2_000, 250, 10_000),
-    maxPolls: boundedInteger(environment, "NOADSDL_MAX_POLLS", 10, 1, 10)
+    pollBudgetMs: boundedInteger(environment, "NOADSDL_POLL_BUDGET_MS", 40_000, 2_000, 40_000)
   };
   if (configuration.enabled && !configuration.termsApproved) {
     throw new Error("NOADSDL_TERMS_APPROVED must be true before enabling NoAdsDL.");

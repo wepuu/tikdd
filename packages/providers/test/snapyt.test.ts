@@ -255,6 +255,45 @@ describe("SnapYT YouTube adapter", () => {
     expect(calls).toBe(6);
   });
 
+  it("classifies Provider redirects without widening the reviewed media boundary", async () => {
+    const [landing, success, result] = await Promise.all([
+      fixture("snapyt-landing.html"),
+      fixture("snapyt-success.json"),
+      fixture("snapyt-result.html")
+    ]);
+    let calls = 0;
+    const diagnostics: SnapYTDiagnosticEvent[] = [];
+    const provider = new SnapYTProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async (request) => {
+        calls += 1;
+        if (calls === 1) return withUrl(response(landing, request.toString(), "text/html"), request.toString());
+        if (calls === 2) return withUrl(response(success, request.toString(), "application/json"), request.toString());
+        if (calls === 3) return withUrl(response(result, request.toString(), "text/html"), request.toString());
+        return withUrl(new Response(null, {
+          status: 302,
+          headers: { location: "https://redirector.googlevideo.com/" }
+        }), request.toString());
+      }
+    });
+
+    await expect(provider.resolve(input)).rejects.toMatchObject({
+      failureCode: "invalid_result",
+      fallbackAllowed: true
+    });
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "failure",
+      rejectedMediaCount: 3,
+      redirectRejectedCount: 3,
+      htmlRejectedCount: 0,
+      failureCode: "invalid_result"
+    })]);
+    expect(JSON.stringify(diagnostics)).not.toContain("googlevideo");
+  });
+
   it("does not resolve until the browser Delivery audit is explicit", async () => {
     const provider = new SnapYTProvider({ enabled: true, deliveryVerified: false });
     await expect(provider.resolve(input)).rejects.toMatchObject({

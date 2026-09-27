@@ -17,9 +17,10 @@ const MEDIA_PATH_PREFIX = "/api/free-download/file/";
 const MEDIA_POLICY_ID = "noadsdl-youtube-media-v1";
 const MAXIMUM_CANDIDATE_LIFETIME_MS = 2 * 60 * 1_000;
 const MAXIMUM_RESPONSE_BYTES = 512 * 1_024;
-const PROVIDER_TIMEOUT_MS = 28_000;
+const PROVIDER_TIMEOUT_MS = 45_000;
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
-const DEFAULT_MAX_POLLS = 10;
+const DEFAULT_POLL_BUDGET_MS = 40_000;
+const MAXIMUM_STATUS_POLLS = 20;
 const SUPPORTED_PLATFORM = "youtube" as const;
 
 const VideoInfoSchema = z.object({
@@ -49,6 +50,8 @@ const JobSchema = z.object({
 export type NoAdsContentType = "json" | "html" | "text" | "other" | "missing";
 export type NoAdsDiagnosticPhase = "info" | "job" | "poll" | "completed";
 export type NoAdsFormatSchema = "legacy" | "sparse" | "unknown";
+export type NoAdsJobStatusCategory = "missing" | "queued" | "processing" | "completed" | "failed" | "other";
+export type NoAdsProgressBucket = "missing" | "0-24" | "25-49" | "50-74" | "75-99" | "100" | "other";
 
 export interface NoAdsDiagnosticEvent {
   event: "noadsdl_resolution_diagnostic";
@@ -63,6 +66,8 @@ export interface NoAdsDiagnosticEvent {
   selectedFormat: boolean;
   jobCreated: boolean;
   pollCount: number;
+  jobStatusCategory: NoAdsJobStatusCategory;
+  progressBucket: NoAdsProgressBucket;
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -77,6 +82,8 @@ export interface NoAdsVideoInfo {
 
 export interface NoAdsJobState {
   status: string;
+  statusCategory: NoAdsJobStatusCategory;
+  progressBucket: NoAdsProgressBucket;
   statusUrl: string | null;
   directUrl: string | null;
 }
@@ -88,7 +95,7 @@ export interface NoAdsDLProviderOptions {
   maxConcurrency?: number;
   minIntervalMs?: number;
   pollIntervalMs?: number;
-  maxPolls?: number;
+  pollBudgetMs?: number;
   diagnosticSink?: (event: NoAdsDiagnosticEvent) => void;
 }
 
@@ -295,6 +302,26 @@ export function reviewedNoAdsDirectUrl(value: unknown): string | null {
   }
 }
 
+function jobStatusCategory(value: string): NoAdsJobStatusCategory {
+  if (!value) return "missing";
+  if (["queued", "pending"].includes(value)) return "queued";
+  if (["processing", "running"].includes(value)) return "processing";
+  if (["completed", "complete", "ready", "success", "done"].includes(value)) return "completed";
+  if (["failed", "error", "cancelled", "canceled", "expired"].includes(value)) return "failed";
+  return "other";
+}
+
+function progressBucket(value: unknown): NoAdsProgressBucket {
+  if (value === null || value === undefined || value === "") return "missing";
+  const numeric = typeof value === "number" ? value : Number.parseFloat(String(value).replace(/%$/u, ""));
+  if (!Number.isFinite(numeric) || numeric < 0) return "other";
+  if (numeric >= 100) return "100";
+  if (numeric >= 75) return "75-99";
+  if (numeric >= 50) return "50-74";
+  if (numeric >= 25) return "25-49";
+  return "0-24";
+}
+
 export function parseNoAdsJobResponse(body: string, httpStatus = 200): NoAdsJobState {
   let payload: z.infer<typeof JobSchema>;
   try {
@@ -303,19 +330,35 @@ export function parseNoAdsJobResponse(body: string, httpStatus = 200): NoAdsJobS
     throw new ProviderError("NoAdsDL returned an invalid job response.", "provider_schema_changed", true, true);
   }
   const status = stringValue(payload.status, 80)?.toLowerCase() ?? "";
+  const statusCategory = jobStatusCategory(status);
+  const currentProgressBucket = progressBucket(payload.progress);
   const detail = failureText(payload);
-  if (httpStatus < 200 || httpStatus >= 300 || status === "error" || status === "failed") {
+  if (httpStatus < 200 || httpStatus >= 300 || statusCategory === "failed") {
     mapFailure(detail || `status ${String(payload.status ?? httpStatus)}`);
   }
   const statusUrl = reviewedStatusUrl(payload.status_url);
   const directUrl = reviewedNoAdsDirectUrl(payload.direct_url);
+  if (statusCategory === "completed" && !directUrl) {
+    throw new ProviderError(
+      "NoAdsDL completed the job without a reviewed media URL.",
+      "provider_schema_changed",
+      true,
+      true
+    );
+  }
   if (!statusUrl && !directUrl) {
     if (["queued", "pending", "processing", "running"].includes(status)) {
-      return { status, statusUrl: null, directUrl: null };
+      return { status, statusCategory, progressBucket: currentProgressBucket, statusUrl: null, directUrl: null };
     }
     throw new ProviderError("NoAdsDL returned no bounded job continuation.", "provider_schema_changed", true, true);
   }
-  return { status: status || "queued", statusUrl, directUrl };
+  return {
+    status: status || "queued",
+    statusCategory,
+    progressBucket: currentProgressBucket,
+    statusUrl,
+    directUrl
+  };
 }
 
 function diagnosticFailureCode(error: unknown): ProviderFailureCode {
@@ -363,7 +406,7 @@ export class NoAdsDLProvider implements ResolverProvider {
   private readonly maxConcurrency: number;
   private readonly minIntervalMs: number;
   private readonly pollIntervalMs: number;
-  private readonly maxPolls: number;
+  private readonly pollBudgetMs: number;
   private readonly diagnosticSink: ((event: NoAdsDiagnosticEvent) => void) | null;
   private activeRequests = 0;
   private lastRequestAt = 0;
@@ -373,8 +416,8 @@ export class NoAdsDLProvider implements ResolverProvider {
     this.deliveryVerified = options.deliveryVerified ?? false;
     this.maxConcurrency = Math.max(1, Math.min(2, Math.floor(options.maxConcurrency ?? 1)));
     this.minIntervalMs = Math.max(0, Math.min(60_000, Math.floor(options.minIntervalMs ?? 5_000)));
-    this.pollIntervalMs = Math.max(250, Math.min(10_000, Math.floor(options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS)));
-    this.maxPolls = Math.max(1, Math.min(DEFAULT_MAX_POLLS, Math.floor(options.maxPolls ?? DEFAULT_MAX_POLLS)));
+    this.pollIntervalMs = Math.max(0, Math.min(10_000, Math.floor(options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS)));
+    this.pollBudgetMs = Math.max(2_000, Math.min(DEFAULT_POLL_BUDGET_MS, Math.floor(options.pollBudgetMs ?? DEFAULT_POLL_BUDGET_MS)));
     this.diagnosticSink = options.diagnosticSink ?? null;
     this.manifest = {
       id: "noadsdl",
@@ -423,6 +466,8 @@ export class NoAdsDLProvider implements ResolverProvider {
     let selectedFormat = false;
     let jobCreated = false;
     let pollCount = 0;
+    let currentJobStatusCategory: NoAdsJobStatusCategory = "missing";
+    let currentProgressBucket: NoAdsProgressBucket = "missing";
     let sessionCookie = "";
     const emit = (outcome: NoAdsDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
@@ -439,6 +484,8 @@ export class NoAdsDLProvider implements ResolverProvider {
           selectedFormat,
           jobCreated,
           pollCount,
+          jobStatusCategory: currentJobStatusCategory,
+          progressBucket: currentProgressBucket,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -491,17 +538,24 @@ export class NoAdsDLProvider implements ResolverProvider {
       const jobResponse = await requestJson(jobUrl, { method: "GET" });
       let job = parseNoAdsJobResponse(jobResponse.body, jobResponse.response.status);
       jobCreated = true;
+      currentJobStatusCategory = job.statusCategory;
+      currentProgressBucket = job.progressBucket;
       let statusUrl = job.statusUrl;
       if (!job.directUrl && !statusUrl) {
         throw new ProviderError("NoAdsDL did not return a bounded job status URL.", "provider_schema_changed", true, true);
       }
 
-      while (!job.directUrl && statusUrl && pollCount < this.maxPolls) {
-        await delay(this.pollIntervalMs, input.signal);
+      const pollingStartedAt = Date.now();
+      while (!job.directUrl && statusUrl && pollCount < MAXIMUM_STATUS_POLLS) {
+        const remainingMs = this.pollBudgetMs - (Date.now() - pollingStartedAt);
+        if (remainingMs <= 0) break;
+        await delay(Math.min(this.pollIntervalMs, remainingMs), input.signal);
         pollCount += 1;
         phase = "poll";
         const pollResponse = await requestJson(new URL(statusUrl), { method: "GET" });
         job = parseNoAdsJobResponse(pollResponse.body, pollResponse.response.status);
+        currentJobStatusCategory = job.statusCategory;
+        currentProgressBucket = job.progressBucket;
         statusUrl = job.statusUrl ?? statusUrl;
       }
       if (!job.directUrl) {

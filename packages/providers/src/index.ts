@@ -551,7 +551,8 @@ export class ProviderRouter {
         return { resolution, attempts };
       } catch (error) {
         const routeDeadlineReached = input.signal?.aborted ?? false;
-        const normalizedError = signal.aborted
+        const explicitProviderError = error instanceof ProviderError;
+        const normalizedError = signal.aborted && !explicitProviderError
           ? new ProviderError("The provider timed out.", "provider_timeout", true, true)
           : normalizeProviderError(error);
         const finishedAt = new Date();
@@ -573,9 +574,11 @@ export class ProviderRouter {
 
         if (routeDeadlineReached) {
           throw new ProviderRoutingError(
-            "The provider routing deadline was reached.",
-            "provider_timeout",
-            true,
+            explicitProviderError
+              ? normalizedError.message
+              : "The provider routing deadline was reached.",
+            explicitProviderError ? normalizedError.failureCode : "provider_timeout",
+            explicitProviderError ? normalizedError.retryable : true,
             attempts
           );
         }

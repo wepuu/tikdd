@@ -12,6 +12,7 @@ import {
   handleExhaustedResolveJob,
   INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS,
   XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS,
+  YOUTUBE_ROUTE_TIMEOUT_FLOOR_MS,
   processResolveJob,
   routeTimeoutMsForPlatform,
   taskCompletionFailedError,
@@ -30,6 +31,11 @@ describe("resolve route timeout budget", () => {
   it("does not extend other platform routes", () => {
     expect(routeTimeoutMsForPlatform("x", 30_000)).toBe(30_000);
     expect(routeTimeoutMsForPlatform("facebook", 30_000)).toBe(30_000);
+  });
+
+  it("gives the bounded YouTube primary and fallback enough shared route time", () => {
+    expect(routeTimeoutMsForPlatform("youtube", 30_000)).toBe(YOUTUBE_ROUTE_TIMEOUT_FLOOR_MS);
+    expect(routeTimeoutMsForPlatform("youtube", 120_000)).toBe(120_000);
   });
 
   it("gives xHamster conversion Providers enough room for one bounded artifact job", () => {
