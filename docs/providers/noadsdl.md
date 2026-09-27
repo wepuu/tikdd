@@ -12,10 +12,12 @@
 ## Protocol
 
 The adapter calls `GET /api/video-info` with the canonical URL, selects one free combined MP4,
-then calls `GET /download?format=mp4&format_id=...&async=1`. If the Provider queues the job, TikDD
-polls its same-host status URL at most ten times before accepting a reviewed generated-file path.
-The parser tolerates missing optional title and format metadata but requires a format identifier
-and a combined MP4.
+then calls `GET /download?format=mp4&format_id=...&async=1`. The parser accepts both the original
+codec-rich response and the current sparse `"720p MP4"` map, where `format_id` is required but
+title, bitrate, size and other optional metadata may be absent. If the Provider queues the job,
+TikDD polls its same-host status URL at most ten times; a processing response may omit
+`status_url`, in which case the original reviewed status URL is retained. Only a ready generated
+file path becomes a candidate.
 
 The only Delivery target is the versioned `noadsdl-youtube-media-v1` policy. Provider stream URLs
 remain encrypted internal candidates; they are never returned in the public resolve result and

@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "platform": "youtube",
+  "title": "fixture",
+  "video_formats": {
+    "480p MP4": {
+      "format_id": "18",
+      "resolution": "854x480",
+      "bitrate": 700000,
+      "size_mb": 12.5
+    },
+    "720p MP4": {
+      "format_id": 22,
+      "resolution": "1280x720",
+      "bitrate": 1200000,
+      "size_mb": 24.5
+    },
+    "1080p MP4": {
+      "format_id": "37",
+      "resolution": "1920x1080",
+      "bitrate": 2400000,
+      "size_mb": 48.1
+    }
+  },
+  "audio_formats": {
+    "128 kbps MP3": {
+      "format_id": "audio-128"
+    }
+  }
+}

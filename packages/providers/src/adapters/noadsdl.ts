@@ -48,6 +48,7 @@ const JobSchema = z.object({
 
 export type NoAdsContentType = "json" | "html" | "text" | "other" | "missing";
 export type NoAdsDiagnosticPhase = "info" | "job" | "poll" | "completed";
+export type NoAdsFormatSchema = "legacy" | "sparse" | "unknown";
 
 export interface NoAdsDiagnosticEvent {
   event: "noadsdl_resolution_diagnostic";
@@ -58,6 +59,7 @@ export interface NoAdsDiagnosticEvent {
   httpStatus: number | null;
   contentType: NoAdsContentType;
   formatCount: number;
+  formatSchema: NoAdsFormatSchema;
   selectedFormat: boolean;
   jobCreated: boolean;
   pollCount: number;
@@ -68,6 +70,7 @@ export interface NoAdsDiagnosticEvent {
 export interface NoAdsVideoInfo {
   title: string | null;
   formatCount: number;
+  formatSchema: NoAdsFormatSchema;
   formatId: string;
   label: string;
 }
@@ -99,6 +102,13 @@ function stringValue(value: unknown, maximum: number): string | null {
   return typeof value === "string" && value.trim().length > 0 && value.length <= maximum
     ? value.trim()
     : null;
+}
+
+function boundedFormatId(value: unknown): string | null {
+  const candidate = typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 999_999
+    ? String(value)
+    : stringValue(value, 160);
+  return candidate && /^[A-Za-z0-9._-]+$/.test(candidate) ? candidate : null;
 }
 
 function contentTypeCategory(headers: Headers): NoAdsContentType {
@@ -162,12 +172,42 @@ function formatEntries(value: unknown): Array<{ key: string; record: Record<stri
     : [];
 }
 
-function isFreeCombinedMp4(record: Record<string, unknown>): boolean {
+function isLegacyCombinedMp4(record: Record<string, unknown>): boolean {
   const ext = stringValue(record.ext, 16)?.toLowerCase();
   const type = stringValue(record.type, 32)?.toLowerCase();
   const vcodec = stringValue(record.vcodec, 32)?.toLowerCase();
   const acodec = stringValue(record.acodec, 32)?.toLowerCase();
   return ext === "mp4" && type !== "audio" && vcodec !== "none" && acodec !== "none";
+}
+
+function isSparseCombinedMp4(key: string, record: Record<string, unknown>): boolean {
+  // The current NoAdsDL schema omits codecs and extension metadata. The
+  // provider keeps combined MP4s in the video_formats map and labels them
+  // with a bounded "<height>p MP4" key; audio_formats is a separate map.
+  if (!/^\d{3,4}p\s+MP4$/i.test(key)) return false;
+  if (!boundedFormatId(record.format_id)) return false;
+  const resolution = stringValue(record.resolution, 32);
+  if (resolution && !/^\d{2,5}(?:x\d{2,5}|p)$/i.test(resolution)) return false;
+  const bitrate = record.bitrate;
+  if (bitrate !== undefined && typeof bitrate !== "number" && typeof bitrate !== "string") return false;
+  const sizeMb = record.size_mb;
+  if (sizeMb !== undefined && typeof sizeMb !== "number" && typeof sizeMb !== "string") return false;
+  return true;
+}
+
+function formatSchemaForEntries(entries: Array<{ key: string; record: Record<string, unknown> }>): NoAdsFormatSchema {
+  if (entries.some(({ record }) => isLegacyCombinedMp4(record))) return "legacy";
+  if (entries.some(({ key, record }) => isSparseCombinedMp4(key, record))) return "sparse";
+  return "unknown";
+}
+
+function countVideoInfoFormats(body: string): number {
+  try {
+    const payload = VideoInfoSchema.parse(JSON.parse(body));
+    return formatEntries(payload.video_formats).length;
+  } catch {
+    return 0;
+  }
 }
 
 export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoInfo {
@@ -182,7 +222,10 @@ export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoI
     mapFailure(detail || `status ${String(payload.status ?? httpStatus)}`);
   }
   const entries = formatEntries(payload.video_formats);
-  const eligible = entries.filter(({ record }) => isFreeCombinedMp4(record));
+  const formatSchema = formatSchemaForEntries(entries);
+  const eligible = entries.filter(({ key, record }) =>
+    isLegacyCombinedMp4(record) || isSparseCombinedMp4(key, record)
+  );
   if (eligible.length === 0) {
     throw new ProviderError("NoAdsDL returned no free combined MP4 format.", "invalid_result", false, true);
   }
@@ -196,7 +239,7 @@ export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoI
   if (!selected) {
     throw new ProviderError("NoAdsDL returned no selectable MP4 format.", "invalid_result", false, true);
   }
-  const formatId = stringValue(selected.record.format_id, 160);
+  const formatId = boundedFormatId(selected.record.format_id);
   if (!formatId) {
     throw new ProviderError("NoAdsDL omitted the selected format identifier.", "provider_schema_changed", true, true);
   }
@@ -204,6 +247,7 @@ export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoI
   return {
     title: stringValue(payload.title, 1_000),
     formatCount: entries.length,
+    formatSchema,
     formatId,
     label: quality > 0 ? `${quality}p MP4` : "MP4"
   };
@@ -266,6 +310,9 @@ export function parseNoAdsJobResponse(body: string, httpStatus = 200): NoAdsJobS
   const statusUrl = reviewedStatusUrl(payload.status_url);
   const directUrl = reviewedNoAdsDirectUrl(payload.direct_url);
   if (!statusUrl && !directUrl) {
+    if (["queued", "pending", "processing", "running"].includes(status)) {
+      return { status, statusUrl: null, directUrl: null };
+    }
     throw new ProviderError("NoAdsDL returned no bounded job continuation.", "provider_schema_changed", true, true);
   }
   return { status: status || "queued", statusUrl, directUrl };
@@ -372,6 +419,7 @@ export class NoAdsDLProvider implements ResolverProvider {
     let httpStatus: number | null = null;
     let contentType: NoAdsContentType = "missing";
     let formatCount = 0;
+    let formatSchema: NoAdsFormatSchema = "unknown";
     let selectedFormat = false;
     let jobCreated = false;
     let pollCount = 0;
@@ -387,6 +435,7 @@ export class NoAdsDLProvider implements ResolverProvider {
           httpStatus,
           contentType,
           formatCount,
+          formatSchema,
           selectedFormat,
           jobCreated,
           pollCount,
@@ -427,8 +476,10 @@ export class NoAdsDLProvider implements ResolverProvider {
       infoUrl.searchParams.set("url", input.canonicalUrl);
       phase = "info";
       const infoResponse = await requestJson(infoUrl, { method: "GET" });
+      formatCount = countVideoInfoFormats(infoResponse.body);
       const info = parseNoAdsVideoInfo(infoResponse.body, infoResponse.response.status);
       formatCount = info.formatCount;
+      formatSchema = info.formatSchema;
       selectedFormat = true;
 
       const jobUrl = new URL(DOWNLOAD_PATH, ORIGIN);
@@ -440,13 +491,18 @@ export class NoAdsDLProvider implements ResolverProvider {
       const jobResponse = await requestJson(jobUrl, { method: "GET" });
       let job = parseNoAdsJobResponse(jobResponse.body, jobResponse.response.status);
       jobCreated = true;
+      let statusUrl = job.statusUrl;
+      if (!job.directUrl && !statusUrl) {
+        throw new ProviderError("NoAdsDL did not return a bounded job status URL.", "provider_schema_changed", true, true);
+      }
 
-      while (!job.directUrl && job.statusUrl && pollCount < this.maxPolls) {
+      while (!job.directUrl && statusUrl && pollCount < this.maxPolls) {
         await delay(this.pollIntervalMs, input.signal);
         pollCount += 1;
         phase = "poll";
-        const pollResponse = await requestJson(new URL(job.statusUrl), { method: "GET" });
+        const pollResponse = await requestJson(new URL(statusUrl), { method: "GET" });
         job = parseNoAdsJobResponse(pollResponse.body, pollResponse.response.status);
+        statusUrl = job.statusUrl ?? statusUrl;
       }
       if (!job.directUrl) {
         throw new ProviderError("NoAdsDL did not finish the download job in time.", "provider_timeout", true, true);

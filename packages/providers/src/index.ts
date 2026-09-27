@@ -96,6 +96,7 @@ export {
   type SnapYTContentType,
   type SnapYTDiagnosticEvent,
   type SnapYTDiagnosticPhase,
+  type SnapYTFormatKind,
   type SnapYTProviderOptions
 } from "./adapters/snapyt";
 export {
@@ -108,6 +109,7 @@ export {
   type NoAdsJobState,
   type NoAdsDiagnosticEvent,
   type NoAdsDiagnosticPhase,
+  type NoAdsFormatSchema,
   type NoAdsContentType
 } from "./adapters/noadsdl";
 export {

@@ -19,10 +19,13 @@ const MAXIMUM_PAGE_BYTES = 384 * 1_024;
 const MAXIMUM_RESULT_BYTES = 512 * 1_024;
 const MAXIMUM_JSON_BYTES = 64 * 1_024;
 const MAXIMUM_MEDIA_PROBE_BYTES = 1_024;
-const COMBINED_MP4_ITAGS = new Map([
+const MAX_MEDIA_PROBES = 5;
+const QUALITY_BY_FORMAT = new Map([
+  ["0", "360p"],
   ["18", "360p"],
   ["22", "720p"]
 ]);
+const COMBINED_FORMATS = new Set(["0", "18", "22"]);
 
 const AjaxResponseSchema = z.object({
   success: z.boolean(),
@@ -31,6 +34,7 @@ const AjaxResponseSchema = z.object({
 
 export type SnapYTDiagnosticPhase = "landing" | "resolve" | "result" | "media" | "completed";
 export type SnapYTContentType = "json" | "html" | "text" | "other" | "missing";
+export type SnapYTFormatKind = "combined" | "video-only" | "audio-only";
 
 export interface SnapYTDiagnosticEvent {
   event: "snapyt_resolution_diagnostic";
@@ -42,6 +46,10 @@ export interface SnapYTDiagnosticEvent {
   contentType: SnapYTContentType;
   candidateCount: number;
   acceptedCount: number;
+  combinedCount: number;
+  videoOnlyCount: number;
+  audioOnlyCount: number;
+  rejectedMediaCount: number;
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -155,7 +163,29 @@ export function parseSnapYTAjaxResponse(body: string): string {
   return url.toString();
 }
 
-function reviewedForceDownloadUrl(value: string): { url: string; quality: string } | null {
+type FormatKindHint = SnapYTFormatKind | "unknown";
+
+interface ReviewedSnapYTFormat extends ParsedFormat {
+  kindHint: FormatKindHint;
+}
+
+function qualityHintFromContext(context: string): string | null {
+  const videoQualities = [...context.matchAll(/\b(\d{3,4}p)\b/gi)].map(([_, value]) => value);
+  const audioQualities = [...context.matchAll(/\b(\d{2,4})\s*(?:kbps|kbit\/s|kb\/s)\b/gi)]
+    .map(([_, value]) => `${value}kbps`);
+  return [...videoQualities, ...audioQualities].at(-1) ?? null;
+}
+
+function kindHintFromContext(context: string, format: string): FormatKindHint {
+  const normalized = context.toLowerCase();
+  if (/audio[\s-]*only|only[\s-]*audio/.test(normalized)) return "audio-only";
+  if (/video[\s-]*only|only[\s-]*video/.test(normalized)) return "video-only";
+  if (/combined|with[\s+/-]*audio|video[\s+/-]*audio/.test(normalized)) return "combined";
+  if (COMBINED_FORMATS.has(format)) return "combined";
+  return "unknown";
+}
+
+function reviewedForceDownloadUrl(value: string, context = ""): { url: string; quality: string; kindHint: FormatKindHint } | null {
   if (value.length > 8_192) return null;
   try {
     const url = new URL(value, PAGE_ORIGIN);
@@ -178,14 +208,18 @@ function reviewedForceDownloadUrl(value: string): { url: string; quality: string
       pid.length !== 1 ||
       !pid[0] ||
       fmt.length !== 1 ||
-      !COMBINED_MP4_ITAGS.has(fmt[0] ?? "") ||
+      !/^[0-9]{1,4}$/.test(fmt[0] ?? "") ||
       nonce.length !== 1 ||
       !nonce[0] ||
       hasUnexpectedKey
     ) {
       return null;
     }
-    return { url: url.toString(), quality: COMBINED_MP4_ITAGS.get(fmt[0] ?? "") ?? "MP4" };
+    return {
+      url: url.toString(),
+      quality: qualityHintFromContext(context) ?? QUALITY_BY_FORMAT.get(fmt[0] ?? "") ?? "MP4",
+      kindHint: kindHintFromContext(context, fmt[0] ?? "")
+    };
   } catch {
     return null;
   }
@@ -193,9 +227,9 @@ function reviewedForceDownloadUrl(value: string): { url: string; quality: string
 
 export function parseSnapYTResultPage(body: string): {
   candidateCount: number;
-  formats: ParsedFormat[];
+  formats: ReviewedSnapYTFormat[];
 } {
-  const formats: ParsedFormat[] = [];
+  const formats: ReviewedSnapYTFormat[] = [];
   const seen = new Set<string>();
   let candidateCount = 0;
   for (const match of body.matchAll(/<[^>]{0,8192}\bdata-force\s*=\s*(["'])[\s\S]*?\1[^>]*>/gi)) {
@@ -203,7 +237,15 @@ export function parseSnapYTResultPage(body: string): {
     const raw = attributesFromTag(tag).get("data-force");
     if (!raw) continue;
     candidateCount += 1;
-    const reviewed = reviewedForceDownloadUrl(raw);
+    const matchIndex = match.index ?? 0;
+    const afterTag = body.slice(matchIndex + tag.length, Math.min(body.length, matchIndex + tag.length + 320));
+    const nextTag = afterTag.indexOf("<");
+    const adjacentText = nextTag >= 0 ? afterTag.slice(0, nextTag) : afterTag;
+    const context = `${tag} ${adjacentText}`
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const reviewed = reviewedForceDownloadUrl(raw, context);
     if (!reviewed || seen.has(reviewed.url)) continue;
     seen.add(reviewed.url);
     formats.push({
@@ -211,13 +253,14 @@ export function parseSnapYTResultPage(body: string): {
       label: reviewed.quality,
       quality: reviewed.quality,
       container: "mp4",
-      hasVideo: true,
-      hasAudio: true
+      hasVideo: reviewed.kindHint !== "audio-only",
+      hasAudio: reviewed.kindHint !== "video-only",
+      kindHint: reviewed.kindHint
     });
   }
   if (formats.length === 0) {
     throw new ProviderError(
-      "SnapYT returned no reviewed combined MP4 resource.",
+      "SnapYT returned no reviewed media resource.",
       "invalid_result",
       false,
       true
@@ -262,13 +305,18 @@ interface SnapYTMediaProbe {
   contentType: string;
   contentDisposition: string;
   bytesRead: number;
+  container: string;
+  kind: SnapYTFormatKind;
+  hasVideo: boolean;
+  hasAudio: boolean;
 }
 
 async function probeSnapYTForceDownload(
   fetchImpl: ProviderFetch,
   target: string,
   signal: AbortSignal | undefined,
-  observer: { onResponse(observation: { status: number; headers: Headers }): void }
+  observer: { onResponse(observation: { status: number; headers: Headers }): void },
+  kindHint: FormatKindHint
 ): Promise<SnapYTMediaProbe> {
   let response: Response;
   try {
@@ -320,11 +368,11 @@ async function probeSnapYTForceDownload(
   if (response.status !== 200 && response.status !== 206) {
     throw new ProviderError("SnapYT returned an invalid media status.", "invalid_result", true, true);
   }
-  if (contentType !== "video/mp4") {
-    throw new ProviderError("SnapYT did not return a video MP4.", "invalid_result", false, true);
+  if (!contentType.startsWith("video/") && !contentType.startsWith("audio/")) {
+    throw new ProviderError("SnapYT did not return a recognized media response.", "invalid_result", false, true);
   }
   if (!contentDisposition.includes("attachment")) {
-    throw new ProviderError("SnapYT MP4 is not marked for browser download.", "invalid_result", false, true);
+    throw new ProviderError("SnapYT media is not marked for browser download.", "invalid_result", false, true);
   }
   let bytesRead = 0;
   if (response.body) {
@@ -337,9 +385,30 @@ async function probeSnapYTForceDownload(
     }
   }
   if (bytesRead <= 0) {
-    throw new ProviderError("SnapYT returned an empty MP4 response.", "invalid_result", false, true);
+    throw new ProviderError("SnapYT returned an empty media response.", "invalid_result", false, true);
   }
-  return { status: response.status, contentType, contentDisposition, bytesRead };
+  const [major, minor] = contentType.split("/", 2);
+  const container = minor === "mpeg" ? "mp3" : minor === "mp4" ? "mp4" : minor === "webm" ? "webm" : minor === "x-m4a" ? "m4a" : "";
+  if (!container) {
+    throw new ProviderError("SnapYT returned an unsupported media container.", "invalid_result", false, true);
+  }
+  const hasVideo = major === "video";
+  const hasAudio = major === "audio";
+  const kind: SnapYTFormatKind = hasAudio
+    ? "audio-only"
+    : kindHint === "combined" && container === "mp4"
+      ? "combined"
+      : "video-only";
+  return {
+    status: response.status,
+    contentType,
+    contentDisposition,
+    bytesRead,
+    container,
+    kind,
+    hasVideo,
+    hasAudio: kind === "combined" || hasAudio
+  };
 }
 
 function diagnosticFailureCode(error: unknown): ProviderFailureCode {
@@ -409,6 +478,10 @@ export class SnapYTProvider implements ResolverProvider {
     let contentType: SnapYTContentType = "missing";
     let candidateCount = 0;
     let acceptedCount = 0;
+    let combinedCount = 0;
+    let videoOnlyCount = 0;
+    let audioOnlyCount = 0;
+    let rejectedMediaCount = 0;
     const emit = (outcome: SnapYTDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -421,6 +494,10 @@ export class SnapYTProvider implements ResolverProvider {
           contentType,
           candidateCount,
           acceptedCount,
+          combinedCount,
+          videoOnlyCount,
+          audioOnlyCount,
+          rejectedMediaCount,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -526,27 +603,44 @@ export class SnapYTProvider implements ResolverProvider {
       const candidatesByQuality = [...parsed.formats].sort((left, right) => {
         const leftQuality = Number.parseInt(left.quality?.match(/\d+/)?.[0] ?? "0", 10);
         const rightQuality = Number.parseInt(right.quality?.match(/\d+/)?.[0] ?? "0", 10);
-        return rightQuality - leftQuality;
+        const leftCombined = left.kindHint === "combined" ? 1 : 0;
+        const rightCombined = right.kindHint === "combined" ? 1 : 0;
+        return rightCombined - leftCombined || rightQuality - leftQuality;
       });
-      let verifiedFormat: ParsedFormat | null = null;
+      const verifiedFormats: ParsedFormat[] = [];
       let lastProbeError: unknown = null;
-      for (const candidate of candidatesByQuality.slice(0, 2)) {
+      for (const candidate of candidatesByQuality.slice(0, MAX_MEDIA_PROBES)) {
         try {
-          await probeSnapYTForceDownload(this.fetchImpl, candidate.url, input.signal, observer);
-          verifiedFormat = candidate;
-          break;
+          const probe = await probeSnapYTForceDownload(this.fetchImpl, candidate.url, input.signal, observer, candidate.kindHint);
+          const composition = probe.kind === "combined" ? "" : probe.kind === "video-only" ? " video-only" : " audio-only";
+          const baseQuality = candidate.quality === "MP4" && probe.kind === "audio-only"
+            ? "Audio"
+            : candidate.quality ?? "MP4";
+          const quality = `${baseQuality}${composition}`.slice(0, 80);
+          verifiedFormats.push({
+            url: candidate.url,
+            label: quality,
+            quality,
+            container: probe.container,
+            hasVideo: probe.hasVideo,
+            hasAudio: probe.hasAudio
+          });
+          if (probe.kind === "combined") combinedCount += 1;
+          else if (probe.kind === "video-only") videoOnlyCount += 1;
+          else audioOnlyCount += 1;
         } catch (error) {
           lastProbeError = error;
+          rejectedMediaCount += 1;
           if (error instanceof ProviderError && error.failureCode !== "invalid_result") {
             throw error;
           }
         }
       }
-      if (!verifiedFormat) {
+      if (verifiedFormats.length === 0) {
         if (lastProbeError instanceof ProviderError) throw lastProbeError;
-        throw new ProviderError("SnapYT returned no browser-downloadable MP4.", "invalid_result", false, true);
+        throw new ProviderError("SnapYT returned no browser-downloadable media.", "invalid_result", false, true);
       }
-      acceptedCount = 1;
+      acceptedCount = verifiedFormats.length;
       phase = "completed";
       const resolution = createRedirectResolution(
         this.manifest.id,
@@ -556,9 +650,9 @@ export class SnapYTProvider implements ResolverProvider {
           title: null,
           thumbnailUrl: null,
           durationSeconds: null,
-          formats: [verifiedFormat],
+          formats: verifiedFormats,
           warnings: [
-            "YouTube Beta uses short-lived combined MP4 resources; unavailable adaptive formats are omitted."
+            "YouTube Beta exposes only bounded, browser-downloadable media; separate video and audio streams are labeled explicitly."
           ]
         },
         {
