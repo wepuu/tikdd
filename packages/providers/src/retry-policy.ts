@@ -34,6 +34,12 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "getxhamster") {
     return false;
   }
+  if (input.providerId === "snapyt-app") {
+    return false;
+  }
+  if (input.providerId === "noadsdl") {
+    return false;
+  }
   return true;
 }
 
@@ -42,5 +48,6 @@ export function resolveJobAttemptsForPlatform(platform: string): number {
   if (platform === "instagram") return 1;
   if (platform === "facebook" || platform === "pinterest") return 1;
   if (platform === "xhamster") return 1;
+  if (platform === "youtube") return 1;
   return 3;
 }

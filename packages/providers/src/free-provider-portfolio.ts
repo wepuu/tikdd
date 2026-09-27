@@ -6,7 +6,8 @@ import {
 
 /**
  * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65, 71 and 100. These records are intentionally
- * code-owned and do not make network calls, persist state, or grant rollout permission.
+ * code-owned and do not make network calls, persist state, or grant rollout permission. Work Item
+ * 110 adds NoAdsDL and Work Item 111 refreshes the SnapYT delivery evidence.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
@@ -1301,6 +1302,82 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     failureFixtureCount: 4,
     technicalState: "resolved",
     evidenceState: "evaluating"
+  },
+  {
+    id: "snapyt-app",
+    displayName: "SnapYT.app",
+    platforms: ["youtube"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "redirect",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 4,
+    technicalState: "no-media",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "noadsdl",
+    displayName: "NoAdsDL.com",
+    platforms: ["youtube"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "redirect",
+    deliveryVerified: false,
+    successFixtureCount: 2,
+    failureFixtureCount: 2,
+    technicalState: "resolved",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "ytultra",
+    displayName: "YTUltra",
+    platforms: ["youtube"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "resolved",
+    evidenceState: "evaluating"
+  },
+  {
+    id: "vd6s",
+    displayName: "VD6S",
+    platforms: ["youtube", "facebook", "instagram", "tiktok", "x"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: true,
+    requiresPaidApi: false,
+    manifestReviewed: false,
+    hostPolicyReviewed: false,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 0,
+    failureFixtureCount: 0,
+    technicalState: "blocked",
+    evidenceState: "rejected"
   }
 ] as const;
 

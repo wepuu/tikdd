@@ -109,6 +109,8 @@ Current records:
 - [TikVid.cc secondary candidate](providers/tikvid.md)
 - [SnapInsta.to secondary candidate](providers/snapinsta.md)
 - [FDown Isuru Facebook adapter](providers/fdown-isuru.md)
+- [SnapYT YouTube POC](providers/snapyt.md)
+- [NoAdsDL YouTube Beta POC](providers/noadsdl.md)
 - AnyLoader xHamster was evaluated as a technical candidate in [Work Item 107](work-item-107-anyloader-xhamster-poc-closeout.md)
   and rejected because its progressive media responses cannot satisfy the current browser-save
   boundary without a new HLS client mode or a server media relay.

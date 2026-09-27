@@ -1862,3 +1862,45 @@ non-product pages stay excluded. The Admin versioned content-pack action writes 
 preserves analytics/advertising IDs; the owner must publish a new snapshot explicitly. See
 [Work Item 108](work-item-108-multilingual-seo-publication.md) and
 [ADR-0049](architecture/adr/0049-route-qualified-multilingual-seo.md).
+
+### Work Item 109 — SnapYT YouTube Beta POC and Delivery audit boundary
+
+Work Item 109 adds a disabled-by-default `snapyt-app / youtube` adapter after a bounded NL review of
+SnapYT, YTUltra, and VD6S. SnapYT follows one nonce/AJAX/result-page sequence and normalizes only
+combined progressive MP4 itags 18 and 22. Its versioned Delivery policy accepts the exact
+`www.snapyt.app/wp-admin/admin-ajax.php` force-download action and a closed query schema; direct
+Googlevideo, adaptive streams, conversion, Provider-page handoff, and TikDD media proxying remain
+out of scope.
+
+YTUltra remains Lab-only because only one of two samples produced a deliverable MP4. VD6S remains
+blocked because its analysis call requires Turnstile. SnapYT ships with three false gates, one
+in-flight request, configurable spacing, sanitized diagnostics, no queue replay, and no rollout.
+YouTube remains non-production and non-indexable until two distinct browser downloads establish the
+no-Cookie/no-Referer attachment path and the normal route-qualified content publication gates pass.
+See [Work Item 109](work-item-109-snapyt-youtube-beta-poc.md) and
+[ADR-0050](architecture/adr/0050-snapyt-youtube-provider-stream.md).
+
+### Work Item 110 — NoAdsDL YouTube Beta 接入与交付审计
+
+Work Item 110 adds a separate, disabled-by-default `noadsdl / youtube` adapter after two
+repeatable anonymous protocol samples. The adapter uses one metadata request, one asynchronous
+job request, and at most ten bounded status polls to select a free combined MP4. Its versioned
+`noadsdl-youtube-media-v1` policy accepts only the Provider's generated file path; no source CDN,
+Provider page handoff, or TikDD media proxy is introduced.
+
+NoAdsDL has its own terms, Delivery-audit, and runtime gates, conservative concurrency/interval
+controls, sanitized diagnostics, and no queue replay. It remains a Provider-stream candidate,
+not a production qualification or indexable YouTube route. Production requires an exact-SHA
+deployment, a unique `noadsdl / youtube / nl` rollout rule, and two real browser downloads before
+any gate is enabled. See [Work Item 110](work-item-110-noadsdl-youtube-beta.md) and
+[ADR-0051](architecture/adr/0051-noadsdl-youtube-provider-stream.md).
+
+### Work Item 111 — SnapYT 交付完整性修复与 YouTube 二级路由
+
+Current NL evidence showed that SnapYT's format label can return `audio/webm`, while another
+sample returned no reviewed combined MP4. Work Item 111 adds a bounded 1 KiB Range validation
+before a Delivery candidate is created and requires `200/206`, `video/mp4`, non-zero bytes, and
+attachment disposition. NoAdsDL remains priority 740 and SnapYT priority 720 as a sequential
+fallback; both remain independently gated and unrolled until two real browser samples pass.
+See [Work Item 111](work-item-111-snapyt-delivery-integrity.md) and
+[ADR-0052](architecture/adr/0052-snapyt-media-integrity-probe.md).

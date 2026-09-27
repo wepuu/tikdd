@@ -62,3 +62,22 @@ streams and the Provider's `/f` relay. Its versioned Delivery policy accepts onl
 `*.ahcdn.com` and uses the reviewed browser `cors-download` handoff. The adapter is bounded to one
 in-flight request with configurable spacing and has no queue replay; 9xBuddy and LocoLoader remain
 explicit sequential fallbacks until a separate rollout audit enables GetXHamster.
+
+## SnapYT YouTube POC
+
+Work Item 109/111 adds `snapyt-app` as a disabled YouTube fallback. It follows one bounded page nonce,
+AJAX resolve, and result-page flow, then accepts only combined MP4 itags 18/22 through the exact
+`snapyt-app-youtube-media-v1` force-download policy. Direct Googlevideo URLs, adaptive streams,
+audio-only results, queue replay, Provider-page handoff, and TikDD media proxying remain excluded.
+Before issuing a candidate, the Worker performs a bounded Range probe and requires an actual
+non-empty `video/mp4` attachment response. NoAdsDL remains the priority-740 YouTube primary;
+SnapYT is the priority-720 sequential fallback. The manifest exposes no delivery mode until the
+independent browser audit gate is explicit.
+
+## NoAdsDL YouTube Beta POC
+
+Work Item 110 adds `noadsdl` as a separate disabled-by-default YouTube adapter. It performs one
+metadata request, one asynchronous job request and at most ten same-host status polls, then uses
+the reviewed `noadsdl-youtube-media-v1` Provider-stream policy. NoAdsDL is not enabled by the
+SnapYT gates, is not a source-CDN redirect, and is not eligible for production until its own
+three gates, rollout rule and browser Delivery audit are complete.

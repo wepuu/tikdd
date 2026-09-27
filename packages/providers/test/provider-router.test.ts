@@ -128,6 +128,18 @@ describe("ProviderRouter", () => {
     expect(routed.attempts.map((attempt) => attempt.providerId)).toEqual(["9xbuddy", "locoloader"]);
   });
 
+  it("keeps NoAdsDL ahead of SnapYT and falls back sequentially", async () => {
+    const calls: string[] = [];
+    const router = new ProviderRouter([
+      new TestProvider("noadsdl", 740, "retryable", calls),
+      new TestProvider("snapyt-app", 720, "success", calls)
+    ]);
+    const routed = await router.resolve(input);
+    expect(calls).toEqual(["noadsdl", "snapyt-app"]);
+    expect(routed.resolution.result.provenance.provider).toBe("snapyt-app");
+    expect(routed.attempts.map(({ providerId }) => providerId)).toEqual(["noadsdl", "snapyt-app"]);
+  });
+
   it("ranks GetXHamster ahead of 9xBuddy and LocoLoader for xHamster", async () => {
     const calls: string[] = [];
     const xhamsterInput: ResolveInput = {

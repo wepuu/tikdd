@@ -11,6 +11,7 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("facebook")).toBe(1);
     expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
     expect(resolveJobAttemptsForPlatform("xhamster")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("youtube")).toBe(1);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
@@ -137,6 +138,36 @@ describe("provider automatic retry policy", () => {
     expect(shouldAutomaticallyRetryProviderFailure({
       platform: "vimeo",
       providerId: "viddown-net",
+      failureCode
+    })).toBe(false);
+  });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay SnapYT after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "youtube",
+      providerId: "snapyt-app",
+      failureCode
+    })).toBe(false);
+  });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay NoAdsDL after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "youtube",
+      providerId: "noadsdl",
       failureCode
     })).toBe(false);
   });

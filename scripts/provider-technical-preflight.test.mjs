@@ -78,7 +78,11 @@ describe("technical Provider preflight classification", () => {
       snapvideo: "https://snapvideo.cc/",
       "savevideo-me": "https://savevideo.me/en/",
       "viddown-net": "https://www.viddown.net/download-vimeo-video",
-      "downbot-app": "https://downbot.app/en"
+      "downbot-app": "https://downbot.app/en",
+      "snapyt-app": "https://www.snapyt.app/",
+      noadsdl: "https://noadsdl.com/",
+      ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
+      vd6s: "https://vd6s.net/en5/"
     });
   });
 
@@ -95,6 +99,21 @@ describe("technical Provider preflight classification", () => {
       method: "POST",
       url: "https://api.downbot.app/api/download/request"
     });
+    expect(resolveActiveEndpoint("snapyt-app", "youtube")).toEqual({
+      method: "POST",
+      url: "https://www.snapyt.app/wp-admin/admin-ajax.php"
+    });
+    expect(resolveActiveEndpoint("noadsdl", "youtube")).toEqual({
+      method: "GET",
+      url: "https://noadsdl.com/api/video-info"
+    });
+    expect(resolveActiveEndpoint("ytultra", "youtube")).toEqual({
+      method: "POST",
+      url: "https://api.ytultra.com/ikool/youtube/download"
+    });
+    expect(() => resolveActiveEndpoint("vd6s", "youtube")).toThrow(
+      "No reviewed endpoint for vd6s/youtube."
+    );
     expect(Object.hasOwn(ACTIVE_ENDPOINTS["savevideo-me"], "x")).toBe(true);
     expect(() => resolveActiveEndpoint("viddown-net", "instagram")).toThrow(
       "No reviewed endpoint for viddown-net/instagram."
