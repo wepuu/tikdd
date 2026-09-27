@@ -83,6 +83,11 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/GETXHAMSTER_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/GETXHAMSTER_APPROVED_PLATFORMS/);
     expect(releaseScript).toMatch(/GETXHAMSTER_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/ENABLE_SNAPYT_PROVIDER/);
+    expect(releaseScript).toMatch(/SNAPYT_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/SNAPYT_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"SnapYT"/);
+    expect(releaseScript).toMatch(/snapyt_enabled=/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

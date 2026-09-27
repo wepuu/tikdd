@@ -337,6 +337,9 @@ through the asynchronous mock route.
   xHamster. Platform pages enter the sitemap only after production-route, delivery, content, and
   reviewed GEO gates pass; Beta status remains visible and is not itself a noindex rule. Calibration remains stopped and Admin
   remains the always-available owner control plane.
+- Work Item 109 implements a default-off SnapYT YouTube POC with an exact provider-stream Delivery
+  policy. YouTube is not yet a live product route or search page; two distinct browser downloads and
+  the normal route/content publication gates remain required before Beta activation.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

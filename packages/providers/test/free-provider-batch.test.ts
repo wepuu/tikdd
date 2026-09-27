@@ -291,6 +291,21 @@ describe("Work Item 51 portfolio qualification", () => {
       productionRouteEligible: false,
       reasons: expect.arrayContaining(["technical_unverified", "not_evaluated"])
     });
+    expect(results.find(({ providerId }) => providerId === "snapyt-app")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["missing_failure_fixtures", "delivery_unverified", "not_evaluated"])
+    });
+    expect(results.find(({ providerId }) => providerId === "ytultra")).toMatchObject({
+      status: "deferred",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["manifest_unreviewed", "host_policy_unreviewed", "missing_success_fixture"])
+    });
+    expect(results.find(({ providerId }) => providerId === "vd6s")).toMatchObject({
+      status: "rejected",
+      productionRouteEligible: false,
+      reasons: expect.arrayContaining(["interactive_challenge", "technical_blocked"])
+    });
   });
 });
 

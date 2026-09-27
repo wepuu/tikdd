@@ -65,7 +65,10 @@ export const CANDIDATES = {
   snapvideo: "https://snapvideo.cc/",
   "savevideo-me": "https://savevideo.me/en/",
   "viddown-net": "https://www.viddown.net/download-vimeo-video",
-  "downbot-app": "https://downbot.app/en"
+  "downbot-app": "https://downbot.app/en",
+  "snapyt-app": "https://www.snapyt.app/",
+  ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
+  vd6s: "https://vd6s.net/en5/"
 };
 
 /**
@@ -95,7 +98,13 @@ export const ACTIVE_ENDPOINTS = {
     "instagram",
     "vimeo",
     "x"
-  ].map((platform) => [platform, { method: "POST", url: "https://api.downbot.app/api/download/request" }]))
+  ].map((platform) => [platform, { method: "POST", url: "https://api.downbot.app/api/download/request" }])),
+  "snapyt-app": {
+    youtube: { method: "POST", url: "https://www.snapyt.app/wp-admin/admin-ajax.php" }
+  },
+  ytultra: {
+    youtube: { method: "POST", url: "https://api.ytultra.com/ikool/youtube/download" }
+  }
 };
 
 export function resolveActiveEndpoint(providerId, platform) {

@@ -89,6 +89,16 @@ export {
   type GetXHamsterProviderOptions
 } from "./adapters/getxhamster";
 export {
+  SnapYTProvider,
+  extractSnapYTNonce,
+  parseSnapYTAjaxResponse,
+  parseSnapYTResultPage,
+  type SnapYTContentType,
+  type SnapYTDiagnosticEvent,
+  type SnapYTDiagnosticPhase,
+  type SnapYTProviderOptions
+} from "./adapters/snapyt";
+export {
   NineXBuddyProvider,
   createNineXBuddyAuthToken,
   isNineXBuddyLandingChallenge,

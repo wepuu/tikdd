@@ -158,6 +158,11 @@ verify_worker_runtime_config() {
     ENABLE_GETXHAMSTER_PROVIDER \
     GETXHAMSTER_AUTOMATION_USE_APPROVED \
     GETXHAMSTER_DELIVERY_AUDIT_APPROVED)"
+  snapyt_enabled="$(verify_provider_gate_triplet \
+    "SnapYT" \
+    ENABLE_SNAPYT_PROVIDER \
+    SNAPYT_TERMS_APPROVED \
+    SNAPYT_DELIVERY_AUDIT_APPROVED)"
   expected_socialdownloader_platforms="$(release_value SOCIALDOWNLOADER_APPROVED_PLATFORMS "facebook")"
   expected_socialdownloader_verified="$(release_value SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS "facebook")"
   for platform_key in SOCIALDOWNLOADER_APPROVED_PLATFORMS SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS; do
@@ -206,7 +211,7 @@ verify_worker_runtime_config() {
       return 78
     fi
   done
-  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled"
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled snapyt_enabled=$snapyt_enabled"
 }
 
 validate_public_web_origin() {

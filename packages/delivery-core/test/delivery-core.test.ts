@@ -189,6 +189,35 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
+    expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("limits SnapYT delivery to the exact force-download action and query schema", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "snapyt-app",
+      mode: "redirect",
+      hostPolicyId: "snapyt-app-youtube-media-v1",
+      targetUrl: "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture"
+    }).hostname).toBe("www.snapyt.app");
+    for (const targetUrl of [
+      "https://snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://evil.www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "http://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://user:pass@www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://www.snapyt.app:8443/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://www.snapyt.app/other?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=other&pid=fixture&fmt=18&nonce=fixture",
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18",
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture&next=unexpected",
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "snapyt-app",
+        mode: "redirect",
+        hostPolicyId: "snapyt-app-youtube-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("limits GetXHamster media to reviewed xhcdn and ahcdn subdomains", () => {

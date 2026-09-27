@@ -50,6 +50,22 @@ const manifests = [
 ];
 
 describe("internal deployment preflight", () => {
+  it("requires both SnapYT approvals when the Provider is enabled", () => {
+    const base = {
+      ...environment,
+      ENABLE_TWITTERSAVER_PROVIDER: "false",
+      ENABLE_SSSTWITTER_PROVIDER: "false",
+      ENABLE_SNAPYT_PROVIDER: "true"
+    };
+    expect(loadInternalRuntime(base).enabledProviders).toContain("snapyt-app");
+    expect(loadInternalRuntime(base).providerApprovalsPresent).toBe(false);
+    expect(loadInternalRuntime({
+      ...base,
+      SNAPYT_TERMS_APPROVED: "true",
+      SNAPYT_DELIVERY_AUDIT_APPROVED: "true"
+    }).providerApprovalsPresent).toBe(true);
+  });
+
   it("produces an aggregate ready report without secrets or infrastructure addresses", () => {
     const report = evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(environment), signals, manifests, now });
     expect(report.decision).toBe("ready"); expect(report.summary.blocked).toBe(0);

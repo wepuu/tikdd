@@ -24,6 +24,7 @@ import {
   PinterestVideoDownloaderProvider,
   FDownIsuruProvider,
   GetXHamsterProvider,
+  SnapYTProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
@@ -85,7 +86,11 @@ const providerAdapters = [
   }),
   new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }),
   new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" }),
-  new GetXHamsterProvider({ enabled: process.env.ENABLE_GETXHAMSTER_PROVIDER === "true" })
+  new GetXHamsterProvider({ enabled: process.env.ENABLE_GETXHAMSTER_PROVIDER === "true" }),
+  new SnapYTProvider({
+    enabled: process.env.ENABLE_SNAPYT_PROVIDER === "true",
+    deliveryVerified: process.env.SNAPYT_DELIVERY_AUDIT_APPROVED === "true"
+  })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);
 const admission = loadAdmissionControlConfiguration();

@@ -9,7 +9,8 @@ import {
   TikCDProvider,
   VidDownProvider,
   LocoLoaderProvider,
-  NineXBuddyProvider
+  NineXBuddyProvider,
+  SnapYTProvider
 } from "../src/index";
 
 function priority(provider: { manifest: { platforms: readonly { platform: string; priority: number }[] } }, platform: string) {
@@ -64,5 +65,23 @@ describe("production route matrix", () => {
       expect.objectContaining({ platform: "xhamster", priority: 700, deliveryModes: ["redirect"] }),
       expect.objectContaining({ platform: "dailymotion", deliveryModes: [] })
     ]));
+  });
+
+  it("keeps SnapYT YouTube implemented but outside production until Delivery is verified", () => {
+    const provider = new SnapYTProvider();
+    expect(provider.manifest.enabled).toBe(false);
+    expect(provider.manifest.platforms).toEqual([
+      expect.objectContaining({
+        platform: "youtube",
+        priority: 720,
+        deliveryModes: [],
+        verificationStatus: "fixture_verified"
+      })
+    ]);
+    const verified = new SnapYTProvider({ deliveryVerified: true });
+    expect(verified.manifest.platforms[0]).toEqual(expect.objectContaining({
+      deliveryModes: ["redirect"],
+      verificationStatus: "delivery_verified"
+    }));
   });
 });

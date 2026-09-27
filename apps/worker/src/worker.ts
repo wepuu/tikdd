@@ -35,6 +35,7 @@ import {
   LocoLoaderProvider,
   NineXBuddyProvider,
   GetXHamsterProvider,
+  SnapYTProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -69,6 +70,7 @@ import { loadVidDownActivationConfiguration } from "./viddown-activation";
 import { loadLocoLoaderActivationConfiguration } from "./locoloader-activation";
 import { loadNineXBuddyActivationConfiguration } from "./nine-x-buddy-activation";
 import { loadGetXHamsterActivationConfiguration } from "./getxhamster-activation";
+import { loadSnapYTActivationConfiguration } from "./snapyt-activation";
 import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
@@ -93,6 +95,7 @@ const vidDownActivation = loadVidDownActivationConfiguration();
 const locoLoaderActivation = loadLocoLoaderActivationConfiguration();
 const nineXBuddyActivation = loadNineXBuddyActivationConfiguration();
 const getXHamsterActivation = loadGetXHamsterActivationConfiguration();
+const snapYTActivation = loadSnapYTActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -259,6 +262,15 @@ if (getXHamsterActivation.enabled) {
     deliveryVerifiedPlatforms: getXHamsterActivation.deliveryVerifiedPlatforms,
     maxConcurrency: getXHamsterActivation.maxConcurrency,
     minIntervalMs: getXHamsterActivation.minIntervalMs
+  }));
+}
+if (snapYTActivation.enabled) {
+  providers.push(new SnapYTProvider({
+    enabled: true,
+    deliveryVerified: snapYTActivation.deliveryAuditApproved,
+    maxConcurrency: snapYTActivation.maxConcurrency,
+    minIntervalMs: snapYTActivation.minIntervalMs,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }
 if (enableMockProvider) {

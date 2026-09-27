@@ -1862,3 +1862,20 @@ non-product pages stay excluded. The Admin versioned content-pack action writes 
 preserves analytics/advertising IDs; the owner must publish a new snapshot explicitly. See
 [Work Item 108](work-item-108-multilingual-seo-publication.md) and
 [ADR-0049](architecture/adr/0049-route-qualified-multilingual-seo.md).
+
+### Work Item 109 — SnapYT YouTube Beta POC and Delivery audit boundary
+
+Work Item 109 adds a disabled-by-default `snapyt-app / youtube` adapter after a bounded NL review of
+SnapYT, YTUltra, and VD6S. SnapYT follows one nonce/AJAX/result-page sequence and normalizes only
+combined progressive MP4 itags 18 and 22. Its versioned Delivery policy accepts the exact
+`www.snapyt.app/wp-admin/admin-ajax.php` force-download action and a closed query schema; direct
+Googlevideo, adaptive streams, conversion, Provider-page handoff, and TikDD media proxying remain
+out of scope.
+
+YTUltra remains Lab-only because only one of two samples produced a deliverable MP4. VD6S remains
+blocked because its analysis call requires Turnstile. SnapYT ships with three false gates, one
+in-flight request, configurable spacing, sanitized diagnostics, no queue replay, and no rollout.
+YouTube remains non-production and non-indexable until two distinct browser downloads establish the
+no-Cookie/no-Referer attachment path and the normal route-qualified content publication gates pass.
+See [Work Item 109](work-item-109-snapyt-youtube-beta-poc.md) and
+[ADR-0050](architecture/adr/0050-snapyt-youtube-provider-stream.md).
