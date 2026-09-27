@@ -35,6 +35,14 @@ const AjaxResponseSchema = z.object({
 export type SnapYTDiagnosticPhase = "landing" | "resolve" | "result" | "media" | "completed";
 export type SnapYTContentType = "json" | "html" | "text" | "other" | "missing";
 export type SnapYTFormatKind = "combined" | "video-only" | "audio-only";
+export type SnapYTMediaRejectionReason =
+  | "redirect"
+  | "policy"
+  | "status"
+  | "html"
+  | "mime"
+  | "disposition"
+  | "empty";
 
 export interface SnapYTDiagnosticEvent {
   event: "snapyt_resolution_diagnostic";
@@ -50,6 +58,13 @@ export interface SnapYTDiagnosticEvent {
   videoOnlyCount: number;
   audioOnlyCount: number;
   rejectedMediaCount: number;
+  redirectRejectedCount: number;
+  policyRejectedCount: number;
+  statusRejectedCount: number;
+  htmlRejectedCount: number;
+  mimeRejectedCount: number;
+  dispositionRejectedCount: number;
+  emptyRejectedCount: number;
   failureCode: ProviderFailureCode | null;
   durationMs: number;
 }
@@ -311,6 +326,13 @@ interface SnapYTMediaProbe {
   hasAudio: boolean;
 }
 
+class SnapYTMediaProbeError extends ProviderError {
+  constructor(message: string, readonly rejectionReason: SnapYTMediaRejectionReason, retryable = false) {
+    super(message, "invalid_result", retryable, true);
+    this.name = "SnapYTMediaProbeError";
+  }
+}
+
 async function probeSnapYTForceDownload(
   fetchImpl: ProviderFetch,
   target: string,
@@ -336,20 +358,24 @@ async function probeSnapYTForceDownload(
   }
   observer.onResponse({ status: response.status, headers: new Headers(response.headers) });
   if ([301, 302, 303, 307, 308].includes(response.status)) {
-    throw new ProviderError("SnapYT returned a redirect instead of a reviewed MP4 response.", "invalid_result", true, true);
+    throw new SnapYTMediaProbeError(
+      "SnapYT returned a redirect outside its reviewed Provider-stream boundary.",
+      "redirect",
+      true
+    );
   }
   let responseUrl: URL;
   try {
     responseUrl = new URL(response.url || target);
   } catch {
-    throw new ProviderError("SnapYT returned an invalid media URL.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError("SnapYT returned an invalid media URL.", "policy");
   }
   if (
     responseUrl.protocol !== "https:" ||
     responseUrl.hostname.toLowerCase() !== "www.snapyt.app" ||
     responseUrl.pathname !== AJAX_PATH
   ) {
-    throw new ProviderError("SnapYT media response escaped its reviewed host policy.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError("SnapYT media response escaped its reviewed host policy.", "policy");
   }
   if (response.status === 429) {
     throw new ProviderError("SnapYT rate limited media validation.", "provider_rate_limited", true, true);
@@ -366,13 +392,19 @@ async function probeSnapYTForceDownload(
   const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
   const contentDisposition = response.headers.get("content-disposition")?.toLowerCase() ?? "";
   if (response.status !== 200 && response.status !== 206) {
-    throw new ProviderError("SnapYT returned an invalid media status.", "invalid_result", true, true);
+    throw new SnapYTMediaProbeError("SnapYT returned an invalid media status.", "status", true);
   }
   if (!contentType.startsWith("video/") && !contentType.startsWith("audio/")) {
-    throw new ProviderError("SnapYT did not return a recognized media response.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError(
+      "SnapYT did not return a recognized media response.",
+      contentType === "text/html" || contentType === "application/xhtml+xml" ? "html" : "mime"
+    );
   }
   if (!contentDisposition.includes("attachment")) {
-    throw new ProviderError("SnapYT media is not marked for browser download.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError(
+      "SnapYT media is not marked for browser download.",
+      "disposition"
+    );
   }
   let bytesRead = 0;
   if (response.body) {
@@ -385,12 +417,12 @@ async function probeSnapYTForceDownload(
     }
   }
   if (bytesRead <= 0) {
-    throw new ProviderError("SnapYT returned an empty media response.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError("SnapYT returned an empty media response.", "empty");
   }
   const [major, minor] = contentType.split("/", 2);
   const container = minor === "mpeg" ? "mp3" : minor === "mp4" ? "mp4" : minor === "webm" ? "webm" : minor === "x-m4a" ? "m4a" : "";
   if (!container) {
-    throw new ProviderError("SnapYT returned an unsupported media container.", "invalid_result", false, true);
+    throw new SnapYTMediaProbeError("SnapYT returned an unsupported media container.", "mime");
   }
   const hasVideo = major === "video";
   const hasAudio = major === "audio";
@@ -482,6 +514,15 @@ export class SnapYTProvider implements ResolverProvider {
     let videoOnlyCount = 0;
     let audioOnlyCount = 0;
     let rejectedMediaCount = 0;
+    const rejectionCounts: Record<SnapYTMediaRejectionReason, number> = {
+      redirect: 0,
+      policy: 0,
+      status: 0,
+      html: 0,
+      mime: 0,
+      disposition: 0,
+      empty: 0
+    };
     const emit = (outcome: SnapYTDiagnosticEvent["outcome"], failureCode: ProviderFailureCode | null) => {
       try {
         this.diagnosticSink?.({
@@ -498,6 +539,13 @@ export class SnapYTProvider implements ResolverProvider {
           videoOnlyCount,
           audioOnlyCount,
           rejectedMediaCount,
+          redirectRejectedCount: rejectionCounts.redirect,
+          policyRejectedCount: rejectionCounts.policy,
+          statusRejectedCount: rejectionCounts.status,
+          htmlRejectedCount: rejectionCounts.html,
+          mimeRejectedCount: rejectionCounts.mime,
+          dispositionRejectedCount: rejectionCounts.disposition,
+          emptyRejectedCount: rejectionCounts.empty,
           failureCode,
           durationMs: Math.max(0, Date.now() - startedAt)
         });
@@ -631,6 +679,9 @@ export class SnapYTProvider implements ResolverProvider {
         } catch (error) {
           lastProbeError = error;
           rejectedMediaCount += 1;
+          if (error instanceof SnapYTMediaProbeError) {
+            rejectionCounts[error.rejectionReason] += 1;
+          }
           if (error instanceof ProviderError && error.failureCode !== "invalid_result") {
             throw error;
           }

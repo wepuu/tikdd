@@ -283,7 +283,7 @@ if (noAdsDLActivation.enabled) {
     maxConcurrency: noAdsDLActivation.maxConcurrency,
     minIntervalMs: noAdsDLActivation.minIntervalMs,
     pollIntervalMs: noAdsDLActivation.pollIntervalMs,
-    maxPolls: noAdsDLActivation.maxPolls,
+    pollBudgetMs: noAdsDLActivation.pollBudgetMs,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

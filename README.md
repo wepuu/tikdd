@@ -346,6 +346,9 @@ through the asynchronous mock route.
 - Work Item 111 hardens SnapYT with a bounded real-MP4 attachment probe and places it behind
   NoAdsDL as the sequential YouTube fallback. Both routes remain gated and non-indexable until
   browser Delivery qualification is complete.
+- Work Item 113 gives NoAdsDL one bounded 40-second asynchronous completion budget and aligns the
+  YouTube Worker/Web deadlines. Current SnapYT responses redirect through a dynamic Googlevideo
+  chain that ends in 403 from NL, so its rollout remains closed instead of widening Delivery.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

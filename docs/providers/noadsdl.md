@@ -15,7 +15,7 @@ The adapter calls `GET /api/video-info` with the canonical URL, selects one free
 then calls `GET /download?format=mp4&format_id=...&async=1`. The parser accepts both the original
 codec-rich response and the current sparse `"720p MP4"` map, where `format_id` is required but
 title, bitrate, size and other optional metadata may be absent. If the Provider queues the job,
-TikDD polls its same-host status URL at most ten times; a processing response may omit
+TikDD polls its same-host status URL for at most 40 seconds and twenty requests; a processing response may omit
 `status_url`, in which case the original reviewed status URL is retained. Only a ready generated
 file path becomes a candidate.
 
@@ -32,7 +32,7 @@ NOADSDL_DELIVERY_AUDIT_APPROVED=false
 NOADSDL_MAX_CONCURRENCY=1
 NOADSDL_MIN_INTERVAL_MS=5000
 NOADSDL_POLL_INTERVAL_MS=2000
-NOADSDL_MAX_POLLS=10
+NOADSDL_POLL_BUDGET_MS=40000
 ```
 
 All gates must be true before the Worker registers the adapter. A unique `noadsdl / youtube / nl`
@@ -43,5 +43,6 @@ is disabled because each YouTube job is already bounded to one Provider attempt.
 
 Two public samples resolved through the anonymous API and returned a Provider-hosted MP4 stream;
 the result is `resolved`/Delivery-conditional, not a source-CDN qualification. Diagnostics expose
-only phase, HTTP status, content type, format and poll counts, failure code and elapsed time. They
+only phase, HTTP status, content type, format and poll counts, bounded job-status/progress categories,
+failure code and elapsed time. They
 never include source URLs, response bodies, cookies, tokens, query values or media URLs.

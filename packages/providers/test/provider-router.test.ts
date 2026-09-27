@@ -521,6 +521,21 @@ describe("ProviderRouter", () => {
     expect(calls).toEqual(["terminal"]);
   });
 
+  it("preserves an explicit Provider failure when the shared route deadline also expires", async () => {
+    const calls: string[] = [];
+    const controller = new AbortController();
+    controller.abort(new DOMException("route deadline", "TimeoutError"));
+    const router = new ProviderRouter([
+      new TestProvider("explicit", 100, "retryable", calls)
+    ]);
+
+    await expect(router.resolve({ ...input, signal: controller.signal })).rejects.toMatchObject({
+      failureCode: "provider_challenge",
+      retryable: true,
+      attempts: [expect.objectContaining({ failureCode: "provider_challenge" })]
+    });
+  });
+
   it("returns an attempt ledger when all providers fail", async () => {
     const calls: string[] = [];
     const router = new ProviderRouter([

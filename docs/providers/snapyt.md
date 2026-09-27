@@ -54,10 +54,16 @@ NoAdsDL is the YouTube primary at priority 740; SnapYT remains the sequential fa
 - network, timeout, 5xx, challenge, invalid JSON, missing result page, and schema drift: sanitized
   Provider failures, fallback allowed;
 - no reviewed numeric target, unsupported MIME response, missing attachment disposition, empty
-  response, or rejected media probe: non-retryable `invalid_result`, fallback allowed.
+response, or rejected media probe: non-retryable `invalid_result`, fallback allowed.
+
+The current NL response redirects from the exact force-download action through
+`redirector.googlevideo.com` to a dynamic Googlevideo host and ends in 403. That chain is outside
+the reviewed v1 Provider-stream boundary. The production rollout is therefore disabled at zero
+allocation; TikDD does not widen Delivery to `*.googlevideo.com`.
 
 The diagnostic event contains only task ID, platform, phase, HTTP status, content-type category,
-candidate/accepted/composition/rejection counts, failure code, and duration. It never contains
+candidate/accepted/composition counts plus redirect/policy/status/HTML/MIME/disposition/empty
+rejection counts, failure code, and duration. It never contains
 source or result URLs, titles, response bodies, Cookies, nonce values, media hosts, or query
 parameters.
 

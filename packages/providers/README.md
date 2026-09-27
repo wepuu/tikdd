@@ -76,8 +76,9 @@ gate is explicit.
 
 ## NoAdsDL YouTube Beta POC
 
-Work Item 110/112 adds `noadsdl` as a separate disabled-by-default YouTube adapter. It performs one
-metadata request, one asynchronous job request and at most ten same-host status polls, then uses
+Work Item 110/112/113 adds `noadsdl` as a separate disabled-by-default YouTube adapter. It performs one
+metadata request, one asynchronous job request and a 40-second, twenty-request maximum same-host
+status-poll window, then uses
 the reviewed `noadsdl-youtube-media-v1` Provider-stream policy. The parser supports both the
 legacy codec-rich map and the current sparse combined-MP4 map, retaining the original status URL
 when a processing response omits it. NoAdsDL is not enabled by the SnapYT gates, is not a
