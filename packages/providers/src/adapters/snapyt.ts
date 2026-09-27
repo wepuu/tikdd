@@ -18,6 +18,7 @@ const MAXIMUM_CANDIDATE_LIFETIME_MS = 2 * 60 * 1_000;
 const MAXIMUM_PAGE_BYTES = 384 * 1_024;
 const MAXIMUM_RESULT_BYTES = 512 * 1_024;
 const MAXIMUM_JSON_BYTES = 64 * 1_024;
+const MAXIMUM_MEDIA_PROBE_BYTES = 1_024;
 const COMBINED_MP4_ITAGS = new Map([
   ["18", "360p"],
   ["22", "720p"]
@@ -28,7 +29,7 @@ const AjaxResponseSchema = z.object({
   data: z.unknown().optional()
 }).passthrough();
 
-export type SnapYTDiagnosticPhase = "landing" | "resolve" | "result" | "completed";
+export type SnapYTDiagnosticPhase = "landing" | "resolve" | "result" | "media" | "completed";
 export type SnapYTContentType = "json" | "html" | "text" | "other" | "missing";
 
 export interface SnapYTDiagnosticEvent {
@@ -256,6 +257,91 @@ function isSnapYTChallenge(observation: ProviderChallengeObservation): boolean {
     /cf-turnstile|cdn-cgi\/challenge-platform|challenge-stage/i.test(observation.body);
 }
 
+interface SnapYTMediaProbe {
+  status: number;
+  contentType: string;
+  contentDisposition: string;
+  bytesRead: number;
+}
+
+async function probeSnapYTForceDownload(
+  fetchImpl: ProviderFetch,
+  target: string,
+  signal: AbortSignal | undefined,
+  observer: { onResponse(observation: { status: number; headers: Headers }): void }
+): Promise<SnapYTMediaProbe> {
+  let response: Response;
+  try {
+    response = await fetchImpl(new URL(target), {
+      method: "GET",
+      redirect: "manual",
+      ...(signal ? { signal } : {}),
+      headers: {
+        accept: "video/mp4,*/*",
+        range: `bytes=0-${MAXIMUM_MEDIA_PROBE_BYTES - 1}`,
+        "user-agent": "TikDD/snapyt-youtube"
+      }
+    });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new ProviderError("SnapYT media validation could not be reached.", "provider_unavailable", true, true);
+  }
+  observer.onResponse({ status: response.status, headers: new Headers(response.headers) });
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    throw new ProviderError("SnapYT returned a redirect instead of a reviewed MP4 response.", "invalid_result", true, true);
+  }
+  let responseUrl: URL;
+  try {
+    responseUrl = new URL(response.url || target);
+  } catch {
+    throw new ProviderError("SnapYT returned an invalid media URL.", "invalid_result", false, true);
+  }
+  if (
+    responseUrl.protocol !== "https:" ||
+    responseUrl.hostname.toLowerCase() !== "www.snapyt.app" ||
+    responseUrl.pathname !== AJAX_PATH
+  ) {
+    throw new ProviderError("SnapYT media response escaped its reviewed host policy.", "invalid_result", false, true);
+  }
+  if (response.status === 429) {
+    throw new ProviderError("SnapYT rate limited media validation.", "provider_rate_limited", true, true);
+  }
+  if (response.status === 408) {
+    throw new ProviderError("SnapYT media validation timed out.", "provider_timeout", true, true);
+  }
+  if (response.status === 403) {
+    throw new ProviderError("SnapYT presented a media access challenge.", "provider_challenge", true, true);
+  }
+  if (response.status >= 500) {
+    throw new ProviderError("SnapYT media validation is temporarily unavailable.", "provider_unavailable", true, true);
+  }
+  const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+  const contentDisposition = response.headers.get("content-disposition")?.toLowerCase() ?? "";
+  if (response.status !== 200 && response.status !== 206) {
+    throw new ProviderError("SnapYT returned an invalid media status.", "invalid_result", true, true);
+  }
+  if (contentType !== "video/mp4") {
+    throw new ProviderError("SnapYT did not return a video MP4.", "invalid_result", false, true);
+  }
+  if (!contentDisposition.includes("attachment")) {
+    throw new ProviderError("SnapYT MP4 is not marked for browser download.", "invalid_result", false, true);
+  }
+  let bytesRead = 0;
+  if (response.body) {
+    const reader = response.body.getReader();
+    try {
+      const chunk = await reader.read();
+      bytesRead = Math.min(chunk.value?.byteLength ?? 0, MAXIMUM_MEDIA_PROBE_BYTES);
+    } finally {
+      await reader.cancel().catch(() => undefined);
+    }
+  }
+  if (bytesRead <= 0) {
+    throw new ProviderError("SnapYT returned an empty MP4 response.", "invalid_result", false, true);
+  }
+  return { status: response.status, contentType, contentDisposition, bytesRead };
+}
+
 function diagnosticFailureCode(error: unknown): ProviderFailureCode {
   if (error instanceof ProviderError) return error.failureCode;
   if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
@@ -436,7 +522,31 @@ export class SnapYTProvider implements ResolverProvider {
       );
       const parsed = parseSnapYTResultPage(resultPage.body);
       candidateCount = parsed.candidateCount;
-      acceptedCount = parsed.formats.length;
+      phase = "media";
+      const candidatesByQuality = [...parsed.formats].sort((left, right) => {
+        const leftQuality = Number.parseInt(left.quality?.match(/\d+/)?.[0] ?? "0", 10);
+        const rightQuality = Number.parseInt(right.quality?.match(/\d+/)?.[0] ?? "0", 10);
+        return rightQuality - leftQuality;
+      });
+      let verifiedFormat: ParsedFormat | null = null;
+      let lastProbeError: unknown = null;
+      for (const candidate of candidatesByQuality.slice(0, 2)) {
+        try {
+          await probeSnapYTForceDownload(this.fetchImpl, candidate.url, input.signal, observer);
+          verifiedFormat = candidate;
+          break;
+        } catch (error) {
+          lastProbeError = error;
+          if (error instanceof ProviderError && error.failureCode !== "invalid_result") {
+            throw error;
+          }
+        }
+      }
+      if (!verifiedFormat) {
+        if (lastProbeError instanceof ProviderError) throw lastProbeError;
+        throw new ProviderError("SnapYT returned no browser-downloadable MP4.", "invalid_result", false, true);
+      }
+      acceptedCount = 1;
       phase = "completed";
       const resolution = createRedirectResolution(
         this.manifest.id,
@@ -446,7 +556,7 @@ export class SnapYTProvider implements ResolverProvider {
           title: null,
           thumbnailUrl: null,
           durationSeconds: null,
-          formats: parsed.formats,
+          formats: [verifiedFormat],
           warnings: [
             "YouTube Beta uses short-lived combined MP4 resources; unavailable adaptive formats are omitted."
           ]

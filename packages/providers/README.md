@@ -65,11 +65,14 @@ explicit sequential fallbacks until a separate rollout audit enables GetXHamster
 
 ## SnapYT YouTube POC
 
-Work Item 109 adds `snapyt-app` as a disabled YouTube-only POC. It follows one bounded page nonce,
+Work Item 109/111 adds `snapyt-app` as a disabled YouTube fallback. It follows one bounded page nonce,
 AJAX resolve, and result-page flow, then accepts only combined MP4 itags 18/22 through the exact
 `snapyt-app-youtube-media-v1` force-download policy. Direct Googlevideo URLs, adaptive streams,
 audio-only results, queue replay, Provider-page handoff, and TikDD media proxying remain excluded.
-The manifest exposes no delivery mode until the independent browser audit gate is explicit.
+Before issuing a candidate, the Worker performs a bounded Range probe and requires an actual
+non-empty `video/mp4` attachment response. NoAdsDL remains the priority-740 YouTube primary;
+SnapYT is the priority-720 sequential fallback. The manifest exposes no delivery mode until the
+independent browser audit gate is explicit.
 
 ## NoAdsDL YouTube Beta POC
 

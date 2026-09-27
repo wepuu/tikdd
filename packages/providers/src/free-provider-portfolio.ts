@@ -7,7 +7,7 @@ import {
 /**
  * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65, 71 and 100. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission. Work Item
- * 110 adds NoAdsDL as a delivery-conditional YouTube candidate.
+ * 110 adds NoAdsDL and Work Item 111 refreshes the SnapYT delivery evidence.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
@@ -1317,9 +1317,9 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     hostPolicyReviewed: true,
     deliveryMode: "redirect",
     deliveryVerified: false,
-    successFixtureCount: 1,
-    failureFixtureCount: 1,
-    technicalState: "resolved",
+    successFixtureCount: 0,
+    failureFixtureCount: 4,
+    technicalState: "no-media",
     evidenceState: "evaluating"
   },
   {

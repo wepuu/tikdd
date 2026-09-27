@@ -294,7 +294,7 @@ describe("Work Item 51 portfolio qualification", () => {
     expect(results.find(({ providerId }) => providerId === "snapyt-app")).toMatchObject({
       status: "deferred",
       productionRouteEligible: false,
-      reasons: expect.arrayContaining(["missing_failure_fixtures", "delivery_unverified", "not_evaluated"])
+      reasons: expect.arrayContaining(["missing_success_fixture", "delivery_unverified", "technical_no_media", "not_evaluated"])
     });
     expect(results.find(({ providerId }) => providerId === "ytultra")).toMatchObject({
       status: "deferred",

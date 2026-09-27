@@ -1894,3 +1894,13 @@ not a production qualification or indexable YouTube route. Production requires a
 deployment, a unique `noadsdl / youtube / nl` rollout rule, and two real browser downloads before
 any gate is enabled. See [Work Item 110](work-item-110-noadsdl-youtube-beta.md) and
 [ADR-0051](architecture/adr/0051-noadsdl-youtube-provider-stream.md).
+
+### Work Item 111 — SnapYT 交付完整性修复与 YouTube 二级路由
+
+Current NL evidence showed that SnapYT's format label can return `audio/webm`, while another
+sample returned no reviewed combined MP4. Work Item 111 adds a bounded 1 KiB Range validation
+before a Delivery candidate is created and requires `200/206`, `video/mp4`, non-zero bytes, and
+attachment disposition. NoAdsDL remains priority 740 and SnapYT priority 720 as a sequential
+fallback; both remain independently gated and unrolled until two real browser samples pass.
+See [Work Item 111](work-item-111-snapyt-delivery-integrity.md) and
+[ADR-0052](architecture/adr/0052-snapyt-media-integrity-probe.md).

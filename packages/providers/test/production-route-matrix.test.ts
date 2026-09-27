@@ -32,6 +32,8 @@ describe("production route matrix", () => {
     });
     const viddown = new VidDownProvider({ enabled: true });
     const nineXBuddy = new NineXBuddyProvider({ enabled: true });
+    const noadsdl = new NoAdsDLProvider({ enabled: true, deliveryVerified: true });
+    const snapyt = new SnapYTProvider({ enabled: true, deliveryVerified: true });
 
     expect([priority(ssstwitter, "x"), priority(social, "x")]).toEqual([800, 650]);
     expect(priority(savefromins, "instagram")).toBe(900);
@@ -39,6 +41,7 @@ describe("production route matrix", () => {
     expect([priority(fdown, "facebook"), priority(social, "facebook")]).toEqual([700, 650]);
     expect(priority(viddown, "vimeo")).toBe(760);
     expect([priority(nineXBuddy, "xhamster"), priority(new LocoLoaderProvider({ enabled: true }), "xhamster")]).toEqual([700, 480]);
+    expect([priority(noadsdl, "youtube"), priority(snapyt, "youtube")]).toEqual([740, 720]);
   });
 
   it("keeps Pinterest implemented but default-off until the production gate is approved", () => {

@@ -343,6 +343,9 @@ through the asynchronous mock route.
 - Work Item 110 adds a separate default-off NoAdsDL YouTube adapter with bounded asynchronous
   polling and a narrow Provider-stream Delivery policy. YouTube remains non-indexable and no
   production traffic is enabled by this change.
+- Work Item 111 hardens SnapYT with a bounded real-MP4 attachment probe and places it behind
+  NoAdsDL as the sequential YouTube fallback. Both routes remain gated and non-indexable until
+  browser Delivery qualification is complete.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

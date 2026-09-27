@@ -47,6 +47,10 @@ describe("SnapYT YouTube adapter", () => {
       success: true,
       data: { redirect_url: "https://snapyt.app.attacker.example/result" }
     }))).toThrow(/outside its allowlist/);
+    expect(parseSnapYTAjaxResponse(JSON.stringify({
+      success: true,
+      data: { redirect: "/result/fixture-redirect" }
+    }))).toBe("https://www.snapyt.app/result/fixture-redirect");
   });
 
   it("maps only reviewed combined MP4 itags and deduplicates targets", async () => {
@@ -104,12 +108,14 @@ describe("SnapYT YouTube adapter", () => {
     ]);
     const diagnostics: SnapYTDiagnosticEvent[] = [];
     const requests: Array<{ url: string; method: string; body: string }> = [];
+    const requestHeaders: Headers[] = [];
     const provider = new SnapYTProvider({
       enabled: true,
       deliveryVerified: true,
       minIntervalMs: 0,
       diagnosticSink: (event) => diagnostics.push(event),
       fetchImpl: async (request, init) => {
+        requestHeaders.push(new Headers(init?.headers));
         requests.push({
           url: request.toString(),
           method: init?.method ?? "GET",
@@ -121,16 +127,28 @@ describe("SnapYT YouTube adapter", () => {
         if (requests.length === 2) {
           return withUrl(response(success, request.toString(), "application/json"), request.toString());
         }
+        if (requests.length === 4) {
+          return withUrl(new Response(new Uint8Array([1, 2, 3]), {
+            status: 206,
+            headers: {
+              "content-type": "video/mp4",
+              "content-disposition": "attachment; filename=fixture.mp4"
+            }
+          }), request.toString());
+        }
         return withUrl(response(result, request.toString(), "text/html"), request.toString());
       }
     });
 
     const resolution = await provider.resolve(input);
-    expect(requests.map(({ method }) => method)).toEqual(["GET", "POST", "GET"]);
+    expect(requests.map(({ method }) => method)).toEqual(["GET", "POST", "GET", "GET"]);
     expect(requests[1]?.body).toContain("action=process_video_url");
     expect(requests[1]?.body).toContain("security=fixture_nonce");
-    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["360p", "720p"]);
-    expect(resolution.candidates).toHaveLength(2);
+    expect(requestHeaders[3]?.get("range")).toBe("bytes=0-1023");
+    expect(requestHeaders[3]?.get("cookie")).toBeNull();
+    expect(requestHeaders[3]?.get("referer")).toBeNull();
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720p"]);
+    expect(resolution.candidates).toHaveLength(1);
     expect(resolution.candidates.every(({ hostPolicyId }) =>
       hostPolicyId === "snapyt-app-youtube-media-v1"
     )).toBe(true);
@@ -140,7 +158,7 @@ describe("SnapYT YouTube adapter", () => {
         phase: "completed",
         outcome: "success",
         candidateCount: 5,
-        acceptedCount: 2,
+        acceptedCount: 1,
         failureCode: null
       })
     ]);
@@ -148,6 +166,77 @@ describe("SnapYT YouTube adapter", () => {
     expect(serialized).not.toContain(input.canonicalUrl);
     expect(serialized).not.toContain("fixture_nonce");
     expect(serialized).not.toContain("admin-ajax.php");
+  });
+
+  it("rejects an audio response and tries the next bounded candidate", async () => {
+    const [landing, success, result] = await Promise.all([
+      fixture("snapyt-landing.html"),
+      fixture("snapyt-success.json"),
+      fixture("snapyt-result.html")
+    ]);
+    const requests: string[] = [];
+    const provider = new SnapYTProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      fetchImpl: async (request) => {
+        requests.push(request.toString());
+        if (requests.length === 1) return withUrl(response(landing, request.toString(), "text/html"), request.toString());
+        if (requests.length === 2) return withUrl(response(success, request.toString(), "application/json"), request.toString());
+        if (requests.length === 3) return withUrl(response(result, request.toString(), "text/html"), request.toString());
+        if (requests.length === 4) {
+          return withUrl(new Response(new Uint8Array([1]), {
+            status: 206,
+            headers: {
+              "content-type": "audio/webm",
+              "content-disposition": "attachment; filename=audio.webm"
+            }
+          }), request.toString());
+        }
+        return withUrl(new Response(new Uint8Array([1, 2]), {
+          status: 206,
+          headers: {
+            "content-type": "video/mp4",
+            "content-disposition": "attachment; filename=fixture.mp4"
+          }
+        }), request.toString());
+      }
+    });
+    const resolution = await provider.resolve(input);
+    expect(requests).toHaveLength(5);
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["360p"]);
+  });
+
+  it("does not create a candidate when every force-download response is non-video", async () => {
+    const [landing, success, result] = await Promise.all([
+      fixture("snapyt-landing.html"),
+      fixture("snapyt-success.json"),
+      fixture("snapyt-result.html")
+    ]);
+    let calls = 0;
+    const provider = new SnapYTProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      fetchImpl: async (request) => {
+        calls += 1;
+        if (calls === 1) return withUrl(response(landing, request.toString(), "text/html"), request.toString());
+        if (calls === 2) return withUrl(response(success, request.toString(), "application/json"), request.toString());
+        if (calls === 3) return withUrl(response(result, request.toString(), "text/html"), request.toString());
+        return withUrl(new Response(new Uint8Array([1]), {
+          status: 206,
+          headers: {
+            "content-type": "audio/webm",
+            "content-disposition": "attachment; filename=audio.webm"
+          }
+        }), request.toString());
+      }
+    });
+    await expect(provider.resolve(input)).rejects.toMatchObject({
+      failureCode: "invalid_result",
+      fallbackAllowed: true
+    });
+    expect(calls).toBe(5);
   });
 
   it("does not resolve until the browser Delivery audit is explicit", async () => {
@@ -173,6 +262,15 @@ describe("SnapYT YouTube adapter", () => {
       minIntervalMs: 60_000,
       fetchImpl: async (request) => {
         const index = calls++;
+        if (index === 3) {
+          return withUrl(new Response(new Uint8Array([1]), {
+            status: 206,
+            headers: {
+              "content-type": "video/mp4",
+              "content-disposition": "attachment; filename=fixture.mp4"
+            }
+          }), request.toString());
+        }
         return withUrl(response(bodies[index] ?? result, request.toString(), types[index] ?? "text/html"), request.toString());
       }
     });
@@ -182,6 +280,6 @@ describe("SnapYT YouTube adapter", () => {
       retryable: true,
       fallbackAllowed: true
     });
-    expect(calls).toBe(3);
+    expect(calls).toBe(4);
   });
 });
