@@ -10,7 +10,8 @@ import {
   VidDownProvider,
   LocoLoaderProvider,
   NineXBuddyProvider,
-  SnapYTProvider
+  SnapYTProvider,
+  NoAdsDLProvider
 } from "../src/index";
 
 function priority(provider: { manifest: { platforms: readonly { platform: string; priority: number }[] } }, platform: string) {
@@ -79,6 +80,24 @@ describe("production route matrix", () => {
       })
     ]);
     const verified = new SnapYTProvider({ deliveryVerified: true });
+    expect(verified.manifest.platforms[0]).toEqual(expect.objectContaining({
+      deliveryModes: ["redirect"],
+      verificationStatus: "delivery_verified"
+    }));
+  });
+
+  it("keeps NoAdsDL YouTube implemented but outside production until Delivery is verified", () => {
+    const provider = new NoAdsDLProvider();
+    expect(provider.manifest.enabled).toBe(false);
+    expect(provider.manifest.platforms).toEqual([
+      expect.objectContaining({
+        platform: "youtube",
+        priority: 740,
+        deliveryModes: [],
+        verificationStatus: "fixture_verified"
+      })
+    ]);
+    const verified = new NoAdsDLProvider({ deliveryVerified: true });
     expect(verified.manifest.platforms[0]).toEqual(expect.objectContaining({
       deliveryModes: ["redirect"],
       verificationStatus: "delivery_verified"

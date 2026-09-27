@@ -80,6 +80,7 @@ describe("technical Provider preflight classification", () => {
       "viddown-net": "https://www.viddown.net/download-vimeo-video",
       "downbot-app": "https://downbot.app/en",
       "snapyt-app": "https://www.snapyt.app/",
+      noadsdl: "https://noadsdl.com/",
       ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
       vd6s: "https://vd6s.net/en5/"
     });
@@ -101,6 +102,10 @@ describe("technical Provider preflight classification", () => {
     expect(resolveActiveEndpoint("snapyt-app", "youtube")).toEqual({
       method: "POST",
       url: "https://www.snapyt.app/wp-admin/admin-ajax.php"
+    });
+    expect(resolveActiveEndpoint("noadsdl", "youtube")).toEqual({
+      method: "GET",
+      url: "https://noadsdl.com/api/video-info"
     });
     expect(resolveActiveEndpoint("ytultra", "youtube")).toEqual({
       method: "POST",

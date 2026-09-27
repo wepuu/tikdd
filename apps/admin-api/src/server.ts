@@ -25,6 +25,7 @@ import {
   FDownIsuruProvider,
   GetXHamsterProvider,
   SnapYTProvider,
+  NoAdsDLProvider,
   SnapInstaProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
@@ -90,6 +91,10 @@ const providerAdapters = [
   new SnapYTProvider({
     enabled: process.env.ENABLE_SNAPYT_PROVIDER === "true",
     deliveryVerified: process.env.SNAPYT_DELIVERY_AUDIT_APPROVED === "true"
+  }),
+  new NoAdsDLProvider({
+    enabled: process.env.ENABLE_NOADSDL_PROVIDER === "true",
+    deliveryVerified: process.env.NOADSDL_DELIVERY_AUDIT_APPROVED === "true"
   })
 ];
 const manifests = providerAdapters.map(({manifest})=>manifest);

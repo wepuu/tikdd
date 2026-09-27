@@ -1879,3 +1879,18 @@ YouTube remains non-production and non-indexable until two distinct browser down
 no-Cookie/no-Referer attachment path and the normal route-qualified content publication gates pass.
 See [Work Item 109](work-item-109-snapyt-youtube-beta-poc.md) and
 [ADR-0050](architecture/adr/0050-snapyt-youtube-provider-stream.md).
+
+### Work Item 110 — NoAdsDL YouTube Beta 接入与交付审计
+
+Work Item 110 adds a separate, disabled-by-default `noadsdl / youtube` adapter after two
+repeatable anonymous protocol samples. The adapter uses one metadata request, one asynchronous
+job request, and at most ten bounded status polls to select a free combined MP4. Its versioned
+`noadsdl-youtube-media-v1` policy accepts only the Provider's generated file path; no source CDN,
+Provider page handoff, or TikDD media proxy is introduced.
+
+NoAdsDL has its own terms, Delivery-audit, and runtime gates, conservative concurrency/interval
+controls, sanitized diagnostics, and no queue replay. It remains a Provider-stream candidate,
+not a production qualification or indexable YouTube route. Production requires an exact-SHA
+deployment, a unique `noadsdl / youtube / nl` rollout rule, and two real browser downloads before
+any gate is enabled. See [Work Item 110](work-item-110-noadsdl-youtube-beta.md) and
+[ADR-0051](architecture/adr/0051-noadsdl-youtube-provider-stream.md).

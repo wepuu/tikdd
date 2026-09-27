@@ -90,7 +90,8 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     ["socialdownloader-space", "ENABLE_SOCIALDOWNLOADER_PROVIDER"],
     ["pinterest-videodownloader", "ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER"],
     ["viddown-net", "ENABLE_VIDDOWN_PROVIDER"],
-    ["snapyt-app", "ENABLE_SNAPYT_PROVIDER"]
+    ["snapyt-app", "ENABLE_SNAPYT_PROVIDER"],
+    ["noadsdl", "ENABLE_NOADSDL_PROVIDER"]
   ] as const).filter(([, key]) => bool(environment[key])).map(([id]) => id);
   const providerApprovalsPresent = providers.every((provider) => {
     if (provider === "twittersaver") return bool(environment.TWITTERSAVER_TERMS_APPROVED);
@@ -133,6 +134,10 @@ export function loadInternalRuntime(environment: NodeJS.ProcessEnv = process.env
     if (provider === "snapyt-app") {
       return bool(environment.SNAPYT_TERMS_APPROVED) &&
         bool(environment.SNAPYT_DELIVERY_AUDIT_APPROVED);
+    }
+    if (provider === "noadsdl") {
+      return bool(environment.NOADSDL_TERMS_APPROVED) &&
+        bool(environment.NOADSDL_DELIVERY_AUDIT_APPROVED);
     }
     return bool(environment.SNAPTIK_MONSTER_TERMS_APPROVED) &&
       bool(environment.SNAPTIK_MONSTER_DELIVERY_AUDIT_APPROVED);

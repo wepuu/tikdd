@@ -8,6 +8,7 @@ import { loadLocoLoaderActivationConfiguration } from "../src/locoloader-activat
 import { loadNineXBuddyActivationConfiguration } from "../src/nine-x-buddy-activation";
 import { loadGetXHamsterActivationConfiguration } from "../src/getxhamster-activation";
 import { loadSnapYTActivationConfiguration } from "../src/snapyt-activation";
+import { loadNoAdsDLActivationConfiguration } from "../src/noadsdl-activation";
 
 describe("SSSTwitter worker activation", () => {
   it("is fail-closed by default", () => {
@@ -235,6 +236,45 @@ describe("Work Item 109 SnapYT YouTube activation", () => {
       minIntervalMs: 10_000
     });
     expect(() => loadSnapYTActivationConfiguration({ SNAPYT_MAX_CONCURRENCY: "3" }))
+      .toThrow(/outside its allowed range/);
+  });
+});
+
+describe("Work Item 110 NoAdsDL YouTube activation", () => {
+  it("is disabled by default and requires both independent approvals", () => {
+    expect(loadNoAdsDLActivationConfiguration({})).toEqual({
+      enabled: false,
+      termsApproved: false,
+      deliveryAuditApproved: false,
+      maxConcurrency: 1,
+      minIntervalMs: 5_000,
+      pollIntervalMs: 2_000,
+      maxPolls: 10
+    });
+    expect(() => loadNoAdsDLActivationConfiguration({ ENABLE_NOADSDL_PROVIDER: "true" }))
+      .toThrow(/NOADSDL_TERMS_APPROVED/);
+    expect(() => loadNoAdsDLActivationConfiguration({
+      ENABLE_NOADSDL_PROVIDER: "true",
+      NOADSDL_TERMS_APPROVED: "true"
+    })).toThrow(/NOADSDL_DELIVERY_AUDIT_APPROVED/);
+    expect(loadNoAdsDLActivationConfiguration({
+      ENABLE_NOADSDL_PROVIDER: "true",
+      NOADSDL_TERMS_APPROVED: "true",
+      NOADSDL_DELIVERY_AUDIT_APPROVED: "true",
+      NOADSDL_MAX_CONCURRENCY: "2",
+      NOADSDL_MIN_INTERVAL_MS: "10000",
+      NOADSDL_POLL_INTERVAL_MS: "1000",
+      NOADSDL_MAX_POLLS: "5"
+    })).toEqual({
+      enabled: true,
+      termsApproved: true,
+      deliveryAuditApproved: true,
+      maxConcurrency: 2,
+      minIntervalMs: 10_000,
+      pollIntervalMs: 1_000,
+      maxPolls: 5
+    });
+    expect(() => loadNoAdsDLActivationConfiguration({ NOADSDL_MAX_POLLS: "11" }))
       .toThrow(/outside its allowed range/);
   });
 });

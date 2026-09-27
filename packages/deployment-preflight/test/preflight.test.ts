@@ -66,6 +66,22 @@ describe("internal deployment preflight", () => {
     }).providerApprovalsPresent).toBe(true);
   });
 
+  it("requires both NoAdsDL approvals when the Provider is enabled", () => {
+    const base = {
+      ...environment,
+      ENABLE_TWITTERSAVER_PROVIDER: "false",
+      ENABLE_SSSTWITTER_PROVIDER: "false",
+      ENABLE_NOADSDL_PROVIDER: "true"
+    };
+    expect(loadInternalRuntime(base).enabledProviders).toContain("noadsdl");
+    expect(loadInternalRuntime(base).providerApprovalsPresent).toBe(false);
+    expect(loadInternalRuntime({
+      ...base,
+      NOADSDL_TERMS_APPROVED: "true",
+      NOADSDL_DELIVERY_AUDIT_APPROVED: "true"
+    }).providerApprovalsPresent).toBe(true);
+  });
+
   it("produces an aggregate ready report without secrets or infrastructure addresses", () => {
     const report = evaluateInternalPreflight({ plan, runtime: loadInternalRuntime(environment), signals, manifests, now });
     expect(report.decision).toBe("ready"); expect(report.summary.blocked).toBe(0);

@@ -88,6 +88,11 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/SNAPYT_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"SnapYT"/);
     expect(releaseScript).toMatch(/snapyt_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_NOADSDL_PROVIDER/);
+    expect(releaseScript).toMatch(/NOADSDL_TERMS_APPROVED/);
+    expect(releaseScript).toMatch(/NOADSDL_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"NoAdsDL"/);
+    expect(releaseScript).toMatch(/noadsdl_enabled=/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

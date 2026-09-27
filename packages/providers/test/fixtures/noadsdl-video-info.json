@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "status": "ok",
+  "title": "Fixture YouTube video",
+  "video_formats": [
+    { "format_id": "audio-128", "ext": "m4a", "type": "audio", "acodec": "mp4a.40.2", "vcodec": "none" },
+    { "format_id": "137", "ext": "mp4", "height": 1080, "type": "video", "vcodec": "avc1", "acodec": "none" },
+    { "format_id": "18", "ext": "mp4", "height": 360, "type": "video", "vcodec": "avc1", "acodec": "mp4a.40.2" },
+    { "format_id": "22", "ext": "mp4", "height": 720, "type": "video", "vcodec": "avc1", "acodec": "mp4a.40.2" },
+    { "format_id": "18", "ext": "mp4", "height": 360, "type": "video", "vcodec": "avc1", "acodec": "mp4a.40.2" }
+  ]
+}

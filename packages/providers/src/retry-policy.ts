@@ -37,6 +37,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "snapyt-app") {
     return false;
   }
+  if (input.providerId === "noadsdl") {
+    return false;
+  }
   return true;
 }
 

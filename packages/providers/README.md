@@ -70,3 +70,11 @@ AJAX resolve, and result-page flow, then accepts only combined MP4 itags 18/22 t
 `snapyt-app-youtube-media-v1` force-download policy. Direct Googlevideo URLs, adaptive streams,
 audio-only results, queue replay, Provider-page handoff, and TikDD media proxying remain excluded.
 The manifest exposes no delivery mode until the independent browser audit gate is explicit.
+
+## NoAdsDL YouTube Beta POC
+
+Work Item 110 adds `noadsdl` as a separate disabled-by-default YouTube adapter. It performs one
+metadata request, one asynchronous job request and at most ten same-host status polls, then uses
+the reviewed `noadsdl-youtube-media-v1` Provider-stream policy. NoAdsDL is not enabled by the
+SnapYT gates, is not a source-CDN redirect, and is not eligible for production until its own
+three gates, rollout rule and browser Delivery audit are complete.

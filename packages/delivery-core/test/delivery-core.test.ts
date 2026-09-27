@@ -190,6 +190,33 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
     expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("noadsdl-youtube-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("limits NoAdsDL to its reviewed generated-file path", () => {
+    const valid = "https://noadsdl.com/api/free-download/file/0123456789abcdef0123456789abcdef";
+    expect(assertDeliveryTargetPolicy({
+      providerId: "noadsdl",
+      mode: "redirect",
+      hostPolicyId: "noadsdl-youtube-media-v1",
+      targetUrl: valid
+    }).hostname).toBe("noadsdl.com");
+    for (const targetUrl of [
+      "http://noadsdl.com/api/free-download/file/0123456789abcdef",
+      "https://www.noadsdl.com/api/free-download/file/0123456789abcdef",
+      "https://evil.noadsdl.com/api/free-download/file/0123456789abcdef",
+      "https://user:pass@noadsdl.com/api/free-download/file/0123456789abcdef",
+      "https://noadsdl.com:8443/api/free-download/file/0123456789abcdef",
+      "https://noadsdl.com/api/free-download/status/0123456789abcdef",
+      "https://noadsdl.com/api/free-download/file/0123456789abcdef?token=fixture"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "noadsdl",
+        mode: "redirect",
+        hostPolicyId: "noadsdl-youtube-media-v1",
+        targetUrl
+      })).toThrow();
+    }
   });
 
   it("limits SnapYT delivery to the exact force-download action and query schema", () => {

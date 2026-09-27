@@ -192,6 +192,7 @@ export const DeliveryHostPolicySchema = z.object({
   allowedQueryKeys: z.array(
     z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/)
   ).default([]),
+  rejectQueryParameters: z.boolean().default(false),
   browserHandoff: z.enum(["navigate", "cors-download"]).default("navigate")
 }).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
   message: "A delivery host policy must include an exact host or reviewed suffix."
@@ -336,6 +337,17 @@ export const SNAPYT_YOUTUBE_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
   browserHandoff: "navigate"
 });
 
+export const NOADSDL_YOUTUBE_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "noadsdl-youtube-media-v1",
+  providerId: "noadsdl",
+  modes: ["redirect"],
+  hosts: ["noadsdl.com"],
+  exactPaths: [],
+  pathPrefixes: ["/api/free-download/file"],
+  rejectQueryParameters: true,
+  browserHandoff: "navigate"
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -356,7 +368,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY.id, LOCOLOADER_XHAMSTER_MEDIA_HOST_POLICY],
   [NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY.id, NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY],
   [GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY.id, GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY],
-  [SNAPYT_YOUTUBE_MEDIA_HOST_POLICY.id, SNAPYT_YOUTUBE_MEDIA_HOST_POLICY]
+  [SNAPYT_YOUTUBE_MEDIA_HOST_POLICY.id, SNAPYT_YOUTUBE_MEDIA_HOST_POLICY],
+  [NOADSDL_YOUTUBE_MEDIA_HOST_POLICY.id, NOADSDL_YOUTUBE_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -395,6 +408,9 @@ export function assertDeliveryTargetPolicy(input: {
     !policy.pathPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))
   ) {
     throw new Error("The delivery target path is not allowed by its reviewed policy.");
+  }
+  if (policy.rejectQueryParameters && [...url.searchParams.keys()].length > 0) {
+    throw new Error("The delivery target query is not allowed by its reviewed policy.");
   }
   for (const [name, value] of Object.entries(policy.requiredQueryParameters)) {
     const values = url.searchParams.getAll(name);

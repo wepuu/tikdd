@@ -67,6 +67,7 @@ export const CANDIDATES = {
   "viddown-net": "https://www.viddown.net/download-vimeo-video",
   "downbot-app": "https://downbot.app/en",
   "snapyt-app": "https://www.snapyt.app/",
+  noadsdl: "https://noadsdl.com/",
   ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
   vd6s: "https://vd6s.net/en5/"
 };
@@ -101,6 +102,9 @@ export const ACTIVE_ENDPOINTS = {
   ].map((platform) => [platform, { method: "POST", url: "https://api.downbot.app/api/download/request" }])),
   "snapyt-app": {
     youtube: { method: "POST", url: "https://www.snapyt.app/wp-admin/admin-ajax.php" }
+  },
+  noadsdl: {
+    youtube: { method: "GET", url: "https://noadsdl.com/api/video-info" }
   },
   ytultra: {
     youtube: { method: "POST", url: "https://api.ytultra.com/ikool/youtube/download" }
