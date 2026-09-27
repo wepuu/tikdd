@@ -1904,3 +1904,19 @@ attachment disposition. NoAdsDL remains priority 740 and SnapYT priority 720 as 
 fallback; both remain independently gated and unrolled until two real browser samples pass.
 See [Work Item 111](work-item-111-snapyt-delivery-integrity.md) and
 [ADR-0052](architecture/adr/0052-snapyt-media-integrity-probe.md).
+
+### Work Item 112 — YouTube format routing and split-stream integrity
+
+Live NL evidence showed two independent schema changes: NoAdsDL now returns sparse combined-MP4
+metadata and its asynchronous status response can temporarily omit `status_url`; SnapYT exposes
+`fmt=0` for the combined 360p MP4 while other descriptors can resolve to separate audio or video
+streams. Work Item 112 accepts both bounded NoAdsDL schemas, retains the original poll URL, and
+extends SnapYT validation to five sequential probes with MIME-first composition labels. Separate
+audio/video formats are shown as separate downloads; TikDD does not merge, transcode, proxy or
+hand off to Provider pages.
+
+Both YouTube adapters remain independently gated, with NoAdsDL priority 740 and SnapYT priority
+720. This work item does not enable either route or change production configuration. Release
+requires exact-SHA images, isolated NoAdsDL and SnapYT browser checks, then one sequential-route
+check; any failure closes the relevant rollout before its three gates. See [Work Item 112](work-item-112-youtube-format-routing.md)
+and [ADR-0053](architecture/adr/0053-youtube-format-composition-boundary.md).

@@ -6,11 +6,14 @@
 - Platform: `youtube`
 - Region: NL, with local/global fixture support
 - Content: public individual YouTube videos and Shorts
-- Accepted media: combined progressive MP4 itags 18 and 22
+- Accepted media: bounded force-download resources; combined MP4, video-only, and audio-only
+  streams are labeled from the verified response
 - State: implemented fallback adapter, disabled by default, browser Delivery audit pending
 
-Playlists, private/member/paid/age-restricted content, live streams, DRM, HLS, DASH, separate audio,
-adaptive video-only formats, WebM, MP3, and conversion are outside this adapter.
+Playlists, private/member/paid/age-restricted content, live streams, DRM, HLS, DASH and
+conversion are outside this adapter. Separate audio/video resources are accepted only as explicit
+individual downloads; TikDD does not merge or transcode them. The observed combined `fmt=0` 360p
+MP4 is supported alongside the reviewed numeric format identifiers.
 
 ## Protocol
 
@@ -20,9 +23,11 @@ same-origin result page returned by the JSON envelope. It does not use a user Co
 browser storage Token, CAPTCHA, headless browser, or retry loop.
 
 The parser ignores direct Googlevideo fields. It accepts only force-download URLs that match the
-versioned `snapyt-app-youtube-media-v1` policy. Before creating a candidate, the Worker validates
-at most two force-download responses with a 1 KiB Range probe and requires `200/206`, `video/mp4`,
-non-zero bytes, and `Content-Disposition: attachment`. Upstream URLs and nonce values remain
+versioned `snapyt-app-youtube-media-v1` policy and have a bounded numeric `fmt` (including `0`).
+Before creating candidates, the Worker validates at most five force-download responses
+sequentially with a 1 KiB Range probe and requires `200/206`, a recognized `video/*` or `audio/*`
+MIME type, non-zero bytes, and `Content-Disposition: attachment`. Nearby labels are used only as
+composition hints; the actual response MIME type wins. Upstream URLs and nonce values remain
 internal and are encrypted with the normal Delivery candidate mechanism.
 
 ## Runtime controls
@@ -48,12 +53,13 @@ NoAdsDL is the YouTube primary at priority 740; SnapYT remains the sequential fa
 - 429 or explicit capacity text: retryable `provider_rate_limited`, fallback allowed;
 - network, timeout, 5xx, challenge, invalid JSON, missing result page, and schema drift: sanitized
   Provider failures, fallback allowed;
-- no reviewed itag 18/22 target, non-MP4 response, missing attachment disposition, empty response,
-  or rejected media probe: non-retryable `invalid_result`, fallback allowed.
+- no reviewed numeric target, unsupported MIME response, missing attachment disposition, empty
+  response, or rejected media probe: non-retryable `invalid_result`, fallback allowed.
 
 The diagnostic event contains only task ID, platform, phase, HTTP status, content-type category,
-candidate/accepted counts, failure code, and duration. It never contains source or result URLs,
-titles, response bodies, Cookies, nonce values, media hosts, or query parameters.
+candidate/accepted/composition/rejection counts, failure code, and duration. It never contains
+source or result URLs, titles, response bodies, Cookies, nonce values, media hosts, or query
+parameters.
 
 ## Production audit
 

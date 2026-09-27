@@ -51,6 +51,7 @@
 - [ADR-0050: SnapYT bounded YouTube provider-stream delivery](0050-snapyt-youtube-provider-stream.md)
 - [ADR-0051: NoAdsDL bounded YouTube provider-stream delivery](0051-noadsdl-youtube-provider-stream.md)
 - [ADR-0052: SnapYT media integrity probing before Delivery](0052-snapyt-media-integrity-probe.md)
+- [ADR-0053: YouTube format composition boundary](0053-youtube-format-composition-boundary.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

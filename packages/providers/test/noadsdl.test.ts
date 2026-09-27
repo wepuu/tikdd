@@ -26,7 +26,12 @@ function response(body: string, status = 200): Response {
 describe("NoAdsDL YouTube adapter", () => {
   it("selects a free combined MP4 and ignores adaptive/audio-only formats", async () => {
     const parsed = parseNoAdsVideoInfo(await fixture("noadsdl-video-info.json"));
-    expect(parsed).toMatchObject({ formatCount: 5, formatId: "22", label: "720p MP4" });
+    expect(parsed).toMatchObject({ formatCount: 5, formatSchema: "legacy", formatId: "22", label: "720p MP4" });
+  });
+
+  it("accepts the sparse video_formats schema used by the current service", async () => {
+    const parsed = parseNoAdsVideoInfo(await fixture("noadsdl-video-info-sparse.json"));
+    expect(parsed).toMatchObject({ formatCount: 3, formatSchema: "sparse", formatId: "22", label: "720p MP4" });
   });
 
   it("maps unsuccessful responses to terminal content errors", async () => {
@@ -87,6 +92,7 @@ describe("NoAdsDL YouTube adapter", () => {
       phase: "completed",
       outcome: "success",
       formatCount: 5,
+      formatSchema: "legacy",
       selectedFormat: true,
       jobCreated: true,
       pollCount: 1,
@@ -112,5 +118,33 @@ describe("NoAdsDL YouTube adapter", () => {
   it("parses an immediately ready job without polling", async () => {
     const ready = await fixture("noadsdl-status-ready.json");
     expect(parseNoAdsJobResponse(ready)).toMatchObject({ status: "ready", directUrl: expect.stringContaining("/file/") });
+  });
+
+  it("keeps the initial status URL when processing polls omit it", async () => {
+    const processing = await fixture("noadsdl-status-processing.json");
+    expect(parseNoAdsJobResponse(processing)).toMatchObject({ status: "processing", statusUrl: null, directUrl: null });
+  });
+
+  it("continues a job across a processing response without status_url", async () => {
+    const [info, queued, processing, ready] = await Promise.all([
+      fixture("noadsdl-video-info-sparse.json"),
+      fixture("noadsdl-job-queued.json"),
+      fixture("noadsdl-status-processing.json"),
+      fixture("noadsdl-status-ready.json")
+    ]);
+    let requests = 0;
+    const provider = new NoAdsDLProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      pollIntervalMs: 0,
+      fetchImpl: async () => {
+        requests += 1;
+        return response(requests === 1 ? info : requests === 2 ? queued : requests === 3 ? processing : ready);
+      }
+    });
+    const resolution = await provider.resolve(input);
+    expect(requests).toBe(4);
+    expect(resolution.candidates).toHaveLength(1);
   });
 });

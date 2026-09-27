@@ -220,12 +220,17 @@ describe("reviewed delivery network policy", () => {
   });
 
   it("limits SnapYT delivery to the exact force-download action and query schema", () => {
-    expect(assertDeliveryTargetPolicy({
-      providerId: "snapyt-app",
-      mode: "redirect",
-      hostPolicyId: "snapyt-app-youtube-media-v1",
-      targetUrl: "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture"
-    }).hostname).toBe("www.snapyt.app");
+    for (const targetUrl of [
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
+      "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=0&nonce=fixture"
+    ]) {
+      expect(assertDeliveryTargetPolicy({
+        providerId: "snapyt-app",
+        mode: "redirect",
+        hostPolicyId: "snapyt-app-youtube-media-v1",
+        targetUrl
+      }).hostname).toBe("www.snapyt.app");
+    }
     for (const targetUrl of [
       "https://snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",
       "https://evil.www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=fixture&fmt=18&nonce=fixture",

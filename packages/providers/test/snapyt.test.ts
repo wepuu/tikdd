@@ -53,14 +53,22 @@ describe("SnapYT YouTube adapter", () => {
     }))).toBe("https://www.snapyt.app/result/fixture-redirect");
   });
 
-  it("maps only reviewed combined MP4 itags and deduplicates targets", async () => {
+  it("maps bounded force-download descriptors and deduplicates targets", async () => {
     const parsed = parseSnapYTResultPage(await fixture("snapyt-result.html"));
     expect(parsed.candidateCount).toBe(5);
     expect(parsed.formats.map(({ quality, hasAudio, hasVideo }) => ({ quality, hasAudio, hasVideo })))
       .toEqual([
         { quality: "360p", hasAudio: true, hasVideo: true },
-        { quality: "720p", hasAudio: true, hasVideo: true }
+        { quality: "720p", hasAudio: true, hasVideo: true },
+        { quality: "1080p", hasAudio: false, hasVideo: true }
       ]);
+  });
+
+  it("accepts SnapYT's combined fmt=0 fallback", () => {
+    const parsed = parseSnapYTResultPage(
+      '<a data-force="https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&amp;pid=fixture&amp;fmt=0&amp;nonce=fixture">360p MP4</a>'
+    );
+    expect(parsed.formats[0]).toMatchObject({ quality: "360p", hasVideo: true, hasAudio: true });
   });
 
   it.each([
@@ -71,7 +79,7 @@ describe("SnapYT YouTube adapter", () => {
     "https://user:pass@www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=a&fmt=18&nonce=n",
     "https://www.snapyt.app/other?action=snapyt_force_download&pid=a&fmt=18&nonce=n",
     "https://www.snapyt.app/wp-admin/admin-ajax.php?action=other&pid=a&fmt=18&nonce=n",
-    "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=a&fmt=137&nonce=n",
+    "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=a&fmt=abc&nonce=n",
     "https://www.snapyt.app/wp-admin/admin-ajax.php?action=snapyt_force_download&pid=a&fmt=18&nonce=n&extra=1"
   ])("rejects an unreviewed force-download target: %s", (target) => {
     expect(() => parseSnapYTResultPage(`<a data-force="${target.replaceAll("&", "&amp;")}">fixture</a>`))
@@ -141,7 +149,7 @@ describe("SnapYT YouTube adapter", () => {
     });
 
     const resolution = await provider.resolve(input);
-    expect(requests.map(({ method }) => method)).toEqual(["GET", "POST", "GET", "GET"]);
+    expect(requests.map(({ method }) => method)).toEqual(["GET", "POST", "GET", "GET", "GET", "GET"]);
     expect(requests[1]?.body).toContain("action=process_video_url");
     expect(requests[1]?.body).toContain("security=fixture_nonce");
     expect(requestHeaders[3]?.get("range")).toBe("bytes=0-1023");
@@ -159,6 +167,10 @@ describe("SnapYT YouTube adapter", () => {
         outcome: "success",
         candidateCount: 5,
         acceptedCount: 1,
+        combinedCount: 1,
+        videoOnlyCount: 0,
+        audioOnlyCount: 0,
+        rejectedMediaCount: 2,
         failureCode: null
       })
     ]);
@@ -168,7 +180,7 @@ describe("SnapYT YouTube adapter", () => {
     expect(serialized).not.toContain("admin-ajax.php");
   });
 
-  it("rejects an audio response and tries the next bounded candidate", async () => {
+  it("keeps an audio-only response and tries the next bounded candidate", async () => {
     const [landing, success, result] = await Promise.all([
       fixture("snapyt-landing.html"),
       fixture("snapyt-success.json"),
@@ -203,11 +215,15 @@ describe("SnapYT YouTube adapter", () => {
       }
     });
     const resolution = await provider.resolve(input);
-    expect(requests).toHaveLength(5);
-    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["360p"]);
+    expect(requests).toHaveLength(6);
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual([
+      "720p audio-only",
+      "360p",
+      "1080p video-only"
+    ]);
   });
 
-  it("does not create a candidate when every force-download response is non-video", async () => {
+  it("does not create a candidate when every force-download response is non-media", async () => {
     const [landing, success, result] = await Promise.all([
       fixture("snapyt-landing.html"),
       fixture("snapyt-success.json"),
@@ -226,8 +242,8 @@ describe("SnapYT YouTube adapter", () => {
         return withUrl(new Response(new Uint8Array([1]), {
           status: 206,
           headers: {
-            "content-type": "audio/webm",
-            "content-disposition": "attachment; filename=audio.webm"
+            "content-type": "application/octet-stream",
+            "content-disposition": "attachment; filename=unknown.bin"
           }
         }), request.toString());
       }
@@ -236,7 +252,7 @@ describe("SnapYT YouTube adapter", () => {
       failureCode: "invalid_result",
       fallbackAllowed: true
     });
-    expect(calls).toBe(5);
+    expect(calls).toBe(6);
   });
 
   it("does not resolve until the browser Delivery audit is explicit", async () => {
@@ -280,6 +296,6 @@ describe("SnapYT YouTube adapter", () => {
       retryable: true,
       fallbackAllowed: true
     });
-    expect(calls).toBe(4);
+    expect(calls).toBe(6);
   });
 });
