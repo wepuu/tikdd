@@ -1935,3 +1935,16 @@ its exact v1 policy and gains rejection-category diagnostics, but no Googlevideo
 and its rollout remains closed. NoAdsDL may complete a separate two-sample browser qualification
 without SnapYT. See [Work Item 113](work-item-113-youtube-async-delivery-repair.md) and
 [ADR-0054](architecture/adr/0054-youtube-async-budget-and-stateless-handoff.md).
+
+### Work Item 114 — NoAdsDL thumbnail and bounded multi-format preparation
+
+Successful production downloads exposed two product gaps: the upstream YouTube thumbnail was
+discarded and only one combined MP4 was generated. NoAdsDL now validates exact YouTube thumbnail
+hosts and prepares at most two preferred combined MP4 formats sequentially within the existing
+40-second and twenty-poll shared budget. The primary format remains mandatory; optional secondary
+failure keeps the primary result and produces only sanitized count-level diagnostics.
+
+This does not introduce merging, transcoding, media proxying, a new Delivery policy, persistence or
+public-contract changes. `NOADSDL_MAX_PREPARED_FORMATS=1` is the immediate operational rollback.
+See [Work Item 114](work-item-114-noadsdl-thumbnail-multiformat.md) and
+[ADR-0055](architecture/adr/0055-noadsdl-bounded-multiformat-preparation.md).

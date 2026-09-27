@@ -2,6 +2,7 @@
   "success": true,
   "platform": "youtube",
   "title": "fixture",
+  "thumbnail": "https://img.youtube.com/vi/fixture/maxresdefault.webp",
   "video_formats": {
     "480p MP4": {
       "format_id": "18",

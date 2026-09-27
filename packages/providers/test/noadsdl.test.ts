@@ -6,6 +6,7 @@ import {
   parseNoAdsJobResponse,
   parseNoAdsVideoInfo,
   reviewedNoAdsDirectUrl,
+  reviewedNoAdsThumbnailUrl,
   type NoAdsDiagnosticEvent
 } from "../src/index";
 
@@ -26,12 +27,52 @@ function response(body: string, status = 200): Response {
 describe("NoAdsDL YouTube adapter", () => {
   it("selects a free combined MP4 and ignores adaptive/audio-only formats", async () => {
     const parsed = parseNoAdsVideoInfo(await fixture("noadsdl-video-info.json"));
-    expect(parsed).toMatchObject({ formatCount: 5, formatSchema: "legacy", formatId: "22", label: "720p MP4" });
+    expect(parsed).toMatchObject({
+      formatCount: 5,
+      formatSchema: "legacy",
+      thumbnailUrl: "https://i.ytimg.com/vi/fixture/hqdefault.jpg",
+      thumbnailStatus: "accepted",
+      formats: [
+        { formatId: "22", label: "720p MP4" },
+        { formatId: "18", label: "360p MP4" }
+      ]
+    });
   });
 
   it("accepts the sparse video_formats schema used by the current service", async () => {
     const parsed = parseNoAdsVideoInfo(await fixture("noadsdl-video-info-sparse.json"));
-    expect(parsed).toMatchObject({ formatCount: 3, formatSchema: "sparse", formatId: "22", label: "720p MP4" });
+    expect(parsed).toMatchObject({
+      formatCount: 3,
+      formatSchema: "sparse",
+      formats: [
+        { formatId: "22", label: "720p MP4" },
+        { formatId: "37", label: "1080p MP4" },
+        { formatId: "18", label: "480p MP4" }
+      ]
+    });
+  });
+
+  it("accepts only reviewed YouTube thumbnail hosts and image paths", () => {
+    expect(reviewedNoAdsThumbnailUrl("https://i.ytimg.com/vi/id/hqdefault.jpg")).toBe(
+      "https://i.ytimg.com/vi/id/hqdefault.jpg"
+    );
+    expect(reviewedNoAdsThumbnailUrl("https://img.youtube.com/vi/id/cover.webp")).toBe(
+      "https://img.youtube.com/vi/id/cover.webp"
+    );
+    for (const value of [
+      "http://i.ytimg.com/vi/id/cover.jpg",
+      "https://evil.i.ytimg.com/vi/id/cover.jpg",
+      "https://ytimg.com/vi/id/cover.jpg",
+      "https://user:pass@i.ytimg.com/vi/id/cover.jpg",
+      "https://i.ytimg.com:8443/vi/id/cover.jpg",
+      "https://i.ytimg.com/vi/id/cover.jpg?token=secret",
+      "https://i.ytimg.com/vi/id/cover.svg"
+    ]) expect(reviewedNoAdsThumbnailUrl(value)).toBeNull();
+    expect(parseNoAdsVideoInfo(JSON.stringify({
+      success: true,
+      thumbnail: "https://evil.i.ytimg.com/cover.jpg",
+      video_formats: { "720p MP4": { format_id: "22" } }
+    }))).toMatchObject({ thumbnailUrl: null, thumbnailStatus: "rejected" });
   });
 
   it("maps unsuccessful responses to terminal content errors", async () => {
@@ -71,6 +112,7 @@ describe("NoAdsDL YouTube adapter", () => {
       deliveryVerified: true,
       minIntervalMs: 0,
       pollIntervalMs: 0,
+      maxPreparedFormats: 1,
       diagnosticSink: (event) => diagnostics.push(event),
       fetchImpl: async (request, init) => {
         requests.push({ url: request.toString(), method: init?.method ?? "GET", cookie: String(new Headers(init?.headers).get("cookie") ?? "") });
@@ -95,6 +137,13 @@ describe("NoAdsDL YouTube adapter", () => {
       formatSchema: "legacy",
       selectedFormat: true,
       jobCreated: true,
+      eligibleFormatCount: 2,
+      requestedFormatCount: 1,
+      preparedFormatCount: 1,
+      skippedFormatCount: 1,
+      thumbnailAccepted: true,
+      thumbnailStatus: "accepted",
+      secondaryFailureCode: null,
       pollCount: 1,
       jobStatusCategory: "completed",
       progressBucket: "missing",
@@ -147,6 +196,7 @@ describe("NoAdsDL YouTube adapter", () => {
       deliveryVerified: true,
       minIntervalMs: 0,
       pollIntervalMs: 0,
+      maxPreparedFormats: 1,
       fetchImpl: async () => {
         requests += 1;
         return response(requests === 1 ? info : requests === 2 ? queued : requests === 3 ? processing : ready);
@@ -172,6 +222,7 @@ describe("NoAdsDL YouTube adapter", () => {
       minIntervalMs: 0,
       pollIntervalMs: 0,
       pollBudgetMs: 40_000,
+      maxPreparedFormats: 1,
       diagnosticSink: (event) => diagnostics.push(event),
       fetchImpl: async () => {
         requests += 1;
@@ -188,6 +239,79 @@ describe("NoAdsDL YouTube adapter", () => {
       outcome: "success",
       pollCount: 12,
       jobStatusCategory: "completed"
+    })]);
+  });
+
+  it("prepares at most two formats in preferred order", async () => {
+    const [info, ready] = await Promise.all([
+      fixture("noadsdl-video-info-sparse.json"),
+      fixture("noadsdl-status-ready.json")
+    ]);
+    const requests: string[] = [];
+    const diagnostics: NoAdsDiagnosticEvent[] = [];
+    const provider = new NoAdsDLProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      pollIntervalMs: 0,
+      maxPreparedFormats: 2,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async (request) => {
+        requests.push(request.toString());
+        return response(requests.length === 1 ? info : ready);
+      }
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(requests).toHaveLength(3);
+    expect(requests[1]).toContain("format_id=22");
+    expect(requests[2]).toContain("format_id=37");
+    expect(resolution.result.media.thumbnailUrl).toBe("https://img.youtube.com/vi/fixture/maxresdefault.webp");
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720p MP4", "1080p MP4"]);
+    expect(resolution.candidates).toHaveLength(2);
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "success",
+      eligibleFormatCount: 3,
+      requestedFormatCount: 2,
+      preparedFormatCount: 2,
+      skippedFormatCount: 1,
+      thumbnailAccepted: true,
+      thumbnailStatus: "accepted",
+      secondaryFailureCode: null
+    })]);
+  });
+
+  it("keeps the primary format when secondary preparation fails", async () => {
+    const [info, ready] = await Promise.all([
+      fixture("noadsdl-video-info-sparse.json"),
+      fixture("noadsdl-status-ready.json")
+    ]);
+    let requests = 0;
+    const diagnostics: NoAdsDiagnosticEvent[] = [];
+    const provider = new NoAdsDLProvider({
+      enabled: true,
+      deliveryVerified: true,
+      minIntervalMs: 0,
+      pollIntervalMs: 0,
+      maxPreparedFormats: 2,
+      diagnosticSink: (event) => diagnostics.push(event),
+      fetchImpl: async () => {
+        requests += 1;
+        if (requests === 1) return response(info);
+        if (requests === 2) return response(ready);
+        return response(JSON.stringify({ status: "error", message: "upstream unavailable" }), 503);
+      }
+    });
+
+    const resolution = await provider.resolve(input);
+    expect(resolution.result.formats.map(({ quality }) => quality)).toEqual(["720p MP4"]);
+    expect(resolution.candidates).toHaveLength(1);
+    expect(diagnostics).toEqual([expect.objectContaining({
+      outcome: "success",
+      requestedFormatCount: 2,
+      preparedFormatCount: 1,
+      skippedFormatCount: 2,
+      secondaryFailureCode: "provider_unavailable"
     })]);
   });
 });

@@ -2,6 +2,7 @@
   "success": true,
   "status": "ok",
   "title": "Fixture YouTube video",
+  "thumbnail": "https://i.ytimg.com/vi/fixture/hqdefault.jpg",
   "video_formats": [
     { "format_id": "audio-128", "ext": "m4a", "type": "audio", "acodec": "mp4a.40.2", "vcodec": "none" },
     { "format_id": "137", "ext": "mp4", "height": 1080, "type": "video", "vcodec": "avc1", "acodec": "none" },
