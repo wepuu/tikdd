@@ -2,6 +2,12 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("Admin content publication write boundary",()=>{
+  it("orders snapshot revisions numerically after the selected revision is cast to text",async()=>{
+    const source=await readFile(new URL("../src/admin-content-publication.ts",import.meta.url),"utf8");
+    expect(source).not.toContain("ORDER BY revision DESC");
+    expect(source.match(/ORDER BY admin_published_snapshots\.revision DESC/g)).toHaveLength(3);
+  });
+
   it("keeps draft promotion, snapshot insertion, and its receipt in one transaction",async()=>{
     const source=await readFile(new URL("../src/admin-content-publication.ts",import.meta.url),"utf8");
     const publish=source.slice(source.indexOf("async publish("),source.indexOf("async completePropagation("));

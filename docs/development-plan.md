@@ -1982,3 +1982,15 @@ immutable snapshot rules: canonical URLs, reciprocal hreflang, structured data a
 are emitted only after the production route, Delivery, content and GEO gates pass. This work does
 not create a YouTube-specific SEO exception, change Delivery, enable SnapYT, add a migration, or
 run new Provider requests. See [Work Item 116](work-item-116-youtube-beta-productization.md).
+
+### Work Item 117 — Content snapshot revision ordering repair
+
+The first publication after revision 9 exposed a PostgreSQL name-resolution bug in the Admin
+publication repository. Queries selected `revision::text` for the JavaScript boundary and then
+ordered by the unqualified output alias, so revision `9` sorted ahead of revision `10`. Admin
+therefore retried revision `10` and the unique deployment/revision constraint rejected the write.
+
+Work Item 117 qualifies the source BIGINT column in all latest/recent snapshot queries and adds a
+regression guard for the 9 → 10 → 11 boundary. It does not change content, schema, Provider
+routing, Delivery, or public APIs. See
+[Work Item 117](work-item-117-content-snapshot-revision-ordering.md).
