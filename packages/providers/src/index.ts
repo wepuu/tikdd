@@ -104,12 +104,15 @@ export {
   parseNoAdsVideoInfo,
   parseNoAdsJobResponse,
   reviewedNoAdsDirectUrl,
+  reviewedNoAdsThumbnailUrl,
   type NoAdsDLProviderOptions,
+  type NoAdsFormatOffer,
   type NoAdsVideoInfo,
   type NoAdsJobState,
   type NoAdsDiagnosticEvent,
   type NoAdsDiagnosticPhase,
   type NoAdsFormatSchema,
+  type NoAdsThumbnailStatus,
   type NoAdsContentType
 } from "./adapters/noadsdl";
 export {

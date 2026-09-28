@@ -349,6 +349,9 @@ through the asynchronous mock route.
 - Work Item 113 gives NoAdsDL one bounded 40-second asynchronous completion budget and aligns the
   YouTube Worker/Web deadlines. Current SnapYT responses redirect through a dynamic Googlevideo
   chain that ends in 403 from NL, so its rollout remains closed instead of widening Delivery.
+- Work Item 114 retains reviewed YouTube thumbnails and lets NoAdsDL prepare at most two combined
+  MP4 choices sequentially inside the same bounded budget. A secondary failure preserves the
+  primary result; no merge, transcode, media proxy or public contract change is introduced.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

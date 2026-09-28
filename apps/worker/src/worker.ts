@@ -284,6 +284,7 @@ if (noAdsDLActivation.enabled) {
     minIntervalMs: noAdsDLActivation.minIntervalMs,
     pollIntervalMs: noAdsDLActivation.pollIntervalMs,
     pollBudgetMs: noAdsDLActivation.pollBudgetMs,
+    maxPreparedFormats: noAdsDLActivation.maxPreparedFormats,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

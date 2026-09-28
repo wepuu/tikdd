@@ -20,8 +20,10 @@ const MAXIMUM_RESPONSE_BYTES = 512 * 1_024;
 const PROVIDER_TIMEOUT_MS = 45_000;
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
 const DEFAULT_POLL_BUDGET_MS = 40_000;
+const DEFAULT_MAX_PREPARED_FORMATS = 2;
 const MAXIMUM_STATUS_POLLS = 20;
 const SUPPORTED_PLATFORM = "youtube" as const;
+const THUMBNAIL_HOSTS = new Set(["i.ytimg.com", "img.youtube.com"]);
 
 const VideoInfoSchema = z.object({
   success: z.boolean().optional(),
@@ -50,6 +52,7 @@ const JobSchema = z.object({
 export type NoAdsContentType = "json" | "html" | "text" | "other" | "missing";
 export type NoAdsDiagnosticPhase = "info" | "job" | "poll" | "completed";
 export type NoAdsFormatSchema = "legacy" | "sparse" | "unknown";
+export type NoAdsThumbnailStatus = "accepted" | "rejected" | "missing";
 export type NoAdsJobStatusCategory = "missing" | "queued" | "processing" | "completed" | "failed" | "other";
 export type NoAdsProgressBucket = "missing" | "0-24" | "25-49" | "50-74" | "75-99" | "100" | "other";
 
@@ -65,6 +68,13 @@ export interface NoAdsDiagnosticEvent {
   formatSchema: NoAdsFormatSchema;
   selectedFormat: boolean;
   jobCreated: boolean;
+  eligibleFormatCount: number;
+  requestedFormatCount: number;
+  preparedFormatCount: number;
+  skippedFormatCount: number;
+  thumbnailAccepted: boolean;
+  thumbnailStatus: NoAdsThumbnailStatus;
+  secondaryFailureCode: ProviderFailureCode | null;
   pollCount: number;
   jobStatusCategory: NoAdsJobStatusCategory;
   progressBucket: NoAdsProgressBucket;
@@ -74,10 +84,17 @@ export interface NoAdsDiagnosticEvent {
 
 export interface NoAdsVideoInfo {
   title: string | null;
+  thumbnailUrl: string | null;
+  thumbnailStatus: NoAdsThumbnailStatus;
   formatCount: number;
   formatSchema: NoAdsFormatSchema;
+  formats: NoAdsFormatOffer[];
+}
+
+export interface NoAdsFormatOffer {
   formatId: string;
   label: string;
+  quality: number;
 }
 
 export interface NoAdsJobState {
@@ -96,6 +113,7 @@ export interface NoAdsDLProviderOptions {
   minIntervalMs?: number;
   pollIntervalMs?: number;
   pollBudgetMs?: number;
+  maxPreparedFormats?: number;
   diagnosticSink?: (event: NoAdsDiagnosticEvent) => void;
 }
 
@@ -217,6 +235,27 @@ function countVideoInfoFormats(body: string): number {
   }
 }
 
+export function reviewedNoAdsThumbnailUrl(value: unknown): string | null {
+  const raw = stringValue(value, 4_096);
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (
+      url.protocol !== "https:" ||
+      !THUMBNAIL_HOSTS.has(url.hostname.toLowerCase()) ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.hash ||
+      url.search ||
+      !/\.(?:jpe?g|png|webp)$/iu.test(url.pathname)
+    ) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoInfo {
   let payload: z.infer<typeof VideoInfoSchema>;
   try {
@@ -236,27 +275,32 @@ export function parseNoAdsVideoInfo(body: string, httpStatus = 200): NoAdsVideoI
   if (eligible.length === 0) {
     throw new ProviderError("NoAdsDL returned no free combined MP4 format.", "invalid_result", false, true);
   }
-  const selected = [...eligible].sort((left, right) => {
+  const sorted = [...eligible].sort((left, right) => {
     const leftQuality = parseQuality(left.record.height ?? left.record.quality, left.key);
     const rightQuality = parseQuality(right.record.height ?? right.record.quality, right.key);
-    const leftCap = leftQuality > 1_080 ? 1 : 0;
-    const rightCap = rightQuality > 1_080 ? 1 : 0;
-    return leftCap - rightCap || Math.abs(leftQuality - 720) - Math.abs(rightQuality - 720) || rightQuality - leftQuality;
-  })[0];
-  if (!selected) {
-    throw new ProviderError("NoAdsDL returned no selectable MP4 format.", "invalid_result", false, true);
+    const preferred = (quality: number) => quality === 720 ? 0 : quality === 1_080 ? 1 : quality === 480 ? 2 : quality === 360 ? 3 : 4;
+    return preferred(leftQuality) - preferred(rightQuality) || rightQuality - leftQuality;
+  });
+  const seen = new Set<string>();
+  const formats = sorted.flatMap(({ key, record }) => {
+    const formatId = boundedFormatId(record.format_id);
+    if (!formatId || seen.has(formatId)) return [];
+    seen.add(formatId);
+    const quality = parseQuality(record.height ?? record.quality, key);
+    return [{ formatId, quality, label: quality > 0 ? `${quality}p MP4` : "MP4" }];
+  });
+  if (formats.length === 0) {
+    throw new ProviderError("NoAdsDL omitted selectable format identifiers.", "provider_schema_changed", true, true);
   }
-  const formatId = boundedFormatId(selected.record.format_id);
-  if (!formatId) {
-    throw new ProviderError("NoAdsDL omitted the selected format identifier.", "provider_schema_changed", true, true);
-  }
-  const quality = parseQuality(selected.record.height ?? selected.record.quality, selected.key);
+  const suppliedThumbnail = stringValue(payload.thumbnail, 4_096);
+  const thumbnailUrl = reviewedNoAdsThumbnailUrl(payload.thumbnail);
   return {
     title: stringValue(payload.title, 1_000),
+    thumbnailUrl,
+    thumbnailStatus: thumbnailUrl ? "accepted" : suppliedThumbnail ? "rejected" : "missing",
     formatCount: entries.length,
     formatSchema,
-    formatId,
-    label: quality > 0 ? `${quality}p MP4` : "MP4"
+    formats
   };
 }
 
@@ -407,6 +451,7 @@ export class NoAdsDLProvider implements ResolverProvider {
   private readonly minIntervalMs: number;
   private readonly pollIntervalMs: number;
   private readonly pollBudgetMs: number;
+  private readonly maxPreparedFormats: number;
   private readonly diagnosticSink: ((event: NoAdsDiagnosticEvent) => void) | null;
   private activeRequests = 0;
   private lastRequestAt = 0;
@@ -418,6 +463,7 @@ export class NoAdsDLProvider implements ResolverProvider {
     this.minIntervalMs = Math.max(0, Math.min(60_000, Math.floor(options.minIntervalMs ?? 5_000)));
     this.pollIntervalMs = Math.max(0, Math.min(10_000, Math.floor(options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS)));
     this.pollBudgetMs = Math.max(2_000, Math.min(DEFAULT_POLL_BUDGET_MS, Math.floor(options.pollBudgetMs ?? DEFAULT_POLL_BUDGET_MS)));
+    this.maxPreparedFormats = Math.max(1, Math.min(2, Math.floor(options.maxPreparedFormats ?? DEFAULT_MAX_PREPARED_FORMATS)));
     this.diagnosticSink = options.diagnosticSink ?? null;
     this.manifest = {
       id: "noadsdl",
@@ -465,6 +511,13 @@ export class NoAdsDLProvider implements ResolverProvider {
     let formatSchema: NoAdsFormatSchema = "unknown";
     let selectedFormat = false;
     let jobCreated = false;
+    let eligibleFormatCount = 0;
+    let requestedFormatCount = 0;
+    let preparedFormatCount = 0;
+    let skippedFormatCount = 0;
+    let thumbnailAccepted = false;
+    let thumbnailStatus: NoAdsThumbnailStatus = "missing";
+    let secondaryFailureCode: ProviderFailureCode | null = null;
     let pollCount = 0;
     let currentJobStatusCategory: NoAdsJobStatusCategory = "missing";
     let currentProgressBucket: NoAdsProgressBucket = "missing";
@@ -483,6 +536,13 @@ export class NoAdsDLProvider implements ResolverProvider {
           formatSchema,
           selectedFormat,
           jobCreated,
+          eligibleFormatCount,
+          requestedFormatCount,
+          preparedFormatCount,
+          skippedFormatCount,
+          thumbnailAccepted,
+          thumbnailStatus,
+          secondaryFailureCode,
           pollCount,
           jobStatusCategory: currentJobStatusCategory,
           progressBucket: currentProgressBucket,
@@ -527,61 +587,88 @@ export class NoAdsDLProvider implements ResolverProvider {
       const info = parseNoAdsVideoInfo(infoResponse.body, infoResponse.response.status);
       formatCount = info.formatCount;
       formatSchema = info.formatSchema;
-      selectedFormat = true;
+      eligibleFormatCount = info.formats.length;
+      selectedFormat = eligibleFormatCount > 0;
+      thumbnailAccepted = info.thumbnailUrl !== null;
+      thumbnailStatus = info.thumbnailStatus;
+      const preparationStartedAt = Date.now();
+      const prepared: Array<{ url: string; label: string }> = [];
+      const requested = info.formats.slice(0, this.maxPreparedFormats);
+      skippedFormatCount = Math.max(0, info.formats.length - requested.length);
 
-      const jobUrl = new URL(DOWNLOAD_PATH, ORIGIN);
-      jobUrl.searchParams.set("url", input.canonicalUrl);
-      jobUrl.searchParams.set("format", "mp4");
-      jobUrl.searchParams.set("format_id", info.formatId);
-      jobUrl.searchParams.set("async", "1");
-      phase = "job";
-      const jobResponse = await requestJson(jobUrl, { method: "GET" });
-      let job = parseNoAdsJobResponse(jobResponse.body, jobResponse.response.status);
-      jobCreated = true;
-      currentJobStatusCategory = job.statusCategory;
-      currentProgressBucket = job.progressBucket;
-      let statusUrl = job.statusUrl;
-      if (!job.directUrl && !statusUrl) {
-        throw new ProviderError("NoAdsDL did not return a bounded job status URL.", "provider_schema_changed", true, true);
-      }
+      for (const [index, format] of requested.entries()) {
+        if (Date.now() - preparationStartedAt >= this.pollBudgetMs) {
+          skippedFormatCount += requested.length - index;
+          if (index === 0) {
+            throw new ProviderError("NoAdsDL did not finish the download job in time.", "provider_timeout", true, true);
+          }
+          secondaryFailureCode = "provider_timeout";
+          break;
+        }
+        try {
+          requestedFormatCount += 1;
+          const jobUrl = new URL(DOWNLOAD_PATH, ORIGIN);
+          jobUrl.searchParams.set("url", input.canonicalUrl);
+          jobUrl.searchParams.set("format", "mp4");
+          jobUrl.searchParams.set("format_id", format.formatId);
+          jobUrl.searchParams.set("async", "1");
+          phase = "job";
+          const jobResponse = await requestJson(jobUrl, { method: "GET" });
+          let job = parseNoAdsJobResponse(jobResponse.body, jobResponse.response.status);
+          jobCreated = true;
+          currentJobStatusCategory = job.statusCategory;
+          currentProgressBucket = job.progressBucket;
+          let statusUrl = job.statusUrl;
+          if (!job.directUrl && !statusUrl) {
+            throw new ProviderError("NoAdsDL did not return a bounded job status URL.", "provider_schema_changed", true, true);
+          }
 
-      const pollingStartedAt = Date.now();
-      while (!job.directUrl && statusUrl && pollCount < MAXIMUM_STATUS_POLLS) {
-        const remainingMs = this.pollBudgetMs - (Date.now() - pollingStartedAt);
-        if (remainingMs <= 0) break;
-        await delay(Math.min(this.pollIntervalMs, remainingMs), input.signal);
-        pollCount += 1;
-        phase = "poll";
-        const pollResponse = await requestJson(new URL(statusUrl), { method: "GET" });
-        job = parseNoAdsJobResponse(pollResponse.body, pollResponse.response.status);
-        currentJobStatusCategory = job.statusCategory;
-        currentProgressBucket = job.progressBucket;
-        statusUrl = job.statusUrl ?? statusUrl;
-      }
-      if (!job.directUrl) {
-        throw new ProviderError("NoAdsDL did not finish the download job in time.", "provider_timeout", true, true);
+          while (!job.directUrl && statusUrl && pollCount < MAXIMUM_STATUS_POLLS) {
+            const remainingMs = this.pollBudgetMs - (Date.now() - preparationStartedAt);
+            if (remainingMs <= 0) break;
+            await delay(Math.min(this.pollIntervalMs, remainingMs), input.signal);
+            pollCount += 1;
+            phase = "poll";
+            const pollResponse = await requestJson(new URL(statusUrl), { method: "GET" });
+            job = parseNoAdsJobResponse(pollResponse.body, pollResponse.response.status);
+            currentJobStatusCategory = job.statusCategory;
+            currentProgressBucket = job.progressBucket;
+            statusUrl = job.statusUrl ?? statusUrl;
+          }
+          if (!job.directUrl) {
+            throw new ProviderError("NoAdsDL did not finish the download job in time.", "provider_timeout", true, true);
+          }
+          prepared.push({ url: job.directUrl, label: format.label });
+          preparedFormatCount = prepared.length;
+        } catch (error) {
+          if (index === 0) throw error;
+          secondaryFailureCode = diagnosticFailureCode(error);
+          skippedFormatCount += requested.length - index;
+          break;
+        }
       }
       phase = "completed";
-      emit("success", null);
-      return createRedirectResolution(
+      const resolution = createRedirectResolution(
         this.manifest.id,
         this.manifest.kind,
         input,
         {
           title: info.title,
-          thumbnailUrl: null,
-          formats: [{
-            url: job.directUrl,
-            label: info.label,
-            quality: info.label,
+          thumbnailUrl: info.thumbnailUrl,
+          formats: prepared.map((format) => ({
+            url: format.url,
+            label: format.label,
+            quality: format.label,
             container: "mp4",
             hasVideo: true,
             hasAudio: true
-          }],
+          })),
           warnings: ["NoAdsDL prepares the MP4 on its own server before browser delivery."]
         },
         { hostPolicyId: MEDIA_POLICY_ID, maximumLifetimeMs: MAXIMUM_CANDIDATE_LIFETIME_MS }
       );
+      emit("success", null);
+      return resolution;
     } catch (error) {
       emit("failure", diagnosticFailureCode(error));
       if (error instanceof ProviderError) throw error;
