@@ -27,9 +27,9 @@ describe("Admin content management",()=>{
     const publication:any={getActive:vi.fn(async()=>null),getLatest:vi.fn(async()=>null),listRecent:vi.fn(async()=>[])};
     const instance=new AdminContentManagementService({commandSecret:'command-secret-with-at-least-32-characters',platforms:listPlatformDefinitions(),writes,publication,deployment:'tikdd',now:()=>new Date(now)});
     const initial=await instance.getStarterPreview();
-    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:108,expectedSharedCount:9});
+    expect(initial).toMatchObject({state:'empty',eligible:true,expectedPageCount:117,expectedSharedCount:9});
     const result=await instance.bootstrapStarterContent({reason:'Apply the reviewed multilingual content pack.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0001'},'owner_tikdd');
-    expect(result).toMatchObject({createdPageCount:108,createdSharedCount:9,preview:{state:'ready',readyPageCount:108,readySharedCount:9}});
+    expect(result).toMatchObject({createdPageCount:117,createdSharedCount:9,preview:{state:'ready',readyPageCount:117,readySharedCount:9}});
     expect(writes.saveLocaleDraft).toHaveBeenCalledTimes(7);
     expect(writes.savePageDraft).toHaveBeenCalledTimes(starterPageRecords().length);
     const repeat=await instance.bootstrapStarterContent({reason:'Apply the reviewed multilingual content pack.',confirmation:'starter-content',idempotencyKey:'starter-bootstrap-0002'},'owner_tikdd');

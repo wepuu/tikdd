@@ -1,8 +1,8 @@
 # TikDD development roadmap
 
 - Rebaseline source: [`docs/project/current-state-audit.md`](project/current-state-audit.md)
-- Repository checkpoint: `main@1a3b28518cde9d87b1ca3d47af63ab2874777f83` (Work Item 93 deployed; Instagram reopened)
-- Roadmap revision date: 2026-09-25
+- Repository checkpoint: `main@4fde039c35a000e7ff0d8592f45507a5cdfed50f` (Work Item 115 deployed)
+- Roadmap revision date: 2026-09-28
 
 This roadmap starts from the audited repository state, not from historical completion labels. TikDD
 already has the core Provider, routing, health, rollout, Delivery, Admin, CMS, locale, and technical
@@ -40,6 +40,14 @@ post-deploy owner-supplied Reel completed one SaveFromIns attempt, one Delivery 
 non-zero `206 video/mp4` transfer from the reviewed Instagram CDN family. The owner subsequently
 completed multiple manual Instagram downloads successfully. SaveFromIns remains an experimental,
 single-attempt Beta route; no stable promotion or new Provider traffic is implied by these checks.
+
+The current production YouTube route is NoAdsDL at full allocation with its three gates enabled.
+Work Items 113–115 established the bounded asynchronous budget, reviewed combined MP4 preparation,
+ordinary-video thumbnails, and the observed Shorts thumbnail query shape. The owner completed
+ordinary-video and Shorts browser checks on the exact WI115 release. YouTube remains experimental
+and is not promoted to stable; SnapYT remains a disabled secondary candidate. Work Item 116 is the
+productization step for localized public YouTube pages, route-qualified SEO, sitemap membership,
+and Admin support-truth alignment.
 
 ## Baseline classification
 
@@ -1960,3 +1968,17 @@ Delivery remains the existing direct browser navigation to NoAdsDL. No media pro
 filename guarantee, UI copy, public contract, database or production routing change is introduced.
 See [Work Item 115](work-item-115-youtube-shorts-thumbnail.md) and
 [ADR-0055](architecture/adr/0055-noadsdl-bounded-multiformat-preparation.md).
+
+### Work Item 116 — YouTube Beta productization and public route
+
+The owner completed ordinary-video and Shorts browser checks against the exact WI115 release.
+NoAdsDL remains the enabled YouTube primary at full allocation; SnapYT remains disabled and is not
+advertised as a fallback. Work Item 116 turns that verified route into a public product surface by
+adding a reviewed YouTube platform page to the nine-locale starter content, updating homepage and
+shared support copy, and including the platform in the existing Admin support-truth ledger.
+
+YouTube stays `experimental`/Beta. Its localized pages use the existing route-qualified SEO and
+immutable snapshot rules: canonical URLs, reciprocal hreflang, structured data and sitemap entries
+are emitted only after the production route, Delivery, content and GEO gates pass. This work does
+not create a YouTube-specific SEO exception, change Delivery, enable SnapYT, add a migration, or
+run new Provider requests. See [Work Item 116](work-item-116-youtube-beta-productization.md).

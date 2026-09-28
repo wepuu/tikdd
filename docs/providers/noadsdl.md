@@ -5,7 +5,8 @@
 - Provider ID: `noadsdl`
 - Host: `noadsdl.com`
 - Platform: YouTube
-- State: implemented Beta adapter, disabled by default in source and independently gated in production
+- State: implemented Beta adapter; enabled as the production YouTube primary after WI113–WI115
+  browser verification, while source registration and rollout remain independently gated
 - Content: public individual videos and Shorts; private, member-only, age-restricted, live, DRM,
   playlists and adaptive-only streams are out of scope
 

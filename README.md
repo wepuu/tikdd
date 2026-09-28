@@ -190,10 +190,11 @@ cost weight, and enabled state. The worker performs bounded sequential fallback 
 sanitized attempt. See [the provider development guide](docs/provider-development.md).
 Provider-specific reviews live under [`docs/providers`](docs/providers/).
 
-Pinterest is currently an experimental public Beta backed by the reviewed
-`pinterest-videodownloader` route. It remains gated and is not in the sitemap until its production
-browser handoff and natural-traffic closeout are complete; Vimeo remains deferred. See the
-[Work Item 80 record](docs/work-item-80-pinterest-beta-launch.md).
+Pinterest, Vimeo, YouTube, Facebook, and xHamster are bounded experimental public Betas backed by
+their reviewed routes. Their localized pages enter the sitemap only when the existing production
+route, Delivery, content, and GEO gates pass; Beta status remains visible on each page. See the
+[Work Item 80 record](docs/work-item-80-pinterest-beta-launch.md) and the latest YouTube record in
+[Work Item 116](docs/work-item-116-youtube-beta-productization.md).
 
 ## Quick start
 
@@ -331,27 +332,29 @@ through the asynchronous mock route.
 
 - Public task creation accepts a validated URL without a client acknowledgement step.
 - The current live product consists of the stable TikTok route plus bounded X, Instagram,
-  Facebook, Vimeo, Pinterest, and xHamster Betas. The production order includes SSSTwitter → SocialDownloader for
+  Facebook, Vimeo, Pinterest, YouTube, and xHamster Betas. The production order includes SSSTwitter → SocialDownloader for
   X, SaveFromIns for Instagram, SnapTik Monster → TikCD for TikTok, FDown Isuru → SocialDownloader
   for Facebook, VidDown for Vimeo, Pinterest Video Downloader for Pinterest, and GetXHamster for
   xHamster. Platform pages enter the sitemap only after production-route, delivery, content, and
   reviewed GEO gates pass; Beta status remains visible and is not itself a noindex rule. Calibration remains stopped and Admin
   remains the always-available owner control plane.
 - Work Item 109 implements a default-off SnapYT YouTube POC with an exact provider-stream Delivery
-  policy. YouTube is not yet a live product route or search page; two distinct browser downloads and
-  the normal route/content publication gates remain required before Beta activation.
-- Work Item 110 adds a separate default-off NoAdsDL YouTube adapter with bounded asynchronous
-  polling and a narrow Provider-stream Delivery policy. YouTube remains non-indexable and no
-  production traffic is enabled by this change.
-- Work Item 111 hardens SnapYT with a bounded real-MP4 attachment probe and places it behind
-  NoAdsDL as the sequential YouTube fallback. Both routes remain gated and non-indexable until
-  browser Delivery qualification is complete.
+  policy. SnapYT remains disabled and is not advertised as a fallback.
+- Work Item 110 adds a separate NoAdsDL YouTube adapter with bounded asynchronous polling and a
+  narrow Provider-stream Delivery policy. NoAdsDL is now the enabled YouTube Beta primary.
+- Work Item 111 hardens SnapYT with a bounded real-MP4 attachment probe and keeps it behind
+  NoAdsDL as a disabled sequential fallback.
 - Work Item 113 gives NoAdsDL one bounded 40-second asynchronous completion budget and aligns the
   YouTube Worker/Web deadlines. Current SnapYT responses redirect through a dynamic Googlevideo
   chain that ends in 403 from NL, so its rollout remains closed instead of widening Delivery.
 - Work Item 114 retains reviewed YouTube thumbnails and lets NoAdsDL prepare at most two combined
   MP4 choices sequentially inside the same bounded budget. A secondary failure preserves the
   primary result; no merge, transcode, media proxy or public contract change is introduced.
+- Work Item 115 accepts the reviewed Shorts thumbnail query shape on `i.ytimg.com` without widening
+  the image-host boundary. Ordinary videos and Shorts have now passed owner browser checks.
+- Work Item 116 productizes YouTube as a localized Beta page and adds it to the existing route-qualified
+  sitemap/content workflow. It does not promote YouTube to `stable`, enable SnapYT, or change media
+  delivery behavior.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

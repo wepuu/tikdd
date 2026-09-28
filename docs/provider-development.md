@@ -111,6 +111,7 @@ Current records:
 - [FDown Isuru Facebook adapter](providers/fdown-isuru.md)
 - [SnapYT YouTube POC](providers/snapyt.md)
 - [NoAdsDL YouTube Beta POC](providers/noadsdl.md)
+- NoAdsDL is the current enabled YouTube Beta primary; SnapYT remains a disabled secondary route.
 - AnyLoader xHamster was evaluated as a technical candidate in [Work Item 107](work-item-107-anyloader-xhamster-poc-closeout.md)
   and rejected because its progressive media responses cannot satisfy the current browser-save
   boundary without a new HLS client mode or a server media relay.
