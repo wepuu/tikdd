@@ -24,6 +24,7 @@ const DEFAULT_MAX_PREPARED_FORMATS = 2;
 const MAXIMUM_STATUS_POLLS = 20;
 const SUPPORTED_PLATFORM = "youtube" as const;
 const THUMBNAIL_HOSTS = new Set(["i.ytimg.com", "img.youtube.com"]);
+const YTIMG_THUMBNAIL_QUERY_KEYS = new Set(["sqp", "rs"]);
 
 const VideoInfoSchema = z.object({
   success: z.boolean().optional(),
@@ -246,10 +247,20 @@ export function reviewedNoAdsThumbnailUrl(value: unknown): string | null {
       url.username ||
       url.password ||
       url.port ||
-      url.hash ||
-      url.search ||
+      raw.includes("#") ||
       !/\.(?:jpe?g|png|webp)$/iu.test(url.pathname)
     ) return null;
+
+    if (url.search) {
+      if (url.hostname.toLowerCase() !== "i.ytimg.com") return null;
+      const seen = new Set<string>();
+      for (const [key, queryValue] of url.searchParams) {
+        if (!YTIMG_THUMBNAIL_QUERY_KEYS.has(key) || seen.has(key) || queryValue.length === 0) {
+          return null;
+        }
+        seen.add(key);
+      }
+    }
     return url.toString();
   } catch {
     return null;

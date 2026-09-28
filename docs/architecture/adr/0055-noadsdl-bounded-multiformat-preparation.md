@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Work Item 114.
+Accepted for Work Items 114 and 115.
 
 ## Context
 
@@ -22,7 +22,9 @@ existing 45-second Provider and 75-second route boundaries.
   offer must succeed; failure of an optional secondary offer returns the completed primary result.
   No retry, parallel job, queue replay, merge or transcode is introduced.
 - Accept metadata thumbnails only from the exact HTTPS hosts `i.ytimg.com` and `img.youtube.com`,
-  using default ports and image-file paths without credentials, query strings or fragments.
+  using default ports and image-file paths without credentials or fragments. `i.ytimg.com` may
+  carry the observed single-value `sqp` and `rs` Shorts image parameters; unknown, duplicate or
+  empty parameters remain rejected, and `img.youtube.com` remains query-free.
 - Diagnostics expose only counts, acceptance booleans, bounded status categories and sanitized
   failure codes. They never expose source URLs, format identifiers, media URLs, cookies or bodies.
 
@@ -32,6 +34,9 @@ Users may see one or two honest combined MP4 choices depending on upstream capab
 budget. A slow or failed secondary generation does not erase a usable primary result. The existing
 public contract, Delivery policy, task state, persistence schema and timeout hierarchy remain
 unchanged.
+
+Work Item 115 does not change the navigation handoff or claim control over the Provider-selected
+download filename. Media bytes continue to flow directly from NoAdsDL to the user's browser.
 
 ## Rollback
 
