@@ -11,11 +11,11 @@ describe("starter content", () => {
   it("provides a complete nine-locale set with every available platform page indexed", () => {
     const pages = starterPageRecords();
     expect(STARTER_LOCALES).toEqual(["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"]);
-    expect(pages).toHaveLength(108);
-    expect(pages.filter((page) => page.seo.indexable)).toHaveLength(72);
+    expect(pages).toHaveLength(117);
+    expect(pages.filter((page) => page.seo.indexable)).toHaveLength(81);
     expect(pages.filter((page) => page.pageId === "page_home" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(9);
-    expect(pages.filter((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(63);
-    for (const platform of ["x", "instagram", "tiktok", "facebook", "vimeo", "pinterest", "xhamster"] as const) {
+    expect(pages.filter((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(72);
+    for (const platform of ["x", "instagram", "tiktok", "facebook", "vimeo", "pinterest", "youtube", "xhamster"] as const) {
       const localizedPages = pages.filter((page) => page.platform === platform);
       expect(localizedPages.map(({ locale }) => locale)).toEqual(STARTER_LOCALES);
       expect(localizedPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
@@ -41,6 +41,8 @@ describe("starter content", () => {
         googleAdsensePublisherId: null
       });
       expect(entry.content.legalNoticeMarkdown).not.toMatch(/[<>]|https?:\/\//i);
+      expect(entry.content.legalNoticeMarkdown).toContain("YouTube");
+      expect(entry.content.legalNoticeMarkdown).not.toContain("YouTube, and YouTube");
     }
   });
 });

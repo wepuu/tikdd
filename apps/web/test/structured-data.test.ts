@@ -6,6 +6,7 @@ import { buildStructuredData, serializeStructuredData } from "../lib/structured-
 const homepage = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageType === "homepage" && page.locale === "en")!;
 const instagram = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageId === "page_instagram" && page.locale === "en")!;
 const tiktok = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageId === "page_tiktok" && page.locale === "en")!;
+const youtube = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.find((page) => page.pageId === "page_youtube" && page.locale === "en")!;
 
 describe("published structured data", () => {
   it("builds a localized homepage graph from the visible copy", () => {
@@ -44,6 +45,17 @@ describe("published structured data", () => {
     });
     expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
     expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/tiktok-downloader");
+  });
+
+  it("builds structured data for the YouTube Beta landing page", () => {
+    const document = buildStructuredData({
+      page: youtube,
+      copy: copyForPage(youtube),
+      siteName: "TikDD",
+      siteUrl: "https://www.tikdd.cc"
+    });
+    expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
+    expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/youtube-downloader");
   });
 
   it("adds breadcrumbs only after an eligible platform page is indexable", () => {

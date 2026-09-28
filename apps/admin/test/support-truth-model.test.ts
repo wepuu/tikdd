@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { consoleSnapshot } from "./fixture";
 import { deriveEffectiveRoutePlans } from "../lib/console-model";
-import { deriveSupportTruth } from "../lib/support-truth-model";
+import { deriveSupportTruth, PUBLIC_SUPPORTED_PLATFORMS } from "../lib/support-truth-model";
 
 function derive(snapshot = consoleSnapshot) {
   const routes = snapshot.routes.status === "ready" ? snapshot.routes.data.routes : [];
@@ -17,6 +17,10 @@ function derive(snapshot = consoleSnapshot) {
 }
 
 describe("support truth ledger", () => {
+  it("treats YouTube as a public Beta platform in the operator ledger", () => {
+    expect(PUBLIC_SUPPORTED_PLATFORMS).toContain("youtube");
+  });
+
   it("keeps natural events separate from route and catalog facts", () => {
     const [x] = derive();
     expect(x).toMatchObject({ platform: "x", catalogStatus: "stable", tasks: expect.any(Number), attempts: expect.any(Number) });

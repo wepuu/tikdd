@@ -39,12 +39,12 @@ export interface StarterPageRecord {
   seo: AdminSeoFields;
 }
 
-type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "xhamster";
+type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "youtube" | "xhamster";
 type StarterPageKey = "home" | StarterPlatform | "faq" | "help" | "privacy" | "terms";
 
 const PLATFORM_NAMES: Record<StarterPlatform, string> = {
   x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook",
-  vimeo: "Vimeo", pinterest: "Pinterest", xhamster: "xHamster"
+  vimeo: "Vimeo", pinterest: "Pinterest", youtube: "YouTube", xhamster: "xHamster"
 };
 
 type Text = {
@@ -54,7 +54,7 @@ type Text = {
   resolve: string; resolveDescription: string; choose: string; chooseDescription: string;
   faqTitle: string; faqIntro: string; supportedQuestion: string; supportedAnswer: string;
   accountQuestion: string; accountAnswer: string; failureQuestion: string; failureAnswer: string;
-  publicOnly: string; platformLink: Record<StarterPlatform, string>; platformTitle: (name: string, stable: boolean) => string;
+  publicOnly: string; platformLink: Partial<Record<StarterPlatform, string>>; platformTitle: (name: string, stable: boolean) => string;
   platformIntro: (name: string, link: string) => string; platformSupportedQ: (name: string) => string;
   platformSupportedA: (name: string, stable: boolean, link: string) => string; accountPlatformQ: (name: string) => string;
   directAnswer: (name: string, stable: boolean, link: string) => string;
@@ -68,7 +68,7 @@ type Text = {
   genericSeoDescription: Record<"faq" | "help" | "privacy" | "terms", string>;
 };
 
-const commonPlatforms = "X, Instagram, TikTok, Facebook, Vimeo, and Pinterest";
+const commonPlatforms = "X, Instagram, TikTok, Facebook, Vimeo, Pinterest, and YouTube";
 const TEXT: Record<StarterLocale, Text> = {
   en: {
     home: "Home", footer: "Clear formats. Controlled delivery.", independent: `TikDD is an independent tool and is not affiliated with ${commonPlatforms}.`,
@@ -130,33 +130,155 @@ const TEXT: Record<StarterLocale, Text> = {
   }
 };
 
+const YOUTUBE_PLATFORM_LINK: Record<StarterLocale, string> = {
+  en: "video or Short", "zh-CN": "视频或 Shorts", es: "vídeo o Short", fr: "vidéo ou Short",
+  de: "Video oder Short", it: "video o Short", tr: "video veya Short", pl: "film lub Short", ja: "動画またはShorts"
+};
+
+const YOUTUBE_HOME_COPY: Record<StarterLocale, {
+  heroTitle: string;
+  heroSubtitle: string;
+  inputPlaceholder: string;
+  supportedTitle: string;
+  supportedAnswer: string;
+  socialTitle: string;
+  socialDescription: string;
+  homeSeoTitle: string;
+  homeSeoDescription: string;
+}> = {
+  en: {
+    heroTitle: "Download public videos from seven supported platforms",
+    heroSubtitle: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, Pinterest, or YouTube video link. TikDD checks available formats and creates a short-lived download link.",
+    inputPlaceholder: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, Pinterest, or YouTube URL",
+    supportedTitle: "Seven supported platforms",
+    supportedAnswer: "TikDD accepts public X posts, Instagram Reels or posts, TikTok videos, Facebook videos, Vimeo videos, Pinterest video Pins, and YouTube videos or Shorts. Availability depends on the public post and the active route.",
+    socialTitle: "TikDD public video downloader for supported platforms",
+    socialDescription: "Download public videos from X, Instagram, TikTok, Facebook, Vimeo, Pinterest, and YouTube with TikDD.",
+    homeSeoTitle: "TikDD X, Instagram, TikTok, Facebook, Vimeo, Pinterest, YouTube downloader",
+    homeSeoDescription: "Download public videos from X, Instagram, TikTok, Facebook, Vimeo, Pinterest, and YouTube. Paste a link, choose an available format, and download in your browser."
+  },
+  "zh-CN": {
+    heroTitle: "下载七个平台的公开视频",
+    heroSubtitle: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 或 YouTube 视频链接。TikDD 会检查可用格式并生成短期下载链接。",
+    inputPlaceholder: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 或 YouTube 链接",
+    supportedTitle: "支持七个平台",
+    supportedAnswer: "TikDD 支持 X 帖子、Instagram Reel 或视频、TikTok 视频、Facebook 视频、Vimeo 视频、Pinterest 视频 Pin，以及 YouTube 视频或 Shorts。实际可用性取决于公开内容和当前路由。",
+    socialTitle: "TikDD 多平台公开视频下载工具",
+    socialDescription: "使用 TikDD 下载 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 与 YouTube 的公开视频。",
+    homeSeoTitle: "TikDD X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTube 视频下载",
+    homeSeoDescription: "下载 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 与 YouTube 的公开视频。粘贴链接、选择可用格式并在浏览器中下载。"
+  },
+  es: {
+    heroTitle: "Descarga vídeos públicos de siete plataformas compatibles",
+    heroSubtitle: "Pega una URL pública de X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube. TikDD comprueba los formatos disponibles y crea un enlace temporal.",
+    inputPlaceholder: "Pega una URL pública de X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube",
+    supportedTitle: "Siete plataformas compatibles",
+    supportedAnswer: "TikDD admite publicaciones públicas de X, Reels o vídeos de Instagram, vídeos de TikTok y Facebook, vídeos de Vimeo, Pins de vídeo de Pinterest y vídeos o Shorts de YouTube. La disponibilidad depende de la publicación y la ruta activa.",
+    socialTitle: "Descargador TikDD de vídeos públicos",
+    socialDescription: "Descarga vídeos públicos de X, Instagram, TikTok, Facebook, Vimeo, Pinterest y YouTube con TikDD.",
+    homeSeoTitle: "Descargador TikDD de X, Instagram, TikTok, Facebook, Vimeo, Pinterest y YouTube",
+    homeSeoDescription: "Descarga vídeos públicos de X, Instagram, TikTok, Facebook, Vimeo, Pinterest y YouTube. Pega un enlace, elige un formato disponible y descarga en tu navegador."
+  },
+  fr: {
+    heroTitle: "Téléchargez des vidéos publiques de sept plateformes",
+    heroSubtitle: "Collez une URL publique X, Instagram, TikTok, Facebook, Vimeo, Pinterest ou YouTube. TikDD vérifie les formats disponibles et crée un lien temporaire.",
+    inputPlaceholder: "Collez une URL publique X, Instagram, TikTok, Facebook, Vimeo, Pinterest ou YouTube",
+    supportedTitle: "Sept plateformes prises en charge",
+    supportedAnswer: "TikDD accepte les publications publiques X, les Reels ou vidéos Instagram, les vidéos TikTok et Facebook, les vidéos Vimeo, les Pins vidéo Pinterest et les vidéos ou Shorts YouTube. La disponibilité dépend de la publication et de la route active.",
+    socialTitle: "Téléchargeur de vidéos publiques TikDD",
+    socialDescription: "Téléchargez des vidéos publiques de X, Instagram, TikTok, Facebook, Vimeo, Pinterest et YouTube avec TikDD.",
+    homeSeoTitle: "Téléchargeur TikDD pour X, Instagram, TikTok, Facebook, Vimeo, Pinterest et YouTube",
+    homeSeoDescription: "Téléchargez des vidéos publiques de X, Instagram, TikTok, Facebook, Vimeo, Pinterest et YouTube. Collez un lien, choisissez un format disponible et téléchargez dans le navigateur."
+  },
+  de: {
+    heroTitle: "Öffentliche Videos von sieben unterstützten Plattformen herunterladen",
+    heroSubtitle: "Füge einen öffentlichen Link von X, Instagram, TikTok, Facebook, Vimeo, Pinterest oder YouTube ein. TikDD prüft verfügbare Formate und erstellt einen kurzlebigen Download-Link.",
+    inputPlaceholder: "Öffentliche URL von X, Instagram, TikTok, Facebook, Vimeo, Pinterest oder YouTube einfügen",
+    supportedTitle: "Sieben unterstützte Plattformen",
+    supportedAnswer: "TikDD akzeptiert öffentliche X-Beiträge, Instagram-Reels oder -Videos, TikTok- und Facebook-Videos, Vimeo-Videos, Pinterest-Video-Pins sowie YouTube-Videos oder Shorts. Die Verfügbarkeit hängt vom Beitrag und der aktiven Route ab.",
+    socialTitle: "TikDD Downloader für öffentliche Videos",
+    socialDescription: "Lade öffentliche Videos von X, Instagram, TikTok, Facebook, Vimeo, Pinterest und YouTube mit TikDD herunter.",
+    homeSeoTitle: "TikDD Downloader für X, Instagram, TikTok, Facebook, Vimeo, Pinterest und YouTube",
+    homeSeoDescription: "Lade öffentliche Videos von X, Instagram, TikTok, Facebook, Vimeo, Pinterest und YouTube herunter. Link einfügen, verfügbares Format wählen und im Browser speichern."
+  },
+  it: {
+    heroTitle: "Scarica video pubblici da sette piattaforme supportate",
+    heroSubtitle: "Incolla un URL pubblico di X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube. TikDD controlla i formati disponibili e crea un link temporaneo.",
+    inputPlaceholder: "Incolla un URL pubblico di X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube",
+    supportedTitle: "Sette piattaforme supportate",
+    supportedAnswer: "TikDD accetta post pubblici di X, Reel o video Instagram, video TikTok e Facebook, video Vimeo, Pin video Pinterest e video o Shorts YouTube. La disponibilità dipende dal post e dal percorso attivo.",
+    socialTitle: "Downloader di video pubblici TikDD",
+    socialDescription: "Scarica video pubblici da X, Instagram, TikTok, Facebook, Vimeo, Pinterest e YouTube con TikDD.",
+    homeSeoTitle: "Downloader TikDD per X, Instagram, TikTok, Facebook, Vimeo, Pinterest e YouTube",
+    homeSeoDescription: "Scarica video pubblici da X, Instagram, TikTok, Facebook, Vimeo, Pinterest e YouTube. Incolla un link, scegli un formato disponibile e scarica nel browser."
+  },
+  tr: {
+    heroTitle: "Desteklenen yedi platformdan herkese açık videoları indirin",
+    heroSubtitle: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest veya YouTube herkese açık video bağlantısını yapıştırın. TikDD kullanılabilir biçimleri kontrol eder ve kısa ömürlü bir indirme bağlantısı oluşturur.",
+    inputPlaceholder: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest veya YouTube herkese açık URL'sini yapıştırın",
+    supportedTitle: "Desteklenen yedi platform",
+    supportedAnswer: "TikDD herkese açık X gönderilerini, Instagram Reel veya videolarını, TikTok ve Facebook videolarını, Vimeo videolarını, Pinterest video Pinlerini ve YouTube video veya Shorts içeriklerini kabul eder. Kullanılabilirlik gönderiye ve etkin rotaya bağlıdır.",
+    socialTitle: "TikDD herkese açık video indirici",
+    socialDescription: "TikDD ile X, Instagram, TikTok, Facebook, Vimeo, Pinterest ve YouTube'dan herkese açık videoları indirin.",
+    homeSeoTitle: "TikDD X, Instagram, TikTok, Facebook, Vimeo, Pinterest ve YouTube video indirici",
+    homeSeoDescription: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest ve YouTube'dan herkese açık videoları indirin. Bağlantıyı yapıştırın, biçimi seçin ve tarayıcıda indirin."
+  },
+  pl: {
+    heroTitle: "Pobieraj publiczne filmy z siedmiu obsługiwanych platform",
+    heroSubtitle: "Wklej publiczny adres filmu z X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta lub YouTube. TikDD sprawdzi dostępne formaty i utworzy krótkotrwały link pobierania.",
+    inputPlaceholder: "Wklej publiczny adres X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta lub YouTube",
+    supportedTitle: "Siedem obsługiwanych platform",
+    supportedAnswer: "TikDD obsługuje publiczne wpisy X, Reelsy lub filmy z Instagrama, filmy TikToka i Facebooka, filmy Vimeo, Piny wideo Pinteresta oraz filmy lub Shortsy YouTube. Dostępność zależy od wpisu i aktywnej trasy.",
+    socialTitle: "Publiczny downloader wideo TikDD",
+    socialDescription: "Pobieraj publiczne filmy z X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta i YouTube dzięki TikDD.",
+    homeSeoTitle: "Downloader TikDD dla X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta i YouTube",
+    homeSeoDescription: "Pobieraj publiczne filmy z X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta i YouTube. Wklej link, wybierz dostępny format i pobierz w przeglądarce."
+  },
+  ja: {
+    heroTitle: "7つの対応プラットフォームから公開動画をダウンロード",
+    heroSubtitle: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開動画URLを貼り付けてください。TikDDが利用可能な形式を確認し、短時間有効なダウンロードリンクを作成します。",
+    inputPlaceholder: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開URLを貼り付け",
+    supportedTitle: "7つの対応プラットフォーム",
+    supportedAnswer: "TikDDは公開X投稿、InstagramのReelや動画、TikTokとFacebookの動画、Vimeo動画、Pinterestの動画Pin、YouTube動画やShortsに対応します。利用可否は投稿と有効なルートによって変わります。",
+    socialTitle: "TikDD 公開動画ダウンローダー",
+    socialDescription: "TikDDでX、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開動画をダウンロードできます。",
+    homeSeoTitle: "TikDD X・Instagram・TikTok・Facebook・Vimeo・Pinterest・YouTube動画ダウンローダー",
+    homeSeoDescription: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開動画をダウンロード。リンクを貼り、利用可能な形式を選んでブラウザで保存できます。"
+  }
+};
+
 const shared = (locale: StarterLocale): AdminSharedContent => {
   const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
+  const independent = text.independent.includes("YouTube")
+    ? text.independent
+    : text.independent.replace("Pinterest", "Pinterest and YouTube");
   return AdminSharedContentSchema.parse({
     siteName: "TikDD", navigationLabel: text.home, footerTagline: text.footer,
-    legalNoticeMarkdown: text.independent, defaultSocialTitle: text.socialTitle,
-    defaultSocialDescription: text.socialDescription, defaultSocialImageAssetId: null,
+    legalNoticeMarkdown: independent, defaultSocialTitle: youtube.socialTitle,
+    defaultSocialDescription: youtube.socialDescription, defaultSocialImageAssetId: null,
     siteIntegrations: { googleAnalyticsMeasurementId: null, googleAdsensePublisherId: null }
   });
 };
 
 const homepageContent = (locale: StarterLocale): AdminPageContent => {
   const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
+  const faqItems = [
+    { question: text.supportedQuestion, answerMarkdown: youtube.supportedAnswer },
+    { question: text.accountQuestion, answerMarkdown: text.accountAnswer },
+    { question: text.failureQuestion, answerMarkdown: text.failureAnswer }
+  ];
   return AdminPageContentSchema.parse({
-    template: "homepage", heroTitle: text.heroTitle, heroSubtitle: text.heroSubtitle,
-    inputLabel: text.inputLabel, inputPlaceholder: text.placeholder, primaryActionLabel: text.action,
-    supportedPlatformsTitle: text.supportedTitle, howItWorksTitle: text.howTitle,
+    template: "homepage", heroTitle: youtube.heroTitle, heroSubtitle: youtube.heroSubtitle,
+    inputLabel: text.inputLabel, inputPlaceholder: youtube.inputPlaceholder, primaryActionLabel: text.action,
+    supportedPlatformsTitle: youtube.supportedTitle, howItWorksTitle: text.howTitle,
     howItWorksSteps: [
       { title: text.paste, description: text.pasteDescription },
       { title: text.resolve, description: text.resolveDescription },
       { title: text.choose, description: text.chooseDescription }
     ],
-    faqTitle: text.faqTitle,
-    faqItems: [
-      { question: text.supportedQuestion, answerMarkdown: text.supportedAnswer },
-      { question: text.accountQuestion, answerMarkdown: text.accountAnswer },
-      { question: text.failureQuestion, answerMarkdown: text.failureAnswer }
-    ]
+    faqTitle: text.faqTitle, faqItems
   });
 };
 
@@ -164,7 +286,7 @@ const platformContent = (locale: StarterLocale, platform: StarterPlatform): Admi
   const text = TEXT[locale];
   const name = PLATFORM_NAMES[platform];
   const stable = platform === "tiktok";
-  const link = text.platformLink[platform];
+  const link = text.platformLink[platform] ?? YOUTUBE_PLATFORM_LINK[locale];
   return AdminPageContentSchema.parse({
     template: "platform", eyebrow: `${name} ${stable ? "Stable" : "Beta"}`,
     title: text.platformTitle(name, stable), introduction: text.platformIntro(name, link),
@@ -191,9 +313,10 @@ const platformContent = (locale: StarterLocale, platform: StarterPlatform): Admi
 
 const faqContent = (locale: StarterLocale): AdminPageContent => {
   const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
   return AdminPageContentSchema.parse({ template: "faq", title: text.faqTitle, introduction: text.faqIntro,
     items: [
-      { question: text.supportedQuestion, answerMarkdown: text.supportedAnswer },
+      { question: text.supportedQuestion, answerMarkdown: youtube.supportedAnswer },
       { question: text.accountQuestion, answerMarkdown: text.accountAnswer },
       { question: text.failureQuestion, answerMarkdown: text.failureAnswer }
     ] });
@@ -201,9 +324,10 @@ const faqContent = (locale: StarterLocale): AdminPageContent => {
 
 const guideContent = (locale: StarterLocale): AdminPageContent => {
   const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
   return AdminPageContentSchema.parse({ template: "guide", title: text.guideTitle, introduction: text.guideIntro,
     sections: [
-      { id: "paste", heading: `1. ${text.paste}`, bodyMarkdown: text.guidePaste },
+      { id: "paste", heading: `1. ${text.paste}`, bodyMarkdown: `${youtube.inputPlaceholder}.` },
       { id: "choose", heading: `2. ${text.resolve}`, bodyMarkdown: text.guideChoose },
       { id: "download", heading: `3. ${text.choose}`, bodyMarkdown: text.guideDownload }
     ] });
@@ -222,27 +346,29 @@ const legalContent = (locale: StarterLocale, kind: "privacy" | "terms"): AdminPa
 
 const PATHS: Record<StarterPageKey, string> = {
   home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader",
-  facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader",
+  facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", youtube: "/youtube-downloader",
   xhamster: "/xhamster-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms"
 };
 
 const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
   const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
   const isPlatform = page in PLATFORM_NAMES;
   const stable = page === "tiktok";
-  const title = page === "home" ? text.homeSeoTitle
+  const title = page === "home" ? youtube.homeSeoTitle
     : isPlatform ? text.platformSeoTitle(PLATFORM_NAMES[page as StarterPlatform], stable)
       : text.genericSeoTitle[page as "faq" | "help" | "privacy" | "terms"];
-  const description = page === "home" ? text.homeSeoDescription
+  const description = page === "home" ? youtube.homeSeoDescription
     : isPlatform ? text.platformSeoDescription(PLATFORM_NAMES[page as StarterPlatform], stable)
       : text.genericSeoDescription[page as "faq" | "help" | "privacy" | "terms"];
   const reviewedDescription = (description.length < 40
     ? `${description} ${text.footer} ${text.failureAnswer}`
     : description).slice(0, 180);
+  const safeTitle = title.slice(0, 70);
   const publicSearchPage = page === "home" || isPlatform;
   return AdminSeoFieldsSchema.parse({
-    localPath: PATHS[page], searchTitle: title, searchDescription: reviewedDescription,
-    socialTitle: page === "home" ? title : null, socialDescription: page === "home" ? reviewedDescription : null,
+    localPath: PATHS[page], searchTitle: safeTitle, searchDescription: reviewedDescription,
+    socialTitle: page === "home" ? safeTitle : null, socialDescription: page === "home" ? reviewedDescription : null,
     socialImageAssetId: null, indexable: publicSearchPage, includeInSitemap: publicSearchPage, redirectFrom: []
   });
 };

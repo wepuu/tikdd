@@ -245,11 +245,117 @@ const additionalCopy: Record<Exclude<Locale, "en" | "zh-CN">, LocaleOverride> = 
   }
 };
 
+const YOUTUBE_RUNTIME_COPY: Record<Locale, {
+  badge: string;
+  tail: string;
+  description: string;
+  placeholder: string;
+  featureTitle: string;
+  featureDescription: string;
+  faqAnswer: string;
+}> = {
+  en: {
+    badge: "TikTok stable · six platforms in Public Beta",
+    tail: " from seven supported platforms",
+    description: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, Pinterest, or YouTube video URL. TikDD resolves available formats and creates a short-lived download link.",
+    placeholder: "Paste a public X, Instagram, TikTok, Facebook, Vimeo, Pinterest, or YouTube URL",
+    featureTitle: "TikTok stable · six platforms in Public Beta",
+    featureDescription: "Recognizes public X, Instagram, TikTok, Facebook, Vimeo, Pinterest, and YouTube video URLs.",
+    faqAnswer: "TikDD accepts public X posts, public Instagram Reels or posts, TikTok videos, Facebook videos, Vimeo videos, Pinterest video Pins, and YouTube videos or Shorts. TikTok is stable; the other six platforms remain in public Beta."
+  },
+  "zh-CN": {
+    badge: "TikTok 稳定版 · 六个平台 Beta",
+    tail: "，覆盖七个平台",
+    description: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 或 YouTube 视频链接。TikDD 会解析可用格式并生成短期下载链接。",
+    placeholder: "粘贴公开的 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 或 YouTube 链接",
+    featureTitle: "TikTok 稳定版 · 六个平台 Beta",
+    featureDescription: "识别 X、Instagram、TikTok、Facebook、Vimeo、Pinterest 与 YouTube 的公开视频链接。",
+    faqAnswer: "TikDD 支持 X 帖子、公开的 Instagram Reel 或视频、TikTok 视频、Facebook 视频、Vimeo 视频、Pinterest 视频 Pin，以及 YouTube 视频或 Shorts。TikTok 为稳定版，其余六个平台处于公开 Beta。"
+  },
+  es: {
+    badge: "Seis plataformas compatibles",
+    tail: " de siete plataformas",
+    description: "Pega una URL pública de X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube. TikDD comprueba los formatos y prepara una descarga temporal.",
+    placeholder: "Pega una URL pública de X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube",
+    featureTitle: "Seis plataformas en Beta público",
+    featureDescription: "Reconoce vídeos públicos de X, Instagram, TikTok, Facebook, Vimeo, Pinterest y YouTube.",
+    faqAnswer: "TikDD admite páginas públicas de X, Reels o vídeos de Instagram, vídeos de TikTok y Facebook, vídeos de Vimeo, Pins de vídeo de Pinterest y vídeos o Shorts de YouTube. TikTok es estable; las otras seis plataformas están en Beta público."
+  },
+  fr: {
+    badge: "Six plateformes compatibles",
+    tail: " parmi sept plateformes",
+    description: "Collez une URL publique X, Instagram, TikTok, Facebook, Vimeo, Pinterest ou YouTube. TikDD vérifie les formats et prépare un téléchargement temporaire.",
+    placeholder: "Collez une URL publique X, Instagram, TikTok, Facebook, Vimeo, Pinterest ou YouTube",
+    featureTitle: "Six plateformes en Beta public",
+    featureDescription: "Reconnaît les vidéos publiques de X, Instagram, TikTok, Facebook, Vimeo, Pinterest et YouTube.",
+    faqAnswer: "TikDD accepte les publications publiques X, les Reels ou vidéos Instagram, les vidéos TikTok et Facebook, les vidéos Vimeo, les Pins vidéo Pinterest et les vidéos ou Shorts YouTube. TikTok est stable ; les six autres plateformes restent en Beta public."
+  },
+  de: {
+    badge: "Sechs unterstützte Plattformen",
+    tail: " – von sieben Plattformen",
+    description: "Füge einen öffentlichen Link von X, Instagram, TikTok, Facebook, Vimeo, Pinterest oder YouTube ein. TikDD prüft Formate und bereitet den Download vor.",
+    placeholder: "Öffentliche URL von X, Instagram, TikTok, Facebook, Vimeo, Pinterest oder YouTube einfügen",
+    featureTitle: "Sechs Plattformen im öffentlichen Beta",
+    featureDescription: "Erkennt öffentliche Videos von X, Instagram, TikTok, Facebook, Vimeo, Pinterest und YouTube.",
+    faqAnswer: "TikDD akzeptiert öffentliche X-Beiträge, Instagram-Reels oder -Videos, TikTok- und Facebook-Videos, Vimeo-Videos, Pinterest-Video-Pins sowie YouTube-Videos oder Shorts. TikTok ist stabil; die sechs anderen Plattformen bleiben im öffentlichen Beta."
+  },
+  it: {
+    badge: "Sei piattaforme supportate",
+    tail: " da sette piattaforme",
+    description: "Incolla un URL pubblico di X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube. TikDD verifica i formati e prepara un download temporaneo.",
+    placeholder: "Incolla un URL pubblico di X, Instagram, TikTok, Facebook, Vimeo, Pinterest o YouTube",
+    featureTitle: "Sei piattaforme in Beta pubblico",
+    featureDescription: "Riconosce video pubblici da X, Instagram, TikTok, Facebook, Vimeo, Pinterest e YouTube.",
+    faqAnswer: "TikDD accetta post pubblici di X, Reel o video Instagram, video TikTok e Facebook, video Vimeo, Pin video Pinterest e video o Shorts YouTube. TikTok è stabile; le altre sei piattaforme restano in Beta pubblico."
+  },
+  tr: {
+    badge: "Desteklenen altı platform",
+    tail: " – yedi platformdan",
+    description: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest veya YouTube herkese açık video URL'sini yapıştırın. TikDD biçimleri kontrol eder ve geçici indirme hazırlar.",
+    placeholder: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest veya YouTube herkese açık URL'sini yapıştırın",
+    featureTitle: "Herkese açık Beta'da altı platform",
+    featureDescription: "X, Instagram, TikTok, Facebook, Vimeo, Pinterest ve YouTube herkese açık video URL'lerini tanır.",
+    faqAnswer: "TikDD herkese açık X gönderilerini, Instagram Reel veya videolarını, TikTok ve Facebook videolarını, Vimeo videolarını, Pinterest video Pinlerini ve YouTube video veya Shorts içeriklerini kabul eder. TikTok stabildir; diğer altı platform herkese açık Beta'dadır."
+  },
+  pl: {
+    badge: "Sześć obsługiwanych platform",
+    tail: " z siedmiu platform",
+    description: "Wklej publiczny adres filmu z X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta lub YouTube. TikDD sprawdzi formaty i przygotuje tymczasowe pobieranie.",
+    placeholder: "Wklej publiczny adres X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta lub YouTube",
+    featureTitle: "Sześć platform w publicznej becie",
+    featureDescription: "Rozpoznaje publiczne filmy z X, Instagrama, TikToka, Facebooka, Vimeo, Pinteresta i YouTube.",
+    faqAnswer: "TikDD obsługuje publiczne wpisy X, Reelsy lub filmy z Instagrama, filmy TikToka i Facebooka, filmy Vimeo, Piny wideo Pinteresta oraz filmy lub Shortsy YouTube. TikTok jest stabilny; pozostałe sześć platform pozostaje w publicznej becie."
+  },
+  ja: {
+    badge: "6つの対応プラットフォーム",
+    tail: "（7つのプラットフォームに対応）",
+    description: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開動画URLを貼り付けてください。TikDDが形式を確認し、一時的なダウンロードを準備します。",
+    placeholder: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開URLを貼り付け",
+    featureTitle: "公開Betaの6プラットフォーム",
+    featureDescription: "X、Instagram、TikTok、Facebook、Vimeo、Pinterest、YouTubeの公開動画URLを認識します。",
+    faqAnswer: "TikDDは公開X投稿、InstagramのReelや動画、TikTokとFacebookの動画、Vimeo動画、Pinterestの動画Pin、YouTube動画やShortsに対応します。TikTokは安定版で、他の6プラットフォームは公開Betaです。"
+  }
+};
+
 const copy = Object.fromEntries(locales.map((locale) => {
   if (locale === "en" || locale === "zh-CN") return [locale, baseCopy[locale]];
   const extra = additionalCopy[locale];
   return [locale, { ...baseCopy.en, ...extra, form: { ...baseCopy.en.form, ...extra.form } }];
 })) as Record<Locale, SiteCopy>;
+
+for (const locale of locales) {
+  const youtube = YOUTUBE_RUNTIME_COPY[locale];
+  const current = copy[locale];
+  copy[locale] = {
+    ...current,
+    hero: { ...current.hero, badge: youtube.badge, tail: youtube.tail, description: youtube.description },
+    form: { ...current.form, placeholder: youtube.placeholder },
+    features: [[youtube.featureTitle, youtube.featureDescription], ...current.features.slice(1)],
+    supported: { ...current.supported, platforms: [...current.supported.platforms, "YouTube"] },
+    faq: { ...current.faq, items: [[current.faq.items[0]?.[0] ?? "Which links can I use?", youtube.faqAnswer], ...current.faq.items.slice(1)] },
+    legal: locale === "en" ? current.legal.replace("Vimeo, or Pinterest.", "Vimeo, Pinterest, or YouTube.") : `${current.legal} YouTube.`
+  };
+}
 
 export function isLocale(value: string): value is Locale { return locales.includes(value as Locale); }
 export function getCopy(locale: Locale): SiteCopy { return copy[locale]; }
