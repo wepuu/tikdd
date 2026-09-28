@@ -19,11 +19,16 @@ title, bitrate, size and other optional metadata may be absent. If the Provider 
 TikDD polls its same-host status URL within one shared 40-second and twenty-request budget; a processing response may omit
 `status_url`, in which case the original reviewed status URL is retained. Only a ready generated
 file path becomes a candidate. The primary format must succeed; optional secondary failure keeps
-the primary result. A thumbnail is retained only from exact reviewed YouTube image hosts.
+the primary result. A thumbnail is retained only from exact reviewed YouTube image hosts. The
+`i.ytimg.com` Shorts shape may include one `sqp` and one `rs` parameter; other query shapes remain
+rejected.
 
 The only Delivery target is the versioned `noadsdl-youtube-media-v1` policy. Provider stream URLs
 remain encrypted internal candidates; they are never returned in the public resolve result and
 TikDD does not proxy, cache or read the media body.
+
+The browser navigation handoff remains unchanged. The Provider or browser may select the final
+download filename; TikDD does not relay the media body to override it.
 
 ## Runtime controls
 

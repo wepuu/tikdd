@@ -1948,3 +1948,15 @@ This does not introduce merging, transcoding, media proxying, a new Delivery pol
 public-contract changes. `NOADSDL_MAX_PREPARED_FORMATS=1` is the immediate operational rollback.
 See [Work Item 114](work-item-114-noadsdl-thumbnail-multiformat.md) and
 [ADR-0055](architecture/adr/0055-noadsdl-bounded-multiformat-preparation.md).
+
+### Work Item 115 — YouTube Shorts thumbnail compatibility
+
+Production browser checks confirmed that standard NoAdsDL thumbnails were accepted while a
+successful Shorts result used the same exact `i.ytimg.com` host with the bounded `sqp` and `rs`
+image parameters. Work Item 115 accepts only that observed single-value query shape while keeping
+unknown, duplicate or empty parameters and all existing host/path spoofing cases rejected.
+
+Delivery remains the existing direct browser navigation to NoAdsDL. No media proxy, Blob handoff,
+filename guarantee, UI copy, public contract, database or production routing change is introduced.
+See [Work Item 115](work-item-115-youtube-shorts-thumbnail.md) and
+[ADR-0055](architecture/adr/0055-noadsdl-bounded-multiformat-preparation.md).

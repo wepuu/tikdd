@@ -56,6 +56,9 @@ describe("NoAdsDL YouTube adapter", () => {
     expect(reviewedNoAdsThumbnailUrl("https://i.ytimg.com/vi/id/hqdefault.jpg")).toBe(
       "https://i.ytimg.com/vi/id/hqdefault.jpg"
     );
+    expect(reviewedNoAdsThumbnailUrl("https://i.ytimg.com/vi/id/hq720_2.jpg?sqp=fixture&rs=fixture-signature")).toBe(
+      "https://i.ytimg.com/vi/id/hq720_2.jpg?sqp=fixture&rs=fixture-signature"
+    );
     expect(reviewedNoAdsThumbnailUrl("https://img.youtube.com/vi/id/cover.webp")).toBe(
       "https://img.youtube.com/vi/id/cover.webp"
     );
@@ -66,6 +69,11 @@ describe("NoAdsDL YouTube adapter", () => {
       "https://user:pass@i.ytimg.com/vi/id/cover.jpg",
       "https://i.ytimg.com:8443/vi/id/cover.jpg",
       "https://i.ytimg.com/vi/id/cover.jpg?token=secret",
+      "https://i.ytimg.com/vi/id/cover.jpg?sqp=one&sqp=two",
+      "https://i.ytimg.com/vi/id/cover.jpg?sqp=",
+      "https://img.youtube.com/vi/id/cover.jpg?sqp=fixture",
+      "https://i.ytimg.com/vi/id/cover.jpg#fragment",
+      "https://i.ytimg.com/vi/id/cover.jpg#",
       "https://i.ytimg.com/vi/id/cover.svg"
     ]) expect(reviewedNoAdsThumbnailUrl(value)).toBeNull();
     expect(parseNoAdsVideoInfo(JSON.stringify({
@@ -73,6 +81,15 @@ describe("NoAdsDL YouTube adapter", () => {
       thumbnail: "https://evil.i.ytimg.com/cover.jpg",
       video_formats: { "720p MP4": { format_id: "22" } }
     }))).toMatchObject({ thumbnailUrl: null, thumbnailStatus: "rejected" });
+  });
+
+  it("accepts the reviewed Shorts thumbnail query shape", async () => {
+    const parsed = parseNoAdsVideoInfo(await fixture("noadsdl-video-info-shorts.json"));
+    expect(parsed).toMatchObject({
+      thumbnailUrl: "https://i.ytimg.com/vi/fixture/hq720_2.jpg?sqp=fixture&rs=fixture-signature",
+      thumbnailStatus: "accepted",
+      formats: [{ formatId: "22", label: "720p MP4" }]
+    });
   });
 
   it("maps unsuccessful responses to terminal content errors", async () => {

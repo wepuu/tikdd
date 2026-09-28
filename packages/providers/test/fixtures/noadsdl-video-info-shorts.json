@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "title": "Short fixture",
+  "thumbnail": "https://i.ytimg.com/vi/fixture/hq720_2.jpg?sqp=fixture&rs=fixture-signature",
+  "video_formats": {
+    "720p MP4": {
+      "format_id": "22",
+      "resolution": "720p"
+    }
+  }
+}
