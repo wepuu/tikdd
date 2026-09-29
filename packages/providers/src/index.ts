@@ -171,6 +171,17 @@ export {
   FREE_PROVIDER_PORTFOLIO,
   qualifyFreeProviderPortfolio
 } from "./free-provider-portfolio";
+export {
+  OKRU_DELIVERY_POC_EVIDENCE,
+  OkruDeliveryAssessmentSchema,
+  OkruDeliveryFailureSchema,
+  OkruProviderEvidenceSchema,
+  assessOkruDeliveryEvidence,
+  assessOkruDeliveryPortfolio,
+  type OkruDeliveryAssessment,
+  type OkruDeliveryFailure,
+  type OkruProviderEvidence
+} from "./okru-delivery-qualification";
 
 export interface ResolveInput {
   taskId: string;

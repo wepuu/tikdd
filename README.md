@@ -195,6 +195,8 @@ their reviewed routes. Their localized pages enter the sitemap only when the exi
 route, Delivery, content, and GEO gates pass; Beta status remains visible on each page. See the
 [Work Item 80 record](docs/work-item-80-pinterest-beta-launch.md) and the latest YouTube record in
 [Work Item 116](docs/work-item-116-youtube-beta-productization.md).
+OK.ru remains planned because its first delivery batch did not produce a portable browser GET; see
+[Work Item 118](docs/work-item-118-okru-delivery-compatibility.md).
 
 ## Quick start
 
@@ -355,6 +357,8 @@ through the asynchronous mock route.
 - Work Item 116 productizes YouTube as a localized Beta page and adds it to the existing route-qualified
   sitemap/content workflow. It does not promote YouTube to `stable`, enable SnapYT, or change media
   delivery behavior.
+- Work Item 118 records the OK.ru Provider delivery POC. No candidate passed the portable browser
+  GET boundary, so OK.ru remains planned with no adapter, rollout, public page, or production traffic.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized

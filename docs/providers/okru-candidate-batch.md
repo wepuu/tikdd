@@ -1,0 +1,38 @@
+# OK.ru free Provider candidate batch
+
+## Current decision
+
+Work Item 118 closed without a production Provider. OK.ru remains planned and receives no public
+traffic. This record is based on protocol and delivery behavior observed from NL, not landing-page
+claims.
+
+| Candidate | Protocol result | Delivery result | State |
+| --- | --- | --- | --- |
+| TryUnSora OK.ru | Landing page reachable; no reproducible anonymous endpoint | Not tested | Deferred |
+| MediaPuller | Anonymous form produced OK CDN candidates | Candidate media returned HTTP 400 | No media |
+| Get-From.net | Dynamic client protocol was not reproducible | Not tested | Blocked |
+| A2Z | Metadata endpoint returned a negative success envelope | No media | No media |
+| ToolSphare | Slow JSON success envelope; one malformed page descriptor | POST/stream topology did not yield a browser GET | No media |
+| SaveClips | Anonymous nonce; final bounded request returned no media | Not verified | No media |
+| OKGrabber | Two native samples resolved; NL Range returned `206 video/mp4` | Signed CDN URL failed from two client exits; download endpoint returned HTML | Blocked |
+| SparkDownloader | Page and unified client reachable; no reviewed OK.ru endpoint | Not tested | Deferred |
+
+The repository stores only endpoint paths, counts, booleans, and failure classes. It does not store
+sample URLs, signed CDN URLs, response bodies, nonce values, cookies, tokens, query values, or full
+CDN hosts.
+
+## Requalification gate
+
+A later candidate must satisfy all of the following before an adapter is implemented:
+
+1. Two distinct public native OK.ru videos resolve without login, user cookies, CAPTCHA, or copied
+   browser state.
+2. At least one normalized progressive format per sample returns non-zero `200/206 video/*` for a
+   one-kibibyte Range request.
+3. The same short-lived address succeeds from an independent client exit; resolver-IP-bound URLs
+   fail this gate.
+4. Browser delivery is an HTTPS GET with at most three reviewed redirects and no Provider page.
+5. Exact media hosts and paths can be represented by a versioned Delivery policy without turning
+   Delivery into a general proxy.
+
+See [ADR-0056](../architecture/adr/0056-okru-portable-delivery-boundary.md).

@@ -82,7 +82,15 @@ describe("technical Provider preflight classification", () => {
       "snapyt-app": "https://www.snapyt.app/",
       noadsdl: "https://noadsdl.com/",
       ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
-      vd6s: "https://vd6s.net/en5/"
+      vd6s: "https://vd6s.net/en5/",
+      "tryunsora-okru": "https://tryunsora.com/free-tools/ok-video-downloader",
+      "mediapuller-okru": "https://mediapuller.com/download/ok",
+      "get-from-okru": "https://get-from.net/ru/ok-video-downloader",
+      "a2z-okru": "https://a2z.tools/okru-video-downloader",
+      "toolsphare-okru": "https://toolsphare.tech/en/tools/okru-downloader",
+      "saveclips-okru": "https://saveclips.org/odnoklassniki-video-downloader/",
+      okgrabber: "https://okgrabber.com/ru/",
+      "sparkdownloader-okru": "https://downloader.bhwa233.com/en"
     });
   });
 
@@ -111,6 +119,29 @@ describe("technical Provider preflight classification", () => {
       method: "POST",
       url: "https://api.ytultra.com/ikool/youtube/download"
     });
+    expect(resolveActiveEndpoint("mediapuller-okru", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://mediapuller.com/"
+    });
+    expect(resolveActiveEndpoint("a2z-okru", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://a2z.tools/api/fetch-video-info"
+    });
+    expect(resolveActiveEndpoint("toolsphare-okru", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://toolsphare.tech/downloader-api/info"
+    });
+    expect(resolveActiveEndpoint("saveclips-okru", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://saveclips.org/wp-json/visolix/api/download"
+    });
+    expect(resolveActiveEndpoint("okgrabber", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://okgrabber.com/wp-admin/admin-ajax.php"
+    });
+    expect(() => resolveActiveEndpoint("tryunsora-okru", "odnoklassniki")).toThrow(
+      "No reviewed endpoint for tryunsora-okru/odnoklassniki."
+    );
     expect(() => resolveActiveEndpoint("vd6s", "youtube")).toThrow(
       "No reviewed endpoint for vd6s/youtube."
     );

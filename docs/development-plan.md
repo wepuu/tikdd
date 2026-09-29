@@ -1994,3 +1994,17 @@ Work Item 117 qualifies the source BIGINT column in all latest/recent snapshot q
 regression guard for the 9 → 10 → 11 boundary. It does not change content, schema, Provider
 routing, Delivery, or public APIs. See
 [Work Item 117](work-item-117-content-snapshot-revision-ordering.md).
+
+### Work Item 118 — OK.ru delivery compatibility POC
+
+Eight free OK.ru candidates were inspected from NL using their actual anonymous protocols and
+bounded media checks. OKGrabber repeated resolution across two native samples, but its OK CDN
+address was bound to the resolver exit and failed from independent client exits; its download path
+returned a Provider HTML page. ToolSphare returned an invalid page descriptor, SaveClips did not
+return media in the final check, and the other candidates did not produce portable video.
+
+Work Item 118 therefore closes without an adapter, Delivery policy, gates, rollout, public page, or
+production deployment. The candidate matrix and failure reasons are code-owned so a future
+upstream change can be evaluated without weakening the current Delivery boundary. OK.ru remains
+planned. See [Work Item 118](work-item-118-okru-delivery-compatibility.md) and
+[ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).

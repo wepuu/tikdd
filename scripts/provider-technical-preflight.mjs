@@ -69,7 +69,15 @@ export const CANDIDATES = {
   "snapyt-app": "https://www.snapyt.app/",
   noadsdl: "https://noadsdl.com/",
   ytultra: "https://www.ytultra.com/en/youtube-video-downloader/",
-  vd6s: "https://vd6s.net/en5/"
+  vd6s: "https://vd6s.net/en5/",
+  "tryunsora-okru": "https://tryunsora.com/free-tools/ok-video-downloader",
+  "mediapuller-okru": "https://mediapuller.com/download/ok",
+  "get-from-okru": "https://get-from.net/ru/ok-video-downloader",
+  "a2z-okru": "https://a2z.tools/okru-video-downloader",
+  "toolsphare-okru": "https://toolsphare.tech/en/tools/okru-downloader",
+  "saveclips-okru": "https://saveclips.org/odnoklassniki-video-downloader/",
+  okgrabber: "https://okgrabber.com/ru/",
+  "sparkdownloader-okru": "https://downloader.bhwa233.com/en"
 };
 
 /**
@@ -108,6 +116,21 @@ export const ACTIVE_ENDPOINTS = {
   },
   ytultra: {
     youtube: { method: "POST", url: "https://api.ytultra.com/ikool/youtube/download" }
+  },
+  "mediapuller-okru": {
+    odnoklassniki: { method: "POST", url: "https://mediapuller.com/" }
+  },
+  "a2z-okru": {
+    odnoklassniki: { method: "POST", url: "https://a2z.tools/api/fetch-video-info" }
+  },
+  "toolsphare-okru": {
+    odnoklassniki: { method: "POST", url: "https://toolsphare.tech/downloader-api/info" }
+  },
+  "saveclips-okru": {
+    odnoklassniki: { method: "POST", url: "https://saveclips.org/wp-json/visolix/api/download" }
+  },
+  okgrabber: {
+    odnoklassniki: { method: "POST", url: "https://okgrabber.com/wp-admin/admin-ajax.php" }
   }
 };
 

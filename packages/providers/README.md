@@ -84,3 +84,12 @@ legacy codec-rich map and the current sparse combined-MP4 map, retaining the ori
 when a processing response omits it. NoAdsDL is not enabled by the SnapYT gates, is not a
 source-CDN redirect, and is not eligible for production until its own three gates, rollout rule
 and browser Delivery audit are complete.
+
+## OK.ru delivery compatibility
+
+Work Item 118 records eight OK.ru candidates as evidence-only portfolio entries. None owns a
+manifest capability or production route. In particular, OKGrabber can resolve native videos but
+returns OK CDN resources signed to the resolver exit; a successful NL Range does not make those
+resources browser-portable. An OK.ru adapter requires two native samples, verified video Range,
+cross-exit replay, and a cookie-free browser GET. Provider POST streams, Provider pages, and TikDD
+media proxying do not satisfy this boundary. See ADR-0056.
