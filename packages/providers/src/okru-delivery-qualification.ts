@@ -3,16 +3,107 @@ import { z } from "zod";
 export const OkruDeliveryFailureSchema = z.enum([
   "no_reproducible_endpoint",
   "no_media",
+  "hls_only",
+  "split_media_only",
+  "invalid_mime",
+  "empty_media",
+  "unsafe_media_host",
   "invalid_media_descriptor",
   "source_ip_bound",
   "provider_post_only",
   "provider_page_handoff",
+  "browser_state_required",
+  "browser_save_unverified",
   "insufficient_samples",
   "range_unverified",
   "cross_exit_unverified"
 ]);
 
 export type OkruDeliveryFailure = z.infer<typeof OkruDeliveryFailureSchema>;
+
+export const OkruTechnicalQualificationStatusSchema = z.enum([
+  "qualified",
+  "resolved-conditional",
+  "delivery-blocked",
+  "no-media",
+  "blocked",
+  "deferred"
+]);
+
+export type OkruTechnicalQualificationStatus = z.infer<
+  typeof OkruTechnicalQualificationStatusSchema
+>;
+
+export const OkruBatchEvidenceSchema = z.strictObject({
+  providerId: z.string().min(1).max(100).regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/),
+  endpointPath: z.string().min(1).max(160).nullable(),
+  endpointMethod: z.enum(["GET", "POST"]).nullable(),
+  samplesAttempted: z.number().int().min(0).max(2),
+  samplesResolved: z.number().int().min(0).max(2),
+  mediaRangeVerified: z.boolean(),
+  crossExitVerified: z.boolean(),
+  browserSaveMode: z.enum(["attachment", "cors-download"]).nullable(),
+  browserStateRequired: z.boolean(),
+  requiresProviderPost: z.boolean(),
+  requiresProviderPage: z.boolean(),
+  sourceIpBound: z.boolean(),
+  temporaryFailure: z.boolean(),
+  failures: z.array(OkruDeliveryFailureSchema).max(10)
+});
+
+export type OkruBatchEvidence = z.infer<typeof OkruBatchEvidenceSchema>;
+
+export const OkruBatchAssessmentSchema = z.strictObject({
+  providerId: OkruBatchEvidenceSchema.shape.providerId,
+  status: OkruTechnicalQualificationStatusSchema,
+  adapterEligible: z.boolean(),
+  productionRouteEligible: z.boolean(),
+  failures: z.array(OkruDeliveryFailureSchema).max(10)
+});
+
+export type OkruBatchAssessment = z.infer<typeof OkruBatchAssessmentSchema>;
+
+export function assessOkruBatchEvidence(input: OkruBatchEvidence): OkruBatchAssessment {
+  const evidence = OkruBatchEvidenceSchema.parse(input);
+  const qualified =
+    evidence.samplesAttempted === 2 &&
+    evidence.samplesResolved === 2 &&
+    evidence.mediaRangeVerified &&
+    evidence.crossExitVerified &&
+    evidence.browserSaveMode !== null &&
+    !evidence.browserStateRequired &&
+    !evidence.requiresProviderPost &&
+    !evidence.requiresProviderPage &&
+    !evidence.sourceIpBound &&
+    !evidence.temporaryFailure &&
+    evidence.failures.length === 0;
+
+  let status: OkruTechnicalQualificationStatus;
+  if (qualified) status = "qualified";
+  else if (evidence.browserStateRequired) status = "blocked";
+  else if (evidence.sourceIpBound || evidence.requiresProviderPost || evidence.requiresProviderPage) {
+    status = "delivery-blocked";
+  } else if (evidence.samplesResolved > 0) status = "resolved-conditional";
+  else if (evidence.failures.some((failure) => [
+    "no_media",
+    "hls_only",
+    "split_media_only",
+    "invalid_mime",
+    "empty_media",
+    "unsafe_media_host",
+    "invalid_media_descriptor"
+  ].includes(failure))) {
+    status = "no-media";
+  } else status = "deferred";
+
+  return OkruBatchAssessmentSchema.parse({
+    providerId: evidence.providerId,
+    status,
+    adapterEligible: qualified,
+    productionRouteEligible: qualified,
+    failures: evidence.failures
+  });
+}
 
 export const OkruProviderEvidenceSchema = z.strictObject({
   providerId: z.string().min(1).max(100).regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/),
@@ -172,6 +263,81 @@ export const OKRU_DELIVERY_POC_EVIDENCE: readonly OkruProviderEvidence[] = [
   }
 ] as const;
 
+/**
+ * Sanitized Work Item 119 batch evidence. Sample URLs, response bodies, token values, cookies,
+ * signed media addresses, query strings, and complete CDN hosts are deliberately excluded.
+ */
+export const OKRU_PROVIDER_BATCH_2_EVIDENCE: readonly OkruBatchEvidence[] = [
+  {
+    providerId: "okvid-download",
+    endpointPath: "/",
+    endpointMethod: "POST",
+    samplesAttempted: 1,
+    samplesResolved: 0,
+    mediaRangeVerified: false,
+    crossExitVerified: false,
+    browserSaveMode: null,
+    browserStateRequired: false,
+    requiresProviderPost: false,
+    requiresProviderPage: false,
+    sourceIpBound: false,
+    temporaryFailure: false,
+    failures: ["no_media", "insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+  },
+  {
+    providerId: "pastedownload-okru",
+    endpointPath: "/okru-downloader/",
+    endpointMethod: "GET",
+    samplesAttempted: 1,
+    samplesResolved: 0,
+    mediaRangeVerified: false,
+    crossExitVerified: false,
+    browserSaveMode: null,
+    browserStateRequired: false,
+    requiresProviderPost: false,
+    requiresProviderPage: false,
+    sourceIpBound: false,
+    temporaryFailure: false,
+    failures: ["no_media", "insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+  },
+  {
+    providerId: "snapfrom-okru",
+    endpointPath: null,
+    endpointMethod: null,
+    samplesAttempted: 0,
+    samplesResolved: 0,
+    mediaRangeVerified: false,
+    crossExitVerified: false,
+    browserSaveMode: null,
+    browserStateRequired: true,
+    requiresProviderPost: false,
+    requiresProviderPage: false,
+    sourceIpBound: false,
+    temporaryFailure: false,
+    failures: ["no_reproducible_endpoint", "browser_state_required", "insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+  },
+  {
+    providerId: "anydownloader-web-okru",
+    endpointPath: null,
+    endpointMethod: null,
+    samplesAttempted: 0,
+    samplesResolved: 0,
+    mediaRangeVerified: false,
+    crossExitVerified: false,
+    browserSaveMode: null,
+    browserStateRequired: true,
+    requiresProviderPost: false,
+    requiresProviderPage: false,
+    sourceIpBound: false,
+    temporaryFailure: false,
+    failures: ["no_reproducible_endpoint", "browser_state_required", "insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+  }
+] as const;
+
 export function assessOkruDeliveryPortfolio(): readonly OkruDeliveryAssessment[] {
   return OKRU_DELIVERY_POC_EVIDENCE.map((evidence) => assessOkruDeliveryEvidence(evidence));
+}
+
+export function assessOkruBatch2Portfolio(): readonly OkruBatchAssessment[] {
+  return OKRU_PROVIDER_BATCH_2_EVIDENCE.map((evidence) => assessOkruBatchEvidence(evidence));
 }

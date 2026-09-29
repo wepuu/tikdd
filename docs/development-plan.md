@@ -2008,3 +2008,18 @@ production deployment. The candidate matrix and failure reasons are code-owned s
 upstream change can be evaluated without weakening the current Delivery boundary. OK.ru remains
 planned. See [Work Item 118](work-item-118-okru-delivery-compatibility.md) and
 [ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).
+
+### Work Item 119 — second OK.ru Provider qualification batch
+
+Four additional owner-supplied OK.ru services were inspected from NL with bounded anonymous
+protocol checks. OKVid and PasteDownload exposed reproducible same-origin form submissions but the
+primary native sample returned no safe progressive MP4. SnapFrom depended on browser session/token
+state without a reproducible anonymous endpoint, while AnyDownloader Web rejected the stateless
+token prerequisite. The hosted AnyDownloader candidate remains distinct from the earlier
+self-hosted candidate.
+
+No candidate passed the primary-sample media gate, so the second sample, Range, cross-exit and
+browser-save checks were intentionally skipped. Work Item 119 closes without an adapter, Delivery
+policy, rollout, public page, SEO change or production deployment. OK.ru remains planned. See
+[Work Item 119](work-item-119-okru-provider-batch-2.md) and
+[ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).

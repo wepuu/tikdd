@@ -173,14 +173,23 @@ export {
 } from "./free-provider-portfolio";
 export {
   OKRU_DELIVERY_POC_EVIDENCE,
+  OKRU_PROVIDER_BATCH_2_EVIDENCE,
+  OkruBatchAssessmentSchema,
+  OkruBatchEvidenceSchema,
   OkruDeliveryAssessmentSchema,
   OkruDeliveryFailureSchema,
   OkruProviderEvidenceSchema,
+  OkruTechnicalQualificationStatusSchema,
+  assessOkruBatch2Portfolio,
+  assessOkruBatchEvidence,
   assessOkruDeliveryEvidence,
   assessOkruDeliveryPortfolio,
+  type OkruBatchAssessment,
+  type OkruBatchEvidence,
   type OkruDeliveryAssessment,
   type OkruDeliveryFailure,
-  type OkruProviderEvidence
+  type OkruProviderEvidence,
+  type OkruTechnicalQualificationStatus
 } from "./okru-delivery-qualification";
 
 export interface ResolveInput {

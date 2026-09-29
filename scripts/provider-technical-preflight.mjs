@@ -77,7 +77,11 @@ export const CANDIDATES = {
   "toolsphare-okru": "https://toolsphare.tech/en/tools/okru-downloader",
   "saveclips-okru": "https://saveclips.org/odnoklassniki-video-downloader/",
   okgrabber: "https://okgrabber.com/ru/",
-  "sparkdownloader-okru": "https://downloader.bhwa233.com/en"
+  "sparkdownloader-okru": "https://downloader.bhwa233.com/en",
+  "okvid-download": "https://okvid.download/",
+  "pastedownload-okru": "https://pastedownload.com/okru-downloader/",
+  "snapfrom-okru": "https://snapfrom.app/okru-video-downloader/",
+  "anydownloader-web-okru": "https://anydownloader.com/en/ok-ru-video-downloader/"
 };
 
 /**
@@ -131,6 +135,12 @@ export const ACTIVE_ENDPOINTS = {
   },
   okgrabber: {
     odnoklassniki: { method: "POST", url: "https://okgrabber.com/wp-admin/admin-ajax.php" }
+  },
+  "okvid-download": {
+    odnoklassniki: { method: "POST", url: "https://okvid.download/" }
+  },
+  "pastedownload-okru": {
+    odnoklassniki: { method: "GET", url: "https://pastedownload.com/okru-downloader/" }
   }
 };
 

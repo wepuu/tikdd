@@ -2,9 +2,9 @@
 
 ## Current decision
 
-Work Item 118 closed without a production Provider. OK.ru remains planned and receives no public
-traffic. This record is based on protocol and delivery behavior observed from NL, not landing-page
-claims.
+Work Items 118 and 119 closed without a production Provider. OK.ru remains planned and receives no
+public traffic. This record is based on protocol and delivery behavior observed from NL, not
+landing-page claims.
 
 | Candidate | Protocol result | Delivery result | State |
 | --- | --- | --- | --- |
@@ -16,6 +16,10 @@ claims.
 | SaveClips | Anonymous nonce; final bounded request returned no media | Not verified | No media |
 | OKGrabber | Two native samples resolved; NL Range returned `206 video/mp4` | Signed CDN URL failed from two client exits; download endpoint returned HTML | Blocked |
 | SparkDownloader | Page and unified client reachable; no reviewed OK.ru endpoint | Not tested | Deferred |
+| OKVid | Anonymous same-origin form returned HTTP 200 HTML with no safe MP4 | Mandatory media gate not reached | No media |
+| PasteDownload | Anonymous same-page form with page-issued hidden fields returned no safe MP4 | Mandatory media gate not reached | No media |
+| SnapFrom | Browser session/token flow; no reproducible anonymous endpoint | Not tested | Blocked |
+| AnyDownloader Web | Hosted API requires browser token state; distinct from the earlier self-hosted candidate | Not tested | Blocked |
 
 The repository stores only endpoint paths, counts, booleans, and failure classes. It does not store
 sample URLs, signed CDN URLs, response bodies, nonce values, cookies, tokens, query values, or full
