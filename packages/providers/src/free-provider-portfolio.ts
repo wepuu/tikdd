@@ -8,7 +8,9 @@ import {
  * Offline owner-supplied candidate matrix for Work Items 51, 56, 57, 58, 62, 64, 65, 71 and 100. These records are intentionally
  * code-owned and do not make network calls, persist state, or grant rollout permission. Work Item
  * 110 adds NoAdsDL, Work Item 111 refreshes the SnapYT delivery evidence, and Work Items 118/119
- * record bounded OK.ru delivery-compatibility batches without granting an implementation route.
+ * record bounded OK.ru delivery-compatibility batches. Work Item 120 adds the reviewed Vidomon
+ * protocol POC; its current media addresses and session-bound wrapper fail the portable-delivery
+ * boundary and do not grant a production route.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
@@ -1607,6 +1609,25 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     failureFixtureCount: 1,
     technicalState: "blocked",
     evidenceState: "rejected"
+  },
+  {
+    id: "vidomon",
+    displayName: "Vidomon",
+    platforms: ["odnoklassniki"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 1,
+    failureFixtureCount: 4,
+    technicalState: "resolved",
+    evidenceState: "canary-failed"
   }
 ] as const;
 

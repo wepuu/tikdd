@@ -82,6 +82,16 @@ export {
   type VidDownDiagnosticPhase,
   type VidDownContentType
 } from "./adapters/viddown";
+export {
+  VidomonProvider,
+  createVidomonHash,
+  extractVidomonToken,
+  parseVidomonResponse,
+  type VidomonProviderOptions,
+  type VidomonDiagnosticEvent,
+  type VidomonDiagnosticPhase,
+  type VidomonContentType
+} from "./adapters/vidomon";
 export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
 export {
   GetXHamsterProvider,

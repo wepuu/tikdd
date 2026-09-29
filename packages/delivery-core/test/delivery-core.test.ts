@@ -186,11 +186,28 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("vidomon-okru-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
     expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("noadsdl-youtube-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only reviewed Vidomon OK CDN subdomains", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "vidomon", mode: "redirect", hostPolicyId: "vidomon-okru-media-v1",
+      targetUrl: "https://vd1.okcdn.ru/video?id=fixture"
+    }).hostname).toBe("vd1.okcdn.ru");
+    for (const targetUrl of [
+      "https://okcdn.ru/video", "https://evilokcdn.ru/video",
+      "https://okcdn.ru.example.com/video", "http://vd1.okcdn.ru/video",
+      "https://user:pass@vd1.okcdn.ru/video", "https://vd1.okcdn.ru:8443/video"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "vidomon", mode: "redirect", hostPolicyId: "vidomon-okru-media-v1", targetUrl
+      })).toThrow();
+    }
   });
 
   it("limits NoAdsDL to its reviewed generated-file path", () => {

@@ -94,7 +94,8 @@ describe("technical Provider preflight classification", () => {
       "okvid-download": "https://okvid.download/",
       "pastedownload-okru": "https://pastedownload.com/okru-downloader/",
       "snapfrom-okru": "https://snapfrom.app/okru-video-downloader/",
-      "anydownloader-web-okru": "https://anydownloader.com/en/ok-ru-video-downloader/"
+      "anydownloader-web-okru": "https://anydownloader.com/en/ok-ru-video-downloader/",
+      vidomon: "https://vidomon.com/"
     });
   });
 
@@ -150,6 +151,10 @@ describe("technical Provider preflight classification", () => {
     expect(resolveActiveEndpoint("pastedownload-okru", "odnoklassniki")).toEqual({
       method: "GET",
       url: "https://pastedownload.com/okru-downloader/"
+    });
+    expect(resolveActiveEndpoint("vidomon", "odnoklassniki")).toEqual({
+      method: "POST",
+      url: "https://vidomon.com/wp-json/aio-dl/video-data/"
     });
     expect(() => resolveActiveEndpoint("snapfrom-okru", "odnoklassniki")).toThrow(
       "No reviewed endpoint for snapfrom-okru/odnoklassniki."

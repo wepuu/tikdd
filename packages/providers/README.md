@@ -87,12 +87,18 @@ and browser Delivery audit are complete.
 
 ## OK.ru delivery compatibility
 
-Work Items 118 and 119 record twelve OK.ru candidates as evidence-only portfolio entries. None owns
-a manifest capability or production route. In particular, OKGrabber can resolve native videos but
+Work Items 118 and 119 record twelve OK.ru candidates as evidence-only portfolio entries. In
+particular, OKGrabber can resolve native videos but
 returns OK CDN resources signed to the resolver exit; a successful NL Range does not make those
 resources browser-portable. The second batch found two reproducible anonymous form endpoints that
 returned no media for the primary sample, plus two browser-token-dependent flows that cannot be
 reproduced by the Worker. An OK.ru adapter requires two native samples, verified video Range,
 cross-exit replay, and a cookie-free browser GET with either attachment semantics or reviewed CORS
 download support. Provider POST streams, Provider pages, browser state, and TikDD media proxying do
-not satisfy this boundary. See ADR-0056.
+not satisfy this boundary.
+
+Work Item 120 reproduces Vidomon's fresh anonymous page token and request hash and normalizes only
+progressive MP4 metadata on true `*.okcdn.ru` subdomains. Live checks resolved two samples, but the
+direct media returned HTTP 400 and the Provider download wrapper required its PHP browser session.
+The manifest therefore has no production delivery mode and is not registered in the Worker or
+release gates. OK.ru remains planned. See ADR-0056 and ADR-0057.

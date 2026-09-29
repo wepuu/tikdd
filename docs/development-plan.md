@@ -2023,3 +2023,18 @@ browser-save checks were intentionally skipped. Work Item 119 closes without an 
 policy, rollout, public page, SEO change or production deployment. OK.ru remains planned. See
 [Work Item 119](work-item-119-okru-provider-batch-2.md) and
 [ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).
+
+### Work Item 120 — Vidomon OK.ru portable-delivery evaluation
+
+A later browser-protocol review reproduced Vidomon's anonymous page-token and deterministic hash
+flow. Two native samples each returned six progressive MP4 descriptors, but preferred direct CDN
+entries returned HTTP 400 under both Range and ordinary GET checks. Vidomon's own download wrapper
+worked only inside its PHP browser session; a cookie-free request with the session identifier
+returned HTML rather than media.
+
+TikDD retains the parser and synthetic fixtures as a resolution-only `canary_failed` record, but
+does not register Vidomon in the production Worker, activation gates, rollout control or release
+scripts. OK.ru remains `planned`, non-indexable, and absent from the sitemap. Provider-page
+handoff, Cookie replay and TikDD media proxying remain outside the architecture. See
+[Work Item 120](work-item-120-vidomon-okru-beta.md) and
+[ADR-0057](architecture/adr/0057-vidomon-okru-direct-delivery.md).

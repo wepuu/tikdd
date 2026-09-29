@@ -12,6 +12,15 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
     expect(resolveJobAttemptsForPlatform("xhamster")).toBe(1);
     expect(resolveJobAttemptsForPlatform("youtube")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("odnoklassniki")).toBe(1);
+  });
+
+  it("does not replay Vidomon OK.ru attempts", () => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "odnoklassniki",
+      providerId: "vidomon",
+      failureCode: "provider_timeout"
+    })).toBe(false);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(

@@ -2,9 +2,10 @@
 
 ## Current decision
 
-Work Items 118 and 119 closed without a production Provider. OK.ru remains planned and receives no
-public traffic. This record is based on protocol and delivery behavior observed from NL, not
-landing-page claims.
+Work Items 118 and 119 closed without a production Provider. Work Item 120 later reproduced
+Vidomon's real anonymous protocol, but its direct OK CDN resources returned HTTP 400 and its working
+download wrapper remained bound to the Provider browser session. OK.ru remains planned and receives
+no public traffic. This record is based on protocol and delivery behavior, not landing-page claims.
 
 | Candidate | Protocol result | Delivery result | State |
 | --- | --- | --- | --- |
@@ -20,6 +21,7 @@ landing-page claims.
 | PasteDownload | Anonymous same-page form with page-issued hidden fields returned no safe MP4 | Mandatory media gate not reached | No media |
 | SnapFrom | Browser session/token flow; no reproducible anonymous endpoint | Not tested | Blocked |
 | AnyDownloader Web | Hosted API requires browser token state; distinct from the earlier self-hosted candidate | Not tested | Blocked |
+| Vidomon | Fresh landing token plus deterministic same-origin REST request returned six MP4 descriptors for each of two samples | Direct CDN GET/Range returned 400; cookie-free wrapper returned HTML | Delivery blocked |
 
 The repository stores only endpoint paths, counts, booleans, and failure classes. It does not store
 sample URLs, signed CDN URLs, response bodies, nonce values, cookies, tokens, query values, or full
@@ -40,3 +42,5 @@ A later candidate must satisfy all of the following before an adapter is impleme
    Delivery into a general proxy.
 
 See [ADR-0056](../architecture/adr/0056-okru-portable-delivery-boundary.md).
+Vidomon's narrower implementation decision is recorded in
+[ADR-0057](../architecture/adr/0057-vidomon-okru-direct-delivery.md).

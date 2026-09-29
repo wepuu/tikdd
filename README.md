@@ -195,8 +195,9 @@ their reviewed routes. Their localized pages enter the sitemap only when the exi
 route, Delivery, content, and GEO gates pass; Beta status remains visible on each page. See the
 [Work Item 80 record](docs/work-item-80-pinterest-beta-launch.md) and the latest YouTube record in
 [Work Item 116](docs/work-item-116-youtube-beta-productization.md).
-OK.ru remains planned because its first delivery batch did not produce a portable browser GET; see
-[Work Item 118](docs/work-item-118-okru-delivery-compatibility.md).
+OK.ru remains planned. Vidomon now resolves metadata but its direct media returns HTTP 400 and its
+working download path is Provider-session-bound, so it has no production route; see
+[Work Item 120](docs/work-item-120-vidomon-okru-beta.md).
 
 ## Quick start
 
@@ -359,6 +360,9 @@ through the asynchronous mock route.
   delivery behavior.
 - Work Item 118 records the OK.ru Provider delivery POC. No candidate passed the portable browser
   GET boundary, so OK.ru remains planned with no adapter, rollout, public page, or production traffic.
+- Work Item 120 reproduces Vidomon parsing but rejects production activation: two samples resolved,
+  while direct media returned HTTP 400 and the Provider download path required its browser session.
+  OK.ru remains planned; Provider-page handoff and TikDD media proxying remain out of scope.
 - Private, paid, DRM-protected, authenticated, or region-restricted media is out of scope.
 - Public task/result pages are not an SEO surface.
 - Real providers require a terms review, explicit allowlists, timeouts, circuit breakers, sanitized
