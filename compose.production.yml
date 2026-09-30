@@ -248,6 +248,8 @@ services:
     restart: unless-stopped
     stop_grace_period: 20s
     read_only: true
+    group_add:
+      - ${TIKDD_SECRETS_GID:-1999}
     security_opt:
       - no-new-privileges:true
     cap_drop:

@@ -26,8 +26,9 @@ service is advertised. It does not print the API key or Cobalt response. Use
 `cobalt-runtime-stop` to release the service after a failed or deferred canary.
 
 The production key must be a dedicated UUID key whose `allowedServices` contains only `ok` for
-this first canary. It must be mode `0600`, must not be `unlimited`, and must not be copied into
-the Worker environment while the provider is disabled.
+this first canary. The file is owned by `root:tikdd-secrets` with mode `0640`; the Cobalt
+container receives only the dedicated supplementary secrets group. It must not be `unlimited`,
+and it must not be copied into the Worker environment while the provider is disabled.
 
 ## OK.ru canary gates
 

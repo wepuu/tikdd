@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const releaseScript = readFileSync(new URL("./production-release.sh", import.meta.url), "utf8");
+const productionCompose = readFileSync(new URL("../compose.production.yml", import.meta.url), "utf8");
 
 describe("production release Admin lifecycle", () => {
   it("validates the browser-facing public origin independently of Admin's internal Web origin", () => {
@@ -55,6 +56,12 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/cobalt-runtime-stop\)/);
     const probeBlock = releaseScript.split("  cobalt-runtime-probe)", 2)[1]?.split("  cobalt-runtime-stop)", 2)[0] ?? "";
     expect(probeBlock).not.toMatch(/force-recreate.*worker/);
+  });
+
+  it("keeps the Cobalt key readable only through the dedicated secrets group", () => {
+    const cobaltBlock = productionCompose.split("  cobalt-api:", 2)[1]?.split("  calibration-api-preflight:", 2)[0] ?? "";
+    expect(cobaltBlock).toMatch(/group_add:\s+- \$\{TIKDD_SECRETS_GID:-1999\}/);
+    expect(cobaltBlock).toMatch(/secrets:\s+- cobalt_api_keys/);
   });
 
   it("requires every Provider gate triplet to match its Provider switch in the Worker", () => {
