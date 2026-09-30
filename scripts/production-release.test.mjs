@@ -44,6 +44,19 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/Worker configuration revision mismatch/);
   });
 
+  it("supports a closed-gate private Cobalt runtime probe without recreating the Worker", () => {
+    expect(releaseScript).toMatch(/verify_cobalt_runtime\(\)/);
+    expect(releaseScript).toMatch(/cobalt-runtime-probe\)/);
+    expect(releaseScript).toMatch(/cobalt-runtime-probe requires ENABLE_COBALT_PROVIDER=false/);
+    expect(releaseScript).toMatch(/compose --profile cobalt pull cobalt-api/);
+    expect(releaseScript).toMatch(/compose --profile cobalt up -d --wait cobalt-api/);
+    expect(releaseScript).toMatch(/compose --profile cobalt exec -T cobalt-api node -e/);
+    expect(releaseScript).toMatch(/service=private auth=verified ok=available gates=closed/);
+    expect(releaseScript).toMatch(/cobalt-runtime-stop\)/);
+    const probeBlock = releaseScript.split("  cobalt-runtime-probe)", 2)[1]?.split("  cobalt-runtime-stop)", 2)[0] ?? "";
+    expect(probeBlock).not.toMatch(/force-recreate.*worker/);
+  });
+
   it("requires every Provider gate triplet to match its Provider switch in the Worker", () => {
     expect(releaseScript).toMatch(/ENABLE_FDOWN_ISURU_PROVIDER[\s\S]*FDOWN_ISURU_TERMS_APPROVED[\s\S]*FDOWN_ISURU_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/\$provider_label gates must all match \$enabled_key/);
@@ -93,6 +106,13 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/NOADSDL_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"NoAdsDL"/);
     expect(releaseScript).toMatch(/noadsdl_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_COBALT_PROVIDER/);
+    expect(releaseScript).toMatch(/COBALT_LICENSE_ACKNOWLEDGED/);
+    expect(releaseScript).toMatch(/COBALT_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"Cobalt"/);
+    expect(releaseScript).toMatch(/cobalt_enabled=/);
+    expect(releaseScript).toMatch(/COBALT_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/COBALT_DELIVERY_VERIFIED_PLATFORMS/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

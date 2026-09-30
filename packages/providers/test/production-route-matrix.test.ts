@@ -8,6 +8,7 @@ import {
   SSSTwitterProvider,
   TikCDProvider,
   VidDownProvider,
+  VidomonProvider,
   LocoLoaderProvider,
   NineXBuddyProvider,
   SnapYTProvider,
@@ -49,6 +50,19 @@ describe("production route matrix", () => {
     expect(pinterest.manifest.enabled).toBe(false);
     expect(pinterest.manifest.platforms).toEqual([
       expect.objectContaining({ platform: "pinterest", priority: 760, deliveryModes: ["redirect"] })
+    ]);
+  });
+
+  it("keeps Vidomon OK.ru resolution-only after portable Delivery failed", () => {
+    const provider = new VidomonProvider();
+    expect(provider.manifest.enabled).toBe(false);
+    expect(provider.manifest.platforms).toEqual([
+      expect.objectContaining({
+        platform: "odnoklassniki",
+        priority: 760,
+        deliveryModes: [],
+        verificationStatus: "canary_failed"
+      })
     ]);
   });
 

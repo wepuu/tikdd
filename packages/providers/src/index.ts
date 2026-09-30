@@ -59,6 +59,15 @@ export {
 export { TikVidProvider, type TikVidProviderOptions } from "./adapters/tikvid";
 export { TikCDProvider, type TikCDProviderOptions } from "./adapters/tikcd";
 export {
+  CobaltProvider,
+  parseCobaltResponse,
+  parseCobaltPlatformConfiguration,
+  type CobaltProviderOptions,
+  type CobaltPlatformConfiguration,
+  type CobaltDiagnosticEvent,
+  type CobaltDiagnosticPhase
+} from "./adapters/cobalt";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,
@@ -82,6 +91,16 @@ export {
   type VidDownDiagnosticPhase,
   type VidDownContentType
 } from "./adapters/viddown";
+export {
+  VidomonProvider,
+  createVidomonHash,
+  extractVidomonToken,
+  parseVidomonResponse,
+  type VidomonProviderOptions,
+  type VidomonDiagnosticEvent,
+  type VidomonDiagnosticPhase,
+  type VidomonContentType
+} from "./adapters/vidomon";
 export { LocoLoaderProvider, createLocoLoaderKey, parseLocoLoaderResponse, type LocoLoaderProviderOptions } from "./adapters/locoloader";
 export {
   GetXHamsterProvider,
@@ -171,6 +190,26 @@ export {
   FREE_PROVIDER_PORTFOLIO,
   qualifyFreeProviderPortfolio
 } from "./free-provider-portfolio";
+export {
+  OKRU_DELIVERY_POC_EVIDENCE,
+  OKRU_PROVIDER_BATCH_2_EVIDENCE,
+  OkruBatchAssessmentSchema,
+  OkruBatchEvidenceSchema,
+  OkruDeliveryAssessmentSchema,
+  OkruDeliveryFailureSchema,
+  OkruProviderEvidenceSchema,
+  OkruTechnicalQualificationStatusSchema,
+  assessOkruBatch2Portfolio,
+  assessOkruBatchEvidence,
+  assessOkruDeliveryEvidence,
+  assessOkruDeliveryPortfolio,
+  type OkruBatchAssessment,
+  type OkruBatchEvidence,
+  type OkruDeliveryAssessment,
+  type OkruDeliveryFailure,
+  type OkruProviderEvidence,
+  type OkruTechnicalQualificationStatus
+} from "./okru-delivery-qualification";
 
 export interface ResolveInput {
   taskId: string;

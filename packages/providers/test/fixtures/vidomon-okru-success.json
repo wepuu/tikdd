@@ -1,0 +1,13 @@
+{
+  "title": "Fixture OK.ru video",
+  "thumbnail": "https://iv.okcdn.ru/videoPreview?id=fixture",
+  "duration": "54",
+  "source": "odnoklassniki",
+  "medias": [
+    { "url": "https://vd1.okcdn.ru/video?id=one", "extension": "mp4", "quality": "mobile", "videoAvailable": true, "audioAvailable": true },
+    { "url": "https://vd2.okcdn.ru/video?id=two", "extension": "mp4", "quality": "720p", "videoAvailable": 1, "audioAvailable": 1 },
+    { "url": "https://vd2.okcdn.ru/video?id=two", "extension": "mp4", "quality": "duplicate", "videoAvailable": true, "audioAvailable": true },
+    { "url": "https://evil.example/video.mp4", "extension": "mp4", "quality": "invalid-host", "videoAvailable": true, "audioAvailable": true },
+    { "url": "https://vd3.okcdn.ru/audio", "extension": "mp3", "quality": "audio", "videoAvailable": false, "audioAvailable": true }
+  ]
+}

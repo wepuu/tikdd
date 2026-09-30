@@ -84,3 +84,35 @@ legacy codec-rich map and the current sparse combined-MP4 map, retaining the ori
 when a processing response omits it. NoAdsDL is not enabled by the SnapYT gates, is not a
 source-CDN redirect, and is not eligible for production until its own three gates, rollout rule
 and browser Delivery audit are complete.
+
+## OK.ru delivery compatibility
+
+Work Items 118 and 119 record twelve OK.ru candidates as evidence-only portfolio entries. In
+particular, OKGrabber can resolve native videos but
+returns OK CDN resources signed to the resolver exit; a successful NL Range does not make those
+resources browser-portable. The second batch found two reproducible anonymous form endpoints that
+returned no media for the primary sample, plus two browser-token-dependent flows that cannot be
+reproduced by the Worker. An OK.ru adapter requires two native samples, verified video Range,
+cross-exit replay, and a cookie-free browser GET with either attachment semantics or reviewed CORS
+download support. Provider POST streams, Provider pages, browser state, and TikDD media proxying do
+not satisfy this boundary.
+
+Work Item 120 reproduces Vidomon's fresh anonymous page token and request hash and normalizes only
+progressive MP4 metadata on true `*.okcdn.ru` subdomains. Live checks resolved two samples, but the
+direct media returned HTTP 400 and the Provider download wrapper required its PHP browser session.
+The manifest therefore has no production delivery mode and is not registered in the Worker or
+release gates. OK.ru remains planned. See ADR-0056 and ADR-0057.
+
+## Cobalt self-hosted secondary
+
+Work Item 121 adds `cobalt-selfhosted` as an isolated Docker-backed multi-platform adapter for OK.ru,
+X, Instagram, TikTok, Facebook, Pinterest, and Vimeo. The Worker calls only the private
+`cobalt-api` service with a key from the mode-600 release environment; Cobalt's UUID key registry is
+a Docker secret, and the official hosted `api.cobalt.tools` endpoint is not used.
+The adapter accepts only `redirect` and `picker` responses with HTTPS media URLs and rejects
+`tunnel` and `local-processing` results, so it never turns Cobalt into a TikDD media proxy. Every
+platform starts with `deliveryModes: []` and must pass its own CDN, cross-exit, and browser download
+audit before `COBALT_DELIVERY_VERIFIED_PLATFORMS` can include it. YouTube and xHamster are disabled
+in the Cobalt container and are not part of this work item. The image is pinned by digest, the
+container has no public port, and the default production gates remain false. See ADR-0058 and
+`docs/work-item-121-cobalt-secondary-provider.md`.

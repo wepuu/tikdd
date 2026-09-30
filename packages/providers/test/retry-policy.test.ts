@@ -12,6 +12,15 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("pinterest")).toBe(1);
     expect(resolveJobAttemptsForPlatform("xhamster")).toBe(1);
     expect(resolveJobAttemptsForPlatform("youtube")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("odnoklassniki")).toBe(1);
+  });
+
+  it("does not replay Vidomon OK.ru attempts", () => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "odnoklassniki",
+      providerId: "vidomon",
+      failureCode: "provider_timeout"
+    })).toBe(false);
   });
 
   it.each(["provider_unavailable", "provider_timeout"] as const)(
@@ -168,6 +177,21 @@ describe("provider automatic retry policy", () => {
     expect(shouldAutomaticallyRetryProviderFailure({
       platform: "youtube",
       providerId: "noadsdl",
+      failureCode
+    })).toBe(false);
+  });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay self-hosted Cobalt after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "x",
+      providerId: "cobalt-selfhosted",
       failureCode
     })).toBe(false);
   });

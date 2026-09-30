@@ -1994,3 +1994,76 @@ Work Item 117 qualifies the source BIGINT column in all latest/recent snapshot q
 regression guard for the 9 → 10 → 11 boundary. It does not change content, schema, Provider
 routing, Delivery, or public APIs. See
 [Work Item 117](work-item-117-content-snapshot-revision-ordering.md).
+
+### Work Item 118 — OK.ru delivery compatibility POC
+
+Eight free OK.ru candidates were inspected from NL using their actual anonymous protocols and
+bounded media checks. OKGrabber repeated resolution across two native samples, but its OK CDN
+address was bound to the resolver exit and failed from independent client exits; its download path
+returned a Provider HTML page. ToolSphare returned an invalid page descriptor, SaveClips did not
+return media in the final check, and the other candidates did not produce portable video.
+
+Work Item 118 therefore closes without an adapter, Delivery policy, gates, rollout, public page, or
+production deployment. The candidate matrix and failure reasons are code-owned so a future
+upstream change can be evaluated without weakening the current Delivery boundary. OK.ru remains
+planned. See [Work Item 118](work-item-118-okru-delivery-compatibility.md) and
+[ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).
+
+### Work Item 119 — second OK.ru Provider qualification batch
+
+Four additional owner-supplied OK.ru services were inspected from NL with bounded anonymous
+protocol checks. OKVid and PasteDownload exposed reproducible same-origin form submissions but the
+primary native sample returned no safe progressive MP4. SnapFrom depended on browser session/token
+state without a reproducible anonymous endpoint, while AnyDownloader Web rejected the stateless
+token prerequisite. The hosted AnyDownloader candidate remains distinct from the earlier
+self-hosted candidate.
+
+No candidate passed the primary-sample media gate, so the second sample, Range, cross-exit and
+browser-save checks were intentionally skipped. Work Item 119 closes without an adapter, Delivery
+policy, rollout, public page, SEO change or production deployment. OK.ru remains planned. See
+[Work Item 119](work-item-119-okru-provider-batch-2.md) and
+[ADR-0056](architecture/adr/0056-okru-portable-delivery-boundary.md).
+
+### Work Item 120 — Vidomon OK.ru portable-delivery evaluation
+
+A later browser-protocol review reproduced Vidomon's anonymous page-token and deterministic hash
+flow. Two native samples each returned six progressive MP4 descriptors, but preferred direct CDN
+entries returned HTTP 400 under both Range and ordinary GET checks. Vidomon's own download wrapper
+worked only inside its PHP browser session; a cookie-free request with the session identifier
+returned HTML rather than media.
+
+TikDD retains the parser and synthetic fixtures as a resolution-only `canary_failed` record, but
+does not register Vidomon in the production Worker, activation gates, rollout control or release
+scripts. OK.ru remains `planned`, non-indexable, and absent from the sitemap. Provider-page
+handoff, Cookie replay and TikDD media proxying remain outside the architecture. See
+[Work Item 120](work-item-120-vidomon-okru-beta.md) and
+[ADR-0057](architecture/adr/0057-vidomon-okru-direct-delivery.md).
+
+### Work Item 121 — self-hosted Cobalt multi-platform secondary Provider
+
+Work Item 121 adds an isolated, profile-gated Cobalt Docker service and a runtime-validated
+`cobalt-selfhosted` adapter for OK.ru, X, Instagram, TikTok, Facebook, Pinterest and Vimeo. The
+Worker calls only the private service with a dedicated API key; the hosted `api.cobalt.tools`
+endpoint, user cookies, Turnstile values, YouTube and xHamster remain out of scope. The adapter
+normalizes only HTTPS `redirect`/`picker` results and rejects Cobalt tunnels and local-processing
+artifacts, so Delivery remains a one-time audited redirect rather than a media proxy.
+
+All Cobalt capabilities start with empty Delivery modes. Each platform needs its own direct-CDN
+host-policy, two-sample Range, cross-exit and browser-save evidence before it may be added to
+`COBALT_DELIVERY_VERIFIED_PLATFORMS`; the three Cobalt gates remain false in production. The image
+is pinned by digest and resource-capped for the NL VPS. See [Work Item 121](work-item-121-cobalt-secondary-provider.md)
+and [ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).
+
+### Work Item 122 - Cobalt private runtime and OK.ru canary
+
+Work Item 122 adds a closed-gate `cobalt-runtime-probe` release operation. It starts only the
+private, digest-pinned Cobalt profile, verifies the Docker-secret API key and the reviewed `ok`
+service from inside the container network, and never recreates the Worker or exposes a public
+port. The companion stop operation releases the service after a failed or deferred canary.
+
+OK.ru is the first canary because prior hosted candidates failed portable delivery. Two public
+samples must pass Cobalt redirect/picker parsing, `*.okcdn.ru` policy, NL/local/v2rayN Range
+checks and browser saving before the unique Cobalt OK.ru rollout may be enabled. Vimeo and
+Pinterest are follow-up secondary checks; existing X, Instagram, TikTok and Facebook traffic is
+unchanged. Cobalt gates remain closed until this evidence exists, and OK.ru remains Beta and
+non-indexed. See [Work Item 122](work-item-122-cobalt-runtime-okru-canary.md).

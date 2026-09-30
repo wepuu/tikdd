@@ -22,6 +22,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "viddown-net") {
     return false;
   }
+  if (input.providerId === "vidomon") {
+    return false;
+  }
   if (input.providerId === "savefromins") {
     return false;
   }
@@ -40,6 +43,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "noadsdl") {
     return false;
   }
+  if (input.providerId === "cobalt-selfhosted") {
+    return false;
+  }
   return true;
 }
 
@@ -49,5 +55,6 @@ export function resolveJobAttemptsForPlatform(platform: string): number {
   if (platform === "facebook" || platform === "pinterest") return 1;
   if (platform === "xhamster") return 1;
   if (platform === "youtube") return 1;
+  if (platform === "odnoklassniki") return 1;
   return 3;
 }

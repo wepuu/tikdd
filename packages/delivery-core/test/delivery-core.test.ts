@@ -186,11 +186,30 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("socialdownloader-space-tiktok-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("pinterest-videodownloader-pinterest-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("viddown-net-vimeo-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("vidomon-okru-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("locoloader-xhamster-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("9xbuddy-xhamster-artifact-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
     expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("noadsdl-youtube-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-x-media-v1")?.browserHandoff).toBe("navigate");
+  });
+
+  it("allows only reviewed Vidomon OK CDN subdomains", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "vidomon", mode: "redirect", hostPolicyId: "vidomon-okru-media-v1",
+      targetUrl: "https://vd1.okcdn.ru/video?id=fixture"
+    }).hostname).toBe("vd1.okcdn.ru");
+    for (const targetUrl of [
+      "https://okcdn.ru/video", "https://evilokcdn.ru/video",
+      "https://okcdn.ru.example.com/video", "http://vd1.okcdn.ru/video",
+      "https://user:pass@vd1.okcdn.ru/video", "https://vd1.okcdn.ru:8443/video"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "vidomon", mode: "redirect", hostPolicyId: "vidomon-okru-media-v1", targetUrl
+      })).toThrow();
+    }
   });
 
   it("limits NoAdsDL to its reviewed generated-file path", () => {
@@ -423,6 +442,35 @@ describe("reviewed delivery network policy", () => {
       })).toThrow();
     }
   });
+  it("keeps Cobalt source-CDN policies narrow and provider-specific", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "cobalt-selfhosted",
+      mode: "redirect",
+      hostPolicyId: "cobalt-selfhosted-x-media-v1",
+      targetUrl: "https://video.twimg.com/ext_tw_video/fixture.mp4"
+    }).hostname).toBe("video.twimg.com");
+    expect(assertDeliveryTargetPolicy({
+      providerId: "cobalt-selfhosted",
+      mode: "redirect",
+      hostPolicyId: "cobalt-selfhosted-okru-media-v1",
+      targetUrl: "https://video.okcdn.ru/fixture/video.mp4"
+    }).hostname).toBe("video.okcdn.ru");
+    for (const targetUrl of [
+      "https://twimg.com/ext_tw_video/fixture.mp4",
+      "https://evil.video.twimg.com/fixture.mp4",
+      "http://video.twimg.com/fixture.mp4",
+      "https://user:pass@video.twimg.com/fixture.mp4",
+      "https://video.twimg.com:8443/fixture.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "cobalt-selfhosted",
+        mode: "redirect",
+        hostPolicyId: "cobalt-selfhosted-x-media-v1",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
   it("allows only the exact reviewed TwitterSaver media host", () => {
     expect(
       assertDeliveryTargetPolicy({
