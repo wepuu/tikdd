@@ -2088,3 +2088,21 @@ content and sitemap remain unchanged and closed. Cobalt was stopped, temporary f
 and OK.ru remains planned/non-indexed. A future retry requires evidence of an upstream Cobalt/OK.ru
 protocol change; it must not weaken the host policy or add a media proxy. See
 [Work Item 125](work-item-125-cobalt-okru-beta-qualification.md).
+
+### Work Item 126 - Cobalt multi-platform capability matrix
+
+Work Item 126 adds a sanitized, platform-keyed qualification model and documented runtime service
+discovery for the private Cobalt instance. Existing Vimeo, Pinterest, X, TikTok, Facebook and
+Instagram platforms are evaluated as possible sequential fallbacks, with Vimeo and Pinterest
+first because they have the clearest current TikDD delivery boundaries. Additional services that
+Cobalt advertises at runtime (such as Reddit, Loom, VK, Snapchat, Xiaohongshu and SoundCloud)
+remain discovery-only candidates; this item does not add a platform slug, public page, sitemap
+entry or adapter for them.
+
+Only `redirect` and video `picker` items are portable. `tunnel` and `local-processing` are
+classified as `proxy-only`, even when Cobalt successfully resolves the source. Each candidate
+requires two public samples, a reviewed Host policy, 1 KiB Range checks from NL/local/v2rayN,
+and either attachment or audited CORS browser saving. YouTube and xHamster remain disabled, and
+the Cobalt gates, rollout rules and production traffic remain closed. See
+[Work Item 126](work-item-126-cobalt-capability-matrix.md) and
+[ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).

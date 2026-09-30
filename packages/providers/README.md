@@ -124,3 +124,13 @@ audit before `COBALT_DELIVERY_VERIFIED_PLATFORMS` can include it. YouTube and xH
 in the Cobalt container and are not part of this work item. The image is pinned by digest, the
 container has no public port, and the default production gates remain false. See ADR-0058 and
 `docs/work-item-121-cobalt-secondary-provider.md`.
+
+## Cobalt capability matrix
+
+Work Item 126 generalizes the closed-gate evidence model beyond the failed OK.ru canary. The
+runtime service list is read only from the documented `cobalt.services` field, and service aliases
+are mapped to explicit TikDD platform slugs. A platform remains a `qualified-secondary` candidate
+only after two samples pass direct-host, Range, cross-exit and browser-save checks. Cobalt
+`tunnel` and `local-processing` responses are recorded as `proxy-only`; TikDD does not proxy or
+remux those results. The matrix is evidence-only and does not add new public platforms or change
+the production gates.

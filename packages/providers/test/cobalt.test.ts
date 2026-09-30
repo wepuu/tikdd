@@ -42,6 +42,7 @@ describe("Cobalt self-hosted secondary Provider", () => {
     const picker = parseCobaltResponse(JSON.stringify({
       status: "picker",
       picker: [
+        { type: "photo", url: "https://pbs.twimg.com/media/fixture.jpg" },
         { type: "audio", url: "https://video.twimg.com/audio/fixture.m4a", quality: "audio" },
         { type: "video", url: "https://video.twimg.com/ext_tw_video/fixture/pu/vid/640x360/fixture.mp4", quality: "360p" },
         { type: "video", url: "https://video.twimg.com/ext_tw_video/fixture/pu/vid/640x360/fixture.mp4", quality: "360p" }
@@ -49,6 +50,13 @@ describe("Cobalt self-hosted secondary Provider", () => {
     }));
     expect(picker.formats).toHaveLength(1);
     expect(picker.formats[0]?.quality).toBe("360p");
+  });
+
+  it("does not reinterpret a GIF picker item as an MP4 video", () => {
+    expect(() => parseCobaltResponse(JSON.stringify({
+      status: "picker",
+      picker: [{ type: "gif", url: "https://video.twimg.com/ext_tw_video/fixture.gif" }]
+    }))).toThrow(/no portable video/);
   });
 
   it("rejects tunnel and local-processing results instead of proxying them", () => {

@@ -81,6 +81,21 @@ export {
   type CobaltOkruQualificationStatus
 } from "./cobalt-okru-qualification";
 export {
+  assessCobaltPlatformQualification,
+  CobaltCapabilityFailureSchema,
+  CobaltCapabilityResponseModeSchema,
+  CobaltCapabilityStatusSchema,
+  CobaltPlatformQualificationAssessmentSchema,
+  CobaltPlatformQualificationEvidenceSchema,
+  mapCobaltRuntimeServicesToPlatforms,
+  parseCobaltRuntimeServices,
+  type CobaltCapabilityFailure,
+  type CobaltCapabilityResponseMode,
+  type CobaltCapabilityStatus,
+  type CobaltPlatformQualificationAssessment,
+  type CobaltPlatformQualificationEvidence
+} from "./cobalt-capability-matrix";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,
