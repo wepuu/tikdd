@@ -93,6 +93,13 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/NOADSDL_DELIVERY_AUDIT_APPROVED/);
     expect(releaseScript).toMatch(/"NoAdsDL"/);
     expect(releaseScript).toMatch(/noadsdl_enabled=/);
+    expect(releaseScript).toMatch(/ENABLE_COBALT_PROVIDER/);
+    expect(releaseScript).toMatch(/COBALT_LICENSE_ACKNOWLEDGED/);
+    expect(releaseScript).toMatch(/COBALT_DELIVERY_AUDIT_APPROVED/);
+    expect(releaseScript).toMatch(/"Cobalt"/);
+    expect(releaseScript).toMatch(/cobalt_enabled=/);
+    expect(releaseScript).toMatch(/COBALT_APPROVED_PLATFORMS/);
+    expect(releaseScript).toMatch(/COBALT_DELIVERY_VERIFIED_PLATFORMS/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

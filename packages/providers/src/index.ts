@@ -59,6 +59,15 @@ export {
 export { TikVidProvider, type TikVidProviderOptions } from "./adapters/tikvid";
 export { TikCDProvider, type TikCDProviderOptions } from "./adapters/tikcd";
 export {
+  CobaltProvider,
+  parseCobaltResponse,
+  parseCobaltPlatformConfiguration,
+  type CobaltProviderOptions,
+  type CobaltPlatformConfiguration,
+  type CobaltDiagnosticEvent,
+  type CobaltDiagnosticPhase
+} from "./adapters/cobalt";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,

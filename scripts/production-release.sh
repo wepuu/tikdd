@@ -168,6 +168,11 @@ verify_worker_runtime_config() {
     ENABLE_NOADSDL_PROVIDER \
     NOADSDL_TERMS_APPROVED \
     NOADSDL_DELIVERY_AUDIT_APPROVED)"
+  cobalt_enabled="$(verify_provider_gate_triplet \
+    "Cobalt" \
+    ENABLE_COBALT_PROVIDER \
+    COBALT_LICENSE_ACKNOWLEDGED \
+    COBALT_DELIVERY_AUDIT_APPROVED)"
   expected_socialdownloader_platforms="$(release_value SOCIALDOWNLOADER_APPROVED_PLATFORMS "facebook")"
   expected_socialdownloader_verified="$(release_value SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS "facebook")"
   for platform_key in SOCIALDOWNLOADER_APPROVED_PLATFORMS SOCIALDOWNLOADER_DELIVERY_VERIFIED_PLATFORMS; do
@@ -216,7 +221,18 @@ verify_worker_runtime_config() {
       return 78
     fi
   done
-  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled snapyt_enabled=$snapyt_enabled noadsdl_enabled=$noadsdl_enabled"
+  expected_cobalt_platforms="$(release_value COBALT_APPROVED_PLATFORMS "odnoklassniki,x,instagram,tiktok,facebook,pinterest,vimeo")"
+  expected_cobalt_verified="$(release_value COBALT_DELIVERY_VERIFIED_PLATFORMS "")"
+  for platform_key in COBALT_APPROVED_PLATFORMS COBALT_DELIVERY_VERIFIED_PLATFORMS; do
+    expected_platforms="$expected_cobalt_platforms"
+    [ "$platform_key" = COBALT_DELIVERY_VERIFIED_PLATFORMS ] && expected_platforms="$expected_cobalt_verified"
+    actual_platforms="$(printf '%s\n' "$env_dump" | awk -F= -v key="$platform_key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
+    if [ "$actual_platforms" != "$expected_platforms" ]; then
+      echo "Worker Cobalt platform binding mismatch for $platform_key." >&2
+      return 78
+    fi
+  done
+  echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled snapyt_enabled=$snapyt_enabled noadsdl_enabled=$noadsdl_enabled cobalt_enabled=$cobalt_enabled"
 }
 
 validate_public_web_origin() {
@@ -240,7 +256,7 @@ validate_public_web_origin() {
 
 validate() {
   validate_public_web_origin
-  compose --profile admin --profile ops --profile admin-ops config --quiet
+  compose --profile admin --profile ops --profile admin-ops --profile cobalt config --quiet
 }
 
 acquire_lock() {
@@ -392,6 +408,11 @@ case "$action" in
     run_stage_gate migration
     stage_service api
     stage_service delivery
+    if [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "true" ]; then
+      compose --profile cobalt pull cobalt-api
+      compose --profile cobalt up -d --wait cobalt-api
+      run_stage_gate cobalt-api
+    fi
     stage_service worker
     stage_service web
     run_provider_preflight
@@ -401,6 +422,9 @@ case "$action" in
   worker-config-apply)
     acquire_lock
     validate
+    if [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "true" ]; then
+      compose --profile cobalt up -d --wait cobalt-api
+    fi
     compose up -d --force-recreate --wait worker
     verify_worker_runtime_config
     ;;

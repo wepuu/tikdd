@@ -12,6 +12,7 @@ import {
  * protocol POC; its current media addresses and session-bound wrapper fail the portable-delivery
  * boundary and do not grant a production route.
  * Work Items 59 through 61 add the later Instagram technical-validation batches and delivery-path evidence.
+ * Work Item 121 records the self-hosted Cobalt implementation as a gated multi-platform secondary.
  */
 export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
   {
@@ -658,6 +659,25 @@ export const FREE_PROVIDER_PORTFOLIO: readonly FreeProviderCandidate[] = [
     successFixtureCount: 0,
     failureFixtureCount: 1,
     technicalState: "blocked",
+    evidenceState: "not-evaluated"
+  },
+  {
+    id: "cobalt-selfhosted",
+    displayName: "Cobalt (self-hosted)",
+    platforms: ["odnoklassniki", "x", "instagram", "tiktok", "facebook", "pinterest", "vimeo"],
+    freeAccess: true,
+    publicContentOnly: true,
+    requiresLogin: false,
+    requiresCookies: false,
+    requiresInteractiveChallenge: false,
+    requiresPaidApi: false,
+    manifestReviewed: true,
+    hostPolicyReviewed: true,
+    deliveryMode: "resolution-only",
+    deliveryVerified: false,
+    successFixtureCount: 2,
+    failureFixtureCount: 2,
+    technicalState: "reachable",
     evidenceState: "not-evaluated"
   },
   {

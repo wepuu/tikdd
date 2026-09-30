@@ -2038,3 +2038,18 @@ scripts. OK.ru remains `planned`, non-indexable, and absent from the sitemap. Pr
 handoff, Cookie replay and TikDD media proxying remain outside the architecture. See
 [Work Item 120](work-item-120-vidomon-okru-beta.md) and
 [ADR-0057](architecture/adr/0057-vidomon-okru-direct-delivery.md).
+
+### Work Item 121 — self-hosted Cobalt multi-platform secondary Provider
+
+Work Item 121 adds an isolated, profile-gated Cobalt Docker service and a runtime-validated
+`cobalt-selfhosted` adapter for OK.ru, X, Instagram, TikTok, Facebook, Pinterest and Vimeo. The
+Worker calls only the private service with a dedicated API key; the hosted `api.cobalt.tools`
+endpoint, user cookies, Turnstile values, YouTube and xHamster remain out of scope. The adapter
+normalizes only HTTPS `redirect`/`picker` results and rejects Cobalt tunnels and local-processing
+artifacts, so Delivery remains a one-time audited redirect rather than a media proxy.
+
+All Cobalt capabilities start with empty Delivery modes. Each platform needs its own direct-CDN
+host-policy, two-sample Range, cross-exit and browser-save evidence before it may be added to
+`COBALT_DELIVERY_VERIFIED_PLATFORMS`; the three Cobalt gates remain false in production. The image
+is pinned by digest and resource-capped for the NL VPS. See [Work Item 121](work-item-121-cobalt-secondary-provider.md)
+and [ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).

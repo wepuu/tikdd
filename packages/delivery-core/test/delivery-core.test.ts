@@ -192,6 +192,8 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("getxhamster-xhamster-media-v1")?.browserHandoff).toBe("cors-download");
     expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("noadsdl-youtube-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-x-media-v1")?.browserHandoff).toBe("navigate");
   });
 
   it("allows only reviewed Vidomon OK CDN subdomains", () => {
@@ -440,6 +442,35 @@ describe("reviewed delivery network policy", () => {
       })).toThrow();
     }
   });
+  it("keeps Cobalt source-CDN policies narrow and provider-specific", () => {
+    expect(assertDeliveryTargetPolicy({
+      providerId: "cobalt-selfhosted",
+      mode: "redirect",
+      hostPolicyId: "cobalt-selfhosted-x-media-v1",
+      targetUrl: "https://video.twimg.com/ext_tw_video/fixture.mp4"
+    }).hostname).toBe("video.twimg.com");
+    expect(assertDeliveryTargetPolicy({
+      providerId: "cobalt-selfhosted",
+      mode: "redirect",
+      hostPolicyId: "cobalt-selfhosted-okru-media-v1",
+      targetUrl: "https://video.okcdn.ru/fixture/video.mp4"
+    }).hostname).toBe("video.okcdn.ru");
+    for (const targetUrl of [
+      "https://twimg.com/ext_tw_video/fixture.mp4",
+      "https://evil.video.twimg.com/fixture.mp4",
+      "http://video.twimg.com/fixture.mp4",
+      "https://user:pass@video.twimg.com/fixture.mp4",
+      "https://video.twimg.com:8443/fixture.mp4"
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "cobalt-selfhosted",
+        mode: "redirect",
+        hostPolicyId: "cobalt-selfhosted-x-media-v1",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
   it("allows only the exact reviewed TwitterSaver media host", () => {
     expect(
       assertDeliveryTargetPolicy({

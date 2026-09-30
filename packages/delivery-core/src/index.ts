@@ -357,6 +357,70 @@ export const NOADSDL_YOUTUBE_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse(
   browserHandoff: "navigate"
 });
 
+// Cobalt is isolated behind the Worker and remains fail-closed until each platform has an
+// independent redirect and cross-exit audit. These policies intentionally list only known source
+// CDNs; the Cobalt adapter cannot activate a platform merely because the service advertises it.
+export const COBALT_SELFHOSTED_OKRU_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-okru-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["okcdn.ru"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_X_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-x-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: ["video.twimg.com", "pbs.twimg.com"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_INSTAGRAM_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-instagram-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["cdninstagram.com", "fbcdn.net"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_TIKTOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-tiktok-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["tiktokcdn.com", "tiktokcdn-us.com", "ibytedtos.com", "muscdn.com"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_FACEBOOK_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-facebook-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["fbcdn.net"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-pinterest-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["pinimg.com"],
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-vimeo-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["redirect"],
+  hosts: ["player.vimeo.com", "vod-progressive.akamaized.net"],
+  browserHandoff: "navigate"
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -379,7 +443,14 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY.id, NINE_X_BUDDY_XHAMSTER_ARTIFACT_HOST_POLICY],
   [GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY.id, GETXHAMSTER_XHAMSTER_MEDIA_HOST_POLICY],
   [SNAPYT_YOUTUBE_MEDIA_HOST_POLICY.id, SNAPYT_YOUTUBE_MEDIA_HOST_POLICY],
-  [NOADSDL_YOUTUBE_MEDIA_HOST_POLICY.id, NOADSDL_YOUTUBE_MEDIA_HOST_POLICY]
+  [NOADSDL_YOUTUBE_MEDIA_HOST_POLICY.id, NOADSDL_YOUTUBE_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_OKRU_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_OKRU_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_X_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_X_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_INSTAGRAM_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_INSTAGRAM_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_TIKTOK_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_TIKTOK_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_FACEBOOK_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_FACEBOOK_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

@@ -44,6 +44,7 @@ import {
   TwitterSaverProvider,
   VidDownProvider,
   LocoLoaderProvider,
+  CobaltProvider,
   resolveJobAttemptsForPlatform
 } from "@tikdd/providers";
 import { RedisCircuitStore } from "@tikdd/routing-health";
@@ -155,7 +156,8 @@ registerProviderHealthDiagnostics(app, {
     new SocialDownloaderProvider({ enabled: process.env.ENABLE_SOCIALDOWNLOADER_PROVIDER === "true" }).manifest,
     new PinterestVideoDownloaderProvider({ enabled: process.env.ENABLE_PINTEREST_VIDEODOWNLOADER_PROVIDER === "true" }).manifest,
     new VidDownProvider({ enabled: process.env.ENABLE_VIDDOWN_PROVIDER === "true" }).manifest,
-    new LocoLoaderProvider({ enabled: process.env.ENABLE_LOCOLOADER_PROVIDER === "true" }).manifest
+    new LocoLoaderProvider({ enabled: process.env.ENABLE_LOCOLOADER_PROVIDER === "true" }).manifest,
+    new CobaltProvider({ enabled: process.env.ENABLE_COBALT_PROVIDER === "true" }).manifest
   ],
   region: workerRegion,
   token: providerDiagnosticsToken

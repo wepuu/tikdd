@@ -37,6 +37,7 @@ import {
   GetXHamsterProvider,
   SnapYTProvider,
   NoAdsDLProvider,
+  CobaltProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -73,6 +74,7 @@ import { loadNineXBuddyActivationConfiguration } from "./nine-x-buddy-activation
 import { loadGetXHamsterActivationConfiguration } from "./getxhamster-activation";
 import { loadSnapYTActivationConfiguration } from "./snapyt-activation";
 import { loadNoAdsDLActivationConfiguration } from "./noadsdl-activation";
+import { loadCobaltActivationConfiguration } from "./cobalt-activation";
 import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
@@ -99,6 +101,7 @@ const nineXBuddyActivation = loadNineXBuddyActivationConfiguration();
 const getXHamsterActivation = loadGetXHamsterActivationConfiguration();
 const snapYTActivation = loadSnapYTActivationConfiguration();
 const noAdsDLActivation = loadNoAdsDLActivationConfiguration();
+const cobaltActivation = loadCobaltActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -285,6 +288,20 @@ if (noAdsDLActivation.enabled) {
     pollIntervalMs: noAdsDLActivation.pollIntervalMs,
     pollBudgetMs: noAdsDLActivation.pollBudgetMs,
     maxPreparedFormats: noAdsDLActivation.maxPreparedFormats,
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+  }));
+}
+if (cobaltActivation.enabled) {
+  const cobaltApiKey = process.env.COBALT_API_KEY?.trim();
+  if (!cobaltApiKey) {
+    throw new Error("COBALT_API_KEY must be configured before enabling Cobalt.");
+  }
+  providers.push(new CobaltProvider({
+    enabled: true,
+    apiUrl: cobaltActivation.apiUrl,
+    apiKey: cobaltApiKey,
+    approvedPlatforms: cobaltActivation.approvedPlatforms,
+    deliveryVerifiedPlatforms: cobaltActivation.deliveryVerifiedPlatforms,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

@@ -43,6 +43,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "noadsdl") {
     return false;
   }
+  if (input.providerId === "cobalt-selfhosted") {
+    return false;
+  }
   return true;
 }
 

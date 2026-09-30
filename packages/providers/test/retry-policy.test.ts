@@ -180,4 +180,19 @@ describe("provider automatic retry policy", () => {
       failureCode
     })).toBe(false);
   });
+
+  it.each([
+    "provider_unavailable",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_challenge",
+    "provider_schema_changed",
+    "invalid_result"
+  ] as const)("does not replay self-hosted Cobalt after %s", (failureCode) => {
+    expect(shouldAutomaticallyRetryProviderFailure({
+      platform: "x",
+      providerId: "cobalt-selfhosted",
+      failureCode
+    })).toBe(false);
+  });
 });

@@ -242,6 +242,42 @@ services:
     mem_limit: ${TIKDD_WORKER_MEMORY_LIMIT:-384m}
     pids_limit: 192
 
+  cobalt-api:
+    profiles: ["cobalt"]
+    image: ${TIKDD_COBALT_IMAGE:-ghcr.io/imputnet/cobalt:11@sha256:df14a3b3fe4390d4e1c2d4761ed58981d34aa5fc82d0df2091bab890e7dfaa8b}
+    restart: unless-stopped
+    stop_grace_period: 20s
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m
+    environment:
+      API_URL: http://cobalt-api:9000/
+      API_KEY_URL: file:///run/secrets/cobalt_api_keys
+      API_AUTH_REQUIRED: "1"
+      DISABLED_SERVICES: youtube,xhamster
+      DURATION_LIMIT: ${COBALT_DURATION_LIMIT:-900}
+      TUNNEL_LIFESPAN: ${COBALT_TUNNEL_LIFESPAN:-120000}
+      RATELIMIT_WINDOW: ${COBALT_RATELIMIT_WINDOW:-60000}
+      RATELIMIT_MAX: ${COBALT_RATELIMIT_MAX:-10}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const fs=require('fs');const key=Object.keys(JSON.parse(fs.readFileSync('/run/secrets/cobalt_api_keys')))[0];fetch('http://127.0.0.1:9000/',{headers:{authorization:'Api-Key '+key}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    secrets:
+      - cobalt_api_keys
+    networks:
+      - provider-egress
+    mem_limit: ${TIKDD_COBALT_MEMORY_LIMIT:-512m}
+    cpus: ${TIKDD_COBALT_CPUS:-1.0}
+    pids_limit: 128
+    logging: *bounded-logging
+
   calibration-api-preflight:
     <<: *application-base
     profiles: ["calibration"]
@@ -856,6 +892,8 @@ secrets:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/provider_diagnostics_token
   pilot_evidence_diagnostics_token:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/pilot_evidence_diagnostics_token
+  cobalt_api_keys:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/cobalt_api_keys
   admin_csrf_secret:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_csrf_secret
   admin_command_secret:
