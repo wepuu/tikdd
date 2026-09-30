@@ -2074,3 +2074,17 @@ The first closed-gate runtime probe reached the healthy, authenticated private C
 used the wrong JSON path for the documented service list. The probe now reads `cobalt.services`.
 This is a diagnostic-only correction; Cobalt gates, OK.ru rollout, and all public traffic remain
 closed until the two-sample delivery canary is completed.
+
+### Work Item 125 - Cobalt OK.ru delivery qualification
+
+Work Item 125 adds a sanitized, code-owned qualification record for the self-hosted Cobalt OK.ru
+canary. The closed-gate runtime probe is recorded as passed, but the two native samples still need
+independent `redirect`/`picker` parsing, `*.okcdn.ru` host review, 1 KiB Range checks from NL,
+local and v2rayN exits, and a browser attachment or CORS-save audit. The assessment cannot mark
+the route eligible until every gate passes.
+
+Cobalt gates, `COBALT_DELIVERY_VERIFIED_PLATFORMS`, the unique OK.ru rollout, public page, SEO
+content and sitemap remain unchanged and closed in this stage. If the audit succeeds, a separate
+operator-approved release step will recreate only the Worker, enable the three gates and perform
+two browser downloads; if it fails, Cobalt is stopped and OK.ru remains planned/non-indexed. See
+[Work Item 125](work-item-125-cobalt-okru-beta-qualification.md).

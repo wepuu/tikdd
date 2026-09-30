@@ -12,6 +12,16 @@ describe("Cobalt activation", () => {
     });
   });
 
+  it("does not treat an approved OK.ru platform as delivery-verified by itself", () => {
+    expect(loadCobaltActivationConfiguration({
+      COBALT_APPROVED_PLATFORMS: "odnoklassniki"
+    })).toMatchObject({
+      enabled: false,
+      approvedPlatforms: ["odnoklassniki"],
+      deliveryVerifiedPlatforms: []
+    });
+  });
+
   it("requires both explicit gates when enabled", () => {
     expect(() => loadCobaltActivationConfiguration({ ENABLE_COBALT_PROVIDER: "true" }))
       .toThrow(/COBALT_LICENSE_ACKNOWLEDGED/);
