@@ -235,6 +235,38 @@ verify_worker_runtime_config() {
   echo "worker_runtime_config=PASS revision=$expected_revision fdown_enabled=$fdown_enabled socialdownloader_enabled=$socialdownloader_enabled pinterest_enabled=$pinterest_enabled viddown_enabled=$viddown_enabled locoloader_enabled=$locoloader_enabled nine_x_buddy_enabled=$nine_x_buddy_enabled getxhamster_enabled=$getxhamster_enabled snapyt_enabled=$snapyt_enabled noadsdl_enabled=$noadsdl_enabled cobalt_enabled=$cobalt_enabled"
 }
 
+verify_cobalt_runtime() {
+  [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "false" ] || {
+    echo "cobalt-runtime-probe requires ENABLE_COBALT_PROVIDER=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_LICENSE_ACKNOWLEDGED "false")" = "false" ] || {
+    echo "cobalt-runtime-probe requires COBALT_LICENSE_ACKNOWLEDGED=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_DELIVERY_AUDIT_APPROVED "false")" = "false" ] || {
+    echo "cobalt-runtime-probe requires COBALT_DELIVERY_AUDIT_APPROVED=false." >&2
+    return 78
+  }
+
+  container_id="$(compose --profile cobalt ps -q cobalt-api 2>/dev/null | awk 'NF { value=$1 } END { print value }')"
+  [ -n "$container_id" ] || {
+    echo "Cobalt container is not running; cannot verify private runtime." >&2
+    return 78
+  }
+  running="$(docker inspect "$container_id" --format '{{.State.Running}}' 2>/dev/null || true)"
+  [ "$running" = "true" ] || {
+    echo "Cobalt container is not running; refusing to continue." >&2
+    return 78
+  }
+
+  # The probe runs inside the private container network and emits no upstream
+  # response. It validates authentication and the reviewed OK service without
+  # exposing the key, source URL, response body, or media URL to the release log.
+  compose --profile cobalt exec -T cobalt-api node -e 'const fs=require("fs");const key=Object.keys(JSON.parse(fs.readFileSync("/run/secrets/cobalt_api_keys","utf8")))[0];fetch("http://127.0.0.1:9000/",{headers:{authorization:"Api-Key "+key}}).then(async r=>{let body=null;try{body=await r.json()}catch{}const services=Array.isArray(body?.services)?body.services:[];const hasOk=services.some(s=>typeof s==="string"?s.toLowerCase()==="ok":String(s?.id??s?.name??"").toLowerCase()==="ok");if(!r.ok||!hasOk)process.exit(1)}).catch(()=>process.exit(1))'
+  echo "cobalt_runtime=PASS service=private auth=verified ok=available gates=closed"
+}
+
 validate_public_web_origin() {
   public_origin="$(release_value TIKDD_WEB_PUBLIC_ORIGIN "")"
   case "$public_origin" in
@@ -428,6 +460,19 @@ case "$action" in
     compose up -d --force-recreate --wait worker
     verify_worker_runtime_config
     ;;
+  cobalt-runtime-probe)
+    acquire_lock
+    validate
+    compose --profile cobalt pull cobalt-api
+    compose --profile cobalt up -d --wait cobalt-api
+    verify_cobalt_runtime
+    ;;
+  cobalt-runtime-stop)
+    acquire_lock
+    validate
+    compose --profile cobalt stop cobalt-api
+    echo "cobalt_runtime=STOPPED"
+    ;;
   rollback)
     acquire_lock
     : "${TIKDD_ROLLBACK_ENV:?Set TIKDD_ROLLBACK_ENV to the previous approved release environment file.}"
@@ -485,7 +530,7 @@ case "$action" in
     compose --profile admin-ops run --rm admin-account "$@"
     ;;
   *)
-    echo "Usage: $0 {validate|deploy|worker-config-apply|rollback|admin-start|admin-stop|admin-account}" >&2
+    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac

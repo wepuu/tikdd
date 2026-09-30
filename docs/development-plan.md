@@ -2053,3 +2053,17 @@ host-policy, two-sample Range, cross-exit and browser-save evidence before it ma
 `COBALT_DELIVERY_VERIFIED_PLATFORMS`; the three Cobalt gates remain false in production. The image
 is pinned by digest and resource-capped for the NL VPS. See [Work Item 121](work-item-121-cobalt-secondary-provider.md)
 and [ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).
+
+### Work Item 122 - Cobalt private runtime and OK.ru canary
+
+Work Item 122 adds a closed-gate `cobalt-runtime-probe` release operation. It starts only the
+private, digest-pinned Cobalt profile, verifies the Docker-secret API key and the reviewed `ok`
+service from inside the container network, and never recreates the Worker or exposes a public
+port. The companion stop operation releases the service after a failed or deferred canary.
+
+OK.ru is the first canary because prior hosted candidates failed portable delivery. Two public
+samples must pass Cobalt redirect/picker parsing, `*.okcdn.ru` policy, NL/local/v2rayN Range
+checks and browser saving before the unique Cobalt OK.ru rollout may be enabled. Vimeo and
+Pinterest are follow-up secondary checks; existing X, Instagram, TikTok and Facebook traffic is
+unchanged. Cobalt gates remain closed until this evidence exists, and OK.ru remains Beta and
+non-indexed. See [Work Item 122](work-item-122-cobalt-runtime-okru-canary.md).
