@@ -18,14 +18,20 @@ const qualified = {
 };
 
 describe("Work Item 125 Cobalt OK.ru qualification", () => {
-  it("keeps the current closed-gate evidence deferred", () => {
+  it("keeps the failed closed-gate canary outside production", () => {
     expect(assessCurrentCobaltOkruQualification()).toEqual({
       providerId: "cobalt-selfhosted",
       platform: "odnoklassniki",
-      status: "deferred",
+      status: "no-media",
       adapterEligible: false,
       productionRouteEligible: false,
-      failures: ["insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+      failures: [
+        "provider_error_envelope",
+        "insufficient_samples",
+        "range_unverified",
+        "cross_exit_unverified",
+        "browser_save_unverified"
+      ]
     });
   });
 
@@ -75,6 +81,14 @@ describe("Work Item 125 Cobalt OK.ru qualification", () => {
       temporaryFailure: true,
       failures: ["temporary_failure"]
     }))).toMatchObject({ status: "deferred", productionRouteEligible: false });
+  });
+
+  it("classifies a Cobalt error envelope with no media as no-media", () => {
+    expect(assessCobaltOkruQualification(CobaltOkruQualificationEvidenceSchema.parse({
+      ...COBALT_OKRU_QUALIFICATION_EVIDENCE,
+      samplesAttempted: 1,
+      failures: ["provider_error_envelope"]
+    }))).toMatchObject({ status: "no-media", productionRouteEligible: false });
   });
 
   it("never serializes sample URLs, media URLs, credentials, or response bodies", () => {

@@ -9,6 +9,7 @@ import { z } from "zod";
 export const CobaltOkruQualificationFailureSchema = z.enum([
   "insufficient_samples",
   "runtime_not_verified",
+  "provider_error_envelope",
   "invalid_cobalt_status",
   "non_portable_result",
   "no_media",
@@ -91,7 +92,7 @@ export function assessCobaltOkruQualification(
   } else if (evidence.sourceIpBound || evidence.requiresProviderPage) {
     status = "delivery-blocked";
   } else if (evidence.failures.some((failure) =>
-    ["invalid_cobalt_status", "non_portable_result", "no_media", "unsafe_media_host"].includes(failure)
+    ["provider_error_envelope", "invalid_cobalt_status", "non_portable_result", "no_media", "unsafe_media_host"].includes(failure)
   )) {
     status = "no-media";
   } else if (!evidence.runtimeProbePassed || evidence.temporaryFailure || evidence.failures.includes("temporary_failure")) {
@@ -113,14 +114,15 @@ export function assessCobaltOkruQualification(
 }
 
 /**
- * Current release evidence after the closed-gate runtime probe. The private Cobalt service is
- * healthy, but media delivery has not yet been audited, so no platform route is activated.
+ * Closed-gate production evidence. The private Cobalt runtime passed authentication and advertised
+ * the OK service, but the first native sample returned a Cobalt error response with no media.
+ * The fail-fast boundary stopped the second sample and no platform route was activated.
  */
 export const COBALT_OKRU_QUALIFICATION_EVIDENCE: CobaltOkruQualificationEvidence = {
   providerId: "cobalt-selfhosted",
   platform: "odnoklassniki",
   runtimeProbePassed: true,
-  samplesAttempted: 0,
+  samplesAttempted: 1,
   samplesResolved: 0,
   mediaHostPolicyVerified: false,
   mediaRangeVerified: false,
@@ -130,7 +132,13 @@ export const COBALT_OKRU_QUALIFICATION_EVIDENCE: CobaltOkruQualificationEvidence
   requiresProviderPage: false,
   sourceIpBound: false,
   temporaryFailure: false,
-  failures: ["insufficient_samples", "range_unverified", "cross_exit_unverified", "browser_save_unverified"]
+  failures: [
+    "provider_error_envelope",
+    "insufficient_samples",
+    "range_unverified",
+    "cross_exit_unverified",
+    "browser_save_unverified"
+  ]
 };
 
 export function assessCurrentCobaltOkruQualification(): CobaltOkruQualificationAssessment {

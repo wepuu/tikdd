@@ -7,9 +7,10 @@ service and API-key wiring. This work item qualifies OK.ru delivery independentl
 Worker traffic, rollout rule, public page, SEO entry, or sitemap change. The baseline is
 `main@c451f2d`.
 
-The current evidence record is intentionally `deferred`: the closed-gate runtime probe passed,
-while the two-sample media and browser audit has not been run. Cobalt, its three gates and the
-OK.ru rollout remain disabled.
+The closed-gate runtime probe passed, but the first native sample returned an authenticated Cobalt
+`status=error` response with no media candidate. The bounded canary did not retry and stopped
+before the second sample. No Range, cross-exit or browser-save test could run. The resulting
+qualification is `no-media`; Cobalt, its three gates and the OK.ru rollout remain disabled.
 
 ## Qualification gates
 
@@ -26,12 +27,13 @@ both samples, portable host policy, Range, cross-exit and browser-save evidence.
 
 `packages/providers/src/cobalt-okru-qualification.ts` owns the sanitized evidence schema and
 deterministic status assessment. It excludes all sample and CDN identifiers. The current record
-has `runtimeProbePassed=true`, zero media samples, and a `deferred` result. A successful
-assessment is only a prerequisite for activation; it does not change environment flags by itself.
+has `runtimeProbePassed=true`, one attempted sample, zero resolved samples and a `no-media`
+result. The private Cobalt container was stopped after the failure and all temporary files were
+deleted.
 
 ## Conditional activation
 
-Only after the two samples pass may the operator set `COBALT_DELIVERY_VERIFIED_PLATFORMS=odnoklassniki`
+Only after a future, separately justified upstream change lets both samples pass may the operator set `COBALT_DELIVERY_VERIFIED_PLATFORMS=odnoklassniki`
 alongside the existing approved platform list, acknowledge the three Cobalt gates, and recreate
 only the Worker through `worker-config-apply`. Then CAS-enable the unique
 `cobalt-selfhosted / odnoklassniki / nl` rollout rule and perform two real browser downloads.
@@ -50,6 +52,5 @@ Cobalt tunnels, expand the `*.okcdn.ru` boundary, or hand users to a Provider pa
   its reviewed `okcdn.ru` suffix; no new policy is created before browser evidence exists.
 - Worker tests confirm an approved platform is not delivery-verified by default and all three
   gates remain closed.
-- Run targeted Vitest, `pnpm check`, `git diff --check`, Compose validation and the official
-  release script checks. Production is not changed by this code-only stage.
-
+- Targeted Vitest, `pnpm check`, `git diff --check`, PR CI and the official closed-gate runtime
+  probe passed. The media canary failed before delivery, so production routing was not changed.
