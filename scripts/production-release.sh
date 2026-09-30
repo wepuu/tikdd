@@ -263,7 +263,7 @@ verify_cobalt_runtime() {
   # The probe runs inside the private container network and emits no upstream
   # response. It validates authentication and the reviewed OK service without
   # exposing the key, source URL, response body, or media URL to the release log.
-  compose --profile cobalt exec -T cobalt-api node -e 'const fs=require("fs");const key=Object.keys(JSON.parse(fs.readFileSync("/run/secrets/cobalt_api_keys","utf8")))[0];fetch("http://127.0.0.1:9000/",{headers:{authorization:"Api-Key "+key}}).then(async r=>{let body=null;try{body=await r.json()}catch{}const services=Array.isArray(body?.services)?body.services:[];const hasOk=services.some(s=>typeof s==="string"?s.toLowerCase()==="ok":String(s?.id??s?.name??"").toLowerCase()==="ok");if(!r.ok||!hasOk)process.exit(1)}).catch(()=>process.exit(1))'
+  compose --profile cobalt exec -T cobalt-api node -e 'const fs=require("fs");const key=Object.keys(JSON.parse(fs.readFileSync("/run/secrets/cobalt_api_keys","utf8")))[0];fetch("http://127.0.0.1:9000/",{headers:{authorization:"Api-Key "+key}}).then(async r=>{let body=null;try{body=await r.json()}catch{}const services=Array.isArray(body?.cobalt?.services)?body.cobalt.services:[];const hasOk=services.some(s=>typeof s==="string"?s.toLowerCase()==="ok":String(s?.id??s?.name??"").toLowerCase()==="ok");if(!r.ok||!hasOk)process.exit(1)}).catch(()=>process.exit(1))'
   echo "cobalt_runtime=PASS service=private auth=verified ok=available gates=closed"
 }
 

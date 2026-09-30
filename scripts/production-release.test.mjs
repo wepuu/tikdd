@@ -52,6 +52,7 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/compose --profile cobalt pull cobalt-api/);
     expect(releaseScript).toMatch(/compose --profile cobalt up -d --wait cobalt-api/);
     expect(releaseScript).toMatch(/compose --profile cobalt exec -T cobalt-api node -e/);
+    expect(releaseScript).toMatch(/body\?\.cobalt\?\.services/);
     expect(releaseScript).toMatch(/service=private auth=verified ok=available gates=closed/);
     expect(releaseScript).toMatch(/cobalt-runtime-stop\)/);
     const probeBlock = releaseScript.split("  cobalt-runtime-probe)", 2)[1]?.split("  cobalt-runtime-stop)", 2)[0] ?? "";

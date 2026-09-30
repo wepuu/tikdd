@@ -2067,3 +2067,10 @@ checks and browser saving before the unique Cobalt OK.ru rollout may be enabled.
 Pinterest are follow-up secondary checks; existing X, Instagram, TikTok and Facebook traffic is
 unchanged. Cobalt gates remain closed until this evidence exists, and OK.ru remains Beta and
 non-indexed. See [Work Item 122](work-item-122-cobalt-runtime-okru-canary.md).
+
+### Work Item 124 - Cobalt runtime root-schema correction
+
+The first closed-gate runtime probe reached the healthy, authenticated private Cobalt container but
+used the wrong JSON path for the documented service list. The probe now reads `cobalt.services`.
+This is a diagnostic-only correction; Cobalt gates, OK.ru rollout, and all public traffic remain
+closed until the two-sample delivery canary is completed.
