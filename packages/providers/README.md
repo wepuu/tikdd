@@ -15,6 +15,14 @@ modes declared for that exact capability. Production formats each require one ma
 Add capability, error-decision, normalized-result, candidate-host, and sequential-fallback tests for
 every adapter change. New source and delivery hosts require explicit allowlists and redirect tests.
 
+### Cobalt OK.ru qualification
+
+The self-hosted Cobalt adapter remains fixture-verified for OK.ru. Work Item 125's authenticated
+runtime probe passed, but the first native sample returned a Cobalt error envelope with no media;
+the second sample and all delivery checks were therefore skipped. The qualification module records
+that sanitized `no-media` result and never promotes a platform or writes production configuration.
+The existing `cobalt-selfhosted-okru-media-v1` policy remains closed behind the three Cobalt gates.
+
 Before implementing a new free Provider, run the code-owned `qualifyFreeProviderCandidate` intake
 from the package. It is offline-only and reports sanitized reject/defer reasons; an accepted result
 still requires the normal adapter fixtures, Host review, Delivery verification, rollout approval,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FDownIsuruProvider,
+  CobaltProvider,
   PinterestVideoDownloaderProvider,
   SaveFromInsProvider,
   SnapTikMonsterProvider,
@@ -43,6 +44,23 @@ describe("production route matrix", () => {
     expect(priority(viddown, "vimeo")).toBe(760);
     expect([priority(nineXBuddy, "xhamster"), priority(new LocoLoaderProvider({ enabled: true }), "xhamster")]).toEqual([700, 480]);
     expect([priority(noadsdl, "youtube"), priority(snapyt, "youtube")]).toEqual([740, 720]);
+  });
+
+  it("keeps Cobalt OK.ru outside production until the independent delivery audit", () => {
+    const cobalt = new CobaltProvider({
+      enabled: true,
+      apiKey: "fixture-api-key",
+      approvedPlatforms: ["odnoklassniki"],
+      deliveryVerifiedPlatforms: []
+    });
+    expect(cobalt.manifest.platforms).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        platform: "odnoklassniki",
+        priority: 500,
+        deliveryModes: [],
+        verificationStatus: "fixture_verified"
+      })
+    ]));
   });
 
   it("keeps Pinterest implemented but default-off until the production gate is approved", () => {

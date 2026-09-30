@@ -193,6 +193,7 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("snapyt-app-youtube-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("noadsdl-youtube-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.hostSuffixes).toEqual(["okcdn.ru"]);
     expect(getDeliveryHostPolicy("cobalt-selfhosted-x-media-v1")?.browserHandoff).toBe("navigate");
   });
 
