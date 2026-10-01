@@ -2106,3 +2106,17 @@ and either attachment or audited CORS browser saving. YouTube and xHamster remai
 the Cobalt gates, rollout rules and production traffic remain closed. See
 [Work Item 126](work-item-126-cobalt-capability-matrix.md) and
 [ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).
+
+### Work Item 127 - Cobalt Vimeo/Pinterest qualification
+
+Work Item 127 narrows the first real Cobalt capability batch to Vimeo and Pinterest. VidDown and
+Pinterest Video Downloader remain the primary routes; Cobalt can only be added as a sequential
+priority-450 fallback after each platform independently passes two public samples, reviewed Host
+policy, NL/local/v2rayN Range checks and browser-save validation. The initial code-owned evidence is
+`deferred` because the closed-gate NL runtime probe has not yet been performed for these services.
+
+The Cobalt key allowlist must be temporarily restricted to the batch during the closed-gate probe.
+Only a platform with `qualified-secondary` evidence may enter its own
+`COBALT_DELIVERY_VERIFIED_PLATFORMS` value and rollout rule. YouTube, xHamster, OK.ru, new public
+platforms, SEO pages and sitemap entries remain unchanged. See
+[Work Item 127](work-item-127-cobalt-vimeo-pinterest-qualification.md).

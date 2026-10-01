@@ -96,6 +96,11 @@ export {
   type CobaltPlatformQualificationEvidence
 } from "./cobalt-capability-matrix";
 export {
+  assessCurrentCobaltVimeoPinterestQualification,
+  COBALT_VIMEO_PINTEREST_BATCH,
+  COBALT_VIMEO_PINTEREST_QUALIFICATION_EVIDENCE
+} from "./cobalt-vimeo-pinterest-qualification";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,

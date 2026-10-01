@@ -134,3 +134,9 @@ only after two samples pass direct-host, Range, cross-exit and browser-save chec
 `tunnel` and `local-processing` responses are recorded as `proxy-only`; TikDD does not proxy or
 remux those results. The matrix is evidence-only and does not add new public platforms or change
 the production gates.
+
+Work Item 127 narrows the first live matrix to Vimeo and Pinterest. Both start as deferred
+closed-gate records until the private runtime service list, two samples, reviewed media hosts,
+three-exit Range checks and browser saving all pass independently. Existing VidDown and Pinterest
+Video Downloader routes remain primary; Cobalt can only become a sequential fallback after that
+platform's own evidence is qualified.
