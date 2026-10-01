@@ -2,9 +2,24 @@
 
 ## 状态
 
-实施准备中。WI127 已完成 Vimeo/Pinterest 闭门验证，但两个平台均未达到
-`qualified-secondary`。本项不重试 Vimeo、Pinterest 或 OK.ru，只验证已有 X、Instagram、
-TikTok、Facebook 主 Provider 的 Cobalt 顺序备用能力。
+已完成闭门验证，未达到任何平台的 `qualified-secondary`。WI127 的 Vimeo/Pinterest 结果不在本批重试；
+本批只验证已有 X、Instagram、TikTok、Facebook 主 Provider 的 Cobalt 顺序备用能力。
+
+### 2026-10-01 脱敏结果
+
+- X：两条解析均成功（`redirect`/`picker`），NL 与本机 v2rayN 的 1 KiB Range 均为
+  `206 video/mp4`；本机直连两条均超时。因此为 `delivery-blocked`，失败码为
+  `cross_exit_unverified`、`browser_save_unverified`。
+- Instagram：两条解析一次成功、一次返回上游空结果错误包；为 `no-media`，失败码为
+  `provider_error_envelope`。未继续做跨出口和浏览器保存。
+- TikTok：两条均返回 `tunnel` 结果，属于 Provider 代理流；为 `proxy-only`，失败码为
+  `non_portable_result`，不引入 TikDD 媒体中转。
+- Facebook：两条解析均成功，NL 与本机 v2rayN 的 1 KiB Range 均为 `206 video/mp4`；
+  本机直连两条均超时。因此为 `delivery-blocked`，失败码为 `cross_exit_unverified`、
+  `browser_save_unverified`。
+
+本批使用正确的生产 UA `TikDD/cobalt-secondary`，运行时、服务清单和 API key 均通过；上述
+结果不代表 Cobalt 或现有主 Provider 故障，而是本批交付门槛未满足。Cobalt 未获得任何生产路由资格。
 
 ## 仓库阶段
 
@@ -40,7 +55,7 @@ TikTok、Facebook 主 Provider 的 Cobalt 顺序备用能力。
 ## 完成标准
 
 - WI126/WI127 单一 PR 合并，生产无变更；
-- 四个平台各有明确资格结论；
-- 合格平台才进入后续路由 PR 和一次性生产发布；
+- 四个平台各有明确资格结论（X/Facebook `delivery-blocked`、Instagram `no-media`、TikTok `proxy-only`）；
+- 没有平台进入后续路由 PR 或生产发布；
 - Cobalt、Worker、rollout 和 secret 在验证结束后恢复到原状态；
 - `pnpm check`、Compose 校验和脱敏扫描通过。
