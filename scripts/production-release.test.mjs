@@ -64,10 +64,12 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/cobalt-multimode-qualification\)/);
     expect(releaseScript).toMatch(/requires ENABLE_COBALT_PROVIDER=false/);
     expect(releaseScript).toMatch(/input must have mode 600/);
-    expect(releaseScript).toMatch(/compose --profile cobalt --profile ops run --rm cobalt-qualification/);
+    expect(releaseScript).toMatch(/compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification/);
     expect(releaseScript).toMatch(/trap 'rm -f "\$qualification_input"'/);
     const qualificationBlock = productionCompose.split("  cobalt-qualification:", 2)[1]?.split("  canary:", 2)[0] ?? "";
     expect(qualificationBlock).toMatch(/cobalt:qualify/);
+    expect(qualificationBlock).toMatch(/profiles: \["cobalt-ops"\]/);
+    expect(qualificationBlock).not.toMatch(/profiles: \["ops"\]/);
     expect(qualificationBlock).toMatch(/read_only: true/);
     expect(qualificationBlock).toMatch(/cobalt_api_keys/);
     expect(qualificationBlock).toMatch(/provider-egress/);
