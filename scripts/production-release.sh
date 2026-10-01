@@ -269,6 +269,35 @@ verify_cobalt_runtime() {
   echo "cobalt_runtime=PASS service=private auth=verified ok=available gates=closed"
 }
 
+verify_cobalt_qualification_input() {
+  [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "false" ] || {
+    echo "cobalt-multimode-qualification requires ENABLE_COBALT_PROVIDER=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_LICENSE_ACKNOWLEDGED "false")" = "false" ] || {
+    echo "cobalt-multimode-qualification requires COBALT_LICENSE_ACKNOWLEDGED=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_DELIVERY_AUDIT_APPROVED "false")" = "false" ] || {
+    echo "cobalt-multimode-qualification requires COBALT_DELIVERY_AUDIT_APPROVED=false." >&2
+    return 78
+  }
+  qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
+  [ "$qualification_input" = "/run/tikdd/cobalt-qualification-input.json" ] || {
+    echo "Cobalt qualification input must use the reviewed runtime path." >&2
+    return 78
+  }
+  [ -f "$qualification_input" ] && [ -r "$qualification_input" ] || {
+    echo "Cobalt qualification input is missing or unreadable." >&2
+    return 78
+  }
+  input_mode="$(stat -c '%a' "$qualification_input" 2>/dev/null || true)"
+  [ "$input_mode" = "600" ] || {
+    echo "Cobalt qualification input must have mode 600." >&2
+    return 78
+  }
+}
+
 validate_public_web_origin() {
   public_origin="$(release_value TIKDD_WEB_PUBLIC_ORIGIN "")"
   case "$public_origin" in
@@ -475,6 +504,18 @@ case "$action" in
     compose --profile cobalt stop cobalt-api
     echo "cobalt_runtime=STOPPED"
     ;;
+  cobalt-multimode-qualification)
+    acquire_lock
+    validate
+    verify_cobalt_qualification_input
+    qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
+    trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
+    compose --profile cobalt pull cobalt-api
+    compose --profile cobalt up -d --wait cobalt-api
+    compose --profile cobalt --profile ops run --rm cobalt-qualification
+    rm -f "$qualification_input"
+    trap - EXIT HUP INT TERM
+    ;;
   rollback)
     acquire_lock
     : "${TIKDD_ROLLBACK_ENV:?Set TIKDD_ROLLBACK_ENV to the previous approved release environment file.}"
@@ -532,7 +573,7 @@ case "$action" in
     compose --profile admin-ops run --rm admin-account "$@"
     ;;
   *)
-    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|rollback|admin-start|admin-stop|admin-account}" >&2
+    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|cobalt-multimode-qualification|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac

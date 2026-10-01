@@ -2153,3 +2153,14 @@ bounded sequential fallback. This implementation changes no production gates or 
 later platform-by-platform audit must approve the exact result modes before production traffic is
 enabled. See [Work Item 129](work-item-129-cobalt-multimode-delivery.md) and
 [ADR-0059](architecture/adr/0059-cobalt-multimode-client-delivery.md).
+
+### Work Item 130 - Cobalt multi-mode production qualification
+
+Work Item 130 adds a closed-gate, sequential qualification runner for the four Cobalt response
+modes introduced in Work Item 129. It accepts only reviewed X, Instagram, TikTok and Facebook
+samples from a temporary mode-600 runtime file, emits sanitized mode and normalization evidence,
+and deletes the input after the run. TikTok is the only conditional production-route candidate in
+this batch; X and Facebook remain evidence-only and Instagram is tested last. Existing primary
+Providers retain priority, and Cobalt traffic remains closed unless two TikTok samples and a real
+browser delivery pass a separately reviewed rollout. See
+[Work Item 130](work-item-130-cobalt-multimode-qualification.md).
