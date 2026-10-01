@@ -163,3 +163,10 @@ production eligible without the standard one-time Delivery handoff and a real br
 Browser local-processing remains unapproved. Current TikTok Tunnel evidence is therefore
 `resolved-conditional`, with every Cobalt production gate and capability still closed. See
 ADR-0060 and Work Item 131.
+
+Work Item 132 repeated both TikTok samples successfully behind a temporary TikTok-only key. The
+proxied client exit passed, but the direct client exit was blocked at the Cloudflare edge before
+the request reached the media origin. Cobalt therefore remains `resolved-conditional`: the
+temporary key was destroyed, the original OK-only key restored, the container stopped, and no
+Worker gate, `tiktok:tunnel` capability or rollout rule was enabled. Edge/browser compatibility
+must be repaired and the complete handoff repeated before Cobalt can join the TikTok route.
