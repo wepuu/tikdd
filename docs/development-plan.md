@@ -2164,3 +2164,8 @@ this batch; X and Facebook remain evidence-only and Instagram is tested last. Ex
 Providers retain priority, and Cobalt traffic remains closed unless two TikTok samples and a real
 browser delivery pass a separately reviewed rollout. See
 [Work Item 130](work-item-130-cobalt-multimode-qualification.md).
+
+Production closeout deployed `main@a5b85e7` and resolved both TikTok samples through the reviewed
+tunnel policy. Local direct and v2rayN exits received attachment MP4 ranges, but the NL
+public-origin exit returned HTTP 403. The three-exit gate therefore remains false, Cobalt stays
+`proxy-only`, and no production key scope, Worker gate, capability or rollout rule was enabled.
