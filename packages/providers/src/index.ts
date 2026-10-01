@@ -81,6 +81,26 @@ export {
   type CobaltOkruQualificationStatus
 } from "./cobalt-okru-qualification";
 export {
+  assessCobaltPlatformQualification,
+  CobaltCapabilityFailureSchema,
+  CobaltCapabilityResponseModeSchema,
+  CobaltCapabilityStatusSchema,
+  CobaltPlatformQualificationAssessmentSchema,
+  CobaltPlatformQualificationEvidenceSchema,
+  mapCobaltRuntimeServicesToPlatforms,
+  parseCobaltRuntimeServices,
+  type CobaltCapabilityFailure,
+  type CobaltCapabilityResponseMode,
+  type CobaltCapabilityStatus,
+  type CobaltPlatformQualificationAssessment,
+  type CobaltPlatformQualificationEvidence
+} from "./cobalt-capability-matrix";
+export {
+  assessCurrentCobaltVimeoPinterestQualification,
+  COBALT_VIMEO_PINTEREST_BATCH,
+  COBALT_VIMEO_PINTEREST_QUALIFICATION_EVIDENCE
+} from "./cobalt-vimeo-pinterest-qualification";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,

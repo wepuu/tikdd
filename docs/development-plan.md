@@ -2088,3 +2088,35 @@ content and sitemap remain unchanged and closed. Cobalt was stopped, temporary f
 and OK.ru remains planned/non-indexed. A future retry requires evidence of an upstream Cobalt/OK.ru
 protocol change; it must not weaken the host policy or add a media proxy. See
 [Work Item 125](work-item-125-cobalt-okru-beta-qualification.md).
+
+### Work Item 126 - Cobalt multi-platform capability matrix
+
+Work Item 126 adds a sanitized, platform-keyed qualification model and documented runtime service
+discovery for the private Cobalt instance. Existing Vimeo, Pinterest, X, TikTok, Facebook and
+Instagram platforms are evaluated as possible sequential fallbacks, with Vimeo and Pinterest
+first because they have the clearest current TikDD delivery boundaries. Additional services that
+Cobalt advertises at runtime (such as Reddit, Loom, VK, Snapchat, Xiaohongshu and SoundCloud)
+remain discovery-only candidates; this item does not add a platform slug, public page, sitemap
+entry or adapter for them.
+
+Only `redirect` and video `picker` items are portable. `tunnel` and `local-processing` are
+classified as `proxy-only`, even when Cobalt successfully resolves the source. Each candidate
+requires two public samples, a reviewed Host policy, 1 KiB Range checks from NL/local/v2rayN,
+and either attachment or audited CORS browser saving. YouTube and xHamster remain disabled, and
+the Cobalt gates, rollout rules and production traffic remain closed. See
+[Work Item 126](work-item-126-cobalt-capability-matrix.md) and
+[ADR-0058](architecture/adr/0058-selfhosted-cobalt-secondary-provider.md).
+
+### Work Item 127 - Cobalt Vimeo/Pinterest qualification
+
+Work Item 127 narrows the first real Cobalt capability batch to Vimeo and Pinterest. VidDown and
+Pinterest Video Downloader remain the primary routes; Cobalt can only be added as a sequential
+priority-450 fallback after each platform independently passes two public samples, reviewed Host
+policy, NL/local/v2rayN Range checks and browser-save validation. The initial code-owned evidence is
+`deferred` because the closed-gate NL runtime probe has not yet been performed for these services.
+
+The Cobalt key allowlist must be temporarily restricted to the batch during the closed-gate probe.
+Only a platform with `qualified-secondary` evidence may enter its own
+`COBALT_DELIVERY_VERIFIED_PLATFORMS` value and rollout rule. YouTube, xHamster, OK.ru, new public
+platforms, SEO pages and sitemap entries remain unchanged. See
+[Work Item 127](work-item-127-cobalt-vimeo-pinterest-qualification.md).

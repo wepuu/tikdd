@@ -159,6 +159,10 @@ function isAudioUrl(url: string): boolean {
   return /\.(?:m4a|mp3|aac|opus|ogg|wav)$/.test(path);
 }
 
+function isNonVideoPickerUrl(url: string): boolean {
+  return /\.(?:gif|png|jpe?g|webp)(?:$|\?)/i.test(new URL(url).pathname);
+}
+
 function qualityLabel(value: string | null | undefined, url: string): string {
   const source = `${value ?? ""} ${url}`;
   return source.match(/\b(\d{3,4}p)\b/i)?.[1] ?? "Source";
@@ -226,7 +230,16 @@ export function parseCobaltResponse(body: string, httpStatus = 200): {
     }));
   for (const candidate of candidates) {
     const url = reviewedMediaUrl(candidate.url);
-    if (!url || candidate.type?.toLowerCase() === "audio" || isAudioUrl(url) || seen.has(url)) continue;
+    const type = candidate.type?.toLowerCase();
+    // Cobalt picker responses may contain photos, GIFs and audio beside videos. TikDD's
+    // normalized result is a video-only contract, so do not reinterpret a non-video item as MP4.
+    if (
+      !url ||
+      (type !== undefined && type !== "video" && type !== "gif") ||
+      (type === "gif" && isNonVideoPickerUrl(url)) ||
+      isAudioUrl(url) ||
+      seen.has(url)
+    ) continue;
     seen.add(url);
     formats.push({
       url,
