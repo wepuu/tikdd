@@ -63,6 +63,20 @@ describe("production release Admin lifecycle", () => {
     const cobaltBlock = productionCompose.split("  cobalt-api:", 2)[1]?.split("  calibration-api-preflight:", 2)[0] ?? "";
     expect(cobaltBlock).toMatch(/group_add:\s+- \$\{TIKDD_SECRETS_GID:-1999\}/);
     expect(cobaltBlock).toMatch(/secrets:\s+- cobalt_api_keys/);
+    expect(cobaltBlock).toMatch(/127\.0\.0\.1:\$\{TIKDD_COBALT_HOST_PORT:-3900\}:9000/);
+    expect(cobaltBlock).toMatch(/API_URL: \$\{TIKDD_COBALT_PUBLIC_ORIGIN:-https:\/\/media\.tikdd\.cc\/\}/);
+    expect(cobaltBlock).toMatch(/TUNNEL_LIFESPAN: \$\{COBALT_TUNNEL_LIFESPAN:-300\}/);
+    expect(cobaltBlock).toMatch(/CORS_WILDCARD: "0"/);
+  });
+
+  it("exposes only the exact Cobalt tunnel route at the media origin", () => {
+    const nginx = readFileSync(new URL("../deploy/nginx/tikdd.conf.template", import.meta.url), "utf8");
+    const mediaBlock = nginx.split("server_name __TIKDD_MEDIA_HOST__;", 2)[1]?.split("\nserver {", 2)[0] ?? "";
+    expect(mediaBlock).toMatch(/location = \/tunnel/);
+    expect(mediaBlock).toMatch(/limit_except GET \{ deny all; \}/);
+    expect(mediaBlock).toMatch(/127\.0\.0\.1:__TIKDD_COBALT_HOST_PORT__\/tunnel\$is_args\$args/);
+    expect(mediaBlock).toMatch(/location \/ \{ return 404; \}/);
+    expect(mediaBlock).not.toMatch(/\/v1|\/health|cobalt-api/);
   });
 
   it("requires every Provider gate triplet to match its Provider switch in the Worker", () => {
@@ -121,6 +135,7 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/cobalt_enabled=/);
     expect(releaseScript).toMatch(/COBALT_APPROVED_PLATFORMS/);
     expect(releaseScript).toMatch(/COBALT_DELIVERY_VERIFIED_PLATFORMS/);
+    expect(releaseScript).toMatch(/COBALT_DELIVERY_VERIFIED_CAPABILITIES/);
     expect(releaseScript).toMatch(/Worker LocoLoader platform binding mismatch/);
   });
 

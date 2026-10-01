@@ -6,7 +6,10 @@ import {
 } from "node:crypto";
 import { lookup as dnsLookup } from "node:dns/promises";
 import { BlockList } from "node:net";
-import { ResolveResultSchema } from "@tikdd/contracts";
+import {
+  DeliveryClientProcessingPlanSchema,
+  ResolveResultSchema
+} from "@tikdd/contracts";
 import { z } from "zod";
 
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -72,14 +75,25 @@ export const SecretHeadersSchema = z
     }
   });
 
-export const DeliveryCandidateInputSchema = z.object({
+const DeliveryCandidateBaseSchema = z.object({
   formatId: z.string().min(1).max(160).regex(FORMAT_ID_PATTERN),
   mode: DeliveryModeSchema,
-  targetUrl: HttpsTargetUrlSchema,
   hostPolicyId: HostPolicyIdSchema,
-  expiresAt: z.string().datetime({ offset: true }),
-  secretHeaders: SecretHeadersSchema
+  expiresAt: z.string().datetime({ offset: true })
 });
+
+export const DeliveryCandidateInputSchema = z.union([
+  DeliveryCandidateBaseSchema.extend({
+    kind: z.literal("target").optional(),
+    targetUrl: HttpsTargetUrlSchema,
+    secretHeaders: SecretHeadersSchema
+  }),
+  DeliveryCandidateBaseSchema.extend({
+    kind: z.literal("processing"),
+    mode: z.literal("proxy"),
+    processing: DeliveryClientProcessingPlanSchema
+  })
+]);
 export type DeliveryCandidateInput = z.infer<typeof DeliveryCandidateInputSchema>;
 
 export const ProviderResolutionSchema = z
@@ -125,10 +139,17 @@ export const CompleteProviderResolutionSchema = ProviderResolutionSchema.superRe
   }
 );
 
-export const CandidateSecretSchema = z.object({
-  targetUrl: HttpsTargetUrlSchema,
-  secretHeaders: SecretHeadersSchema
-});
+export const CandidateSecretSchema = z.union([
+  z.object({
+    kind: z.literal("target").optional(),
+    targetUrl: HttpsTargetUrlSchema,
+    secretHeaders: SecretHeadersSchema
+  }),
+  z.object({
+    kind: z.literal("processing"),
+    processing: DeliveryClientProcessingPlanSchema
+  })
+]);
 export type CandidateSecret = z.infer<typeof CandidateSecretSchema>;
 
 const Base64UrlSchema = z.string().min(1).max(100_000).regex(BASE64URL_PATTERN);
@@ -193,7 +214,13 @@ export const DeliveryHostPolicySchema = z.object({
     z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/)
   ).default([]),
   rejectQueryParameters: z.boolean().default(false),
-  browserHandoff: z.enum(["navigate", "cors-download"]).default("navigate")
+  browserHandoff: z.enum(["navigate", "cors-download", "client-process"]).default("navigate"),
+  queryValuePatterns: z.record(
+    z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/),
+    z.string().min(1).max(200)
+  ).default({}),
+  expiryQueryKey: z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/).optional(),
+  maximumFutureExpiryMs: z.number().int().positive().max(86_400_000).optional()
 }).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
   message: "A delivery host policy must include an exact host or reviewed suffix."
 });
@@ -421,6 +448,32 @@ export const COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY = DeliveryHostPolicySchem
   browserHandoff: "navigate"
 });
 
+export const COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "cobalt-selfhosted-tunnel-media-v1",
+  providerId: "cobalt-selfhosted",
+  modes: ["proxy"],
+  hosts: ["media.tikdd.cc"],
+  exactPaths: ["/tunnel"],
+  requiredQueryKeys: ["id", "exp", "sig", "sec", "iv"],
+  allowedQueryKeys: ["id", "exp", "sig", "sec", "iv"],
+  queryValuePatterns: {
+    id: "^[A-Za-z0-9_-]{21}$",
+    exp: "^[0-9]{13}$",
+    sig: "^[A-Za-z0-9_-]{43}$",
+    sec: "^[A-Za-z0-9_-]{43}$",
+    iv: "^[A-Za-z0-9_-]{22}$"
+  },
+  expiryQueryKey: "exp",
+  maximumFutureExpiryMs: 330_000,
+  browserHandoff: "navigate"
+});
+
+export const COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  ...COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY,
+  id: "cobalt-selfhosted-processing-media-v1",
+  browserHandoff: "client-process"
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -450,7 +503,9 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [COBALT_SELFHOSTED_TIKTOK_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_TIKTOK_MEDIA_HOST_POLICY],
   [COBALT_SELFHOSTED_FACEBOOK_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_FACEBOOK_MEDIA_HOST_POLICY],
   [COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY],
-  [COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY]
+  [COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY],
+  [COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {
@@ -511,6 +566,19 @@ export function assertDeliveryTargetPolicy(input: {
       if (!allowed.has(name)) {
         throw new Error("The delivery target query is not allowed by its reviewed policy.");
       }
+    }
+  }
+  for (const [name, pattern] of Object.entries(policy.queryValuePatterns)) {
+    const values = url.searchParams.getAll(name);
+    if (values.length !== 1 || !new RegExp(pattern).test(values[0] ?? "")) {
+      throw new Error("The delivery target query is not allowed by its reviewed policy.");
+    }
+  }
+  if (policy.expiryQueryKey && policy.maximumFutureExpiryMs) {
+    const expiresAt = Number(url.searchParams.get(policy.expiryQueryKey));
+    const now = Date.now();
+    if (!Number.isSafeInteger(expiresAt) || expiresAt <= now || expiresAt > now + policy.maximumFutureExpiryMs) {
+      throw new Error("The delivery target expiry is outside its reviewed policy.");
     }
   }
   return url;

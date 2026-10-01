@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted for Work Item 121. No Cobalt platform is production-enabled by this decision.
+Accepted for Work Item 121. No Cobalt platform is production-enabled by this decision. The blanket
+rejection of `tunnel` and `local-processing` and the absolute no-host-port rule are superseded by
+ADR-0059. The API remains private; ADR-0059 permits only a loopback publication behind an exact
+Nginx `/tunnel` allowlist. The provenance, resource and closed-gate decisions remain in force.
 
 ## Context
 

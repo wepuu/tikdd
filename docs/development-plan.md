@@ -2138,3 +2138,18 @@ returned only `tunnel` results (`proxy-only`). Cobalt was stopped, its original 
 and all gates, rollout rules, Worker configuration and existing Provider traffic remained unchanged.
 No Cobalt platform is eligible for a production fallback; a future attempt needs an upstream or
 client-egress change and must not add a TikDD media proxy.
+
+### Work Item 129 - Cobalt multi-mode client delivery
+
+Work Item 129 replaces the earlier portable-CDN-only assumption with an explicit four-mode Cobalt
+boundary. The authenticated API stays private. Direct `redirect` and `picker` results retain their
+reviewed CDN policies; signed `tunnel` descriptors use only `media.tikdd.cc/tunnel`; and
+`local-processing` runs in the browser with pinned libav.js builds, a 200 MiB combined limit and a
+120-second deadline. TikDD Delivery only validates and redeems one-time credentials and never
+transfers media bytes.
+
+Activation is mode-specific per platform. Existing stable Providers remain primary and Cobalt is a
+bounded sequential fallback. This implementation changes no production gates or rollout rules; a
+later platform-by-platform audit must approve the exact result modes before production traffic is
+enabled. See [Work Item 129](work-item-129-cobalt-multimode-delivery.md) and
+[ADR-0059](architecture/adr/0059-cobalt-multimode-client-delivery.md).

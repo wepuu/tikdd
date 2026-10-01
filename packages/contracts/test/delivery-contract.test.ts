@@ -17,4 +17,9 @@ describe("Delivery browser handoff contract", () => {
     expect(DeliverySchema.parse({ ...base, browserHandoff: "cors-download" }).browserHandoff)
       .toBe("cors-download");
   });
+
+  it("accepts the client processing handoff", () => {
+    expect(DeliverySchema.parse({ ...base, mode: "proxy", browserHandoff: "client-process" }).browserHandoff)
+      .toBe("client-process");
+  });
 });

@@ -1,5 +1,8 @@
 import type { Platform } from "@tikdd/contracts";
-import { parseCobaltPlatformConfiguration } from "@tikdd/providers";
+import {
+  parseCobaltPlatformConfiguration,
+  type CobaltSuccessMode
+} from "@tikdd/providers";
 
 export interface CobaltActivationConfiguration {
   enabled: boolean;
@@ -7,6 +10,7 @@ export interface CobaltActivationConfiguration {
   deliveryAuditApproved: boolean;
   approvedPlatforms: readonly Platform[];
   deliveryVerifiedPlatforms: readonly Platform[];
+  deliveryVerifiedCapabilities: Readonly<Record<string, readonly CobaltSuccessMode[]>>;
   apiUrl: string;
   maxConcurrency: number;
   minIntervalMs: number;
@@ -24,9 +28,14 @@ function boundedInteger(value: string | undefined, fallback: number, minimum: nu
 export function loadCobaltActivationConfiguration(
   environment: NodeJS.ProcessEnv = process.env
 ): CobaltActivationConfiguration {
-  const { approvedPlatforms, deliveryVerifiedPlatforms } = parseCobaltPlatformConfiguration({
+  const {
+    approvedPlatforms,
+    deliveryVerifiedPlatforms,
+    deliveryVerifiedCapabilities
+  } = parseCobaltPlatformConfiguration({
     approvedPlatforms: environment.COBALT_APPROVED_PLATFORMS,
-    deliveryVerifiedPlatforms: environment.COBALT_DELIVERY_VERIFIED_PLATFORMS
+    deliveryVerifiedPlatforms: environment.COBALT_DELIVERY_VERIFIED_PLATFORMS,
+    deliveryVerifiedCapabilities: environment.COBALT_DELIVERY_VERIFIED_CAPABILITIES
   });
   const enabled = (environment.ENABLE_COBALT_PROVIDER ?? "false") === "true";
   const configuration = {
@@ -35,6 +44,7 @@ export function loadCobaltActivationConfiguration(
     deliveryAuditApproved: (environment.COBALT_DELIVERY_AUDIT_APPROVED ?? "false") === "true",
     approvedPlatforms,
     deliveryVerifiedPlatforms,
+    deliveryVerifiedCapabilities,
     apiUrl: environment.COBALT_API_URL ?? "http://cobalt-api:9000/",
     maxConcurrency: boundedInteger(environment.COBALT_MAX_CONCURRENCY, 1, 1, 1),
     minIntervalMs: boundedInteger(environment.COBALT_MIN_INTERVAL_MS, 1_000, 0, 60_000)

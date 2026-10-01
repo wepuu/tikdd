@@ -6,6 +6,7 @@ node_modules/
 .next-web-build/
 .next-web-production/
 .next-qa-*/
+apps/web/public/vendor/libav/
 .tikdd-admin-runtime/
 .tikdd-calibration-runtime/
 dist/

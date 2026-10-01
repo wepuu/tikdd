@@ -223,9 +223,11 @@ verify_worker_runtime_config() {
   done
   expected_cobalt_platforms="$(release_value COBALT_APPROVED_PLATFORMS "odnoklassniki,x,instagram,tiktok,facebook,pinterest,vimeo")"
   expected_cobalt_verified="$(release_value COBALT_DELIVERY_VERIFIED_PLATFORMS "")"
-  for platform_key in COBALT_APPROVED_PLATFORMS COBALT_DELIVERY_VERIFIED_PLATFORMS; do
+  expected_cobalt_capabilities="$(release_value COBALT_DELIVERY_VERIFIED_CAPABILITIES "")"
+  for platform_key in COBALT_APPROVED_PLATFORMS COBALT_DELIVERY_VERIFIED_PLATFORMS COBALT_DELIVERY_VERIFIED_CAPABILITIES; do
     expected_platforms="$expected_cobalt_platforms"
     [ "$platform_key" = COBALT_DELIVERY_VERIFIED_PLATFORMS ] && expected_platforms="$expected_cobalt_verified"
+    [ "$platform_key" = COBALT_DELIVERY_VERIFIED_CAPABILITIES ] && expected_platforms="$expected_cobalt_capabilities"
     actual_platforms="$(printf '%s\n' "$env_dump" | awk -F= -v key="$platform_key" '$1==key { sub(/^[^=]*=/, ""); print; exit }')"
     if [ "$actual_platforms" != "$expected_platforms" ]; then
       echo "Worker Cobalt platform binding mismatch for $platform_key." >&2

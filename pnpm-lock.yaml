@@ -229,6 +229,12 @@ importers:
       '@fontsource-variable/plus-jakarta-sans':
         specifier: ^5.3.0
         version: 5.3.0
+      '@imput/libav.js-encode-cli':
+        specifier: 6.8.7
+        version: 6.8.7
+      '@imput/libav.js-remux-cli':
+        specifier: 6.8.7
+        version: 6.8.7
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -785,6 +791,12 @@ packages:
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
+
+  '@imput/libav.js-encode-cli@6.8.7':
+    resolution: {integrity: sha512-kWZmCwDYOQVSFu1ARsFfd5P0HqEx5TlhDMZFM/o8cWvMv7okCZWzKRMlEvw3EEGkxWkXUsgcf6F65wQEOE/08A==}
+
+  '@imput/libav.js-remux-cli@6.8.7':
+    resolution: {integrity: sha512-EXyRSaIGDSLs98dFxPsRPWOr0G/cNWPKe94u0Ch4/ZwopDVfi7Z0utekluhowUns09LJ5RN9BuCZwc6slMcaLg==}
 
   '@ioredis/commands@1.10.0':
     resolution: {integrity: sha512-UmeW7z4LfctwoQ5wkhVzgq8tXkreED2xZGpX+Bg+zA+WJFZCT6c062AfCK/Dfk81xZnnwdhJCUMkitihRaoC2Q==}
@@ -1869,6 +1881,10 @@ snapshots:
 
   '@img/sharp-win32-x64@0.34.5':
     optional: true
+
+  '@imput/libav.js-encode-cli@6.8.7': {}
+
+  '@imput/libav.js-remux-cli@6.8.7': {}
 
   '@ioredis/commands@1.10.0': {}
 

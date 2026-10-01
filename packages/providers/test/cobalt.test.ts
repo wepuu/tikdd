@@ -23,14 +23,25 @@ function response(body: string, status = 200) {
 describe("Cobalt self-hosted secondary Provider", () => {
   it("keeps approved and delivery-verified platform sets independent", () => {
     expect(parseCobaltPlatformConfiguration({ approvedPlatforms: "x,instagram", deliveryVerifiedPlatforms: "" }))
-      .toEqual({ approvedPlatforms: ["x", "instagram"], deliveryVerifiedPlatforms: [] });
+      .toEqual({
+        approvedPlatforms: ["x", "instagram"],
+        deliveryVerifiedPlatforms: [],
+        deliveryVerifiedCapabilities: {}
+      });
     expect(() => parseCobaltPlatformConfiguration({ approvedPlatforms: "x", deliveryVerifiedPlatforms: "x,facebook" }))
       .toThrow(/subset/);
     expect(() => parseCobaltPlatformConfiguration({ approvedPlatforms: "x,unknown" }))
       .toThrow(/unsupported platform/);
+    expect(parseCobaltPlatformConfiguration({
+      approvedPlatforms: "x,tiktok",
+      deliveryVerifiedCapabilities: "x:redirect|picker,tiktok:tunnel|local-processing"
+    }).deliveryVerifiedCapabilities).toEqual({
+      x: ["redirect", "picker"],
+      tiktok: ["tunnel", "local-processing"]
+    });
   });
 
-  it("normalizes redirect and picker responses while rejecting audio-only resources", () => {
+  it("normalizes redirect and mixed picker responses", () => {
     const redirect = parseCobaltResponse(JSON.stringify({
       status: "redirect",
       url: "https://video.twimg.com/ext_tw_video/fixture/pu/vid/1280x720/fixture.mp4",
@@ -43,27 +54,47 @@ describe("Cobalt self-hosted secondary Provider", () => {
       status: "picker",
       picker: [
         { type: "photo", url: "https://pbs.twimg.com/media/fixture.jpg" },
-        { type: "audio", url: "https://video.twimg.com/audio/fixture.m4a", quality: "audio" },
         { type: "video", url: "https://video.twimg.com/ext_tw_video/fixture/pu/vid/640x360/fixture.mp4", quality: "360p" },
         { type: "video", url: "https://video.twimg.com/ext_tw_video/fixture/pu/vid/640x360/fixture.mp4", quality: "360p" }
-      ]
+      ],
+      audio: "https://video.twimg.com/audio/fixture.m4a",
+      audioFilename: "fixture.m4a"
     }));
-    expect(picker.formats).toHaveLength(1);
-    expect(picker.formats[0]?.quality).toBe("360p");
+    expect(picker.formats).toHaveLength(3);
+    expect(picker.formats.map(({ mediaKind }) => mediaKind)).toEqual(["image", "video", "audio"]);
   });
 
-  it("does not reinterpret a GIF picker item as an MP4 video", () => {
-    expect(() => parseCobaltResponse(JSON.stringify({
+  it("keeps a GIF picker item typed as a GIF", () => {
+    const parsed = parseCobaltResponse(JSON.stringify({
       status: "picker",
       picker: [{ type: "gif", url: "https://video.twimg.com/ext_tw_video/fixture.gif" }]
-    }))).toThrow(/no portable video/);
+    }));
+    expect(parsed.formats[0]).toMatchObject({ mediaKind: "gif", container: "gif", hasVideo: false });
   });
 
-  it("rejects tunnel and local-processing results instead of proxying them", () => {
-    for (const status of ["tunnel", "local-processing"] as const) {
-      expect(() => parseCobaltResponse(JSON.stringify({ status, url: "https://video.twimg.com/fixture.mp4" })))
-        .toThrow(/non-portable/);
-    }
+  it("normalizes signed tunnel and local-processing results", () => {
+    const exp = String(Date.now() + 120_000);
+    const tunnel = `https://media.tikdd.cc/tunnel?id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+    expect(parseCobaltResponse(JSON.stringify({ status: "tunnel", url: tunnel }))).toMatchObject({
+      responseMode: "tunnel",
+      requiredModes: ["tunnel"]
+    });
+    const processing = parseCobaltResponse(JSON.stringify({
+      status: "local-processing",
+      type: "merge",
+      tunnel: [tunnel, tunnel.replace("a".repeat(21), "e".repeat(21))],
+      output: { type: "video/mp4", filename: "TikDD-X-merged.mp4" }
+    }));
+    expect(processing.formats[0]).toMatchObject({
+      hostPolicyId: "cobalt-selfhosted-processing-media-v1",
+      processing: {
+        operation: "merge",
+        inputs: [
+          { url: tunnel.replace("a".repeat(21), "e".repeat(21)), role: "video" },
+          { url: tunnel, role: "audio" }
+        ]
+      }
+    });
   });
 
   it("calls only the private API and returns a reviewed redirect candidate", async () => {
@@ -87,6 +118,7 @@ describe("Cobalt self-hosted secondary Provider", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe("http://cobalt-api:9000/");
     expect(new Headers(calls[0]?.init?.headers).get("authorization")).toBe("Api-Key fixture-api-key");
+    expect(JSON.parse(String(calls[0]?.init?.body))).toMatchObject({ localProcessing: "disabled" });
     expect(JSON.stringify(resolution.result)).not.toContain("video.twimg.com");
     expect(resolution.candidates[0]).toMatchObject({
       mode: "redirect",

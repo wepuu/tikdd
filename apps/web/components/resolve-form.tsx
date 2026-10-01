@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { SiteCopy } from "../lib/copy";
 import { analyticsFailureClass, analyticsPlatform, trackWebEvent } from "../lib/analytics";
 import { ClientDownloadError, downloadCorsBlob } from "../lib/client-download";
+import { downloadClientProcessedMedia } from "../lib/client-processing";
 import { navigateToDelivery } from "../lib/delivery-navigation";
 import { suggestedDownloadFilename } from "../lib/download-filename";
 import { RESOLVE_POLL_INTERVAL_MS, resolvePollMaxAttempts } from "../lib/resolve-polling";
@@ -462,6 +463,36 @@ export function ResolveForm({ copy, featureLabel, features, process, supported, 
     // Keep development QA scenarios rendered for visual checks; production
     // navigates immediately after the single user action.
     if (qaScenarioRef.current) return;
+
+    if (nextDelivery.browserHandoff === "client-process") {
+      setIsClientDownloading(true);
+      try {
+        await downloadClientProcessedMedia({ url: nextDelivery.url });
+        setFallbackFormatId(null);
+        setHandoffStarted(true);
+        const platform = analyticsPlatform(task?.platform);
+        if (platform) {
+          trackWebEvent("download_handoff", {
+            platform,
+            locale: analyticsLocale,
+            page_type: analyticsPageType
+          });
+        }
+      } catch (error) {
+        const code = error instanceof ClientDownloadError ? error.code : "network";
+        setDeliveryError(code === "too_large"
+          ? copy.clientDownloadTooLarge
+          : code === "timeout"
+            ? copy.clientDownloadTimeout
+            : copy.clientDownloadError);
+        // A processing ticket returns a JSON plan, so navigation is not a
+        // meaningful fallback. The user can request a fresh ticket instead.
+        setFallbackFormatId(null);
+      } finally {
+        setIsClientDownloading(false);
+      }
+      return;
+    }
 
     if (nextDelivery.browserHandoff === "cors-download") {
       setIsClientDownloading(true);

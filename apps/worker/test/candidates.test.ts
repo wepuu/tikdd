@@ -97,9 +97,43 @@ describe("prepareEncryptedCandidates", () => {
         formatId
       })
     ).toEqual({
+      kind: "target",
       targetUrl: "https://media.example.test/video.mp4?token=secret",
       secretHeaders: { Authorization: "Bearer fixture-secret" }
     });
+  });
+
+  it("encrypts a client-processing plan without persisting tunnel descriptors", () => {
+    const candidateCipher = cipher();
+    const processingResolution = resolution(true);
+    processingResolution.candidates = [{
+      kind: "processing",
+      formatId,
+      mode: "proxy",
+      hostPolicyId: "cobalt-selfhosted-processing-media-v1",
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      processing: {
+        operation: "remux",
+        platform: "x",
+        inputs: [{ url: "https://media.tikdd.cc/tunnel?id=secret", role: "media" }],
+        output: { mimeType: "video/mp4", filename: "TikDD-X-output.mp4" },
+        isHls: false
+      }
+    }];
+    const [encrypted] = prepareEncryptedCandidates({
+      taskId,
+      resolution: processingResolution,
+      cipher: candidateCipher,
+      allowResolutionOnly: false,
+      idFactory: () => "dddddddddddddddddddddddddddddddd"
+    });
+    expect(JSON.stringify(encrypted)).not.toContain("media.tikdd.cc");
+    expect(candidateCipher.open(encrypted!.envelope, {
+      purpose: "delivery-candidate",
+      candidateId: encrypted!.id,
+      taskId,
+      formatId
+    })).toMatchObject({ kind: "processing", processing: { operation: "remux" } });
   });
 
   it("allows resolution-only output only when explicitly enabled", () => {

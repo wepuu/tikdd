@@ -302,6 +302,7 @@ if (cobaltActivation.enabled) {
     apiKey: cobaltApiKey,
     approvedPlatforms: cobaltActivation.approvedPlatforms,
     deliveryVerifiedPlatforms: cobaltActivation.deliveryVerifiedPlatforms,
+    deliveryVerifiedCapabilities: cobaltActivation.deliveryVerifiedCapabilities,
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }

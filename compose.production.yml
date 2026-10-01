@@ -256,15 +256,23 @@ services:
       - ALL
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=128m
+    ports:
+      - "127.0.0.1:${TIKDD_COBALT_HOST_PORT:-3900}:9000"
     environment:
-      API_URL: http://cobalt-api:9000/
+      # Cobalt signs tunnel descriptors against this public base. Only the
+      # exact /tunnel route is exposed by the host Nginx configuration.
+      API_URL: ${TIKDD_COBALT_PUBLIC_ORIGIN:-https://media.tikdd.cc/}
       API_KEY_URL: file:///run/secrets/cobalt_api_keys
       API_AUTH_REQUIRED: "1"
       DISABLED_SERVICES: youtube,xhamster
       DURATION_LIMIT: ${COBALT_DURATION_LIMIT:-900}
-      TUNNEL_LIFESPAN: ${COBALT_TUNNEL_LIFESPAN:-120000}
-      RATELIMIT_WINDOW: ${COBALT_RATELIMIT_WINDOW:-60000}
+      TUNNEL_LIFESPAN: ${COBALT_TUNNEL_LIFESPAN:-300}
+      RATELIMIT_WINDOW: ${COBALT_RATELIMIT_WINDOW:-60}
       RATELIMIT_MAX: ${COBALT_RATELIMIT_MAX:-10}
+      TUNNEL_RATELIMIT_WINDOW: ${COBALT_TUNNEL_RATELIMIT_WINDOW:-60}
+      TUNNEL_RATELIMIT_MAX: ${COBALT_TUNNEL_RATELIMIT_MAX:-12}
+      CORS_WILDCARD: "0"
+      CORS_URL: ${TIKDD_WEB_PUBLIC_ORIGIN:-https://www.tikdd.cc}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"const fs=require('fs');const key=Object.keys(JSON.parse(fs.readFileSync('/run/secrets/cobalt_api_keys')))[0];fetch('http://127.0.0.1:9000/',{headers:{authorization:'Api-Key '+key}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\""]
       interval: 20s

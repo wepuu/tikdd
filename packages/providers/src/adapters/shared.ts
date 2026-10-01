@@ -47,6 +47,7 @@ export interface ParsedFormat {
   quality?: string;
   hasVideo: boolean;
   hasAudio: boolean;
+  mediaKind?: "video" | "audio" | "image" | "gif";
 }
 
 export interface ParsedMedia {
@@ -386,7 +387,14 @@ function normalizedContainer(format: ParsedFormat): string {
   }
 }
 
-function mimeTypeFor(container: string, hasVideo: boolean): string {
+function mimeTypeFor(
+  container: string,
+  hasVideo: boolean,
+  mediaKind?: ParsedFormat["mediaKind"]
+): string {
+  if (mediaKind === "image" || mediaKind === "gif") {
+    return container === "jpg" ? "image/jpeg" : `image/${container}`;
+  }
   if (container === "webm") {
     return hasVideo ? "video/webm" : "audio/webm";
   }
@@ -460,7 +468,7 @@ export function createResolveResult(
           .digest("hex")
           .slice(0, 20)}`,
         container,
-        mimeType: mimeTypeFor(container, format.hasVideo),
+        mimeType: mimeTypeFor(container, format.hasVideo, format.mediaKind),
         quality: (format.quality ?? format.label).slice(0, 80),
         width: null,
         height: heightMatch?.[1] ? Number.parseInt(heightMatch[1], 10) : null,
@@ -470,7 +478,8 @@ export function createResolveResult(
         videoCodec: null,
         audioCodec: null,
         hasVideo: format.hasVideo,
-        hasAudio: format.hasAudio
+        hasAudio: format.hasAudio,
+        ...(format.mediaKind ? { mediaKind: format.mediaKind } : {})
       };
     }),
     provenance: {
@@ -510,13 +519,16 @@ export function createRedirectResolution(
       secretHeaders: {}
     }))
   });
-  resolution.candidates.forEach((candidate) =>
+  resolution.candidates.forEach((candidate) => {
+    if (!("targetUrl" in candidate)) {
+      throw new ProviderError("A direct-media adapter produced a processing candidate.", "invalid_result", false, false);
+    }
     assertDeliveryTargetPolicy({
       providerId,
       mode: candidate.mode,
       hostPolicyId: candidate.hostPolicyId,
       targetUrl: candidate.targetUrl
-    })
-  );
+    });
+  });
   return resolution;
 }
