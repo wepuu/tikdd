@@ -342,6 +342,10 @@ Install safely:
 4. reload Nginx only after validation;
 5. regression-test every existing PHP and non-TikDD site.
 
+Render `__TIKDD_NGINX_LOG_DIR__` to the host's existing Nginx log directory. The reviewed NL
+aaPanel host uses `/www/wwwlogs`; a conventional distribution-managed Nginx may use
+`/var/log/nginx`. The directory must already exist and be writable by the running Nginx worker.
+
 Phase C2 installs and configures host-level, systemd-managed cloudflared; it is not part of TikDD
 Compose and its current absence does not reject the approved VPS. Host cloudflared routes approved
 public hostnames to the shared loopback Nginx origin while
