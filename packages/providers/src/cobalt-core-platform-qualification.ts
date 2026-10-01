@@ -8,11 +8,11 @@ import {
 export const COBALT_CORE_PLATFORM_BATCH = ["x", "instagram", "tiktok", "facebook"] as const;
 
 /**
- * Sanitized results from the 2026-10-01 closed-gate runtime window. The runtime was healthy and
- * the production UA/key was accepted, but no platform met the three-exit plus browser-save gate:
- * X and Facebook were readable from NL/v2rayN but timed out from the local direct exit; Instagram
- * returned one successful redirect and one upstream empty-result envelope; TikTok returned only
- * Cobalt tunnel URLs. No route or production gate is eligible from this evidence.
+ * Sanitized results from the 2026-10-01 closed-gate runtime windows. Work Item 130 reconfirmed
+ * two TikTok tunnel results, two X direct results, two Facebook direct results and one of two
+ * Instagram direct results. TikTok tunnel delivery returned attachment MP4 ranges from the local
+ * direct and v2rayN exits, but the NL public-origin exit returned HTTP 403. It therefore remains
+ * fail-closed under the existing three-exit gate. No route or production gate is eligible.
  */
 export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatformQualificationEvidence[] = [
   {
@@ -65,15 +65,15 @@ export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatfor
     samplesAttempted: 2,
     samplesResolved: 2,
     responseModes: ["tunnel"],
-    mediaHostPolicyVerified: false,
-    mediaRangeVerified: false,
+    mediaHostPolicyVerified: true,
+    mediaRangeVerified: true,
     crossExitVerified: false,
-    browserSaveMode: null,
+    browserSaveMode: "attachment",
     browserStateRequired: false,
     requiresProviderPage: false,
     sourceIpBound: false,
     temporaryFailure: false,
-    failures: ["non_portable_result"]
+    failures: ["cross_exit_unverified"]
   },
   {
     providerId: "cobalt-selfhosted",

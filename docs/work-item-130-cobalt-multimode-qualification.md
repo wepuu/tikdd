@@ -39,6 +39,26 @@ preflight, canary, evidence, and cleanup commands therefore do not activate or d
 Existing primary Providers stay ahead of Cobalt. A failed qualification closes normally without
 changing Worker configuration or public traffic.
 
+## Production result
+
+The exact `main@a5b85e7902d6aa68529f351c23b8dbdaefbce0fc` GitHub images were deployed after an
+input-ownership repair. The production Worker retained empty Cobalt capabilities and all three
+Cobalt gates remained false.
+
+The eight-sample isolated run produced the following sanitized result:
+
+- TikTok resolved two of two as `tunnel` with one MP4 candidate each.
+- X resolved two of two as one `picker` and one `redirect`.
+- Facebook resolved two of two as `redirect`.
+- Instagram resolved one of two as `redirect`; the second returned HTTP 400.
+
+Both TikTok tunnel descriptors returned `206 video/mp4`, non-zero bytes, attachment disposition and
+the exact Web-origin CORS response from the local direct exit. Both also returned `206 video/mp4`
+through the local v2rayN exit. The NL public-origin exit returned HTTP 403, so the existing
+three-exit qualification remains incomplete. TikTok stays `proxy-only`; no production key scope,
+Worker gate, capability or rollout rule was changed. The isolated containers, UUID key, input and
+signed descriptors were destroyed after the audit.
+
 The NL deployment renders the Nginx log-directory placeholder to the existing aaPanel
 `/www/wwwlogs` path. This prevents the Cobalt media vhost from assuming a distribution-specific
 `/var/log/nginx` layout while retaining query-free tunnel access logs.
