@@ -140,3 +140,8 @@ closed-gate records until the private runtime service list, two samples, reviewe
 three-exit Range checks and browser saving all pass independently. Existing VidDown and Pinterest
 Video Downloader routes remain primary; Cobalt can only become a sequential fallback after that
 platform's own evidence is qualified.
+
+Work Item 128 prepares a single closed-gate batch for existing X, Instagram, TikTok and Facebook
+routes. The batch starts fail-closed and uses the production Cobalt User-Agent; it does not enable
+the Worker or alter any rollout. Only platforms that pass two samples, the existing Host policy,
+three-exit Range checks and browser saving may become priority-450 sequential fallbacks.
