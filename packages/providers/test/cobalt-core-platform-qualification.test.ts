@@ -6,17 +6,15 @@ import {
 } from "../src";
 
 describe("Work Item 128 Cobalt core-platform qualification", () => {
-  it("keeps the four-platform batch fail-closed before the runtime window", () => {
+  it("records the closed-gate results without making any route eligible", () => {
     expect(COBALT_CORE_PLATFORM_BATCH).toEqual(["x", "instagram", "tiktok", "facebook"]);
     expect(assessCurrentCobaltCorePlatformQualification()).toEqual(
-      COBALT_CORE_PLATFORM_BATCH.map((platform) => ({
-        providerId: "cobalt-selfhosted",
-        platform,
-        status: "deferred",
-        adapterEligible: false,
-        productionRouteEligible: false,
-        failures: ["runtime_not_verified"]
-      }))
+      [
+        { providerId: "cobalt-selfhosted", platform: "x", status: "delivery-blocked", adapterEligible: false, productionRouteEligible: false, failures: ["cross_exit_unverified", "browser_save_unverified"] },
+        { providerId: "cobalt-selfhosted", platform: "instagram", status: "no-media", adapterEligible: false, productionRouteEligible: false, failures: ["provider_error_envelope"] },
+        { providerId: "cobalt-selfhosted", platform: "tiktok", status: "proxy-only", adapterEligible: false, productionRouteEligible: false, failures: ["non_portable_result"] },
+        { providerId: "cobalt-selfhosted", platform: "facebook", status: "delivery-blocked", adapterEligible: false, productionRouteEligible: false, failures: ["cross_exit_unverified", "browser_save_unverified"] }
+      ]
     );
   });
 

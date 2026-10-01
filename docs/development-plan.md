@@ -2129,3 +2129,12 @@ changed during the test. Each platform requires two samples, the existing Host p
 v2rayN Range checks and browser-save validation. Only a platform with `qualified-secondary` evidence
 may become a priority-450 sequential fallback; Vimeo, Pinterest and OK.ru are not retried in this
 batch. See [Work Item 128](work-item-128-cobalt-core-platform-fallbacks.md).
+
+The 2026-10-01 closed-gate run completed with the production UA and key accepted. X and Facebook
+returned two portable-looking MP4 candidates each, but both failed the local direct-exit check
+while NL and v2rayN succeeded, so they are `delivery-blocked` and browser-save validation was not
+run. Instagram produced one redirect and one upstream empty-result envelope (`no-media`). TikTok
+returned only `tunnel` results (`proxy-only`). Cobalt was stopped, its original secret restored,
+and all gates, rollout rules, Worker configuration and existing Provider traffic remained unchanged.
+No Cobalt platform is eligible for a production fallback; a future attempt needs an upstream or
+client-egress change and must not add a TikDD media proxy.
