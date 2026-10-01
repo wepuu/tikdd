@@ -31,3 +31,7 @@ descriptor, Cookie, or request headers.
 
 Existing primary Providers stay ahead of Cobalt. A failed qualification closes normally without
 changing Worker configuration or public traffic.
+
+The NL deployment renders the Nginx log-directory placeholder to the existing aaPanel
+`/www/wwwlogs` path. This prevents the Cobalt media vhost from assuming a distribution-specific
+`/var/log/nginx` layout while retaining query-free tunnel access logs.

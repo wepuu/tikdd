@@ -90,6 +90,8 @@ describe("production release Admin lifecycle", () => {
     expect(mediaBlock).toMatch(/limit_except GET \{ deny all; \}/);
     expect(mediaBlock).toMatch(/127\.0\.0\.1:__TIKDD_COBALT_HOST_PORT__\/tunnel\$is_args\$args/);
     expect(mediaBlock).toMatch(/location \/ \{ return 404; \}/);
+    expect(mediaBlock).toMatch(/__TIKDD_NGINX_LOG_DIR__\/tikdd-media\.access\.log/);
+    expect(nginx).not.toMatch(/access_log \/var\/log\/nginx\/tikdd-/);
     expect(mediaBlock).not.toMatch(/\/v1|\/health|cobalt-api/);
   });
 
