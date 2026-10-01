@@ -101,6 +101,11 @@ export {
   COBALT_VIMEO_PINTEREST_QUALIFICATION_EVIDENCE
 } from "./cobalt-vimeo-pinterest-qualification";
 export {
+  assessCurrentCobaltCorePlatformQualification,
+  COBALT_CORE_PLATFORM_BATCH,
+  COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE
+} from "./cobalt-core-platform-qualification";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,

@@ -2109,14 +2109,23 @@ the Cobalt gates, rollout rules and production traffic remain closed. See
 
 ### Work Item 127 - Cobalt Vimeo/Pinterest qualification
 
-Work Item 127 narrows the first real Cobalt capability batch to Vimeo and Pinterest. VidDown and
-Pinterest Video Downloader remain the primary routes; Cobalt can only be added as a sequential
-priority-450 fallback after each platform independently passes two public samples, reviewed Host
-policy, NL/local/v2rayN Range checks and browser-save validation. The initial code-owned evidence is
-`deferred` because the closed-gate NL runtime probe has not yet been performed for these services.
+Work Item 127 completed the first closed-gate Cobalt capability batch. Vimeo returned upstream
+`error.api.fetch.fail` for both samples and is recorded as `no-media`. Pinterest returned one
+redirect candidate and one upstream `error.api.fetch.critical`; its successful candidate passed NL
+and v2rayN Range checks but failed the local direct-exit check, so it is recorded as
+`delivery-blocked`. The initial probe used a UA outside the production key allowlist and was
+discarded; the final evidence used `TikDD/cobalt-secondary`.
 
-The Cobalt key allowlist must be temporarily restricted to the batch during the closed-gate probe.
-Only a platform with `qualified-secondary` evidence may enter its own
-`COBALT_DELIVERY_VERIFIED_PLATFORMS` value and rollout rule. YouTube, xHamster, OK.ru, new public
-platforms, SEO pages and sitemap entries remain unchanged. See
+Cobalt was stopped, the original secret was restored, and Worker, gates and rollout remained
+unchanged. No Vimeo/Pinterest Cobalt route is eligible. See
 [Work Item 127](work-item-127-cobalt-vimeo-pinterest-qualification.md).
+
+### Work Item 128 - Cobalt core-platform fallback batch
+
+Work Item 128 prepares one bounded qualification window for existing X, Instagram, TikTok and
+Facebook routes. The new evidence model starts fail-closed. The private key is temporarily
+restricted to the four service IDs, the production UA is used, and no Worker, gate or rollout is
+changed during the test. Each platform requires two samples, the existing Host policy, NL/local/
+v2rayN Range checks and browser-save validation. Only a platform with `qualified-secondary` evidence
+may become a priority-450 sequential fallback; Vimeo, Pinterest and OK.ru are not retried in this
+batch. See [Work Item 128](work-item-128-cobalt-core-platform-fallbacks.md).
