@@ -6,24 +6,24 @@ import {
 } from "../src";
 
 describe("Work Item 127 Cobalt Vimeo/Pinterest qualification", () => {
-  it("keeps the initial closed-gate batch deferred for both platforms", () => {
+  it("records the closed-gate NL evidence without making either platform eligible", () => {
     expect(COBALT_VIMEO_PINTEREST_BATCH).toEqual(["vimeo", "pinterest"]);
     expect(assessCurrentCobaltVimeoPinterestQualification()).toEqual([
       {
         providerId: "cobalt-selfhosted",
         platform: "vimeo",
-        status: "deferred",
+        status: "no-media",
         adapterEligible: false,
         productionRouteEligible: false,
-        failures: ["runtime_not_verified"]
+        failures: ["provider_error_envelope"]
       },
       {
         providerId: "cobalt-selfhosted",
         platform: "pinterest",
-        status: "deferred",
+        status: "delivery-blocked",
         adapterEligible: false,
         productionRouteEligible: false,
-        failures: ["runtime_not_verified"]
+        failures: ["provider_error_envelope", "cross_exit_unverified", "browser_save_unverified"]
       }
     ]);
   });
