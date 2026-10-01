@@ -364,10 +364,21 @@ with Cobalt `API_URL`, and never log or copy the signed tunnel query.
 
 Closed-gate multi-mode qualification uses `cobalt-multimode-qualification`. Before running it,
 write a JSON object with a `samples` array to
-`/run/tikdd/cobalt-qualification-input.json`, set mode `600`, and keep all three Cobalt Provider
-gates false. The operation validates the private runtime, performs at most eight sequential calls,
+`/run/tikdd/cobalt-qualification-input.json`, set ownership to the pinned service identity
+`1000:1000` and mode `600`, and keep all three Cobalt Provider gates false. The operation validates
+the private runtime, performs at most eight sequential calls,
 prints only sanitized evidence, and deletes the temporary input on success or failure. It does not
 recreate the Worker or grant a rollout rule.
+
+```sh
+install -o 1000 -g 1000 -m 600 /tmp/cobalt-qualification-input.json \
+  /run/tikdd/cobalt-qualification-input.json
+```
+
+Ownership matters because the production service image runs as non-root UID `1000`. A root-owned
+mode-`600` bind mount is rejected before Compose starts because the one-shot container cannot read
+it.
+
 The qualification service is isolated under the `cobalt-ops` profile; do not add it to the general
 `ops` profile used by migrations and scheduled jobs.
 

@@ -64,6 +64,8 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/cobalt-multimode-qualification\)/);
     expect(releaseScript).toMatch(/requires ENABLE_COBALT_PROVIDER=false/);
     expect(releaseScript).toMatch(/input must have mode 600/);
+    expect(releaseScript).toMatch(/input must be owned by service UID 1000/);
+    expect(releaseScript).toMatch(/stat -c '%u' "\$qualification_input"/);
     expect(releaseScript).toMatch(/compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification/);
     expect(releaseScript).toMatch(/trap 'rm -f "\$qualification_input"'/);
     const qualificationBlock = productionCompose.split("  cobalt-qualification:", 2)[1]?.split("  canary:", 2)[0] ?? "";
