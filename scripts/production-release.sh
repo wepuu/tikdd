@@ -306,6 +306,40 @@ verify_cobalt_qualification_input() {
   }
 }
 
+verify_cobalt_tunnel_audit_input() {
+  [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "false" ] || {
+    echo "cobalt-tunnel-audit requires ENABLE_COBALT_PROVIDER=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_LICENSE_ACKNOWLEDGED "false")" = "false" ] || {
+    echo "cobalt-tunnel-audit requires COBALT_LICENSE_ACKNOWLEDGED=false." >&2
+    return 78
+  }
+  [ "$(release_value COBALT_DELIVERY_AUDIT_APPROVED "false")" = "false" ] || {
+    echo "cobalt-tunnel-audit requires COBALT_DELIVERY_AUDIT_APPROVED=false." >&2
+    return 78
+  }
+  tunnel_audit_input="$(release_value TIKDD_COBALT_TUNNEL_AUDIT_INPUT "/run/tikdd/cobalt-tunnel-audit-input.json")"
+  [ "$tunnel_audit_input" = "/run/tikdd/cobalt-tunnel-audit-input.json" ] || {
+    echo "Cobalt tunnel audit input must use the reviewed runtime path." >&2
+    return 78
+  }
+  [ -f "$tunnel_audit_input" ] && [ -r "$tunnel_audit_input" ] || {
+    echo "Cobalt tunnel audit input is missing or unreadable." >&2
+    return 78
+  }
+  audit_input_mode="$(stat -c '%a' "$tunnel_audit_input" 2>/dev/null || true)"
+  [ "$audit_input_mode" = "600" ] || {
+    echo "Cobalt tunnel audit input must have mode 600." >&2
+    return 78
+  }
+  audit_input_uid="$(stat -c '%u' "$tunnel_audit_input" 2>/dev/null || true)"
+  [ "$audit_input_uid" = "1000" ] || {
+    echo "Cobalt tunnel audit input must be owned by service UID 1000." >&2
+    return 78
+  }
+}
+
 validate_public_web_origin() {
   public_origin="$(release_value TIKDD_WEB_PUBLIC_ORIGIN "")"
   case "$public_origin" in
@@ -524,6 +558,18 @@ case "$action" in
     rm -f "$qualification_input"
     trap - EXIT HUP INT TERM
     ;;
+  cobalt-tunnel-audit)
+    acquire_lock
+    validate
+    verify_cobalt_tunnel_audit_input
+    tunnel_audit_input="$(release_value TIKDD_COBALT_TUNNEL_AUDIT_INPUT "/run/tikdd/cobalt-tunnel-audit-input.json")"
+    trap 'rm -f "$tunnel_audit_input"' EXIT HUP INT TERM
+    compose --profile cobalt pull cobalt-api
+    compose --profile cobalt up -d --wait cobalt-api
+    compose --profile cobalt --profile cobalt-ops run --rm cobalt-tunnel-audit
+    rm -f "$tunnel_audit_input"
+    trap - EXIT HUP INT TERM
+    ;;
   rollback)
     acquire_lock
     : "${TIKDD_ROLLBACK_ENV:?Set TIKDD_ROLLBACK_ENV to the previous approved release environment file.}"
@@ -581,7 +627,7 @@ case "$action" in
     compose --profile admin-ops run --rm admin-account "$@"
     ;;
   *)
-    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|cobalt-multimode-qualification|rollback|admin-start|admin-stop|admin-account}" >&2
+    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|cobalt-multimode-qualification|cobalt-tunnel-audit|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac

@@ -154,3 +154,12 @@ remuxed/encoded by the browser. Delivery validates and reveals a one-time plan b
 media bytes. Production eligibility is explicit per platform and result mode through
 `COBALT_DELIVERY_VERIFIED_CAPABILITIES`; the legacy verified-platform list means only
 `redirect|picker`. See ADR-0059 and Work Item 129.
+
+Work Item 131 makes qualification topology-aware. Direct source-CDN results still require resolver,
+direct-client and proxied-client portability. Signed Tunnel results require the two independent
+client exits and the exact `media.tikdd.cc/tunnel` boundary; the NL host's request through its own
+Cloudflare hostname is diagnostic rather than source-CDN portability evidence. Neither topology is
+production eligible without the standard one-time Delivery handoff and a real browser save.
+Browser local-processing remains unapproved. Current TikTok Tunnel evidence is therefore
+`resolved-conditional`, with every Cobalt production gate and capability still closed. See
+ADR-0060 and Work Item 131.

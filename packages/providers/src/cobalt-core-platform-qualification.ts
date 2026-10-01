@@ -11,8 +11,10 @@ export const COBALT_CORE_PLATFORM_BATCH = ["x", "instagram", "tiktok", "facebook
  * Sanitized results from the 2026-10-01 closed-gate runtime windows. Work Item 130 reconfirmed
  * two TikTok tunnel results, two X direct results, two Facebook direct results and one of two
  * Instagram direct results. TikTok tunnel delivery returned attachment MP4 ranges from the local
- * direct and v2rayN exits, but the NL public-origin exit returned HTTP 403. It therefore remains
- * fail-closed under the existing three-exit gate. No route or production gate is eligible.
+ * direct and v2rayN exits, while the NL public-origin hairpin returned HTTP 403. Work Item 131
+ * records those facts separately: user-exit portability and the reviewed tunnel boundary pass,
+ * but the one-time TikDD handoff and real browser save are still pending. No production gate is
+ * eligible from this evidence alone.
  */
 export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatformQualificationEvidence[] = [
   {
@@ -25,10 +27,18 @@ export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatfor
     samplesAttempted: 2,
     samplesResolved: 2,
     responseModes: ["redirect", "picker"],
+    deliveryTopology: "direct-source",
     mediaHostPolicyVerified: true,
     mediaRangeVerified: true,
-    crossExitVerified: false,
+    resolverExitVerified: true,
+    clientDirectExitVerified: false,
+    clientProxyExitVerified: true,
+    originHairpinStatus: "not-applicable",
+    tunnelBoundaryVerified: false,
+    localProcessingVerified: false,
+    deliveryHandoffVerified: false,
     browserSaveMode: null,
+    browserSaveVerified: false,
     browserStateRequired: false,
     requiresProviderPage: false,
     sourceIpBound: false,
@@ -45,10 +55,18 @@ export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatfor
     samplesAttempted: 2,
     samplesResolved: 1,
     responseModes: ["redirect", "error"],
+    deliveryTopology: "direct-source",
     mediaHostPolicyVerified: true,
     mediaRangeVerified: false,
-    crossExitVerified: false,
+    resolverExitVerified: false,
+    clientDirectExitVerified: false,
+    clientProxyExitVerified: false,
+    originHairpinStatus: "not-applicable",
+    tunnelBoundaryVerified: false,
+    localProcessingVerified: false,
+    deliveryHandoffVerified: false,
     browserSaveMode: null,
+    browserSaveVerified: false,
     browserStateRequired: false,
     requiresProviderPage: false,
     sourceIpBound: false,
@@ -65,15 +83,23 @@ export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatfor
     samplesAttempted: 2,
     samplesResolved: 2,
     responseModes: ["tunnel"],
+    deliveryTopology: "provider-tunnel",
     mediaHostPolicyVerified: true,
     mediaRangeVerified: true,
-    crossExitVerified: false,
+    resolverExitVerified: false,
+    clientDirectExitVerified: true,
+    clientProxyExitVerified: true,
+    originHairpinStatus: "blocked-unclassified",
+    tunnelBoundaryVerified: true,
+    localProcessingVerified: false,
+    deliveryHandoffVerified: false,
     browserSaveMode: "attachment",
+    browserSaveVerified: false,
     browserStateRequired: false,
     requiresProviderPage: false,
     sourceIpBound: false,
     temporaryFailure: false,
-    failures: ["cross_exit_unverified"]
+    failures: ["delivery_handoff_unverified", "browser_save_unverified"]
   },
   {
     providerId: "cobalt-selfhosted",
@@ -85,10 +111,18 @@ export const COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlatfor
     samplesAttempted: 2,
     samplesResolved: 2,
     responseModes: ["redirect"],
+    deliveryTopology: "direct-source",
     mediaHostPolicyVerified: true,
     mediaRangeVerified: true,
-    crossExitVerified: false,
+    resolverExitVerified: true,
+    clientDirectExitVerified: false,
+    clientProxyExitVerified: true,
+    originHairpinStatus: "not-applicable",
+    tunnelBoundaryVerified: false,
+    localProcessingVerified: false,
+    deliveryHandoffVerified: false,
     browserSaveMode: null,
+    browserSaveVerified: false,
     browserStateRequired: false,
     requiresProviderPage: false,
     sourceIpBound: false,
