@@ -2186,3 +2186,18 @@ handoff and a real browser save still require separate evidence. No production C
 capability, key scope or rollout changes in this work item. See
 [Work Item 131](work-item-131-cobalt-tunnel-qualification.md) and
 [ADR-0060](architecture/adr/0060-cobalt-topology-aware-qualification.md).
+
+### Work Item 132 - Cobalt TikTok secondary activation
+
+Work Item 132 deployed `main@5fdcc546` with every Cobalt gate closed and reran the two approved
+TikTok samples through an isolated TikTok-only key. Both samples again resolved as one normalized
+Tunnel video. The v2rayN client exit passed the complete bounded media audit, but the direct client
+exit received a Cloudflare blocked page before the request reached the query-free Nginx media log.
+An unsigned path comparison reproduced the same edge split, so this is not a Cobalt parser,
+signature or origin-route failure.
+
+The required second independent client exit, one-time Delivery handoff and browser save are not
+complete. The original OK-only key was restored, Cobalt was stopped, temporary credentials and
+descriptors were removed, and no gate, capability or rollout changed. A narrowly scoped
+`media.tikdd.cc` Cloudflare/browser compatibility work item is required before activation can be
+retried. See [Work Item 132](work-item-132-cobalt-tiktok-secondary-activation.md).
