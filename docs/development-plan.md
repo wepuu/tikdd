@@ -2201,3 +2201,18 @@ complete. The original OK-only key was restored, Cobalt was stopped, temporary c
 descriptors were removed, and no gate, capability or rollout changed. A narrowly scoped
 `media.tikdd.cc` Cloudflare/browser compatibility work item is required before activation can be
 retried. See [Work Item 132](work-item-132-cobalt-tiktok-secondary-activation.md).
+
+### Work Item 133 - Cobalt media-edge repair and TikTok secondary activation
+
+Work Item 133 narrowed the existing Cloudflare China deny only for `media.tikdd.cc/tunnel` GET/HEAD.
+Direct and proxied user exits then passed both TikTok Tunnel samples with bounded HTTP 206 video
+ranges, attachment semantics, exact Web-origin CORS and private caching; unrelated paths and POST
+remain blocked. The private API is still unreachable from the Internet.
+
+After an official encrypted PostgreSQL backup, Cobalt and Worker were enabled with only
+`tiktok:tunnel`, a key limited to `ok,tiktok`, and the unique
+`cobalt-selfhosted / tiktok / nl` revision-1 rule at full allocation. All core services and Cobalt
+were healthy with zero restarts. Existing TikTok Providers remain higher priority, so Cobalt is a
+last-resort sequential fallback. Final browser behavior is left to the owner-operated production
+check; failure rolls back the rule before the gates. See
+[Work Item 133](work-item-133-cobalt-media-edge-activation.md).

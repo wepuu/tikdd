@@ -170,3 +170,11 @@ the request reached the media origin. Cobalt therefore remains `resolved-conditi
 temporary key was destroyed, the original OK-only key restored, the container stopped, and no
 Worker gate, `tiktok:tunnel` capability or rollout rule was enabled. Edge/browser compatibility
 must be repaired and the complete handoff repeated before Cobalt can join the TikTok route.
+
+Work Item 133 repaired that edge boundary with an exact `media.tikdd.cc/tunnel` GET/HEAD exception;
+other paths and methods remain denied. Both independent user exits passed the two-sample bounded
+Tunnel audit. Production now enables only `tiktok:tunnel` and the unique TikTok/NL rollout rule,
+while the manifest's priority 450 keeps Cobalt behind established TikTok Providers. The Cobalt key
+scope is limited to `ok,tiktok`; no other platform or mode is implicitly delivery-verified. Final
+browser confirmation is owner-operated, and rollback remains rule-first, then capability and gate
+closure.
