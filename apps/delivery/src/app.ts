@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import cors from "@fastify/cors";
 import {
   CreateDeliveryRequestSchema,
+  DeliveryClientProcessingResponseSchema,
   DeliverySchema,
   type Delivery
 } from "@tikdd/contracts";
@@ -115,7 +116,7 @@ export async function createDeliveryApp(
       tokenHash: hashDeliveryToken(token),
       maximumTtlMs: ticketTtlMs
     });
-    if (!issued || issued.mode !== "redirect") {
+    if (!issued || !["redirect", "proxy"].includes(issued.mode)) {
       return reply.code(409).send({
         error: {
           code: "DELIVERY_CANDIDATE_NOT_AVAILABLE",
@@ -155,28 +156,37 @@ export async function createDeliveryApp(
       });
     }
     const redeemed = await options.repository.redeemDeliveryTicket(hashDeliveryToken(token.data));
-    if (!redeemed || redeemed.candidate.mode !== "redirect") {
+    if (!redeemed || !["redirect", "proxy"].includes(redeemed.candidate.mode)) {
       return reply.code(410).send({
         error: { code: "DELIVERY_EXPIRED", message: "This delivery link is no longer valid." }
       });
     }
 
-    let target: URL;
+    const policy = getDeliveryHostPolicy(redeemed.candidate.hostPolicyId);
+    if (
+      !policy ||
+      policy.providerId !== redeemed.candidate.providerId ||
+      !policy.modes.includes(redeemed.candidate.mode)
+    ) {
+      await options.repository.recordDeliveryRedemptionOutcome({
+        context: redeemed.evidence, result: "mode_rejected",
+        durationMs: Date.now()-startedAt, browserHandoff: false
+      });
+      return reply.code(502).send({
+        error: {
+          code: "DELIVERY_TARGET_REJECTED",
+          message: "The delivery target failed its security validation."
+        }
+      });
+    }
+
+    let secret: ReturnType<AesGcmCandidateCipher["open"]>;
     try {
-      const secret = options.cipher.open(redeemed.candidate.envelope, {
+      secret = options.cipher.open(redeemed.candidate.envelope, {
         purpose: "delivery-candidate",
         candidateId: redeemed.candidate.id,
         taskId: redeemed.taskId,
         formatId: redeemed.candidate.formatId
-      });
-      if (Object.keys(secret.secretHeaders).length > 0) {
-        throw new Error("Redirect delivery cannot use server-held headers.");
-      }
-      target = assertDeliveryTargetPolicy({
-        providerId: redeemed.candidate.providerId,
-        mode: redeemed.candidate.mode,
-        hostPolicyId: redeemed.candidate.hostPolicyId,
-        targetUrl: secret.targetUrl
       });
     } catch {
       await options.repository.recordDeliveryRedemptionOutcome({
@@ -190,7 +200,55 @@ export async function createDeliveryApp(
         }
       });
     }
+    if (secret.kind === "processing") {
+      if (policy.browserHandoff !== "client-process") {
+        return reply.code(502).send({
+          error: { code: "DELIVERY_TARGET_REJECTED", message: "The delivery processing plan was rejected." }
+        });
+      }
+      try {
+        const hosts = new Set<string>();
+        for (const input of secret.processing.inputs) {
+          const target = assertDeliveryTargetPolicy({
+            providerId: redeemed.candidate.providerId,
+            mode: redeemed.candidate.mode,
+            hostPolicyId: redeemed.candidate.hostPolicyId,
+            targetUrl: input.url
+          });
+          hosts.add(target.hostname);
+        }
+        await Promise.all([...hosts].map((host) => assertPublicDeliveryDns(host, options.dnsLookup)));
+      } catch {
+        await options.repository.recordDeliveryRedemptionOutcome({
+          context: redeemed.evidence, result: "host_rejected",
+          durationMs: Date.now()-startedAt, browserHandoff: false
+        });
+        return reply.code(502).send({
+          error: { code: "DELIVERY_TARGET_REJECTED", message: "The delivery processing plan was rejected." }
+        });
+      }
+      await options.repository.recordDeliveryRedemptionOutcome({
+        context: redeemed.evidence, result: "passed",
+        durationMs: Date.now()-startedAt, browserHandoff: true
+      });
+      return reply.send(DeliveryClientProcessingResponseSchema.parse({
+        id: redeemed.evidence.ticketId,
+        expiresAt: redeemed.candidate.expiresAt,
+        processing: secret.processing
+      }));
+    }
+
+    let target: URL;
     try {
+      if (Object.keys(secret.secretHeaders).length > 0) {
+        throw new Error("Browser delivery cannot use server-held headers.");
+      }
+      target = assertDeliveryTargetPolicy({
+        providerId: redeemed.candidate.providerId,
+        mode: redeemed.candidate.mode,
+        hostPolicyId: redeemed.candidate.hostPolicyId,
+        targetUrl: secret.targetUrl
+      });
       await assertPublicDeliveryDns(target.hostname, options.dnsLookup);
     } catch {
       await options.repository.recordDeliveryRedemptionOutcome({

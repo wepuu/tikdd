@@ -145,3 +145,12 @@ Work Item 128 prepares a single closed-gate batch for existing X, Instagram, Tik
 routes. The batch starts fail-closed and uses the production Cobalt User-Agent; it does not enable
 the Worker or alter any rollout. Only platforms that pass two samples, the existing Host policy,
 three-exit Range checks and browser saving may become priority-450 sequential fallbacks.
+
+Work Item 129 supersedes the earlier blanket rejection of Cobalt `tunnel` and `local-processing`.
+The private API remains inaccessible from the Internet; only strict signed descriptors at
+`media.tikdd.cc/tunnel` are accepted. Direct results use reviewed source-CDN policies, tunnel
+results remain provider-hosted browser traffic, and local-processing inputs are downloaded and
+remuxed/encoded by the browser. Delivery validates and reveals a one-time plan but never carries
+media bytes. Production eligibility is explicit per platform and result mode through
+`COBALT_DELIVERY_VERIFIED_CAPABILITIES`; the legacy verified-platform list means only
+`redirect|picker`. See ADR-0059 and Work Item 129.

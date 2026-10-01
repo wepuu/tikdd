@@ -472,6 +472,34 @@ describe("reviewed delivery network policy", () => {
     }
   });
 
+  it("accepts only short-lived, exact Cobalt tunnel descriptors", () => {
+    const exp = String(Date.now() + 120_000);
+    const query = `id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+    expect(assertDeliveryTargetPolicy({
+      providerId: "cobalt-selfhosted",
+      mode: "proxy",
+      hostPolicyId: "cobalt-selfhosted-tunnel-media-v1",
+      targetUrl: `https://media.tikdd.cc/tunnel?${query}`
+    }).hostname).toBe("media.tikdd.cc");
+    expect(getDeliveryHostPolicy("cobalt-selfhosted-processing-media-v1")?.browserHandoff)
+      .toBe("client-process");
+
+    for (const targetUrl of [
+      `https://media.tikdd.cc/?${query}`,
+      `https://evil.media.tikdd.cc/tunnel?${query}`,
+      `http://media.tikdd.cc/tunnel?${query}`,
+      `https://media.tikdd.cc/tunnel?${query}&extra=1`,
+      `https://media.tikdd.cc/tunnel?${query.replace(/exp=\d+/, `exp=${Date.now() + 600_000}`)}`
+    ]) {
+      expect(() => assertDeliveryTargetPolicy({
+        providerId: "cobalt-selfhosted",
+        mode: "proxy",
+        hostPolicyId: "cobalt-selfhosted-tunnel-media-v1",
+        targetUrl
+      })).toThrow();
+    }
+  });
+
   it("allows only the exact reviewed TwitterSaver media host", () => {
     expect(
       assertDeliveryTargetPolicy({

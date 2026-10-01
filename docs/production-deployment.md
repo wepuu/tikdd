@@ -326,8 +326,9 @@ any command or interpret an unscheduled job as stale.
 ## 8. Host Nginx and Cloudflare Tunnel
 
 Render `deploy/nginx/tikdd.conf.template` into a new TikDD-specific site file by replacing the
-canonical Web, apex, temporary Gate C, API and Delivery hostnames plus the configurable Nginx origin
-port and three public application host ports. The template listens only on
+canonical Web, apex, temporary Gate C, API, Delivery and Cobalt media hostnames plus the configurable
+Nginx origin port and public application host ports. The Cobalt media origin also requires the
+loopback-only `TIKDD_COBALT_HOST_PORT`. The template listens only on
 `127.0.0.1:<origin-port>`, redirects the apex to the canonical Web host, makes the temporary Gate C
 host non-indexable, removes query strings from TikDD access-log request lines, and exposes only the
 public API/Delivery routes. Admin, health, diagnostics and internal services are absent, and unknown
@@ -350,6 +351,12 @@ available. On the reviewed shared NL host, the Tunnel cutover is TikDD-only: unr
 continue to require public 80/443, so host-wide firewall closure is explicitly outside this phase.
 The public TikDD vhost must not proxy the new application after cutover; the new application is
 reachable only through the loopback Tunnel origin. TikDD scripts make no firewall change.
+
+When the Cobalt profile is approved, add `media.tikdd.cc` to the same Cloudflare Tunnel origin with
+the original Host header intact. Nginx exposes only exact `/tunnel` GET/HEAD requests and proxies
+them to Cobalt's loopback publication; the Cobalt API root, authentication surface, health route and
+all other paths remain private. Keep `TIKDD_COBALT_PUBLIC_ORIGIN=https://media.tikdd.cc/` aligned
+with Cobalt `API_URL`, and never log or copy the signed tunnel query.
 
 The completed NL Gate C uses Tunnel `tikdd-nl` and publishes only `gate-c.tikdd.cc`,
 `api.tikdd.cc`, `dl.tikdd.cc`, `www.tikdd.cc` and the apex `tikdd.cc` to

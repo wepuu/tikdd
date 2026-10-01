@@ -332,10 +332,6 @@ components:
         expiresAt:
           type: string
           format: date-time
-        browserHandoff:
-          type: string
-          enum: [navigate, cors-download]
-          description: Browser handoff strategy; omitted by older Delivery services.
     ResolveResult:
       type: object
       additionalProperties: false
@@ -416,6 +412,9 @@ components:
           type: string
         mimeType:
           type: string
+        mediaKind:
+          type: string
+          enum: [video, audio, image, gif]
         quality:
           type: string
         width:
@@ -485,6 +484,82 @@ components:
         expiresAt:
           type: string
           format: date-time
+        browserHandoff:
+          type: string
+          enum: [navigate, cors-download, client-process]
+          description: Browser handoff strategy; omitted by older Delivery services.
+    DeliveryClientProcessingPlan:
+      type: object
+      additionalProperties: false
+      required: [operation, platform, inputs, output, isHls]
+      properties:
+        operation:
+          type: string
+          enum: [merge, mute, audio, gif, remux]
+        platform:
+          $ref: "#/components/schemas/Platform"
+        inputs:
+          type: array
+          minItems: 1
+          maxItems: 8
+          items:
+            type: object
+            additionalProperties: false
+            required: [url, role]
+            properties:
+              url:
+                type: string
+                format: uri
+                maxLength: 8192
+              role:
+                type: string
+                enum: [media, video, audio, subtitle, cover]
+        output:
+          type: object
+          additionalProperties: false
+          required: [mimeType, filename]
+          properties:
+            mimeType:
+              type: string
+            filename:
+              type: string
+              maxLength: 120
+            metadata:
+              type: object
+              additionalProperties:
+                type: string
+                maxLength: 500
+            subtitles:
+              type: boolean
+        audio:
+          type: object
+          additionalProperties: false
+          required: [copy, format, bitrateKbps, cover, cropCover]
+          properties:
+            copy: { type: boolean }
+            format:
+              type: string
+              enum: [best, mp3, ogg, wav, opus, m4a]
+            bitrateKbps:
+              type: integer
+              minimum: 8
+              maximum: 320
+            cover: { type: boolean }
+            cropCover: { type: boolean }
+        isHls:
+          type: boolean
+    DeliveryClientProcessingResponse:
+      type: object
+      additionalProperties: false
+      required: [id, expiresAt, processing]
+      properties:
+        id:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        processing:
+          $ref: "#/components/schemas/DeliveryClientProcessingPlan"
     TaskError:
       type: object
       additionalProperties: false

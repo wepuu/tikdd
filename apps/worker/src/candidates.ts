@@ -67,7 +67,13 @@ export function prepareEncryptedCandidates({
       formatId: candidate.formatId
     };
     const envelope = cipher.seal(
-      { targetUrl: candidate.targetUrl, secretHeaders: candidate.secretHeaders },
+      candidate.kind === "processing"
+        ? { kind: "processing", processing: candidate.processing }
+        : {
+            kind: "target",
+            targetUrl: candidate.targetUrl,
+            secretHeaders: candidate.secretHeaders
+          },
       context
     );
     return EncryptedDeliveryCandidateSchema.parse({

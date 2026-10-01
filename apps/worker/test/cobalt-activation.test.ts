@@ -8,6 +8,7 @@ describe("Cobalt activation", () => {
       licenseAcknowledged: false,
       deliveryAuditApproved: false,
       deliveryVerifiedPlatforms: [],
+      deliveryVerifiedCapabilities: {},
       maxConcurrency: 1
     });
   });
@@ -40,5 +41,16 @@ describe("Cobalt activation", () => {
       COBALT_DELIVERY_VERIFIED_PLATFORMS: "x"
     });
     expect(configuration.deliveryVerifiedPlatforms).toEqual(["x"]);
+  });
+
+  it("parses per-platform delivery capabilities", () => {
+    const configuration = loadCobaltActivationConfiguration({
+      COBALT_APPROVED_PLATFORMS: "x,tiktok",
+      COBALT_DELIVERY_VERIFIED_CAPABILITIES: "x:redirect|picker,tiktok:tunnel|local-processing"
+    });
+    expect(configuration.deliveryVerifiedCapabilities).toEqual({
+      x: ["redirect", "picker"],
+      tiktok: ["tunnel", "local-processing"]
+    });
   });
 });

@@ -514,11 +514,11 @@ describe("SSSTwitterProvider", () => {
       resolution.result.formats.map(({ id }) => id)
     );
     expect(
-      resolution.candidates.every(
-        ({ hostPolicyId, mode, secretHeaders }) =>
-          hostPolicyId === "ssstwitter-media-v1" &&
-          mode === "redirect" &&
-          Object.keys(secretHeaders).length === 0
+      resolution.candidates.every((candidate) =>
+        "secretHeaders" in candidate &&
+        candidate.hostPolicyId === "ssstwitter-media-v1" &&
+        candidate.mode === "redirect" &&
+        Object.keys(candidate.secretHeaders).length === 0
       )
     ).toBe(true);
     expect(JSON.stringify(resolution.result)).not.toContain("ssscdn.io");

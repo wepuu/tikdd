@@ -197,7 +197,10 @@ export const MediaFormatSchema = z.object({
   videoCodec: z.string().max(80).nullable(),
   audioCodec: z.string().max(80).nullable(),
   hasVideo: z.boolean(),
-  hasAudio: z.boolean()
+  hasAudio: z.boolean(),
+  // Optional for rolling deployments. Picker-based providers can expose
+  // images and GIFs without pretending that they are video or audio files.
+  mediaKind: z.enum(["video", "audio", "image", "gif"]).optional()
 });
 export type MediaFormat = z.infer<typeof MediaFormatSchema>;
 
@@ -275,9 +278,62 @@ export const DeliverySchema = z.object({
   expiresAt: z.string().datetime(),
   // Optional for rolling deployments: older Delivery services omit it and
   // clients must retain the navigate behavior.
-  browserHandoff: z.enum(["navigate", "cors-download"]).optional()
+  browserHandoff: z.enum(["navigate", "cors-download", "client-process"]).optional()
 });
 export type Delivery = z.infer<typeof DeliverySchema>;
+
+export const ClientProcessingOperationSchema = z.enum([
+  "merge",
+  "mute",
+  "audio",
+  "gif",
+  "remux"
+]);
+export type ClientProcessingOperation = z.infer<typeof ClientProcessingOperationSchema>;
+
+export const ClientProcessingInputRoleSchema = z.enum([
+  "media",
+  "video",
+  "audio",
+  "subtitle",
+  "cover"
+]);
+
+export const DeliveryClientProcessingPlanSchema = z.strictObject({
+  operation: ClientProcessingOperationSchema,
+  platform: PlatformSchema,
+  inputs: z.array(z.strictObject({
+    url: z.string().url().max(8_192),
+    role: ClientProcessingInputRoleSchema
+  })).min(1).max(8),
+  output: z.strictObject({
+    mimeType: z.string().min(1).max(100),
+    filename: z.string().min(1).max(120),
+    metadata: z.partialRecord(
+      z.enum(["album", "composer", "genre", "copyright", "title", "artist", "album_artist", "track", "date", "sublanguage"]),
+      z.string().max(500)
+    ).optional(),
+    subtitles: z.boolean().optional()
+  }),
+  audio: z.strictObject({
+    copy: z.boolean(),
+    format: z.enum(["best", "mp3", "ogg", "wav", "opus", "m4a"]),
+    bitrateKbps: z.number().int().min(8).max(320),
+    cover: z.boolean(),
+    cropCover: z.boolean()
+  }).optional(),
+  isHls: z.boolean().default(false)
+});
+export type DeliveryClientProcessingPlan = z.infer<typeof DeliveryClientProcessingPlanSchema>;
+
+export const DeliveryClientProcessingResponseSchema = z.strictObject({
+  id: z.string().min(1),
+  expiresAt: z.string().datetime(),
+  processing: DeliveryClientProcessingPlanSchema
+});
+export type DeliveryClientProcessingResponse = z.infer<
+  typeof DeliveryClientProcessingResponseSchema
+>;
 
 export const ResolveJobDataSchema = z.object({
   taskId: z.string().regex(/^tsk_[a-f0-9]{32}$/),

@@ -62,8 +62,11 @@ export {
   CobaltProvider,
   parseCobaltResponse,
   parseCobaltPlatformConfiguration,
+  COBALT_SUCCESS_MODES,
   type CobaltProviderOptions,
   type CobaltPlatformConfiguration,
+  type CobaltSuccessMode,
+  type ParsedCobaltResponse,
   type CobaltDiagnosticEvent,
   type CobaltDiagnosticPhase
 } from "./adapters/cobalt";

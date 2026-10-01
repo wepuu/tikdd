@@ -127,9 +127,13 @@ async function main(): Promise<void> {
           : null;
       const resolution = routed?.resolution ?? (await selectedProvider.resolve(input));
       const result = resolution.result;
+      const targetCandidates = resolution.candidates.filter(
+        (candidate): candidate is Extract<(typeof resolution.candidates)[number], { targetUrl: string }> =>
+          "targetUrl" in candidate
+      );
       const candidateHosts = process.env.CANARY_REPORT_HOSTS === "true"
         ? [...new Set([
-            ...resolution.candidates.map((candidate) => new URL(candidate.targetUrl).hostname),
+            ...targetCandidates.map((candidate) => new URL(candidate.targetUrl).hostname),
             ...qualificationHosts(selectedProvider)
           ])]
             .sort()
@@ -137,7 +141,7 @@ async function main(): Promise<void> {
       let deliveryAudit = null;
       if (process.env.CANARY_AUDIT_DELIVERY === "true") {
         if (deliveryLifetimeDelayMs > 0) {
-          const candidate = resolution.candidates[0];
+          const candidate = targetCandidates[0];
           if (!candidate) {
             throw new Error("The provider returned no candidate for the delivery lifetime audit.");
           }
@@ -147,7 +151,7 @@ async function main(): Promise<void> {
           deliveryAudit = [initial, delayed];
         } else {
           deliveryAudit = await Promise.all(
-            resolution.candidates
+            targetCandidates
               .slice(0, 2)
               .map((candidate) => auditDeliveryCandidate(candidate, 0))
           );

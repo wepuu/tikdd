@@ -47,7 +47,7 @@ function candidate(
     mode: "redirect",
     hostPolicyId: fixture.hostPolicyId,
     envelope: candidateCipher.seal(
-      { targetUrl: fixture.targetUrl, secretHeaders: {} },
+      { kind: "target", targetUrl: fixture.targetUrl, secretHeaders: {} },
       { purpose: "delivery-candidate", candidateId, taskId, formatId: fixture.formatId }
     ),
     expiresAt: new Date(Date.now() + 10 * 60_000).toISOString()
@@ -65,7 +65,7 @@ class MemoryDeliveryRepository implements DeliveryRepository {
   }): Promise<IssuedDeliveryTicket | null> {
     this.issuedHash = Buffer.from(input.tokenHash);
     return {
-      mode: "redirect",
+      mode: this.encryptedCandidate.mode,
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       providerId: this.encryptedCandidate.providerId,
       hostPolicyId: this.encryptedCandidate.hostPolicyId
@@ -83,7 +83,7 @@ class MemoryDeliveryRepository implements DeliveryRepository {
     this.redeemed = true;
     return { taskId, candidate: this.encryptedCandidate, evidence: {
       ticketId: "dtk_dddddddddddddddddddddddddddddddd", providerId: this.encryptedCandidate.providerId,
-      platform: "x", region: "global", observationClass: "public", mode: "redirect"
+      platform: "x", region: "global", observationClass: "public", mode: this.encryptedCandidate.mode
     } };
   }
 
@@ -99,6 +99,40 @@ async function appFor(address: string, fixture: DeliveryFixture = defaultFixture
     webOrigin: "https://tikdd.test",
     readyCheck: async () => undefined,
     dnsLookup: async () => [{ address, family: 4 }],
+    tokenFactory: () => token,
+    ticketIdFactory: () => "dddddddddddddddddddddddddddddddd"
+  });
+}
+
+async function processingApp() {
+  const candidateCipher = cipher();
+  const exp = String(Date.now() + 120_000);
+  const descriptor = `https://media.tikdd.cc/tunnel?id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+  const encryptedCandidate: EncryptedDeliveryCandidate = {
+    id: candidateId,
+    formatId,
+    providerId: "cobalt-selfhosted",
+    mode: "proxy",
+    hostPolicyId: "cobalt-selfhosted-processing-media-v1",
+    envelope: candidateCipher.seal({
+      kind: "processing",
+      processing: {
+        operation: "remux",
+        platform: "x",
+        inputs: [{ url: descriptor, role: "media" }],
+        output: { mimeType: "video/mp4", filename: "TikDD-X-processed.mp4" },
+        isHls: false
+      }
+    }, { purpose: "delivery-candidate", candidateId, taskId, formatId }),
+    expiresAt: new Date(Date.now() + 120_000).toISOString()
+  };
+  return createDeliveryApp({
+    repository: new MemoryDeliveryRepository(encryptedCandidate),
+    cipher: candidateCipher,
+    publicBaseUrl: "https://download.tikdd.test",
+    webOrigin: "https://tikdd.test",
+    readyCheck: async () => undefined,
+    dnsLookup: async () => [{ address: "8.8.8.8", family: 4 }],
     tokenFactory: () => token,
     ticketIdFactory: () => "dddddddddddddddddddddddddddddddd"
   });
@@ -210,6 +244,29 @@ describe("delivery application", () => {
       expect(rejected.statusCode).toBe(502);
       const replayed = await app.inject({ method: "GET", url: `/d/${token}` });
       expect(replayed.statusCode).toBe(410);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("redeems a processing ticket as an allowlisted client plan without exposing it at issuance", async () => {
+    const app = await processingApp();
+    try {
+      const created = await app.inject({ method: "POST", url: "/v1/deliveries", payload: { taskId, formatId } });
+      expect(created.statusCode).toBe(201);
+      expect(created.json()).toMatchObject({ mode: "proxy", browserHandoff: "client-process" });
+      expect(created.body).not.toContain("media.tikdd.cc");
+
+      const redeemed = await app.inject({ method: "GET", url: `/d/${token}` });
+      expect(redeemed.statusCode).toBe(200);
+      expect(redeemed.headers["content-type"]).toContain("application/json");
+      expect(redeemed.json()).toMatchObject({
+        processing: {
+          operation: "remux",
+          output: { filename: "TikDD-X-processed.mp4" }
+        }
+      });
+      expect((await app.inject({ method: "GET", url: `/d/${token}` })).statusCode).toBe(410);
     } finally {
       await app.close();
     }

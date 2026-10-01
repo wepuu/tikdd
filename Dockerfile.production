@@ -52,6 +52,7 @@ LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
 LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-web"
 COPY --from=web-build --chown=node:node /workspace/apps/web/.next-web-production /workspace/apps/web/.next-web-production
+COPY --from=web-build --chown=node:node /workspace/apps/web/public/vendor/libav /workspace/apps/web/public/vendor/libav
 USER node
 ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
 CMD ["pnpm", "--filter", "@tikdd/web", "start"]
