@@ -368,6 +368,8 @@ write a JSON object with a `samples` array to
 gates false. The operation validates the private runtime, performs at most eight sequential calls,
 prints only sanitized evidence, and deletes the temporary input on success or failure. It does not
 recreate the Worker or grant a rollout rule.
+The qualification service is isolated under the `cobalt-ops` profile; do not add it to the general
+`ops` profile used by migrations and scheduled jobs.
 
 The completed NL Gate C uses Tunnel `tikdd-nl` and publishes only `gate-c.tikdd.cc`,
 `api.tikdd.cc`, `dl.tikdd.cc`, `www.tikdd.cc` and the apex `tikdd.cc` to

@@ -614,7 +614,7 @@ services:
 
   cobalt-qualification:
     <<: *application-base
-    profiles: ["ops"]
+    profiles: ["cobalt-ops"]
     image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
     build: *service-build
     command: ["pnpm", "--filter", "@tikdd/preflight", "cobalt:qualify"]

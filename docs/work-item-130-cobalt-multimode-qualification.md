@@ -20,6 +20,9 @@ counts, media kinds, versioned Host policy IDs, local-processing operations, dur
 failure code. It never prints the source URL, response body, API key, full media URL, signed tunnel
 descriptor, Cookie, or request headers.
 
+The one-shot service uses the dedicated `cobalt-ops` Compose profile. Ordinary `ops` migration,
+preflight, canary, evidence, and cleanup commands therefore do not activate or depend on Cobalt.
+
 ## Production sequence
 
 1. Merge and deploy the exact GitHub-built SHA with all Cobalt gates and capabilities empty.

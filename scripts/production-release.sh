@@ -319,7 +319,7 @@ validate_public_web_origin() {
 
 validate() {
   validate_public_web_origin
-  compose --profile admin --profile ops --profile admin-ops --profile cobalt config --quiet
+  compose --profile admin --profile ops --profile admin-ops --profile cobalt --profile cobalt-ops config --quiet
 }
 
 acquire_lock() {
@@ -512,7 +512,7 @@ case "$action" in
     trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
     compose --profile cobalt pull cobalt-api
     compose --profile cobalt up -d --wait cobalt-api
-    compose --profile cobalt --profile ops run --rm cobalt-qualification
+    compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification
     rm -f "$qualification_input"
     trap - EXIT HUP INT TERM
     ;;
