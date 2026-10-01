@@ -15,6 +15,10 @@ samples per reviewed core platform, validates every source through `@tikdd/platf
 requests sequentially with a ten-second interval and no automatic retry, and deletes the temporary
 input when the operation exits.
 
+The input must be owned by the pinned non-root service identity `1000:1000` with mode `600`.
+Validating both ownership and mode prevents a root-owned bind mount from passing host checks and
+then failing unreadable inside the one-shot container.
+
 Output is limited to sample ID, platform, response mode, HTTP status, normalized media and candidate
 counts, media kinds, versioned Host policy IDs, local-processing operations, duration, and a typed
 failure code. It never prints the source URL, response body, API key, full media URL, signed tunnel

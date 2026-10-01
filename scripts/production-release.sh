@@ -296,6 +296,14 @@ verify_cobalt_qualification_input() {
     echo "Cobalt qualification input must have mode 600." >&2
     return 78
   }
+  # The service image runs as the pinned non-root node identity (UID 1000).
+  # A root-owned mode-600 bind mount passes the host check but remains unreadable
+  # in the one-shot container, so verify both halves of the contract.
+  input_uid="$(stat -c '%u' "$qualification_input" 2>/dev/null || true)"
+  [ "$input_uid" = "1000" ] || {
+    echo "Cobalt qualification input must be owned by service UID 1000." >&2
+    return 78
+  }
 }
 
 validate_public_web_origin() {
