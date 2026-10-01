@@ -358,6 +358,13 @@ them to Cobalt's loopback publication; the Cobalt API root, authentication surfa
 all other paths remain private. Keep `TIKDD_COBALT_PUBLIC_ORIGIN=https://media.tikdd.cc/` aligned
 with Cobalt `API_URL`, and never log or copy the signed tunnel query.
 
+Closed-gate multi-mode qualification uses `cobalt-multimode-qualification`. Before running it,
+write a JSON object with a `samples` array to
+`/run/tikdd/cobalt-qualification-input.json`, set mode `600`, and keep all three Cobalt Provider
+gates false. The operation validates the private runtime, performs at most eight sequential calls,
+prints only sanitized evidence, and deletes the temporary input on success or failure. It does not
+recreate the Worker or grant a rollout rule.
+
 The completed NL Gate C uses Tunnel `tikdd-nl` and publishes only `gate-c.tikdd.cc`,
 `api.tikdd.cc`, `dl.tikdd.cc`, `www.tikdd.cc` and the apex `tikdd.cc` to
 `http://127.0.0.1:8080`, with an explicit per-route Host header and a final 404 rule. The canonical

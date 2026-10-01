@@ -612,6 +612,32 @@ services:
     mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
     pids_limit: 128
 
+  cobalt-qualification:
+    <<: *application-base
+    profiles: ["ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/preflight", "cobalt:qualify"]
+    restart: "no"
+    environment:
+      COBALT_API_URL: http://cobalt-api:9000/
+      TIKDD_COBALT_API_KEYS_FILE: /run/secrets/cobalt_api_keys
+      TIKDD_COBALT_QUALIFICATION_INPUT: ${TIKDD_COBALT_QUALIFICATION_INPUT:-/run/tikdd/cobalt-qualification-input.json}
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    secrets:
+      - cobalt_api_keys
+    networks:
+      - provider-egress
+    depends_on:
+      cobalt-api:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
   canary:
     <<: *application-base
     profiles: ["ops"]

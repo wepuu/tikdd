@@ -59,6 +59,20 @@ describe("production release Admin lifecycle", () => {
     expect(probeBlock).not.toMatch(/force-recreate.*worker/);
   });
 
+  it("runs a bounded Cobalt multimode qualification and deletes its temporary input", () => {
+    expect(releaseScript).toMatch(/verify_cobalt_qualification_input\(\)/);
+    expect(releaseScript).toMatch(/cobalt-multimode-qualification\)/);
+    expect(releaseScript).toMatch(/requires ENABLE_COBALT_PROVIDER=false/);
+    expect(releaseScript).toMatch(/input must have mode 600/);
+    expect(releaseScript).toMatch(/compose --profile cobalt --profile ops run --rm cobalt-qualification/);
+    expect(releaseScript).toMatch(/trap 'rm -f "\$qualification_input"'/);
+    const qualificationBlock = productionCompose.split("  cobalt-qualification:", 2)[1]?.split("  canary:", 2)[0] ?? "";
+    expect(qualificationBlock).toMatch(/cobalt:qualify/);
+    expect(qualificationBlock).toMatch(/read_only: true/);
+    expect(qualificationBlock).toMatch(/cobalt_api_keys/);
+    expect(qualificationBlock).toMatch(/provider-egress/);
+  });
+
   it("keeps the Cobalt key readable only through the dedicated secrets group", () => {
     const cobaltBlock = productionCompose.split("  cobalt-api:", 2)[1]?.split("  calibration-api-preflight:", 2)[0] ?? "";
     expect(cobaltBlock).toMatch(/group_add:\s+- \$\{TIKDD_SECRETS_GID:-1999\}/);
