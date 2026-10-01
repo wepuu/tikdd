@@ -16,10 +16,18 @@ const qualified = {
   samplesAttempted: 2,
   samplesResolved: 2,
   responseModes: ["redirect", "picker"] as const,
+  deliveryTopology: "direct-source" as const,
   mediaHostPolicyVerified: true,
   mediaRangeVerified: true,
-  crossExitVerified: true,
+  resolverExitVerified: true,
+  clientDirectExitVerified: true,
+  clientProxyExitVerified: true,
+  originHairpinStatus: "not-applicable" as const,
+  tunnelBoundaryVerified: false,
+  localProcessingVerified: false,
+  deliveryHandoffVerified: true,
   browserSaveMode: "attachment" as const,
+  browserSaveVerified: true,
   browserStateRequired: false,
   requiresProviderPage: false,
   sourceIpBound: false,
@@ -56,12 +64,52 @@ describe("Cobalt capability matrix", () => {
     }))).toMatchObject({ status: "resolved-candidate", productionRouteEligible: false });
   });
 
-  it("rejects proxy-only and delivery-blocked outcomes", () => {
+  it("qualifies an audited tunnel without requiring the origin hairpin", () => {
     expect(assessCobaltPlatformQualification(CobaltPlatformQualificationEvidenceSchema.parse({
       ...qualified,
       responseModes: ["tunnel"],
-      failures: ["non_portable_result"]
-    }))).toMatchObject({ status: "proxy-only", productionRouteEligible: false });
+      deliveryTopology: "provider-tunnel",
+      resolverExitVerified: false,
+      originHairpinStatus: "edge-blocked",
+      tunnelBoundaryVerified: true
+    }))).toMatchObject({ status: "qualified-secondary", productionRouteEligible: true });
+  });
+
+  it("keeps tunnel and local-processing results closed until their mode-specific audits pass", () => {
+    expect(assessCobaltPlatformQualification(CobaltPlatformQualificationEvidenceSchema.parse({
+      ...qualified,
+      responseModes: ["tunnel"],
+      deliveryTopology: "provider-tunnel",
+      resolverExitVerified: false,
+      originHairpinStatus: "edge-blocked",
+      tunnelBoundaryVerified: true,
+      deliveryHandoffVerified: false,
+      browserSaveVerified: false,
+      failures: ["delivery_handoff_unverified", "browser_save_unverified"]
+    }))).toMatchObject({ status: "resolved-conditional", productionRouteEligible: false });
+    expect(assessCobaltPlatformQualification(CobaltPlatformQualificationEvidenceSchema.parse({
+      ...qualified,
+      responseModes: ["local-processing"],
+      deliveryTopology: "browser-local-processing",
+      resolverExitVerified: false,
+      originHairpinStatus: "edge-blocked",
+      tunnelBoundaryVerified: true,
+      localProcessingVerified: false,
+      failures: ["local_processing_unverified"]
+    }))).toMatchObject({ status: "resolved-conditional", productionRouteEligible: false });
+  });
+
+  it("rejects missing client exits and delivery-blocked outcomes", () => {
+    expect(assessCobaltPlatformQualification(CobaltPlatformQualificationEvidenceSchema.parse({
+      ...qualified,
+      responseModes: ["tunnel"],
+      deliveryTopology: "provider-tunnel",
+      resolverExitVerified: false,
+      clientProxyExitVerified: false,
+      originHairpinStatus: "edge-blocked",
+      tunnelBoundaryVerified: true,
+      failures: ["client_exit_unverified"]
+    }))).toMatchObject({ status: "delivery-blocked", productionRouteEligible: false });
     expect(assessCobaltPlatformQualification(CobaltPlatformQualificationEvidenceSchema.parse({
       ...qualified,
       sourceIpBound: true,

@@ -370,6 +370,19 @@ the private runtime, performs at most eight sequential calls,
 prints only sanitized evidence, and deletes the temporary input on success or failure. It does not
 recreate the Worker or grant a rollout rule.
 
+Tunnel delivery checks use the separate `cobalt-tunnel-audit` operation. Write one or two current
+signed descriptors to `/run/tikdd/cobalt-tunnel-audit-input.json`, label the actual execution exit
+as `client-direct`, `client-proxy`, or `origin-hairpin`, set ownership to `1000:1000` and mode
+`600`, then run the operation while all three Cobalt gates remain false. It validates the versioned
+Tunnel policy, requests only bytes 0-1023, follows no redirects, prints sanitized results and
+deletes the input on every exit path. Run client-direct and client-proxy from genuinely independent
+user exits; an NL public-origin result is hairpin diagnostics and cannot replace either client
+check. For a failed hairpin, compare only the audit timestamp/sample ID with the query-free Nginx
+access log: an observed origin request is `origin-rejected`, an absent origin request accompanied by
+a Cloudflare request marker is `edge-blocked`, and incomplete correlation stays
+`blocked-unclassified`. Never copy the signed descriptor into a command line, release log or shell
+history.
+
 ```sh
 install -o 1000 -g 1000 -m 600 /tmp/cobalt-qualification-input.json \
   /run/tikdd/cobalt-qualification-input.json

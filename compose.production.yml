@@ -638,6 +638,29 @@ services:
     mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
     pids_limit: 128
 
+  cobalt-tunnel-audit:
+    <<: *application-base
+    profiles: ["cobalt-ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/preflight", "cobalt:tunnel-audit"]
+    restart: "no"
+    environment:
+      TIKDD_COBALT_TUNNEL_AUDIT_INPUT: ${TIKDD_COBALT_TUNNEL_AUDIT_INPUT:-/run/tikdd/cobalt-tunnel-audit-input.json}
+      TIKDD_WEB_PUBLIC_ORIGIN: ${TIKDD_WEB_PUBLIC_ORIGIN:-https://www.tikdd.cc}
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    networks:
+      - provider-egress
+    depends_on:
+      cobalt-api:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 128
+
   canary:
     <<: *application-base
     profiles: ["ops"]

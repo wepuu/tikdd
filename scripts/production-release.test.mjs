@@ -77,6 +77,22 @@ describe("production release Admin lifecycle", () => {
     expect(qualificationBlock).toMatch(/provider-egress/);
   });
 
+  it("audits signed Cobalt tunnel descriptors with closed gates and deletes the sensitive input", () => {
+    expect(releaseScript).toMatch(/verify_cobalt_tunnel_audit_input\(\)/);
+    expect(releaseScript).toMatch(/cobalt-tunnel-audit\)/);
+    expect(releaseScript).toMatch(/cobalt-tunnel-audit requires ENABLE_COBALT_PROVIDER=false/);
+    expect(releaseScript).toMatch(/Cobalt tunnel audit input must have mode 600/);
+    expect(releaseScript).toMatch(/Cobalt tunnel audit input must be owned by service UID 1000/);
+    expect(releaseScript).toMatch(/compose --profile cobalt --profile cobalt-ops run --rm cobalt-tunnel-audit/);
+    expect(releaseScript).toMatch(/trap 'rm -f "\$tunnel_audit_input"'/);
+    const auditBlock = productionCompose.split("  cobalt-tunnel-audit:", 2)[1]?.split("  canary:", 2)[0] ?? "";
+    expect(auditBlock).toMatch(/cobalt:tunnel-audit/);
+    expect(auditBlock).toMatch(/profiles: \["cobalt-ops"\]/);
+    expect(auditBlock).toMatch(/read_only: true/);
+    expect(auditBlock).not.toMatch(/cobalt_api_keys/);
+    expect(auditBlock).toMatch(/provider-egress/);
+  });
+
   it("keeps the Cobalt key readable only through the dedicated secrets group", () => {
     const cobaltBlock = productionCompose.split("  cobalt-api:", 2)[1]?.split("  calibration-api-preflight:", 2)[0] ?? "";
     expect(cobaltBlock).toMatch(/group_add:\s+- \$\{TIKDD_SECRETS_GID:-1999\}/);

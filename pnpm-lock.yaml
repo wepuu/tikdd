@@ -217,6 +217,9 @@ importers:
       '@tikdd/deployment-preflight':
         specifier: workspace:*
         version: link:../../packages/deployment-preflight
+      '@tikdd/delivery-core':
+        specifier: workspace:*
+        version: link:../../packages/delivery-core
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../../packages/platform

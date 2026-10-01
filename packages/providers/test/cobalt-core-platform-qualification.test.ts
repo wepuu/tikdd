@@ -12,7 +12,7 @@ describe("Work Items 128 and 130 Cobalt core-platform qualification", () => {
       [
         { providerId: "cobalt-selfhosted", platform: "x", status: "delivery-blocked", adapterEligible: false, productionRouteEligible: false, failures: ["cross_exit_unverified", "browser_save_unverified"] },
         { providerId: "cobalt-selfhosted", platform: "instagram", status: "no-media", adapterEligible: false, productionRouteEligible: false, failures: ["provider_error_envelope"] },
-        { providerId: "cobalt-selfhosted", platform: "tiktok", status: "proxy-only", adapterEligible: false, productionRouteEligible: false, failures: ["cross_exit_unverified"] },
+        { providerId: "cobalt-selfhosted", platform: "tiktok", status: "resolved-conditional", adapterEligible: false, productionRouteEligible: false, failures: ["delivery_handoff_unverified", "browser_save_unverified"] },
         { providerId: "cobalt-selfhosted", platform: "facebook", status: "delivery-blocked", adapterEligible: false, productionRouteEligible: false, failures: ["cross_exit_unverified", "browser_save_unverified"] }
       ]
     );

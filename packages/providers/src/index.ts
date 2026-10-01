@@ -88,6 +88,8 @@ export {
   CobaltCapabilityFailureSchema,
   CobaltCapabilityResponseModeSchema,
   CobaltCapabilityStatusSchema,
+  CobaltDeliveryTopologySchema,
+  CobaltOriginHairpinStatusSchema,
   CobaltPlatformQualificationAssessmentSchema,
   CobaltPlatformQualificationEvidenceSchema,
   mapCobaltRuntimeServicesToPlatforms,
@@ -95,6 +97,8 @@ export {
   type CobaltCapabilityFailure,
   type CobaltCapabilityResponseMode,
   type CobaltCapabilityStatus,
+  type CobaltDeliveryTopology,
+  type CobaltOriginHairpinStatus,
   type CobaltPlatformQualificationAssessment,
   type CobaltPlatformQualificationEvidence
 } from "./cobalt-capability-matrix";

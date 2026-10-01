@@ -7,11 +7,13 @@
     "start": "tsx src/run.ts",
     "verify": "tsx src/verify.ts",
     "cobalt:qualify": "tsx src/run-cobalt-qualification.ts",
+    "cobalt:tunnel-audit": "tsx src/run-cobalt-tunnel-audit.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@tikdd/deployment-preflight": "workspace:*",
+    "@tikdd/delivery-core": "workspace:*",
     "@tikdd/platform": "workspace:*",
     "@tikdd/providers": "workspace:*"
   }

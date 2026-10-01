@@ -17,6 +17,23 @@ export const CobaltCapabilityResponseModeSchema = z.enum([
 ]);
 export type CobaltCapabilityResponseMode = z.infer<typeof CobaltCapabilityResponseModeSchema>;
 
+export const CobaltDeliveryTopologySchema = z.enum([
+  "direct-source",
+  "provider-tunnel",
+  "browser-local-processing"
+]);
+export type CobaltDeliveryTopology = z.infer<typeof CobaltDeliveryTopologySchema>;
+
+export const CobaltOriginHairpinStatusSchema = z.enum([
+  "not-applicable",
+  "not-tested",
+  "verified",
+  "blocked-unclassified",
+  "edge-blocked",
+  "origin-rejected"
+]);
+export type CobaltOriginHairpinStatus = z.infer<typeof CobaltOriginHairpinStatusSchema>;
+
 export const CobaltCapabilityFailureSchema = z.enum([
   "runtime_not_verified",
   "service_not_advertised",
@@ -29,6 +46,10 @@ export const CobaltCapabilityFailureSchema = z.enum([
   "unsafe_media_host",
   "range_unverified",
   "cross_exit_unverified",
+  "client_exit_unverified",
+  "tunnel_boundary_unverified",
+  "local_processing_unverified",
+  "delivery_handoff_unverified",
   "browser_save_unverified",
   "browser_state_required",
   "provider_page_handoff",
@@ -59,10 +80,18 @@ export const CobaltPlatformQualificationEvidenceSchema = z.strictObject({
   samplesAttempted: z.number().int().min(0).max(2),
   samplesResolved: z.number().int().min(0).max(2),
   responseModes: z.array(CobaltCapabilityResponseModeSchema).max(2),
+  deliveryTopology: CobaltDeliveryTopologySchema,
   mediaHostPolicyVerified: z.boolean(),
   mediaRangeVerified: z.boolean(),
-  crossExitVerified: z.boolean(),
+  resolverExitVerified: z.boolean(),
+  clientDirectExitVerified: z.boolean(),
+  clientProxyExitVerified: z.boolean(),
+  originHairpinStatus: CobaltOriginHairpinStatusSchema,
+  tunnelBoundaryVerified: z.boolean(),
+  localProcessingVerified: z.boolean(),
+  deliveryHandoffVerified: z.boolean(),
   browserSaveMode: z.enum(["attachment", "cors-download"]).nullable(),
+  browserSaveVerified: z.boolean(),
   browserStateRequired: z.boolean(),
   requiresProviderPage: z.boolean(),
   sourceIpBound: z.boolean(),
@@ -89,7 +118,8 @@ const BLOCKING_DELIVERY_FAILURES = new Set<CobaltCapabilityFailure>([
   "unsafe_media_host",
   "range_unverified",
   "cross_exit_unverified",
-  "browser_save_unverified",
+  "client_exit_unverified",
+  "tunnel_boundary_unverified",
   "browser_state_required",
   "provider_page_handoff",
   "source_ip_bound"
@@ -161,6 +191,14 @@ export function assessCobaltPlatformQualification(
   input: CobaltPlatformQualificationEvidence
 ): CobaltPlatformQualificationAssessment {
   const evidence = CobaltPlatformQualificationEvidenceSchema.parse(input);
+  const deliveryTopologyVerified = evidence.deliveryTopology === "direct-source"
+    ? evidence.resolverExitVerified && evidence.clientDirectExitVerified && evidence.clientProxyExitVerified
+    : evidence.deliveryTopology === "provider-tunnel"
+      ? evidence.clientDirectExitVerified && evidence.clientProxyExitVerified && evidence.tunnelBoundaryVerified
+      : evidence.clientDirectExitVerified &&
+        evidence.clientProxyExitVerified &&
+        evidence.tunnelBoundaryVerified &&
+        evidence.localProcessingVerified;
   const qualified =
     evidence.runtimeProbePassed &&
     evidence.runtimeServiceAdvertised &&
@@ -170,8 +208,10 @@ export function assessCobaltPlatformQualification(
     evidence.samplesResolved === 2 &&
     evidence.mediaHostPolicyVerified &&
     evidence.mediaRangeVerified &&
-    evidence.crossExitVerified &&
+    deliveryTopologyVerified &&
+    evidence.deliveryHandoffVerified &&
     evidence.browserSaveMode !== null &&
+    evidence.browserSaveVerified &&
     !evidence.browserStateRequired &&
     !evidence.requiresProviderPage &&
     !evidence.sourceIpBound &&
@@ -181,8 +221,6 @@ export function assessCobaltPlatformQualification(
   let status: CobaltCapabilityStatus;
   if (qualified) {
     status = "qualified-secondary";
-  } else if (evidence.responseModes.some((mode) => mode === "tunnel" || mode === "local-processing")) {
-    status = "proxy-only";
   } else if (evidence.browserStateRequired) {
     status = "blocked";
   } else if (evidence.sourceIpBound || evidence.requiresProviderPage || evidence.failures.some((failure) => BLOCKING_DELIVERY_FAILURES.has(failure))) {

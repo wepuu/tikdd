@@ -2169,3 +2169,20 @@ Production closeout deployed `main@a5b85e7` and resolved both TikTok samples thr
 tunnel policy. Local direct and v2rayN exits received attachment MP4 ranges, but the NL
 public-origin exit returned HTTP 403. The three-exit gate therefore remains false, Cobalt stays
 `proxy-only`, and no production key scope, Worker gate, capability or rollout rule was enabled.
+
+### Work Item 131 - topology-aware Cobalt Tunnel qualification
+
+Work Item 131 replaces the single Cobalt cross-exit flag with topology-aware evidence. Direct
+source-CDN results retain the NL, local-direct and local-proxy portability requirement. Provider
+Tunnel results instead require two independent user exits plus the exact signed Tunnel boundary;
+the origin host's Cloudflare hairpin is recorded separately. Browser local-processing remains
+closed pending its own bounded audit.
+
+The release tooling adds a closed-gate `cobalt-tunnel-audit` operation for at most two mode-600,
+UID-1000 signed descriptors. It reads at most 1 KiB, follows no redirect, emits no signed value and
+deletes the input on exit. The existing TikTok evidence is now `resolved-conditional`, not
+production eligible: direct and proxied client exits passed, but the standard one-time TikDD
+handoff and a real browser save still require separate evidence. No production Cobalt gate,
+capability, key scope or rollout changes in this work item. See
+[Work Item 131](work-item-131-cobalt-tunnel-qualification.md) and
+[ADR-0060](architecture/adr/0060-cobalt-topology-aware-qualification.md).

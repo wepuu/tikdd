@@ -53,6 +53,12 @@
 - [ADR-0052: SnapYT media integrity probing before Delivery](0052-snapyt-media-integrity-probe.md)
 - [ADR-0053: YouTube format composition boundary](0053-youtube-format-composition-boundary.md)
 - [ADR-0054: YouTube asynchronous budget and stateless handoff boundary](0054-youtube-async-budget-and-stateless-handoff.md)
+- [ADR-0055: NoAdsDL bounded multiformat preparation](0055-noadsdl-bounded-multiformat-preparation.md)
+- [ADR-0056: OK.ru portable delivery boundary](0056-okru-portable-delivery-boundary.md)
+- [ADR-0057: Vidomon OK.ru direct delivery](0057-vidomon-okru-direct-delivery.md)
+- [ADR-0058: Self-hosted Cobalt secondary Provider](0058-selfhosted-cobalt-secondary-provider.md)
+- [ADR-0059: Cobalt multi-mode client delivery](0059-cobalt-multimode-client-delivery.md)
+- [ADR-0060: Topology-aware Cobalt delivery qualification](0060-cobalt-topology-aware-qualification.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.
