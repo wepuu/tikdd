@@ -2232,3 +2232,17 @@ audit operations use the same boundary. Production rollout remains disabled/allo
 future retry requires exact-SHA deployment, two-sample requalification and a separately approved
 Cobalt-only browser window. See
 [Work Item 134](work-item-134-cobalt-auth-readiness.md).
+
+### Work Item 135 - Cobalt TikTok production closeout
+
+Work Item 135 deployed the authenticated-readiness repair at exact merge SHA `0c597b846`, passed
+the private authenticated probe, repeated two-sample Tunnel qualification and completed an
+approved Cobalt-only owner browser window. The sanitized attempt ledger recorded two successful
+`cobalt-selfhosted` attempts, and the owner confirmed a real browser download. SnapTik and TikCD
+were then restored as the higher-priority routes; Cobalt remains enabled only as the priority-450
+TikTok Tunnel fallback.
+
+The Cobalt result did not include a thumbnail. This is a known normalization limitation: the
+adapter currently emits a null thumbnail for every Cobalt mode. Optional platform-owned thumbnail
+enrichment is deferred and must not alter the proven media-delivery path. See
+[Work Item 135](work-item-135-cobalt-tiktok-production-closeout.md).
