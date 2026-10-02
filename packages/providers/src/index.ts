@@ -121,6 +121,11 @@ export {
   COBALT_CORE_PLATFORM_QUALIFICATION_EVIDENCE
 } from "./cobalt-core-platform-qualification";
 export {
+  assessCurrentCobaltPlannedPlatformQualification,
+  COBALT_PLANNED_PLATFORM_BATCH,
+  COBALT_PLANNED_PLATFORM_QUALIFICATION_EVIDENCE
+} from "./cobalt-planned-platform-qualification";
+export {
   SocialDownloaderProvider,
   parseSocialDownloaderResponse,
   parseSocialDownloaderPlatformConfiguration,

@@ -2256,3 +2256,17 @@ failure into a null thumbnail so Cobalt media delivery remains successful. The W
 error path continues to show the TikTok platform icon. No route, public contract, database or media
 Delivery policy changes are introduced. See
 [Work Item 136](work-item-136-cobalt-tiktok-thumbnail.md).
+
+### Work Item 137 - Cobalt planned-platform qualification
+
+Work Item 137 evaluates Dailymotion, Reddit and VK in one isolated, closed-gate Cobalt batch.
+Dailymotion resolved both samples as signed Tunnel results, but the isolated instance's descriptors
+correctly failed at the production media origin and therefore do not satisfy client delivery,
+one-time handoff or browser-save gates. The code recognizes only the Dailymotion Tunnel capability;
+direct results remain rejected without an explicit Host policy.
+
+The supplied Reddit and VK pages require an authenticated browser session and are recorded as
+`browser_state_required`, not generic no-media failures. `vkvideo.ru` is now an explicit reviewed
+catalog host with suffix-spoof coverage, while VK remains planned. Production credentials, Worker
+configuration, rollout rules, public pages, SEO status and existing traffic are unchanged. See
+[Work Item 137](work-item-137-cobalt-planned-platform-expansion.md).

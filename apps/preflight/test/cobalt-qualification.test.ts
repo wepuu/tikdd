@@ -14,6 +14,18 @@ describe("Cobalt multimode qualification", () => {
     ] })).toThrow(/does not match/);
   });
 
+  it("accepts the reviewed WI137 platform batch and rejects a spoofed VK Video host", () => {
+    const plan = parseCobaltQualificationPlan({ samples: [
+      { id: "dailymotion-a", platform: "dailymotion", url: "https://www.dailymotion.com/video/fixture-a" },
+      { id: "reddit-a", platform: "reddit", url: "https://www.reddit.com/r/fixture/comments/fixture/" },
+      { id: "vk-a", platform: "vk", url: "https://vkvideo.ru/video-1_2" }
+    ] });
+    expect(plan.samples.map(({ platform }) => platform)).toEqual(["dailymotion", "reddit", "vk"]);
+    expect(() => parseCobaltQualificationPlan({ samples: [
+      { id: "vk-spoof", platform: "vk", url: "https://vkvideo.ru.attacker.example/video-1_2" }
+    ] })).toThrow();
+  });
+
   it("emits only sanitized result metadata", async () => {
     const sourceUrl = "https://www.tiktok.com/@fixture/video/123456789";
     const provider: ResolverProvider = {

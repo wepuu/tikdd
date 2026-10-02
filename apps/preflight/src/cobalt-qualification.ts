@@ -9,7 +9,15 @@ import {
   type ResolverProvider
 } from "@tikdd/providers";
 
-const SUPPORTED_PLATFORMS = ["x", "instagram", "tiktok", "facebook"] as const;
+const SUPPORTED_PLATFORMS = [
+  "x",
+  "instagram",
+  "tiktok",
+  "facebook",
+  "dailymotion",
+  "reddit",
+  "vk"
+] as const;
 const ALL_MODES: readonly CobaltSuccessMode[] = ["redirect", "picker", "tunnel", "local-processing"];
 const SAMPLE_ID_PATTERN = /^[a-z0-9](?:[a-z0-9_-]{0,38}[a-z0-9])?$/;
 const MAXIMUM_SAMPLES = 8;
@@ -50,7 +58,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function qualificationPlatform(value: unknown): QualificationPlatform {
   if (typeof value !== "string" || !(SUPPORTED_PLATFORMS as readonly string[]).includes(value)) {
-    throw new Error("Cobalt qualification platform is not in the reviewed core-platform batch.");
+    throw new Error("Cobalt qualification platform is not in a reviewed batch.");
   }
   return value as QualificationPlatform;
 }

@@ -104,6 +104,35 @@ describe("Cobalt self-hosted secondary Provider", () => {
     });
   });
 
+  it("allows Dailymotion only through the reviewed tunnel policy", () => {
+    const exp = String(Date.now() + 120_000);
+    const tunnel = `https://media.tikdd.cc/tunnel?id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+    expect(parseCobaltResponse(JSON.stringify({ status: "tunnel", url: tunnel }), 200, "dailymotion").formats[0])
+      .toMatchObject({ mode: "proxy", hostPolicyId: "cobalt-selfhosted-tunnel-media-v1" });
+    expect(() => parseCobaltResponse(JSON.stringify({
+      status: "redirect",
+      url: "https://unreviewed.example/video.mp4"
+    }), 200, "dailymotion")).toThrow(/without a reviewed platform policy/);
+  });
+
+  it("keeps the WI137 platforms closed unless an exact mode is verified", () => {
+    const configuration = parseCobaltPlatformConfiguration({
+      approvedPlatforms: "dailymotion,reddit,vk",
+      deliveryVerifiedCapabilities: "dailymotion:tunnel"
+    });
+    expect(configuration.deliveryVerifiedCapabilities).toEqual({ dailymotion: ["tunnel"] });
+    const provider = new CobaltProvider({
+      approvedPlatforms: configuration.approvedPlatforms,
+      deliveryVerifiedCapabilities: configuration.deliveryVerifiedCapabilities
+    });
+    expect(provider.manifest.platforms.find(({ platform }) => platform === "dailymotion"))
+      .toMatchObject({ priority: 450, deliveryModes: ["proxy"], verificationStatus: "delivery_verified" });
+    expect(provider.manifest.platforms.find(({ platform }) => platform === "reddit"))
+      .toMatchObject({ deliveryModes: [], verificationStatus: "fixture_verified" });
+    expect(provider.manifest.platforms.find(({ platform }) => platform === "vk"))
+      .toMatchObject({ deliveryModes: [], verificationStatus: "fixture_verified" });
+  });
+
   it("calls only the private API and returns a reviewed redirect candidate", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     const provider = new CobaltProvider({

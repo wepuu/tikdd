@@ -199,3 +199,10 @@ only TikTok's official `www.tiktok.com/oembed` endpoint with a three-second time
 HTTP, timeout, schema, host or image-load failure leaves `thumbnailUrl` null and preserves the
 existing Cobalt formats and Delivery candidates. The enrichment does not create a Provider route,
 proxy an image or broaden a media Host policy.
+
+Work Item 137 adds a closed-gate Dailymotion, Reddit and VK qualification batch. Dailymotion resolved
+both samples as Cobalt Tunnel results, but descriptors from the isolated validation instance could
+not be redeemed by the production media origin, so it remains `delivery-blocked`. The adapter accepts
+Dailymotion only through the existing Tunnel policy and rejects direct results until a source-CDN
+policy exists. The supplied Reddit and VK samples require browser login state and are recorded as
+blocked; no Cookie or account state is forwarded. No new route, gate or rollout is active.
