@@ -262,11 +262,24 @@ verify_cobalt_runtime() {
     return 78
   }
 
-  # The probe runs inside the private container network and emits no upstream
-  # response. It validates authentication and the reviewed OK service without
-  # exposing the key, source URL, response body, or media URL to the release log.
-  compose --profile cobalt exec -T cobalt-api node -e 'const fs=require("fs");const key=Object.keys(JSON.parse(fs.readFileSync("/run/secrets/cobalt_api_keys","utf8")))[0];fetch("http://127.0.0.1:9000/",{headers:{authorization:"Api-Key "+key}}).then(async r=>{let body=null;try{body=await r.json()}catch{}const services=Array.isArray(body?.cobalt?.services)?body.cobalt.services:[];const hasOk=services.some(s=>typeof s==="string"?s.toLowerCase()==="ok":String(s?.id??s?.name??"").toLowerCase()==="ok");if(!r.ok||!hasOk)process.exit(1)}).catch(()=>process.exit(1))'
+  # GET proves private runtime discovery. POST with an invalid, non-routable URL
+  # proves that the in-memory key registry accepted the mounted schema and key;
+  # it must reach URL validation without contacting an upstream Provider.
+  compose --profile cobalt exec -T cobalt-api node -e 'const fs=require("fs");const keys=Object.keys(JSON.parse(fs.readFileSync("/run/secrets/cobalt_api_keys","utf8")));if(keys.length!==1)process.exit(1);const key=keys[0];const headers={accept:"application/json","content-type":"application/json",authorization:"Api-Key "+key,"user-agent":"TikDD/cobalt-secondary"};Promise.all([fetch("http://127.0.0.1:9000/",{headers}),fetch("http://127.0.0.1:9000/",{method:"POST",headers,body:JSON.stringify({url:"https://example.invalid/"})})]).then(async([discovery,auth])=>{let info=null,error=null;try{info=await discovery.json()}catch{}try{error=await auth.json()}catch{}const services=Array.isArray(info?.cobalt?.services)?info.cobalt.services:[];const hasOk=services.some(s=>typeof s==="string"?s.toLowerCase()==="ok":String(s?.id??s?.name??"").toLowerCase()==="ok");const code=error?.error?.code;if(!discovery.ok||!hasOk||auth.status!==400||!["error.api.link.invalid","error.api.link.unsupported"].includes(code))process.exit(1)}).catch(()=>process.exit(1))'
   echo "cobalt_runtime=PASS service=private auth=verified ok=available gates=closed"
+}
+
+verify_cobalt_auth_readiness() {
+  if ! compose --profile cobalt --profile cobalt-ops run --rm --no-deps cobalt-auth-readiness; then
+    echo "Cobalt authentication readiness failed; stopping the private runtime before Worker recreation." >&2
+    compose --profile cobalt stop cobalt-api >/dev/null 2>&1 || true
+    return 78
+  fi
+}
+
+start_cobalt_authenticated() {
+  compose --profile cobalt up -d --force-recreate --wait cobalt-api
+  verify_cobalt_auth_readiness
 }
 
 verify_cobalt_qualification_input() {
@@ -515,7 +528,7 @@ case "$action" in
     stage_service delivery
     if [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "true" ]; then
       compose --profile cobalt pull cobalt-api
-      compose --profile cobalt up -d --wait cobalt-api
+      start_cobalt_authenticated
       run_stage_gate cobalt-api
     fi
     stage_service worker
@@ -528,7 +541,7 @@ case "$action" in
     acquire_lock
     validate
     if [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "true" ]; then
-      compose --profile cobalt up -d --wait cobalt-api
+      start_cobalt_authenticated
     fi
     compose up -d --force-recreate --wait worker
     verify_worker_runtime_config
@@ -537,7 +550,7 @@ case "$action" in
     acquire_lock
     validate
     compose --profile cobalt pull cobalt-api
-    compose --profile cobalt up -d --wait cobalt-api
+    start_cobalt_authenticated
     verify_cobalt_runtime
     ;;
   cobalt-runtime-stop)
@@ -553,7 +566,8 @@ case "$action" in
     qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
     trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
     compose --profile cobalt pull cobalt-api
-    compose --profile cobalt up -d --wait cobalt-api
+    start_cobalt_authenticated
+    verify_cobalt_runtime
     compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification
     rm -f "$qualification_input"
     trap - EXIT HUP INT TERM
@@ -565,7 +579,7 @@ case "$action" in
     tunnel_audit_input="$(release_value TIKDD_COBALT_TUNNEL_AUDIT_INPUT "/run/tikdd/cobalt-tunnel-audit-input.json")"
     trap 'rm -f "$tunnel_audit_input"' EXIT HUP INT TERM
     compose --profile cobalt pull cobalt-api
-    compose --profile cobalt up -d --wait cobalt-api
+    start_cobalt_authenticated
     compose --profile cobalt --profile cobalt-ops run --rm cobalt-tunnel-audit
     rm -f "$tunnel_audit_input"
     trap - EXIT HUP INT TERM

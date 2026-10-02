@@ -23,14 +23,15 @@ source URLs, signed descriptors, response bodies, cookies or API keys. Automated
 was inconclusive, so final end-user download behavior remains an owner-operated browser check after
 activation.
 
-## Production activation
+## Production activation attempt
 
 Before activation, the official backup script created and validated an encrypted PostgreSQL dump;
 the release environment, Cobalt key registry and release manifest were also copied to a protected
 rollback directory. The isolated qualification container and its temporary credentials were
 removed before the production Cobalt service claimed its fixed localhost port.
 
-The production key is limited to Cobalt service IDs `ok` and `tiktok`. Runtime configuration is:
+The intended production key was limited to Cobalt service IDs `ok` and `tiktok`. Runtime
+configuration was:
 
 - `ENABLE_COBALT_PROVIDER=true`;
 - `COBALT_LICENSE_ACKNOWLEDGED=true`;
@@ -41,19 +42,29 @@ The production key is limited to Cobalt service IDs `ok` and `tiktok`. Runtime c
 
 The first apply attempt correctly rolled back when the capability was not yet a subset of the
 production approved-platform list. After adding only `tiktok` to that list, the official
-`worker-config-apply` operation recreated the Worker and verified the runtime gates. A separate
+`worker-config-apply` operation recreated the Worker and verified the Worker gates. A separate
 one-shot Worker command then created the unique `cobalt-selfhosted-tiktok-nl` rollout rule at
-revision 1, full allocation and no expiry. PostgreSQL, Redis, API, Worker, Delivery, Web and Cobalt
-were healthy with zero restarts after activation; the public Web returned HTTP 200 and unsigned
-Tunnel access returned HTTP 400.
+revision 1, full allocation and no expiry. Container health, the public Web and unsigned Tunnel
+checks passed, but these checks did not authenticate a Cobalt `POST /` request.
+
+The owner-operated Cobalt-only browser window exposed that missing gate. Two tasks selected only
+`cobalt-selfhosted` and both failed with sanitized Cobalt HTTP 400 diagnostics. An internal bounded
+replay identified `error.api.auth.key.not_found`, and the Cobalt container log confirmed that the
+key registry had failed to load because it used unsupported singular field `userAgent` instead of
+the documented `userAgents` array. The apparent healthy runtime was therefore not authenticated.
+
+The activation was rolled back immediately: SnapTik and TikCD were restored at full allocation,
+and `cobalt-selfhosted-tiktok-nl` was CAS-disabled at revision 2 with allocation zero. Cobalt did
+not become a production fallback. Work Item 134 owns the registry-schema validation, forced
+container recreation and authenticated readiness repair.
 
 ## Manual verification and rollback
 
-The owner performs the final TikTok browser download. A successful request may still be served by
-SnapTik, TikCD or another higher-priority Provider; Cobalt is intentionally only a last-resort
-sequential fallback. If Cobalt Tunnel delivery fails, first CAS-disable
-`cobalt-selfhosted-tiktok-nl`, then clear `tiktok:tunnel`, close the three Cobalt gates, apply the
-Worker configuration, and stop Cobalt if no other approved capability needs it.
+The browser verification failed before Cobalt produced media. Existing TikTok Providers remain the
+only active production route. Any future Cobalt retry must first pass Work Item 134's authenticated
+readiness check while the rollout remains disabled, then repeat the bounded two-sample
+qualification and a separately approved Cobalt-only browser window. Rollback remains rule-first,
+then capability and gate closure, followed by stopping Cobalt when no approved capability needs it.
 
 Do not broaden the Cloudflare exception, expose the private Cobalt API, approve another platform or
 mode, or add TikDD media-byte forwarding as part of this closeout.

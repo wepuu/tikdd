@@ -45,14 +45,27 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/Worker configuration revision mismatch/);
   });
 
+  it("force-recreates Cobalt and proves Worker-key POST authentication before recreating Worker", () => {
+    expect(releaseScript).toMatch(/verify_cobalt_auth_readiness\(\)/);
+    expect(releaseScript).toMatch(/start_cobalt_authenticated\(\)/);
+    expect(releaseScript).toMatch(/compose --profile cobalt up -d --force-recreate --wait cobalt-api/);
+    expect(releaseScript).toMatch(/--profile cobalt --profile cobalt-ops run --rm --no-deps cobalt-auth-readiness/);
+    expect(releaseScript).toMatch(/Cobalt authentication readiness failed; stopping the private runtime before Worker recreation/);
+    const applyBlock = releaseScript.split("  worker-config-apply)", 2)[1]?.split("  cobalt-runtime-probe)", 2)[0] ?? "";
+    expect(applyBlock.indexOf("start_cobalt_authenticated")).toBeGreaterThanOrEqual(0);
+    expect(applyBlock.indexOf("compose up -d --force-recreate --wait worker")).toBeGreaterThan(applyBlock.indexOf("start_cobalt_authenticated"));
+  });
+
   it("supports a closed-gate private Cobalt runtime probe without recreating the Worker", () => {
     expect(releaseScript).toMatch(/verify_cobalt_runtime\(\)/);
     expect(releaseScript).toMatch(/cobalt-runtime-probe\)/);
     expect(releaseScript).toMatch(/cobalt-runtime-probe requires ENABLE_COBALT_PROVIDER=false/);
     expect(releaseScript).toMatch(/compose --profile cobalt pull cobalt-api/);
-    expect(releaseScript).toMatch(/compose --profile cobalt up -d --wait cobalt-api/);
+    expect(releaseScript).toMatch(/compose --profile cobalt up -d --force-recreate --wait cobalt-api/);
     expect(releaseScript).toMatch(/compose --profile cobalt exec -T cobalt-api node -e/);
-    expect(releaseScript).toMatch(/body\?\.cobalt\?\.services/);
+    expect(releaseScript).toMatch(/info\?\.cobalt\?\.services/);
+    expect(releaseScript).toMatch(/https:\/\/example\.invalid\//);
+    expect(releaseScript).toMatch(/error\.api\.link\.unsupported/);
     expect(releaseScript).toMatch(/service=private auth=verified ok=available gates=closed/);
     expect(releaseScript).toMatch(/cobalt-runtime-stop\)/);
     const probeBlock = releaseScript.split("  cobalt-runtime-probe)", 2)[1]?.split("  cobalt-runtime-stop)", 2)[0] ?? "";
@@ -101,6 +114,18 @@ describe("production release Admin lifecycle", () => {
     expect(cobaltBlock).toMatch(/API_URL: \$\{TIKDD_COBALT_PUBLIC_ORIGIN:-https:\/\/media\.tikdd\.cc\/\}/);
     expect(cobaltBlock).toMatch(/TUNNEL_LIFESPAN: \$\{COBALT_TUNNEL_LIFESPAN:-300\}/);
     expect(cobaltBlock).toMatch(/CORS_WILDCARD: "0"/);
+  });
+
+  it("runs Cobalt authentication readiness as a private read-only one-shot service", () => {
+    const readinessBlock = productionCompose.split("  cobalt-auth-readiness:", 2)[1]?.split("  cobalt-tunnel-audit:", 2)[0] ?? "";
+    expect(readinessBlock).toMatch(/cobalt:auth-readiness/);
+    expect(readinessBlock).toMatch(/profiles: \["cobalt-ops"\]/);
+    expect(readinessBlock).toMatch(/COBALT_API_URL: http:\/\/cobalt-api:9000\//);
+    expect(readinessBlock).toMatch(/COBALT_API_KEY: \$\{COBALT_API_KEY:-\}/);
+    expect(readinessBlock).toMatch(/cobalt_api_keys/);
+    expect(readinessBlock).toMatch(/provider-egress/);
+    expect(readinessBlock).toMatch(/read_only: true/);
+    expect(readinessBlock).not.toMatch(/ports:/);
   });
 
   it("exposes only the exact Cobalt tunnel route at the media origin", () => {

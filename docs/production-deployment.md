@@ -362,6 +362,30 @@ them to Cobalt's loopback publication; the Cobalt API root, authentication surfa
 all other paths remain private. Keep `TIKDD_COBALT_PUBLIC_ORIGIN=https://media.tikdd.cc/` aligned
 with Cobalt `API_URL`, and never log or copy the signed tunnel query.
 
+The Cobalt API-key registry is a versioned runtime contract, not an opaque secret blob. For Cobalt
+11.7.1 it must use the plural `userAgents` field. Install it atomically with ownership restricted to
+the deployment account and mode `600`; the UUID below is a placeholder and must exactly match
+`COBALT_API_KEY` in the active release environment:
+
+```json
+{
+  "00000000-0000-4000-8000-000000000000": {
+    "name": "TikDD",
+    "userAgents": ["TikDD/cobalt-secondary"],
+    "allowedServices": ["ok", "tiktok"]
+  }
+}
+```
+
+Do not use `userAgent`, add undocumented fields or assume a matching file hash proves that the
+running process loaded the registry. When Cobalt is enabled, the official deploy and
+`worker-config-apply` operations force-recreate `cobalt-api`, validate the mounted registry and run
+an authenticated private `POST /` readiness probe before recreating Worker. The probe uses an
+invalid reserved-domain URL, must stop at Cobalt link validation and never contacts a media
+Provider. An unauthenticated `GET /` or Docker health status alone is insufficient. On readiness
+failure, keep the rollout disabled/allocation zero and stop Cobalt; never use a bare Compose restart
+to apply registry changes.
+
 Closed-gate multi-mode qualification uses `cobalt-multimode-qualification`. Before running it,
 write a JSON object with a `samples` array to
 `/run/tikdd/cobalt-qualification-input.json`, set ownership to the pinned service identity
