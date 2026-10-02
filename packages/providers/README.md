@@ -212,3 +212,9 @@ active. A target already approved or delivery-verified in Worker configuration i
 any upstream call. Successful Tunnel samples may be handed to the bounded audit through a fixed
 mode-600 artifact containing at most two policy-validated descriptors; the public result and logs
 remain sanitized. This tooling does not grant Dailymotion a production capability or rollout.
+
+Work Item 139 exercised that handoff against the production Cobalt instance. Both Dailymotion
+samples returned one reviewed Tunnel candidate, but both bounded client Range requests returned
+HTTP 416 with no media bytes. The exact Tunnel boundary, attachment, CORS and private-cache headers
+were present, so the unresolved boundary is Range compatibility rather than parsing or routing.
+The temporary key grant was reverted and Dailymotion remains ineligible for production routing.

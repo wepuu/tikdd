@@ -25,7 +25,7 @@ export const COBALT_PLANNED_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlat
     clientDirectExitVerified: false,
     clientProxyExitVerified: false,
     originHairpinStatus: "not-tested",
-    tunnelBoundaryVerified: false,
+    tunnelBoundaryVerified: true,
     localProcessingVerified: false,
     deliveryHandoffVerified: false,
     browserSaveMode: null,
@@ -34,7 +34,7 @@ export const COBALT_PLANNED_PLATFORM_QUALIFICATION_EVIDENCE: readonly CobaltPlat
     requiresProviderPage: false,
     sourceIpBound: false,
     temporaryFailure: false,
-    failures: ["tunnel_boundary_unverified", "delivery_handoff_unverified", "browser_save_unverified"]
+    failures: ["range_unverified", "cross_exit_unverified", "delivery_handoff_unverified", "browser_save_unverified"]
   },
   {
     providerId: "cobalt-selfhosted",
