@@ -95,6 +95,17 @@ export function parseCobaltTunnelAuditPlan(value: unknown): CobaltTunnelAuditPla
   return { exit: value.exit, samples };
 }
 
+export function parseCobaltTunnelAuditInput(
+  value: unknown,
+  exitOverride?: string | undefined
+): CobaltTunnelAuditPlan {
+  if (!exitOverride) return parseCobaltTunnelAuditPlan(value);
+  if (!isRecord(value) || !Array.isArray(value.samples)) {
+    throw new Error("Cobalt tunnel descriptor artifact must contain samples.");
+  }
+  return parseCobaltTunnelAuditPlan({ ...value, exit: exitOverride });
+}
+
 async function readBoundedBody(response: Response): Promise<number> {
   if (!response.body) return 0;
   const reader = response.body.getReader();

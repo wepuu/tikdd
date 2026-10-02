@@ -122,4 +122,9 @@ describe("detectPlatform", () => {
   ])("canonicalizes X aliases and post variants: %s", (input, expected) => {
     expect(detectPlatform(input).canonicalUrl).toBe(expected);
   });
+
+  it("recognizes the reviewed VK Video host and rejects suffix spoofing", () => {
+    expect(detectPlatform("https://vkvideo.ru/video-1_2").platform).toBe("vk");
+    expect(isSupportedPlatformUrl("https://vkvideo.ru.attacker.example/video-1_2")).toBe(false);
+  });
 });

@@ -150,7 +150,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
     displayName: "VK",
     status: "planned",
     source: "yt-dlp",
-    hosts: [host("vk.com")],
+    hosts: [host("vk.com"), host("vkvideo.ru")],
     extractorKeys: ["vk", "vk:wallpost"]
   },
   {

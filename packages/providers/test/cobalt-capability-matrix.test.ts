@@ -41,8 +41,9 @@ describe("Cobalt capability matrix", () => {
       services: ["twitter", "spoofed"],
       cobalt: { services: ["twitter", { id: "ok" }, { name: "vimeo" }, "twitter"] }
     })).toEqual(["twitter", "ok", "vimeo"]);
-    expect(mapCobaltRuntimeServicesToPlatforms(["twitter", "ok", "vimeo", "unknown"]))
-      .toEqual(["x", "odnoklassniki", "vimeo"]);
+    expect(mapCobaltRuntimeServicesToPlatforms([
+      "twitter", "ok", "vimeo", "dailymotion", "reddit", "vk", "unknown"
+    ])).toEqual(["x", "odnoklassniki", "vimeo", "dailymotion", "reddit", "vk"]);
     expect(parseCobaltRuntimeServices({ services: ["vimeo"] })).toEqual([]);
   });
 

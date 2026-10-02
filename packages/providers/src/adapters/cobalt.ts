@@ -27,7 +27,10 @@ const SUPPORTED_PLATFORMS = [
   "tiktok",
   "facebook",
   "pinterest",
-  "vimeo"
+  "vimeo",
+  "dailymotion",
+  "reddit",
+  "vk"
 ] as const;
 type CobaltPlatform = (typeof SUPPORTED_PLATFORMS)[number];
 
@@ -39,7 +42,7 @@ export const COBALT_SUCCESS_MODES = [
 ] as const;
 export type CobaltSuccessMode = (typeof COBALT_SUCCESS_MODES)[number];
 
-const DIRECT_POLICY_IDS: Record<CobaltPlatform, string> = {
+const DIRECT_POLICY_IDS: Partial<Record<CobaltPlatform, string>> = {
   odnoklassniki: "cobalt-selfhosted-okru-media-v1",
   x: "cobalt-selfhosted-x-media-v1",
   instagram: "cobalt-selfhosted-instagram-media-v1",
@@ -292,7 +295,7 @@ function normalizedFormat(
     quality?: string | null | undefined;
     type?: string | null | undefined;
   },
-  directPolicyId: string
+  directPolicyId: string | undefined
 ): NormalizedCobaltFormat {
   const mediaKind = candidate.type === "photo"
     ? "image"
@@ -310,6 +313,14 @@ function normalizedFormat(
         : "mp4";
   const container = extension(candidate.filename, candidate.url, fallbackExtension);
   const tunnel = isTunnelUrl(candidate.url);
+  if (!tunnel && !directPolicyId) {
+    throw new ProviderError(
+      "Cobalt returned a direct media host without a reviewed platform policy.",
+      "unsupported_url",
+      false,
+      true
+    );
+  }
   return {
     url: candidate.url,
     label: mediaKind === "video" ? `${qualityLabel(candidate.quality ?? candidate.filename, candidate.url)} ${container.toUpperCase()}` : `${mediaKind} ${container.toUpperCase()}`,
@@ -319,7 +330,7 @@ function normalizedFormat(
     hasAudio: mediaKind === "video" || mediaKind === "audio",
     mediaKind,
     mode: tunnel ? "proxy" : "redirect",
-    hostPolicyId: tunnel ? TUNNEL_POLICY_ID : directPolicyId
+    hostPolicyId: tunnel ? TUNNEL_POLICY_ID : directPolicyId as string
   };
 }
 
@@ -382,9 +393,6 @@ export function parseCobaltResponse(
   if (parsed.data.status === "error") mapCobaltError(parsed.data.error?.code);
   const responseMode = parsed.data.status as CobaltSuccessMode;
   const directPolicyId = DIRECT_POLICY_IDS[platform as CobaltPlatform];
-  if (!directPolicyId) {
-    throw new ProviderError("Cobalt is not configured for this platform.", "unsupported_url", false, true);
-  }
 
   if (responseMode === "local-processing") {
     const operation = parsed.data.type;

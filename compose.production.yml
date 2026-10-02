@@ -623,11 +623,17 @@ services:
       COBALT_API_URL: http://cobalt-api:9000/
       TIKDD_COBALT_API_KEYS_FILE: /run/secrets/cobalt_api_keys
       TIKDD_COBALT_QUALIFICATION_INPUT: ${TIKDD_COBALT_QUALIFICATION_INPUT:-/run/tikdd/cobalt-qualification-input.json}
+      TIKDD_COBALT_QUALIFICATION_TUNNEL_OUTPUT: /run/tikdd/cobalt-qualification-tunnel-output.json
+      COBALT_APPROVED_PLATFORMS: ${COBALT_APPROVED_PLATFORMS:-odnoklassniki,x,instagram,tiktok,facebook,pinterest,vimeo}
+      COBALT_DELIVERY_VERIFIED_CAPABILITIES: ${COBALT_DELIVERY_VERIFIED_CAPABILITIES:-}
     volumes:
       - type: bind
         source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
         target: /run/tikdd
         read_only: true
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}/cobalt-qualification-tunnel-output.json
+        target: /run/tikdd/cobalt-qualification-tunnel-output.json
     secrets:
       - cobalt_api_keys
     networks:
@@ -666,6 +672,7 @@ services:
     restart: "no"
     environment:
       TIKDD_COBALT_TUNNEL_AUDIT_INPUT: ${TIKDD_COBALT_TUNNEL_AUDIT_INPUT:-/run/tikdd/cobalt-tunnel-audit-input.json}
+      TIKDD_COBALT_TUNNEL_AUDIT_EXIT: ${TIKDD_COBALT_TUNNEL_AUDIT_EXIT:-}
       TIKDD_WEB_PUBLIC_ORIGIN: ${TIKDD_WEB_PUBLIC_ORIGIN:-https://www.tikdd.cc}
     volumes:
       - type: bind
