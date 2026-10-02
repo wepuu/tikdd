@@ -15,7 +15,7 @@ describe("Work Item 137 Cobalt planned-platform qualification", () => {
         status: "delivery-blocked",
         adapterEligible: false,
         productionRouteEligible: false,
-        failures: ["tunnel_boundary_unverified", "delivery_handoff_unverified", "browser_save_unverified"]
+        failures: ["range_unverified", "cross_exit_unverified", "delivery_handoff_unverified", "browser_save_unverified"]
       },
       {
         providerId: "cobalt-selfhosted",
@@ -39,5 +39,22 @@ describe("Work Item 137 Cobalt planned-platform qualification", () => {
   it("does not retain source URLs, media URLs or credentials", () => {
     const serialized = JSON.stringify(COBALT_PLANNED_PLATFORM_QUALIFICATION_EVIDENCE);
     expect(serialized).not.toMatch(/https?:\/\/|cookie|token|nonce|signature|cdn\./i);
+  });
+
+  it("records the reviewed tunnel boundary without overstating delivery evidence", () => {
+    const dailymotion = COBALT_PLANNED_PLATFORM_QUALIFICATION_EVIDENCE.find(
+      (entry) => entry.platform === "dailymotion"
+    );
+
+    expect(dailymotion).toMatchObject({
+      resolverExitVerified: false,
+      clientDirectExitVerified: false,
+      clientProxyExitVerified: false,
+      originHairpinStatus: "not-tested",
+      tunnelBoundaryVerified: true,
+      localProcessingVerified: false,
+      deliveryHandoffVerified: false,
+      browserSaveMode: null
+    });
   });
 });

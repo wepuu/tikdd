@@ -2283,3 +2283,17 @@ rejects a requested platform already present in Worker approved platforms or ver
 allowing a closed Dailymotion check while the existing TikTok fallback remains available. This work
 item does not modify the production key, Worker configuration, rollout, page status or SEO. See
 [Work Item 138](work-item-138-dailymotion-production-qualification-readiness.md).
+
+### Work Item 139 - Dailymotion production qualification closeout
+
+Work Item 139 deployed WI137/WI138 at exact merge SHA `47f9a8d7eab324b51f1e51d7c1fcfdec6512ff9a`
+after an encrypted off-host PostgreSQL backup and the complete staged release gate. The production
+Cobalt key was temporarily expanded with only `dailymotion` while Worker approved platforms and
+capabilities remained unchanged. Both reviewed samples resolved quickly to one Tunnel result, but
+the bounded direct-client Range audit returned HTTP 416 and zero media bytes for both samples.
+
+The original key registry was restored, temporary descriptors were deleted, authenticated
+readiness passed, and Worker was force-recreated with only `odnoklassniki,tiktok` and
+`tiktok:tunnel`. No Dailymotion rollout rule or public content was created. Dailymotion remains
+planned and delivery-blocked pending a focused Tunnel Range compatibility repair. See
+[Work Item 139](work-item-139-dailymotion-production-qualification-closeout.md).

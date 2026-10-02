@@ -423,6 +423,13 @@ The Tunnel audit also accepts the qualification artifact when
 `origin-hairpin`. The exit label is supplied by the executing client and is never trusted from the
 artifact itself.
 
+The WI139 production audit showed that a valid Tunnel descriptor can still reject the bounded
+`Range: bytes=0-1023` request with HTTP 416. Treat that result as `range_unverified`: do not retry
+through a full browser download, add the platform to Worker capabilities, or create a rollout rule.
+Restore the previous key registry, delete every descriptor copy, and re-run authenticated readiness
+plus `worker-config-apply`. A later repair must preserve bounded reads and may not weaken the
+existing Tunnel Host Policy.
+
 ```sh
 install -o 1000 -g 1000 -m 600 /tmp/cobalt-qualification-input.json \
   /run/tikdd/cobalt-qualification-input.json
