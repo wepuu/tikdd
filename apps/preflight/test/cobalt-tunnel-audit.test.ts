@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   classifyCobaltOriginHairpin,
+  parseCobaltTunnelAuditInput,
   parseCobaltTunnelAuditPlan,
   runCobaltTunnelAudit
 } from "../src/cobalt-tunnel-audit";
@@ -31,6 +32,16 @@ describe("Cobalt tunnel delivery audit", () => {
       exit: "client-direct",
       samples: [{ id: "bad", url: descriptor().replace("media.tikdd.cc", "media.tikdd.cc.example.com") }]
     })).toThrow(/host/i);
+  });
+
+  it("accepts a qualification artifact only with an explicit reviewed exit", () => {
+    const artifact = { schemaVersion: "1.0", samples: [{ id: "dailymotion-a", url: descriptor() }] };
+    expect(parseCobaltTunnelAuditInput(artifact, "client-direct")).toMatchObject({
+      exit: "client-direct",
+      samples: [{ id: "dailymotion-a" }]
+    });
+    expect(() => parseCobaltTunnelAuditInput(artifact)).toThrow(/exit/i);
+    expect(() => parseCobaltTunnelAuditInput(artifact, "unreviewed-exit")).toThrow(/exit/i);
   });
 
   it("passes a non-zero attachment MP4 range with exact CORS and private caching", async () => {

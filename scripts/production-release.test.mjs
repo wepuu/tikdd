@@ -75,12 +75,14 @@ describe("production release Admin lifecycle", () => {
   it("runs a bounded Cobalt multimode qualification and deletes its temporary input", () => {
     expect(releaseScript).toMatch(/verify_cobalt_qualification_input\(\)/);
     expect(releaseScript).toMatch(/cobalt-multimode-qualification\)/);
-    expect(releaseScript).toMatch(/requires ENABLE_COBALT_PROVIDER=false/);
+    expect(releaseScript).toMatch(/Remove the stale Cobalt qualification tunnel output before continuing/);
     expect(releaseScript).toMatch(/input must have mode 600/);
     expect(releaseScript).toMatch(/input must be owned by service UID 1000/);
     expect(releaseScript).toMatch(/stat -c '%u' "\$qualification_input"/);
     expect(releaseScript).toMatch(/compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification/);
-    expect(releaseScript).toMatch(/trap 'rm -f "\$qualification_input"'/);
+    expect(releaseScript).toMatch(/install -o 1000 -g 1000 -m 600 \/dev\/null "\$qualification_output"/);
+    expect(releaseScript).toMatch(/trap 'rm -f "\$qualification_input" "\$qualification_output"'/);
+    expect(releaseScript).toMatch(/cobalt_tunnel_artifact=READY/);
     const qualificationBlock = productionCompose.split("  cobalt-qualification:", 2)[1]?.split("  canary:", 2)[0] ?? "";
     expect(qualificationBlock).toMatch(/cobalt:qualify/);
     expect(qualificationBlock).toMatch(/profiles: \["cobalt-ops"\]/);
@@ -88,6 +90,9 @@ describe("production release Admin lifecycle", () => {
     expect(qualificationBlock).toMatch(/read_only: true/);
     expect(qualificationBlock).toMatch(/cobalt_api_keys/);
     expect(qualificationBlock).toMatch(/provider-egress/);
+    expect(qualificationBlock).toMatch(/COBALT_APPROVED_PLATFORMS/);
+    expect(qualificationBlock).toMatch(/COBALT_DELIVERY_VERIFIED_CAPABILITIES/);
+    expect(qualificationBlock).toMatch(/cobalt-qualification-tunnel-output\.json/);
   });
 
   it("audits signed Cobalt tunnel descriptors with closed gates and deletes the sensitive input", () => {

@@ -2270,3 +2270,16 @@ The supplied Reddit and VK pages require an authenticated browser session and ar
 catalog host with suffix-spoof coverage, while VK remains planned. Production credentials, Worker
 configuration, rollout rules, public pages, SEO status and existing traffic are unchanged. See
 [Work Item 137](work-item-137-cobalt-planned-platform-expansion.md).
+
+### Work Item 138 - Dailymotion production qualification readiness
+
+Work Item 138 adds a permission-preserving handoff between Cobalt qualification and the existing
+Tunnel audit. At most two signed descriptors can be written to a fixed UID-1000, mode-600 runtime
+artifact after Host Policy validation; qualification failures remove it and normal output remains
+fully sanitized. An audit client must supply an explicit reviewed exit and delete its copy.
+
+Qualification is now isolated per platform rather than by stopping every Cobalt route. The runner
+rejects a requested platform already present in Worker approved platforms or verified capabilities,
+allowing a closed Dailymotion check while the existing TikTok fallback remains available. This work
+item does not modify the production key, Worker configuration, rollout, page status or SEO. See
+[Work Item 138](work-item-138-dailymotion-production-qualification-readiness.md).

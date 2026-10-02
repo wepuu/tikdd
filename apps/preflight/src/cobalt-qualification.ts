@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { chmodSync, readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { detectPlatform } from "@tikdd/platform";
 import {
@@ -8,6 +8,7 @@ import {
   type CobaltSuccessMode,
   type ResolverProvider
 } from "@tikdd/providers";
+import { parseCobaltTunnelAuditInput } from "./cobalt-tunnel-audit";
 
 const SUPPORTED_PLATFORMS = [
   "x",
@@ -52,6 +53,24 @@ export interface CobaltQualificationResult {
   durationMs: number;
 }
 
+export interface CobaltQualificationTunnelArtifactSample {
+  id: string;
+  url: string;
+}
+
+export function writeCobaltQualificationTunnelArtifact(
+  path: string,
+  samples: readonly CobaltQualificationTunnelArtifactSample[]
+): void {
+  const plan = parseCobaltTunnelAuditInput({ samples }, "client-direct");
+  const artifact = {
+    schemaVersion: "1.0",
+    samples: plan.samples.map(({ id, targetUrl }) => ({ id, url: targetUrl }))
+  };
+  writeFileSync(path, `${JSON.stringify(artifact)}\n`, { encoding: "utf8", flag: "w", mode: 0o600 });
+  chmodSync(path, 0o600);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -92,6 +111,23 @@ export function parseCobaltQualificationPlan(value: unknown): CobaltQualificatio
     return { id, platform, sourceUrl: candidate.url, canonicalUrl: detected.canonicalUrl };
   });
   return { samples };
+}
+
+export function assertCobaltQualificationTrafficIsolation(
+  plan: CobaltQualificationPlan,
+  input: { approvedPlatforms?: string | undefined; verifiedCapabilities?: string | undefined }
+): void {
+  const activePlatforms = new Set(
+    (input.approvedPlatforms ?? "").split(",").map((value) => value.trim()).filter(Boolean)
+  );
+  for (const entry of (input.verifiedCapabilities ?? "").split(",")) {
+    const platform = entry.trim().split(":", 1)[0];
+    if (platform) activePlatforms.add(platform);
+  }
+  const overlap = plan.samples.find(({ platform }) => activePlatforms.has(platform));
+  if (overlap) {
+    throw new Error(`Cobalt qualification platform is active in Worker configuration: ${overlap.platform}.`);
+  }
 }
 
 export function readCobaltApiKey(path: string): string {
@@ -139,6 +175,7 @@ export async function runCobaltQualification(
     apiKey: string;
     sleep?: (milliseconds: number) => Promise<void>;
     providerFactory?: (diagnosticSink: (event: CobaltDiagnosticEvent) => void) => ResolverProvider;
+    tunnelArtifactSink?: (samples: readonly CobaltQualificationTunnelArtifactSample[]) => void | Promise<void>;
   }
 ): Promise<readonly CobaltQualificationResult[]> {
   const diagnostics = new Map<string, CobaltDiagnosticEvent>();
@@ -154,6 +191,7 @@ export async function runCobaltQualification(
   });
   const sleep = options.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
   const results: CobaltQualificationResult[] = [];
+  const tunnelArtifactSamples: CobaltQualificationTunnelArtifactSample[] = [];
 
   for (const [index, sample] of plan.samples.entries()) {
     if (index > 0) await sleep(COBALT_QUALIFICATION_INTERVAL_MS);
@@ -166,6 +204,17 @@ export async function runCobaltQualification(
         canonicalUrl: sample.canonicalUrl,
         platform: sample.platform
       });
+      const tunnelCandidates = resolution.candidates.flatMap((candidate) => {
+        if (candidate.kind === "processing") return [];
+        return candidate.mode === "proxy" && candidate.hostPolicyId === "cobalt-selfhosted-tunnel-media-v1"
+          ? [candidate]
+          : [];
+      });
+      if (tunnelCandidates.length > 1) {
+        throw new ProviderError("Cobalt qualification returned multiple tunnel candidates for one sample.", "invalid_result", false, true);
+      }
+      const tunnelCandidate = tunnelCandidates[0];
+      if (tunnelCandidate) tunnelArtifactSamples.push({ id: sample.id, url: tunnelCandidate.targetUrl });
       results.push(summarizeResolution(sample, resolution, diagnostics.get(taskId) ?? null, Date.now() - startedAt));
     } catch (error) {
       const diagnostic = diagnostics.get(taskId) ?? null;
@@ -185,5 +234,9 @@ export async function runCobaltQualification(
       });
     }
   }
+  if (tunnelArtifactSamples.length > 2) {
+    throw new Error("Cobalt qualification tunnel artifact is limited to two samples.");
+  }
+  if (tunnelArtifactSamples.length > 0) await options.tunnelArtifactSink?.(tunnelArtifactSamples);
   return results;
 }

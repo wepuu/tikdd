@@ -283,18 +283,6 @@ start_cobalt_authenticated() {
 }
 
 verify_cobalt_qualification_input() {
-  [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "false" ] || {
-    echo "cobalt-multimode-qualification requires ENABLE_COBALT_PROVIDER=false." >&2
-    return 78
-  }
-  [ "$(release_value COBALT_LICENSE_ACKNOWLEDGED "false")" = "false" ] || {
-    echo "cobalt-multimode-qualification requires COBALT_LICENSE_ACKNOWLEDGED=false." >&2
-    return 78
-  }
-  [ "$(release_value COBALT_DELIVERY_AUDIT_APPROVED "false")" = "false" ] || {
-    echo "cobalt-multimode-qualification requires COBALT_DELIVERY_AUDIT_APPROVED=false." >&2
-    return 78
-  }
   qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
   [ "$qualification_input" = "/run/tikdd/cobalt-qualification-input.json" ] || {
     echo "Cobalt qualification input must use the reviewed runtime path." >&2
@@ -315,6 +303,11 @@ verify_cobalt_qualification_input() {
   input_uid="$(stat -c '%u' "$qualification_input" 2>/dev/null || true)"
   [ "$input_uid" = "1000" ] || {
     echo "Cobalt qualification input must be owned by service UID 1000." >&2
+    return 78
+  }
+  qualification_output="/run/tikdd/cobalt-qualification-tunnel-output.json"
+  [ ! -e "$qualification_output" ] || {
+    echo "Remove the stale Cobalt qualification tunnel output before continuing." >&2
     return 78
   }
 }
@@ -564,12 +557,27 @@ case "$action" in
     validate
     verify_cobalt_qualification_input
     qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
-    trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
+    qualification_output="/run/tikdd/cobalt-qualification-tunnel-output.json"
+    install -o 1000 -g 1000 -m 600 /dev/null "$qualification_output"
+    trap 'rm -f "$qualification_input" "$qualification_output"' EXIT HUP INT TERM
     compose --profile cobalt pull cobalt-api
     start_cobalt_authenticated
-    verify_cobalt_runtime
     compose --profile cobalt --profile cobalt-ops run --rm cobalt-qualification
     rm -f "$qualification_input"
+    if [ -s "$qualification_output" ]; then
+      [ "$(stat -c '%a' "$qualification_output" 2>/dev/null || true)" = "600" ] || {
+        echo "Cobalt qualification tunnel output must have mode 600." >&2
+        exit 78
+      }
+      [ "$(stat -c '%u' "$qualification_output" 2>/dev/null || true)" = "1000" ] || {
+        echo "Cobalt qualification tunnel output must be owned by service UID 1000." >&2
+        exit 78
+      }
+      echo "cobalt_tunnel_artifact=READY samples=bounded path=$qualification_output"
+    else
+      rm -f "$qualification_output"
+      echo "cobalt_tunnel_artifact=NONE"
+    fi
     trap - EXIT HUP INT TERM
     ;;
   cobalt-tunnel-audit)

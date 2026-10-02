@@ -206,3 +206,9 @@ not be redeemed by the production media origin, so it remains `delivery-blocked`
 Dailymotion only through the existing Tunnel policy and rejects direct results until a source-CDN
 policy exists. The supplied Reddit and VK samples require browser login state and are recorded as
 blocked; no Cookie or account state is forwarded. No new route, gate or rollout is active.
+
+Work Item 138 keeps qualification isolated at platform scope while another Cobalt capability is
+active. A target already approved or delivery-verified in Worker configuration is rejected before
+any upstream call. Successful Tunnel samples may be handed to the bounded audit through a fixed
+mode-600 artifact containing at most two policy-validated descriptors; the public result and logs
+remain sanitized. This tooling does not grant Dailymotion a production capability or rollout.

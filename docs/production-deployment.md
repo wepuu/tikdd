@@ -390,10 +390,20 @@ to apply registry changes.
 Closed-gate multi-mode qualification uses `cobalt-multimode-qualification`. Before running it,
 write a JSON object with a `samples` array to
 `/run/tikdd/cobalt-qualification-input.json`, set ownership to the pinned service identity
-`1000:1000` and mode `600`, and keep all three Cobalt Provider gates false. The operation validates
-the private runtime, performs at most eight sequential calls,
-prints only sanitized evidence, and deletes the temporary input on success or failure. It does not
-recreate the Worker or grant a rollout rule.
+`1000:1000` and mode `600`. Every requested platform must be absent from both
+`COBALT_APPROVED_PLATFORMS` and `COBALT_DELIVERY_VERIFIED_CAPABILITIES`; the runner rejects an
+overlap before contacting Cobalt. This permits qualification while an unrelated Cobalt platform
+remains active without recreating the Worker or granting a rollout rule. The private runtime is
+authenticated and the operation performs at most eight sequential calls, prints only sanitized
+evidence, and deletes the temporary input on success or failure.
+
+A successful Tunnel response writes the fixed
+`/run/tikdd/cobalt-qualification-tunnel-output.json` artifact with UID 1000 and mode `0600`.
+It contains at most two policy-validated signed descriptors and never appears in stdout. Copy it
+only through a permission-preserving channel, delete the server copy immediately after transfer,
+and delete every client copy after the audit or descriptor expiry. Failed and interrupted
+qualification runs remove it automatically. Refuse to start a new run while a stale artifact
+exists.
 
 Tunnel delivery checks use the separate `cobalt-tunnel-audit` operation. Write one or two current
 signed descriptors to `/run/tikdd/cobalt-tunnel-audit-input.json`, label the actual execution exit
@@ -407,6 +417,11 @@ access log: an observed origin request is `origin-rejected`, an absent origin re
 a Cloudflare request marker is `edge-blocked`, and incomplete correlation stays
 `blocked-unclassified`. Never copy the signed descriptor into a command line, release log or shell
 history.
+
+The Tunnel audit also accepts the qualification artifact when
+`TIKDD_COBALT_TUNNEL_AUDIT_EXIT` is explicitly set to `client-direct`, `client-proxy`, or
+`origin-hairpin`. The exit label is supplied by the executing client and is never trusted from the
+artifact itself.
 
 ```sh
 install -o 1000 -g 1000 -m 600 /tmp/cobalt-qualification-input.json \

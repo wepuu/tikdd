@@ -36,6 +36,12 @@ a real browser save were not yet verified.
 - Signed tunnel audit inputs are mode-600, UID-1000 temporary files. The audit reads at most 1 KiB
   from at most two descriptors, follows no redirects, prints only sanitized fields and deletes the
   input on exit.
+- A qualification run may create one short-lived descriptor artifact only after every target
+  platform is absent from the Worker approved-platform and verified-capability sets. The artifact
+  contains at most two policy-validated Tunnel descriptors, is owned by UID 1000 with mode 600,
+  never enters stdout, and is removed on qualification failure. Independent clients must provide
+  an explicit reviewed exit label when consuming a copied artifact and delete their copy after the
+  audit. An active Cobalt route for another platform does not require a service-wide shutdown.
 - Cloudflare or origin diagnostics may record whether a request ID was observed, but never the ID,
   signed query, response body, complete media URL, Cookie, header set, or credential.
 - Existing stable Providers remain above Cobalt. This ADR changes qualification semantics, not
