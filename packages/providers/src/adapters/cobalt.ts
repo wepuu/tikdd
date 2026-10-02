@@ -15,6 +15,10 @@ import {
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
 import { createResolveResult, type ParsedFormat, type ProviderFetch } from "./shared";
+import {
+  resolveTikTokThumbnail,
+  type TikTokThumbnailDiagnosticEvent
+} from "./tiktok-thumbnail";
 
 const SUPPORTED_PLATFORMS = [
   "odnoklassniki",
@@ -100,7 +104,9 @@ export interface CobaltProviderOptions {
   apiUrl?: string;
   apiKey?: string;
   fetchImpl?: ProviderFetch;
+  thumbnailFetchImpl?: ProviderFetch;
   diagnosticSink?: (event: CobaltDiagnosticEvent) => void;
+  thumbnailDiagnosticSink?: (event: TikTokThumbnailDiagnosticEvent) => void;
   approvedPlatforms?: readonly Platform[];
   deliveryVerifiedPlatforms?: readonly Platform[];
   deliveryVerifiedCapabilities?: Readonly<Partial<Record<Platform, readonly CobaltSuccessMode[]>>>;
@@ -498,11 +504,12 @@ function expirationForFormats(formats: readonly NormalizedCobaltFormat[]): strin
 function createCobaltResolution(
   providerId: string,
   input: ResolveInput,
-  parsed: ParsedCobaltResponse
+  parsed: ParsedCobaltResponse,
+  thumbnailUrl: string | null = null
 ): ProviderResolution {
   const result = createResolveResult(providerId, "api", input, {
     title: parsed.title,
-    thumbnailUrl: null,
+    thumbnailUrl,
     formats: parsed.formats,
     warnings: [`Cobalt is a self-hosted experimental ${input.platform} fallback Provider.`]
   }, { deliveryPending: false });
@@ -556,7 +563,9 @@ export class CobaltProvider implements ResolverProvider {
   private readonly apiOrigin: URL;
   private readonly apiKey: string;
   private readonly fetchImpl: ProviderFetch;
+  private readonly thumbnailFetchImpl: ProviderFetch;
   private readonly diagnosticSink: ((event: CobaltDiagnosticEvent) => void) | null;
+  private readonly thumbnailDiagnosticSink: ((event: TikTokThumbnailDiagnosticEvent) => void) | null;
   private readonly approvedPlatforms: ReadonlySet<string>;
   private readonly verifiedCapabilities: Readonly<Record<string, readonly CobaltSuccessMode[]>>;
 
@@ -565,7 +574,9 @@ export class CobaltProvider implements ResolverProvider {
     this.apiKey = options.apiKey?.trim() ?? "";
     if (this.apiKey.length > API_KEY_MAXIMUM_LENGTH) throw new Error("COBALT_API_KEY is too long.");
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.thumbnailFetchImpl = options.thumbnailFetchImpl ?? fetch;
     this.diagnosticSink = options.diagnosticSink ?? null;
+    this.thumbnailDiagnosticSink = options.thumbnailDiagnosticSink ?? null;
     this.approvedPlatforms = new Set(options.approvedPlatforms ?? SUPPORTED_PLATFORMS);
     const verifiedCapabilities: Record<string, readonly CobaltSuccessMode[]> = {};
     for (const [platform, modes] of Object.entries(options.deliveryVerifiedCapabilities ?? {})) {
@@ -688,7 +699,16 @@ export class CobaltProvider implements ResolverProvider {
       candidateCount = Array.isArray(raw.picker) ? raw.picker.length : Array.isArray(raw.tunnel) ? raw.tunnel.length : 1;
       validMediaCount = parsed.formats.length;
       rejectedCount = Math.max(0, (candidateCount ?? 0) - validMediaCount);
-      const resolution = createCobaltResolution(this.manifest.id, input, parsed);
+      const thumbnailUrl = input.platform === "tiktok"
+        ? await resolveTikTokThumbnail({
+            taskId: input.taskId,
+            canonicalUrl: input.canonicalUrl,
+            fetchImpl: this.thumbnailFetchImpl,
+            ...(input.signal ? { signal: input.signal } : {}),
+            ...(this.thumbnailDiagnosticSink ? { diagnosticSink: this.thumbnailDiagnosticSink } : {})
+          })
+        : null;
+      const resolution = createCobaltResolution(this.manifest.id, input, parsed, thumbnailUrl);
       phase = "completed";
       emit("success", null);
       return resolution;

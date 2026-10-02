@@ -2246,3 +2246,13 @@ The Cobalt result did not include a thumbnail. This is a known normalization lim
 adapter currently emits a null thumbnail for every Cobalt mode. Optional platform-owned thumbnail
 enrichment is deferred and must not alter the proven media-delivery path. See
 [Work Item 135](work-item-135-cobalt-tiktok-production-closeout.md).
+
+### Work Item 136 - optional Cobalt TikTok thumbnail enrichment
+
+Work Item 136 uses TikTok's official oEmbed endpoint only after Cobalt has produced a valid TikTok
+media result. Two bounded NL samples identified one exact, portable image host. The enrichment has
+its own three-second timeout and 64-KiB response ceiling, never retries, and converts every metadata
+failure into a null thumbnail so Cobalt media delivery remains successful. The Web's existing image
+error path continues to show the TikTok platform icon. No route, public contract, database or media
+Delivery policy changes are introduced. See
+[Work Item 136](work-item-136-cobalt-tiktok-thumbnail.md).

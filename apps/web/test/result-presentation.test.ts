@@ -55,7 +55,7 @@ describe("result presentation", () => {
   });
 
   it("shows a normalized thumbnail and falls back after that URL fails", () => {
-    const thumbnail = "https://pbs.twimg.com/media/preview.jpg";
+    const thumbnail = "https://p16-common-sign.tiktokcdn-eu.com/obj/preview";
     expect(displayThumbnailUrl(thumbnail, null)).toBe(thumbnail);
     expect(displayThumbnailUrl(thumbnail, thumbnail)).toBeNull();
     expect(displayThumbnailUrl(null, null)).toBeNull();

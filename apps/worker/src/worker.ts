@@ -303,7 +303,8 @@ if (cobaltActivation.enabled) {
     approvedPlatforms: cobaltActivation.approvedPlatforms,
     deliveryVerifiedPlatforms: cobaltActivation.deliveryVerifiedPlatforms,
     deliveryVerifiedCapabilities: cobaltActivation.deliveryVerifiedCapabilities,
-    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
+    diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
+    thumbnailDiagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
 }
 if (enableMockProvider) {
