@@ -214,12 +214,12 @@ importers:
 
   apps/preflight:
     dependencies:
-      '@tikdd/deployment-preflight':
-        specifier: workspace:*
-        version: link:../../packages/deployment-preflight
       '@tikdd/delivery-core':
         specifier: workspace:*
         version: link:../../packages/delivery-core
+      '@tikdd/deployment-preflight':
+        specifier: workspace:*
+        version: link:../../packages/deployment-preflight
       '@tikdd/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -314,6 +314,18 @@ importers:
       ioredis:
         specifier: ^5.0.0
         version: 5.11.1
+
+  apps/ytdlp-runner:
+    dependencies:
+      '@tikdd/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@tikdd/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      fastify:
+        specifier: ^5.0.0
+        version: 5.11.0
 
   packages/admin-contracts:
     dependencies:

@@ -278,9 +278,57 @@ export const DeliverySchema = z.object({
   expiresAt: z.string().datetime(),
   // Optional for rolling deployments: older Delivery services omit it and
   // clients must retain the navigate behavior.
-  browserHandoff: z.enum(["navigate", "cors-download", "client-process"]).optional()
+  browserHandoff: z.enum(["navigate", "cors-download", "client-process", "server-download"]).optional()
 });
 export type Delivery = z.infer<typeof DeliverySchema>;
+
+export const YtDlpRunnerPlatformSchema = z.enum(["dailymotion", "youtube"]);
+export type YtDlpRunnerPlatform = z.infer<typeof YtDlpRunnerPlatformSchema>;
+
+export const YtDlpRunnerRequestSchema = z.strictObject({
+  requestId: z.string().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/),
+  platform: YtDlpRunnerPlatformSchema,
+  url: z.string().url().max(2_048),
+  deadlineMs: z.number().int().min(5_000).max(35_000).default(30_000)
+});
+export type YtDlpRunnerRequest = z.infer<typeof YtDlpRunnerRequestSchema>;
+
+export const YtDlpRunnerHeadersSchema = z.partialRecord(
+  z.enum(["User-Agent", "Referer", "Origin"]),
+  z.string().min(1).max(1_024)
+).default({});
+
+export const YtDlpRunnerFormatSchema = z.strictObject({
+  sourceFormatId: z.string().min(1).max(160).regex(/^[A-Za-z0-9._-]+$/),
+  container: z.string().min(1).max(24),
+  protocol: z.enum(["https", "hls", "dash", "unknown"]),
+  quality: z.string().min(1).max(80),
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
+  fps: z.number().positive().nullable(),
+  bitrateKbps: z.number().nonnegative().nullable(),
+  estimatedBytes: z.number().int().nonnegative().nullable(),
+  videoCodec: z.string().min(1).max(80).nullable(),
+  audioCodec: z.string().min(1).max(80).nullable(),
+  hasVideo: z.boolean(),
+  hasAudio: z.boolean(),
+  targetUrl: z.string().url().max(8_192),
+  headers: YtDlpRunnerHeadersSchema
+});
+export type YtDlpRunnerFormat = z.infer<typeof YtDlpRunnerFormatSchema>;
+
+export const YtDlpRunnerResponseSchema = z.strictObject({
+  platform: YtDlpRunnerPlatformSchema,
+  sourceId: z.string().min(1).max(200),
+  title: z.string().min(1).max(500),
+  author: z.string().max(200).nullable(),
+  thumbnailUrl: PublicThumbnailUrlSchema.nullable(),
+  durationSeconds: z.number().nonnegative().nullable(),
+  isLive: z.boolean(),
+  extractor: z.string().min(1).max(100),
+  formats: z.array(YtDlpRunnerFormatSchema).min(1).max(40)
+});
+export type YtDlpRunnerResponse = z.infer<typeof YtDlpRunnerResponseSchema>;
 
 export const ClientProcessingOperationSchema = z.enum([
   "merge",

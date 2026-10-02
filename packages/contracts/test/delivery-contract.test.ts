@@ -13,6 +13,11 @@ describe("Delivery browser handoff contract", () => {
     expect(DeliverySchema.parse(base).browserHandoff).toBeUndefined();
   });
 
+  it("accepts the explicit bounded server download handoff", () => {
+    expect(DeliverySchema.parse({ ...base, mode: "proxy", browserHandoff: "server-download" }).browserHandoff)
+      .toBe("server-download");
+  });
+
   it("accepts the reviewed CORS save strategy", () => {
     expect(DeliverySchema.parse({ ...base, browserHandoff: "cors-download" }).browserHandoff)
       .toBe("cors-download");

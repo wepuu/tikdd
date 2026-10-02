@@ -486,7 +486,7 @@ components:
           format: date-time
         browserHandoff:
           type: string
-          enum: [navigate, cors-download, client-process]
+          enum: [navigate, cors-download, client-process, server-download]
           description: Browser handoff strategy; omitted by older Delivery services.
     DeliveryClientProcessingPlan:
       type: object

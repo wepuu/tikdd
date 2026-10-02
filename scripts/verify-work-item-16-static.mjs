@@ -127,6 +127,7 @@ export function verifyWorkItem16Static() {
   assert(/FROM production-dependencies AS service/.test(dockerfile), "tikdd-service image target is missing.");
   assert(/FROM production-dependencies AS web/.test(dockerfile), "tikdd-web image target is missing.");
   assert(/FROM production-dependencies AS admin/.test(dockerfile), "tikdd-admin image target is missing.");
+  assert(/FROM production-dependencies AS ytdlp-runner/.test(dockerfile), "tikdd-ytdlp-runner image target is missing.");
   assert(/pnpm install --prod --frozen-lockfile/.test(dockerfile), "Production dependencies must exclude the development toolchain.");
   assert(/USER node/g.test(dockerfile), "Application images must run as a non-root user.");
   assert(/TIKDD_REQUIRED_SECRET_ENV_VARS/.test(secretEntrypoint) && !/echo.*value/i.test(secretEntrypoint), "The fail-closed secret bootstrap is missing or unsafe.");
@@ -140,7 +141,7 @@ export function verifyWorkItem16Static() {
   assert(/cap_drop:\r?\n      - ALL/.test(blocks.redis), "TikDD Redis must drop Linux capabilities.");
   assert(/^TIKDD_SECRETS_GID=1999$/m.test(productionEnvironment), "The host secret GID contract is missing.");
   assert(!/github\.com\/example\/tikdd/.test(dockerfile), "OCI source metadata must identify the reviewed repository.");
-  assert((dockerfile.match(/org\.opencontainers\.image\.source="https:\/\/github\.com\/wepuu\/tikdd"/g) ?? []).length === 3, "Every application image target needs the reviewed OCI source.");
+  assert((dockerfile.match(/org\.opencontainers\.image\.source="https:\/\/github\.com\/wepuu\/tikdd"/g) ?? []).length === 4, "Every application image target needs the reviewed OCI source.");
 
   for (const name of ["web", "api", "worker", "delivery", "admin-api", "admin", "migration", "preflight", "canary", "evidence", "cleanup", "cleanup-dry-run"]) {
     assert(/^    secrets:/m.test(blocks[name]), `${name} is missing its explicit secret mount list.`);

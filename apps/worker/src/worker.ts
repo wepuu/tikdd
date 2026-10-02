@@ -38,6 +38,7 @@ import {
   SnapYTProvider,
   NoAdsDLProvider,
   CobaltProvider,
+  YtDlpIsolatedProvider,
   createSSSTwitterDiagnosticTraceFromEnvironment,
   type FDownIsuruDiagnosticEvent,
   type ResolverProvider
@@ -75,6 +76,7 @@ import { loadGetXHamsterActivationConfiguration } from "./getxhamster-activation
 import { loadSnapYTActivationConfiguration } from "./snapyt-activation";
 import { loadNoAdsDLActivationConfiguration } from "./noadsdl-activation";
 import { loadCobaltActivationConfiguration } from "./cobalt-activation";
+import { loadYtDlpActivationConfiguration } from "./ytdlp-activation";
 import { RedisLocoLoaderRequestBudget } from "./locoloader-budget";
 import { handleExhaustedResolveJob, processResolveJob } from "./resolve-job-processor";
 
@@ -102,6 +104,7 @@ const getXHamsterActivation = loadGetXHamsterActivationConfiguration();
 const snapYTActivation = loadSnapYTActivationConfiguration();
 const noAdsDLActivation = loadNoAdsDLActivationConfiguration();
 const cobaltActivation = loadCobaltActivationConfiguration();
+const ytdlpActivation = loadYtDlpActivationConfiguration();
 const concurrency = Number.parseInt(process.env.RESOLVER_CONCURRENCY ?? "4", 10);
 const routeMaxAttempts = Number.parseInt(process.env.ROUTE_MAX_ATTEMPTS ?? "4", 10);
 const routeTimeoutMs = Number.parseInt(process.env.ROUTE_TIMEOUT_MS ?? "30000", 10);
@@ -306,6 +309,13 @@ if (cobaltActivation.enabled) {
     diagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
     thumbnailDiagnosticSink: (event) => process.stdout.write(`${JSON.stringify(event)}\n`)
   }));
+}
+if (ytdlpActivation.enabled) {
+  const hmacSecret = process.env.YTDLP_RUNNER_HMAC_SECRET?.trim();
+  if (!hmacSecret || hmacSecret.length < 32) throw new Error("YTDLP_RUNNER_HMAC_SECRET must be configured before enabling yt-dlp.");
+  providers.push(new YtDlpIsolatedProvider({ enabled: true, apiUrl: ytdlpActivation.apiUrl, hmacSecret,
+    approvedPlatforms: ytdlpActivation.approvedPlatforms.filter((value): value is "dailymotion" | "youtube" => value === "dailymotion" || value === "youtube"),
+    deliveryVerifiedCapabilities: ytdlpActivation.deliveryVerifiedCapabilities }));
 }
 if (enableMockProvider) {
   providers.push(new MockProvider(catalogPlatforms));

@@ -192,6 +192,7 @@ export {
   type NoAdsThumbnailStatus,
   type NoAdsContentType
 } from "./adapters/noadsdl";
+export { YtDlpIsolatedProvider, type YtDlpDeliveryCapability, type YtDlpIsolatedProviderOptions } from "./adapters/ytdlp-isolated";
 export {
   NineXBuddyProvider,
   createNineXBuddyAuthToken,

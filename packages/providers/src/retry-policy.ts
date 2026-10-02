@@ -46,6 +46,9 @@ export function shouldAutomaticallyRetryProviderFailure(input: {
   if (input.providerId === "cobalt-selfhosted") {
     return false;
   }
+  if (input.providerId === "ytdlp-isolated") {
+    return false;
+  }
   return true;
 }
 
@@ -56,5 +59,6 @@ export function resolveJobAttemptsForPlatform(platform: string): number {
   if (platform === "xhamster") return 1;
   if (platform === "youtube") return 1;
   if (platform === "odnoklassniki") return 1;
+  if (platform === "dailymotion") return 1;
   return 3;
 }

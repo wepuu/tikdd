@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { Readable } from "node:stream";
 import cors from "@fastify/cors";
 import {
   CreateDeliveryRequestSchema,
@@ -50,6 +51,7 @@ export interface CreateDeliveryAppOptions {
   ticketTtlMs?: number;
   tokenFactory?: () => string;
   ticketIdFactory?: () => string;
+  fetchImpl?: typeof fetch;
 }
 
 export async function createDeliveryApp(
@@ -240,7 +242,7 @@ export async function createDeliveryApp(
 
     let target: URL;
     try {
-      if (Object.keys(secret.secretHeaders).length > 0) {
+      if (Object.keys(secret.secretHeaders).length > 0 && policy.browserHandoff !== "server-download") {
         throw new Error("Browser delivery cannot use server-held headers.");
       }
       target = assertDeliveryTargetPolicy({
@@ -261,6 +263,71 @@ export async function createDeliveryApp(
           message: "The delivery target failed its security validation."
         }
       });
+    }
+    if (policy.browserHandoff === "server-download") {
+      if (!policy.relay || redeemed.candidate.mode !== "proxy") {
+        return reply.code(502).send({ error: { code: "DELIVERY_TARGET_REJECTED", message: "The relay policy was rejected." } });
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), policy.relay.maximumDurationMs);
+      try {
+        let current = target;
+        let upstream: Response | null = null;
+        for (let redirects = 0; redirects <= 3; redirects += 1) {
+          upstream = await (options.fetchImpl ?? fetch)(current, {
+            method: "GET", redirect: "manual", signal: controller.signal, headers: secret.secretHeaders
+          });
+          if (![301, 302, 303, 307, 308].includes(upstream.status)) break;
+          const location = upstream.headers.get("location");
+          if (!location || redirects === 3) throw new Error("Relay redirect rejected.");
+          current = assertDeliveryTargetPolicy({ providerId: redeemed.candidate.providerId, mode: redeemed.candidate.mode,
+            hostPolicyId: redeemed.candidate.hostPolicyId, targetUrl: new URL(location, current).toString() });
+          await assertPublicDeliveryDns(current.hostname, options.dnsLookup);
+        }
+        if (!upstream?.ok || !upstream.body) throw new Error("Relay upstream failed.");
+        const mimeType = (upstream.headers.get("content-type") ?? "").split(";", 1)[0]!.trim().toLowerCase();
+        if (!policy.relay.allowedMimeTypes.includes(mimeType)) throw new Error("Relay MIME rejected.");
+        const contentLength = Number.parseInt(upstream.headers.get("content-length") ?? "", 10);
+        if (Number.isFinite(contentLength) && (contentLength <= 0 || contentLength > policy.relay.maximumBytes)) throw new Error("Relay size rejected.");
+        const reader = upstream.body.getReader();
+        const maximumBytes = policy.relay.maximumBytes;
+        const evidence = redeemed.evidence;
+        async function* boundedBody() {
+          let total = 0;
+          try {
+            while (true) {
+              const chunk = await reader.read();
+              if (chunk.done) break;
+              total += chunk.value.byteLength;
+              if (total > maximumBytes) throw new Error("Relay size limit exceeded.");
+              yield Buffer.from(chunk.value);
+            }
+            if (total === 0) throw new Error("Relay returned an empty file.");
+            if (Number.isFinite(contentLength) && total !== contentLength) throw new Error("Relay content length mismatch.");
+            await options.repository.recordDeliveryRedemptionOutcome({ context: evidence, result: "passed",
+              durationMs: Date.now()-startedAt, browserHandoff: false });
+          } catch (error) {
+            controller.abort();
+            await options.repository.recordDeliveryRedemptionOutcome({ context: evidence, result: "internal_error",
+              durationMs: Date.now()-startedAt, browserHandoff: false });
+            throw error;
+          } finally {
+            clearTimeout(timer);
+            reader.releaseLock();
+          }
+        }
+        const safeFormat = redeemed.candidate.formatId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 80);
+        reply.header("Content-Type", mimeType);
+        reply.header("Content-Disposition", `attachment; filename="TikDD-${safeFormat}.mp4"`);
+        if (Number.isFinite(contentLength)) reply.header("Content-Length", String(contentLength));
+        return reply.send(Readable.from(boundedBody()));
+      } catch {
+        clearTimeout(timer);
+        controller.abort();
+        await options.repository.recordDeliveryRedemptionOutcome({ context: redeemed.evidence, result: "internal_error",
+          durationMs: Date.now()-startedAt, browserHandoff: false });
+        return reply.code(502).send({ error: { code: "DELIVERY_UPSTREAM_FAILED", message: "The media host could not complete this download." } });
+      }
     }
     await options.repository.recordDeliveryRedemptionOutcome({
       context: redeemed.evidence, result: "passed",

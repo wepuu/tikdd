@@ -49,7 +49,10 @@ The paths are operator-configurable. Do not put production `.env` or secret file
 
 ## 2. Images and immutable release identity
 
-`Dockerfile.production` has three targets:
+`Dockerfile.production` has four application targets. In addition to the Web, Admin, and shared
+service targets, `ytdlp-runner` builds the optional private extractor runtime described by
+ADR-0061. Its immutable image is published separately and is never started unless the `ytdlp`
+profile and all Worker activation gates are explicitly enabled.
 
 - `web` → `tikdd-web`;
 - `admin` → `tikdd-admin`;

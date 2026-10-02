@@ -195,6 +195,21 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.hostSuffixes).toEqual(["okcdn.ru"]);
     expect(getDeliveryHostPolicy("cobalt-selfhosted-x-media-v1")?.browserHandoff).toBe("navigate");
+    expect(getDeliveryHostPolicy("ytdlp-dailymotion-relay-v1")?.browserHandoff).toBe("server-download");
+    expect(getDeliveryHostPolicy("ytdlp-dailymotion-relay-v1")?.relay?.maximumBytes).toBe(300 * 1_024 * 1_024);
+  });
+
+  it("keeps yt-dlp direct and relay targets inside reviewed CDN boundaries", () => {
+    expect(assertDeliveryTargetPolicy({ providerId: "ytdlp-isolated", mode: "proxy",
+      hostPolicyId: "ytdlp-dailymotion-relay-v1", targetUrl: "https://vod-progressive.akamaized.net/video.mp4" }).hostname)
+      .toBe("vod-progressive.akamaized.net");
+    expect(assertDeliveryTargetPolicy({ providerId: "ytdlp-isolated", mode: "redirect",
+      hostPolicyId: "ytdlp-youtube-direct-v1", targetUrl: "https://rr1.googlevideo.com/videoplayback?id=fixture" }).hostname)
+      .toBe("rr1.googlevideo.com");
+    for (const targetUrl of ["https://googlevideo.com/video", "https://evilgooglevideo.com/video", "http://rr1.googlevideo.com/video", "https://rr1.googlevideo.com:8443/video"]) {
+      expect(() => assertDeliveryTargetPolicy({ providerId: "ytdlp-isolated", mode: "redirect",
+        hostPolicyId: "ytdlp-youtube-direct-v1", targetUrl })).toThrow();
+    }
   });
 
   it("allows only reviewed Vidomon OK CDN subdomains", () => {
