@@ -71,6 +71,14 @@ export {
   type CobaltDiagnosticPhase
 } from "./adapters/cobalt";
 export {
+  resolveTikTokThumbnail,
+  reviewedTikTokThumbnailUrl,
+  type TikTokThumbnailDiagnosticEvent,
+  type TikTokThumbnailOptions,
+  type TikTokThumbnailPhase,
+  type TikTokThumbnailStatus
+} from "./adapters/tiktok-thumbnail";
+export {
   assessCobaltOkruQualification,
   assessCurrentCobaltOkruQualification,
   COBALT_OKRU_QUALIFICATION_EVIDENCE,

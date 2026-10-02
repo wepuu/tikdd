@@ -58,8 +58,9 @@ to define the private runtime, multi-mode delivery and topology-aware qualificat
 Production remains fail-closed after this code is merged. A later approved release must:
 
 1. back up PostgreSQL, the active release environment, key registry and release manifest;
-2. atomically install a mode-600 registry using `userAgents: ["TikDD/cobalt-secondary"]`, the exact
-   environment key and only reviewed service IDs;
+2. atomically install a `root:tikdd-secrets` mode-0640 registry using
+   `userAgents: ["TikDD/cobalt-secondary"]`, the exact environment key and only reviewed service
+   IDs, so the pinned non-root container can read it without granting write access;
 3. deploy the exact GitHub image while keeping the Cobalt rollout disabled at allocation zero;
 4. use the official release operation to force-recreate Cobalt and pass authenticated readiness
    before Worker recreation;

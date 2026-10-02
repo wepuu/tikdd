@@ -184,3 +184,18 @@ official release path force-recreates Cobalt after secret changes, requires the 
 probe URL to reach Cobalt's link-validation error, and refuses to recreate Worker if authentication
 fails. The check never invokes an upstream Provider or logs secrets. A later activation must repeat
 the two-sample qualification and obtain separate approval for a Cobalt-only browser window.
+
+Work Item 135 completed that production qualification and browser window. Two persisted
+`cobalt-selfhosted` attempts succeeded and the owner confirmed the browser download, after which
+SnapTik and TikCD were restored as the higher-priority TikTok routes. Cobalt remains enabled only
+for the verified `tiktok:tunnel` capability at priority 450. Its current normalized result has no
+thumbnail because Tunnel responses do not provide a reviewed image field and the adapter emits
+`thumbnailUrl: null`; any future enrichment must use a separate explicit image-host boundary and
+must remain optional.
+
+Work Item 136 adds optional TikTok preview enrichment after a successful Cobalt result. It calls
+only TikTok's official `www.tiktok.com/oembed` endpoint with a three-second timeout, no retry and a
+64-KiB response limit, and accepts only the exact image host proven by two bounded NL samples. Any
+HTTP, timeout, schema, host or image-load failure leaves `thumbnailUrl` null and preserves the
+existing Cobalt formats and Delivery candidates. The enrichment does not create a Provider route,
+proxy an image or broaden a media Host policy.

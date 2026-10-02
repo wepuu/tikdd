@@ -13,6 +13,13 @@ const input: ResolveInput = {
   platform: "x"
 };
 
+const tiktokInput: ResolveInput = {
+  taskId: "tsk_cobalt_tiktok_fixture_000000000000000000000000",
+  sourceUrl: "https://www.tiktok.com/@fixture/video/1234567890123456789",
+  canonicalUrl: "https://www.tiktok.com/@fixture/video/1234567890123456789",
+  platform: "tiktok"
+};
+
 function response(body: string, status = 200) {
   return new Response(body, {
     status,
@@ -133,5 +140,45 @@ describe("Cobalt self-hosted secondary Provider", () => {
       deliveryModes: [],
       verificationStatus: "fixture_verified"
     });
+  });
+
+  it("adds an optional official TikTok thumbnail after Cobalt succeeds", async () => {
+    const exp = String(Date.now() + 120_000);
+    const tunnel = `https://media.tikdd.cc/tunnel?id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+    const provider = new CobaltProvider({
+      enabled: true,
+      apiKey: "fixture-api-key",
+      approvedPlatforms: ["tiktok"],
+      deliveryVerifiedCapabilities: { tiktok: ["tunnel"] },
+      fetchImpl: async () => response(JSON.stringify({ status: "tunnel", url: tunnel, filename: "fixture.mp4" })),
+      thumbnailFetchImpl: async () => response(JSON.stringify({
+        thumbnail_url: "https://p16-common-sign.tiktokcdn-eu.com/obj/fixture-cover"
+      }))
+    });
+
+    const resolution = await provider.resolve(tiktokInput);
+    expect(resolution.result.media.thumbnailUrl).toBe("https://p16-common-sign.tiktokcdn-eu.com/obj/fixture-cover");
+    expect(resolution.candidates[0]).toMatchObject({
+      mode: "proxy",
+      hostPolicyId: "cobalt-selfhosted-tunnel-media-v1"
+    });
+  });
+
+  it("preserves the successful Cobalt download when thumbnail enrichment fails", async () => {
+    const exp = String(Date.now() + 120_000);
+    const tunnel = `https://media.tikdd.cc/tunnel?id=${"a".repeat(21)}&exp=${exp}&sig=${"b".repeat(43)}&sec=${"c".repeat(43)}&iv=${"d".repeat(22)}`;
+    const provider = new CobaltProvider({
+      enabled: true,
+      apiKey: "fixture-api-key",
+      approvedPlatforms: ["tiktok"],
+      deliveryVerifiedCapabilities: { tiktok: ["tunnel"] },
+      fetchImpl: async () => response(JSON.stringify({ status: "tunnel", url: tunnel, filename: "fixture.mp4" })),
+      thumbnailFetchImpl: async () => response("upstream unavailable", 503)
+    });
+
+    const resolution = await provider.resolve(tiktokInput);
+    expect(resolution.result.media.thumbnailUrl).toBeNull();
+    expect(resolution.result.formats).toHaveLength(1);
+    expect(resolution.candidates).toHaveLength(1);
   });
 });

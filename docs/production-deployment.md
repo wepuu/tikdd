@@ -363,9 +363,10 @@ all other paths remain private. Keep `TIKDD_COBALT_PUBLIC_ORIGIN=https://media.t
 with Cobalt `API_URL`, and never log or copy the signed tunnel query.
 
 The Cobalt API-key registry is a versioned runtime contract, not an opaque secret blob. For Cobalt
-11.7.1 it must use the plural `userAgents` field. Install it atomically with ownership restricted to
-the deployment account and mode `600`; the UUID below is a placeholder and must exactly match
-`COBALT_API_KEY` in the active release environment:
+11.7.1 it must use the plural `userAgents` field. Install it atomically as
+`root:tikdd-secrets` with mode `0640`; the pinned non-root container joins only that dedicated
+group, while group and other write bits remain forbidden. The UUID below is a placeholder and must
+exactly match `COBALT_API_KEY` in the active release environment:
 
 ```json
 {
