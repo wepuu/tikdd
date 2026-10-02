@@ -2201,3 +2201,34 @@ complete. The original OK-only key was restored, Cobalt was stopped, temporary c
 descriptors were removed, and no gate, capability or rollout changed. A narrowly scoped
 `media.tikdd.cc` Cloudflare/browser compatibility work item is required before activation can be
 retried. See [Work Item 132](work-item-132-cobalt-tiktok-secondary-activation.md).
+
+### Work Item 133 - Cobalt media-edge repair and failed TikTok activation
+
+Work Item 133 narrowed the existing Cloudflare China deny only for `media.tikdd.cc/tunnel` GET/HEAD.
+Direct and proxied user exits then passed both TikTok Tunnel samples with bounded HTTP 206 video
+ranges, attachment semantics, exact Web-origin CORS and private caching; unrelated paths and POST
+remain blocked. The private API is still unreachable from the Internet.
+
+After an official encrypted PostgreSQL backup, Cobalt and Worker were enabled with only
+`tiktok:tunnel`, a key limited to `ok,tiktok`, and the unique
+`cobalt-selfhosted / tiktok / nl` revision-1 rule at full allocation. The following Cobalt-only
+browser window failed before media resolution. Sanitized replay and container logs proved the key
+registry used unsupported `userAgent` instead of `userAgents`, so Cobalt had loaded no API key even
+though unauthenticated discovery and container health passed. SnapTik and TikCD were restored, and
+the Cobalt rule was CAS-disabled at revision 2/allocation zero. See
+[Work Item 133](work-item-133-cobalt-media-edge-activation.md).
+
+### Work Item 134 - Cobalt authenticated readiness and fail-closed release binding
+
+Work Item 134 validates the exact Cobalt 11.7.1 key-registry schema and rejects unknown fields,
+including the singular `userAgent` spelling that caused the failed activation. A private one-shot
+probe sends an authenticated `POST /` with a deliberately invalid URL and accepts only Cobalt's
+link-validation error, proving key and User-Agent acceptance without contacting an upstream
+Provider.
+
+The official release path force-recreates Cobalt whenever it is enabled, runs authenticated
+readiness before Worker recreation and stops Cobalt if the check fails. Qualification and Tunnel
+audit operations use the same boundary. Production rollout remains disabled/allocation zero; a
+future retry requires exact-SHA deployment, two-sample requalification and a separately approved
+Cobalt-only browser window. See
+[Work Item 134](work-item-134-cobalt-auth-readiness.md).

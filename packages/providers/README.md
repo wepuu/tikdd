@@ -170,3 +170,17 @@ the request reached the media origin. Cobalt therefore remains `resolved-conditi
 temporary key was destroyed, the original OK-only key restored, the container stopped, and no
 Worker gate, `tiktok:tunnel` capability or rollout rule was enabled. Edge/browser compatibility
 must be repaired and the complete handoff repeated before Cobalt can join the TikTok route.
+
+Work Item 133 repaired that edge boundary with an exact `media.tikdd.cc/tunnel` GET/HEAD exception;
+other paths and methods remain denied. Both independent user exits passed the two-sample bounded
+Tunnel audit. The subsequent Cobalt-only browser window nevertheless failed: production Cobalt
+rejected every authenticated request because its key registry used unsupported `userAgent` rather
+than `userAgents`, while the old release check exercised only unauthenticated discovery. The unique
+TikTok/NL Cobalt rule was CAS-disabled at revision 2/allocation zero, and SnapTik plus TikCD were
+restored. Cobalt is not an active production fallback.
+
+Work Item 134 adds a strict registry parser and authenticated private `POST /` readiness probe. The
+official release path force-recreates Cobalt after secret changes, requires the deliberately invalid
+probe URL to reach Cobalt's link-validation error, and refuses to recreate Worker if authentication
+fails. The check never invokes an upstream Provider or logs secrets. A later activation must repeat
+the two-sample qualification and obtain separate approval for a Cobalt-only browser window.
