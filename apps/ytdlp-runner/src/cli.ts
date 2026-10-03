@@ -8,6 +8,13 @@ const EXTRACTORS: Readonly<Record<YtDlpRunnerPlatform, string>> = {
   youtube: "Youtube,YoutubeYtBe,-youtube:tab,-generic"
 };
 
+export function classifyYtDlpProcessFailure(errorOutput: string, code: number | null): string {
+  if (/impersonat(?:e|ion).*unavailable|none of these impersonate targets are available/i.test(errorOutput)) {
+    return "yt-dlp impersonation runtime is unavailable.";
+  }
+  return `yt-dlp exited with status ${code ?? "unknown"}.`;
+}
+
 export interface YtDlpCliInput {
   platform: YtDlpRunnerPlatform;
   url: string;
@@ -56,7 +63,7 @@ function runProcess(command: string, args: readonly string[], timeoutMs: number,
     child.once("error", (error) => finish(error));
     child.once("close", (code) => {
       if (code === 0) finish();
-      else finish(new Error(`yt-dlp exited with status ${code ?? "unknown"}.`));
+      else finish(new Error(classifyYtDlpProcessFailure(errorOutput.toString("utf8"), code)));
     });
   });
 }

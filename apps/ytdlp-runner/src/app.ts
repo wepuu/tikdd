@@ -65,6 +65,8 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
         requestId: parsed.data.requestId,
         failure: error instanceof Error && /timed out|cancelled/i.test(error.message)
           ? "timeout"
+          : error instanceof Error && /impersonation runtime is unavailable/i.test(error.message)
+            ? "runtime_dependency_unavailable"
           : "extractor_error"
       });
       return reply.code(422).send({ error: { code: "extraction_failed" } });
