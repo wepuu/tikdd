@@ -2306,3 +2306,13 @@ activation gates. Direct delivery remains preferred. A size/time/MIME/redirect b
 is available only as a separately audited last resort. No production route is enabled by this item.
 See [Work Item 140](work-item-140-isolated-ytdlp-runner-poc.md) and
 [ADR-0061](architecture/adr/0061-isolated-ytdlp-runner-and-bounded-relay.md).
+
+### Work Item 141 - yt-dlp Dailymotion qualification and impersonation repair
+
+The first closed-gate NL qualification proved the isolation and HMAC boundaries but both Dailymotion
+samples failed before media discovery because the pinned image omitted yt-dlp's optional Firefox
+impersonation runtime. Work Item 141 installs the official `curl-cffi` extra, asserts the target at
+image-build time and adds a sanitized runtime-dependency failure class. Qualification and rollout
+remain closed until the repaired exact-SHA image passes both samples and either direct delivery or
+the bounded relay is verified. See
+[Work Item 141](work-item-141-ytdlp-dailymotion-qualification.md).

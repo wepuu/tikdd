@@ -53,7 +53,8 @@ LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-ytdlp-runner"
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates \
-    && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp==2026.8.19" \
+    && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" \
+    && yt-dlp --list-impersonate-targets | grep -Eq '^Firefox[[:space:]]' \
     && rm -rf /var/lib/apt/lists/*
 USER node
 ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
