@@ -136,6 +136,25 @@ describe("prepareEncryptedCandidates", () => {
     })).toMatchObject({ kind: "processing", processing: { operation: "remux" } });
   });
 
+  it("encrypts an opaque temporary artifact descriptor", () => {
+    const candidateCipher = cipher();
+    const artifactResolution = resolution(true);
+    artifactResolution.result.provenance = { ...artifactResolution.result.provenance,
+      provider: "ytdlp-isolated", kind: "yt-dlp" };
+    artifactResolution.candidates = [{ kind: "artifact", formatId, mode: "temporary-object",
+      hostPolicyId: "ytdlp-dailymotion-artifact-v1", expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      artifact: { id: `yta_${"a".repeat(32)}`, sizeBytes: 1024, sha256: "b".repeat(64),
+        mimeType: "video/mp4", filename: "TikDD-Dailymotion-example-720p.mp4" } }];
+    const [encrypted] = prepareEncryptedCandidates({ taskId, resolution: artifactResolution,
+      cipher: candidateCipher, allowResolutionOnly: false,
+      idFactory: () => "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" });
+    expect(JSON.stringify(encrypted)).not.toContain("yta_");
+    expect(candidateCipher.open(encrypted!.envelope, { purpose: "delivery-candidate",
+      candidateId: encrypted!.id, taskId, formatId })).toMatchObject({
+      kind: "artifact", artifact: { id: `yta_${"a".repeat(32)}`, sizeBytes: 1024 }
+    });
+  });
+
   it("allows resolution-only output only when explicitly enabled", () => {
     expect(
       prepareEncryptedCandidates({

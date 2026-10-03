@@ -1,11 +1,19 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { YtDlpRunnerRequest } from "@tikdd/contracts";
+import type { YtDlpArtifactRequest, YtDlpRunnerRequest } from "@tikdd/contracts";
+
+type SignedRunnerRequest = YtDlpRunnerRequest | YtDlpArtifactRequest;
 
 export const RUNNER_SIGNATURE_HEADER = "x-tikdd-signature";
 export const RUNNER_TIMESTAMP_HEADER = "x-tikdd-timestamp";
 
-export function serializeRunnerRequest(request: YtDlpRunnerRequest): string {
-  return JSON.stringify({
+export function serializeRunnerRequest(request: SignedRunnerRequest): string {
+  return JSON.stringify("maximumHeight" in request ? {
+    requestId: request.requestId,
+    platform: request.platform,
+    url: request.url,
+    deadlineMs: request.deadlineMs,
+    maximumHeight: request.maximumHeight
+  } : {
     requestId: request.requestId,
     platform: request.platform,
     url: request.url,
@@ -16,7 +24,7 @@ export function serializeRunnerRequest(request: YtDlpRunnerRequest): string {
 export function signRunnerRequest(
   secret: string,
   timestamp: string,
-  request: YtDlpRunnerRequest
+  request: SignedRunnerRequest
 ): string {
   return createHmac("sha256", secret)
     .update(`${timestamp}\n${serializeRunnerRequest(request)}`)
@@ -27,7 +35,7 @@ export function verifyRunnerRequestSignature(input: {
   secret: string;
   timestamp: string;
   signature: string;
-  request: YtDlpRunnerRequest;
+  request: SignedRunnerRequest;
   now?: number;
   maximumSkewMs?: number;
 }): boolean {

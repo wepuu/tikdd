@@ -14,7 +14,7 @@ export function loadYtDlpActivationConfiguration(environment: NodeJS.ProcessEnv 
   const capabilities: Record<string, YtDlpDeliveryCapability> = {};
   for (const entry of (environment.YTDLP_DELIVERY_VERIFIED_CAPABILITIES ?? "").split(",").map((value) => value.trim()).filter(Boolean)) {
     const [platform, capability, extra] = entry.split(":");
-    if (extra || !platform || !SUPPORTED.has(platform) || !["direct", "relay"].includes(capability ?? "")) throw new Error("YTDLP_DELIVERY_VERIFIED_CAPABILITIES is invalid.");
+    if (extra || !platform || !SUPPORTED.has(platform) || !["direct", "relay", "artifact"].includes(capability ?? "")) throw new Error("YTDLP_DELIVERY_VERIFIED_CAPABILITIES is invalid.");
     capabilities[platform] = capability as YtDlpDeliveryCapability;
   }
   const configuration = { enabled: environment.ENABLE_YTDLP_PROVIDER === "true", runtimeApproved: environment.YTDLP_RUNTIME_APPROVED === "true",

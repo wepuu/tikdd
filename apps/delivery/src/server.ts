@@ -23,6 +23,7 @@ const app = await createDeliveryApp({
   cipher,
   publicBaseUrl,
   webOrigin,
+  ...(process.env.YTDLP_ARTIFACT_ROOT ? { artifactRoot: process.env.YTDLP_ARTIFACT_ROOT } : {}),
   readyCheck: async () => {
     await pool.query("SELECT 1");
   }

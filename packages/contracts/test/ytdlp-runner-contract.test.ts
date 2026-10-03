@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
+  YtDlpArtifactRequestSchema,
+  YtDlpArtifactResponseSchema,
   YtDlpRunnerRequestSchema,
   YtDlpRunnerResponseSchema
 } from "../src";
@@ -11,6 +13,28 @@ describe("yt-dlp Runner internal contract", () => {
     expect(openapi).toContain("enum: [dailymotion, youtube]");
     expect(openapi).toContain("name: x-tikdd-timestamp");
     expect(openapi).toContain("$ref: \"#/components/schemas/ExtractionResponse\"");
+    expect(openapi).toContain("$ref: \"#/components/schemas/ArtifactResponse\"");
+  });
+
+  it("accepts only bounded, opaque temporary artifact metadata", () => {
+    expect(YtDlpArtifactRequestSchema.parse({
+      requestId: "req-2", platform: "dailymotion",
+      url: "https://www.dailymotion.com/video/example",
+      deadlineMs: 175_000, maximumHeight: 720
+    }).maximumHeight).toBe(720);
+    expect(YtDlpArtifactResponseSchema.parse({
+      platform: "dailymotion", sourceId: "example", title: "Public video", author: null,
+      thumbnailUrl: null, durationSeconds: 30, isLive: false, extractor: "Dailymotion",
+      artifact: { id: `yta_${"a".repeat(32)}`, container: "mp4", mimeType: "video/mp4",
+        quality: "720p", width: 1280, height: 720, sizeBytes: 1024,
+        sha256: "b".repeat(64), expiresAt: "2030-01-01T00:00:00.000Z" }
+    }).artifact.sizeBytes).toBe(1024);
+    expect(() => YtDlpArtifactResponseSchema.parse({
+      platform: "dailymotion", sourceId: "../escape", title: "bad", author: null,
+      thumbnailUrl: null, durationSeconds: null, isLive: false, extractor: "Dailymotion",
+      artifact: { id: "../../video", container: "mp4", mimeType: "video/mp4", quality: "720p",
+        width: null, height: 720, sizeBytes: 1, sha256: "b".repeat(64), expiresAt: "2030-01-01T00:00:00.000Z" }
+    })).toThrow();
   });
   it("accepts a bounded normalized extraction response", () => {
     expect(YtDlpRunnerResponseSchema.parse({

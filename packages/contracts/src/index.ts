@@ -102,7 +102,7 @@ export const ProviderManifestSchema = z
     kind: ProviderKindSchema,
     enabled: z.boolean(),
     regions: z.array(ProviderRegionSchema).min(1),
-    timeoutMs: z.number().int().min(100).max(120_000),
+    timeoutMs: z.number().int().min(100).max(180_000),
     costWeight: z.number().min(0).max(1000),
     platforms: z.array(ProviderPlatformCapabilitySchema).min(1)
   })
@@ -329,6 +329,39 @@ export const YtDlpRunnerResponseSchema = z.strictObject({
   formats: z.array(YtDlpRunnerFormatSchema).min(1).max(40)
 });
 export type YtDlpRunnerResponse = z.infer<typeof YtDlpRunnerResponseSchema>;
+
+export const YtDlpArtifactIdSchema = z.string().regex(/^yta_[a-f0-9]{32}$/);
+export const YtDlpArtifactRequestSchema = z.strictObject({
+  requestId: z.string().min(1).max(100).regex(/^[A-Za-z0-9._-]+$/),
+  platform: YtDlpRunnerPlatformSchema,
+  url: z.string().url().max(2_048),
+  deadlineMs: z.number().int().min(30_000).max(180_000).default(175_000),
+  maximumHeight: z.number().int().min(144).max(720).default(720)
+});
+export type YtDlpArtifactRequest = z.infer<typeof YtDlpArtifactRequestSchema>;
+
+export const YtDlpArtifactResponseSchema = z.strictObject({
+  platform: YtDlpRunnerPlatformSchema,
+  sourceId: z.string().min(1).max(200).regex(/^[A-Za-z0-9._-]+$/),
+  title: z.string().min(1).max(500),
+  author: z.string().max(200).nullable(),
+  thumbnailUrl: PublicThumbnailUrlSchema.nullable(),
+  durationSeconds: z.number().nonnegative().nullable(),
+  isLive: z.literal(false),
+  extractor: z.string().min(1).max(100),
+  artifact: z.strictObject({
+    id: YtDlpArtifactIdSchema,
+    container: z.literal("mp4"),
+    mimeType: z.literal("video/mp4"),
+    quality: z.string().min(1).max(80),
+    width: z.number().int().positive().nullable(),
+    height: z.number().int().positive().max(720).nullable(),
+    sizeBytes: z.number().int().positive().max(300 * 1_024 * 1_024),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    expiresAt: z.string().datetime({ offset: true })
+  })
+});
+export type YtDlpArtifactResponse = z.infer<typeof YtDlpArtifactResponseSchema>;
 
 export const ClientProcessingOperationSchema = z.enum([
   "merge",

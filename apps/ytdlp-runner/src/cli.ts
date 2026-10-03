@@ -27,11 +27,12 @@ export interface YtDlpCli {
   version(): Promise<string>;
 }
 
-function runProcess(command: string, args: readonly string[], timeoutMs: number, signal?: AbortSignal): Promise<string> {
+export function runProcess(command: string, args: readonly string[], timeoutMs: number, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, [...args], {
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
+      detached: process.platform !== "win32",
       env: { PATH: process.env.PATH ?? "", HOME: "/nonexistent", PYTHONUNBUFFERED: "1" }
     });
     let output = Buffer.alloc(0);
@@ -44,12 +45,18 @@ function runProcess(command: string, args: readonly string[], timeoutMs: number,
       signal?.removeEventListener("abort", abort);
       if (error) reject(error); else resolve(output.toString("utf8"));
     };
+    const killTree = () => {
+      try {
+        if (process.platform !== "win32" && child.pid) process.kill(-child.pid, "SIGKILL");
+        else child.kill("SIGKILL");
+      } catch { child.kill("SIGKILL"); }
+    };
     const abort = () => {
-      child.kill("SIGKILL");
+      killTree();
       finish(new Error("yt-dlp execution was cancelled."));
     };
     const timer = setTimeout(() => {
-      child.kill("SIGKILL");
+      killTree();
       finish(new Error("yt-dlp execution timed out."));
     }, timeoutMs);
     signal?.addEventListener("abort", abort, { once: true });

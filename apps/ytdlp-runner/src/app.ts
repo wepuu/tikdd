@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { YtDlpRunnerRequestSchema } from "@tikdd/contracts";
+import { YtDlpArtifactRequestSchema, YtDlpRunnerRequestSchema, type YtDlpArtifactResponse } from "@tikdd/contracts";
 import { detectPlatform } from "@tikdd/platform";
 import {
   RUNNER_SIGNATURE_HEADER,
@@ -7,9 +7,15 @@ import {
   verifyRunnerRequestSignature
 } from "./auth";
 import type { YtDlpCli } from "./cli";
+import { ArtifactCapacityError } from "./artifact";
+
+export interface YtDlpArtifactPreparer {
+  prepare(input: ReturnType<typeof YtDlpArtifactRequestSchema.parse> & { signal?: AbortSignal }): Promise<YtDlpArtifactResponse>;
+}
 
 export interface CreateYtDlpRunnerAppOptions {
   cli: YtDlpCli;
+  artifactPreparer?: YtDlpArtifactPreparer;
   hmacSecret: string;
   now?: () => number;
 }
@@ -70,6 +76,38 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
           : "extractor_error"
       });
       return reply.code(422).send({ error: { code: "extraction_failed" } });
+    }
+  });
+
+  app.post("/internal/v1/artifacts", async (request, reply) => {
+    const parsed = YtDlpArtifactRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: { code: "invalid_request" } });
+    const timestamp = request.headers[RUNNER_TIMESTAMP_HEADER];
+    const signature = request.headers[RUNNER_SIGNATURE_HEADER];
+    if (
+      typeof timestamp !== "string" || typeof signature !== "string" ||
+      !verifyRunnerRequestSignature({ secret: options.hmacSecret, timestamp, signature, request: parsed.data, now: now() })
+    ) return reply.code(401).send({ error: { code: "invalid_signature" } });
+    if (!options.artifactPreparer) return reply.code(503).send({ error: { code: "artifact_runtime_unavailable" } });
+    const current = now();
+    for (const [id, expiresAt] of usedRequests) if (expiresAt <= current) usedRequests.delete(id);
+    if (usedRequests.has(parsed.data.requestId)) return reply.code(409).send({ error: { code: "request_replayed" } });
+    usedRequests.set(parsed.data.requestId, current + 5 * 60_000);
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    request.raw.once("aborted", abort);
+    try {
+      const detected = detectPlatform(parsed.data.url);
+      if (detected.platform !== parsed.data.platform) return reply.code(400).send({ error: { code: "platform_mismatch" } });
+      return await options.artifactPreparer.prepare({ ...parsed.data, signal: controller.signal });
+    } catch (error) {
+      const failure = error instanceof ArtifactCapacityError ? "capacity_unavailable"
+        : error instanceof Error && /timed out|cancelled/i.test(error.message) ? "timeout" : "artifact_failed";
+      request.log.warn({ event: "ytdlp_artifact_failure", platform: parsed.data.platform,
+        requestId: parsed.data.requestId, failure });
+      return reply.code(error instanceof ArtifactCapacityError ? 409 : 422).send({ error: { code: failure } });
+    } finally {
+      request.raw.removeListener("aborted", abort);
     }
   });
   return app;

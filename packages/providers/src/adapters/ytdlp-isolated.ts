@@ -1,12 +1,13 @@
-import { createHmac } from "node:crypto";
-import { YtDlpRunnerRequestSchema, YtDlpRunnerResponseSchema, type ProviderDeliveryMode, type YtDlpRunnerPlatform } from "@tikdd/contracts";
+import { createHash, createHmac } from "node:crypto";
+import { ResolveResultSchema, YtDlpArtifactRequestSchema, YtDlpArtifactResponseSchema, YtDlpRunnerRequestSchema, YtDlpRunnerResponseSchema,
+  type ProviderDeliveryMode, type YtDlpArtifactRequest, type YtDlpRunnerPlatform, type YtDlpRunnerRequest } from "@tikdd/contracts";
 import { ProviderResolutionSchema, assertDeliveryTargetPolicy } from "@tikdd/delivery-core";
 import { ProviderError } from "../errors";
 import type { ProviderManifest, ResolveInput, ResolverProvider } from "../index";
 import { createResolveResult, type ParsedFormat, type ProviderFetch } from "./shared";
 
 const SUPPORTED_PLATFORMS = ["dailymotion", "youtube"] as const;
-export type YtDlpDeliveryCapability = "direct" | "relay";
+export type YtDlpDeliveryCapability = "direct" | "relay" | "artifact";
 export interface YtDlpIsolatedProviderOptions {
   enabled?: boolean; apiUrl?: string; hmacSecret?: string;
   approvedPlatforms?: readonly YtDlpRunnerPlatform[];
@@ -14,10 +15,10 @@ export interface YtDlpIsolatedProviderOptions {
   fetchImpl?: ProviderFetch;
 }
 
-const modeFor = (capability: YtDlpDeliveryCapability): ProviderDeliveryMode => capability === "relay" ? "proxy" : "redirect";
+const modeFor = (capability: YtDlpDeliveryCapability): ProviderDeliveryMode => capability === "relay" ? "proxy" : capability === "artifact" ? "temporary-object" : "redirect";
 const policyFor = (platform: YtDlpRunnerPlatform, capability: YtDlpDeliveryCapability) =>
-  `ytdlp-${platform}-${capability === "relay" ? "relay" : "direct"}-v1`;
-function sign(secret: string, timestamp: string, body: ReturnType<typeof YtDlpRunnerRequestSchema.parse>): string {
+  `ytdlp-${platform}-${capability === "relay" ? "relay" : capability === "artifact" ? "artifact" : "direct"}-v1`;
+function sign(secret: string, timestamp: string, body: YtDlpRunnerRequest | YtDlpArtifactRequest): string {
   return createHmac("sha256", secret).update(`${timestamp}\n${JSON.stringify(body)}`).digest("base64url");
 }
 function mapFormat(format: ReturnType<typeof YtDlpRunnerResponseSchema.parse>["formats"][number]): ParsedFormat {
@@ -56,7 +57,7 @@ export class YtDlpIsolatedProvider implements ResolverProvider {
     this.capabilities = options.deliveryVerifiedCapabilities ?? {};
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.manifest = { id: "ytdlp-isolated", displayName: "yt-dlp (isolated)", kind: "yt-dlp", enabled: options.enabled ?? false,
-      regions: ["nl"], timeoutMs: 35_000, costWeight: 95,
+      regions: ["nl"], timeoutMs: Object.values(this.capabilities).includes("artifact") ? 180_000 : 35_000, costWeight: 95,
       platforms: SUPPORTED_PLATFORMS.map((platform) => {
         const capability = this.capabilities[platform];
         return { platform, priority: platform === "dailymotion" ? 300 : 250,
@@ -69,14 +70,43 @@ export class YtDlpIsolatedProvider implements ResolverProvider {
     const capability = this.capabilities[platform];
     if (!SUPPORTED_PLATFORMS.includes(platform) || !this.approvedPlatforms.has(platform) || !capability) throw new ProviderError("yt-dlp is not delivery-approved for this platform.", "unsupported_url", false, true);
     if (this.hmacSecret.length < 32) throw new ProviderError("yt-dlp Runner authentication is not configured.", "authentication_required", false, false);
-    const body = YtDlpRunnerRequestSchema.parse({ requestId: input.taskId, platform, url: input.canonicalUrl, deadlineMs: 30_000 });
+    const artifact = capability === "artifact";
+    const body = artifact
+      ? YtDlpArtifactRequestSchema.parse({ requestId: input.taskId, platform, url: input.canonicalUrl, deadlineMs: 175_000, maximumHeight: 720 })
+      : YtDlpRunnerRequestSchema.parse({ requestId: input.taskId, platform, url: input.canonicalUrl, deadlineMs: 30_000 });
     const timestamp = String(Date.now());
     let response: Response;
-    try { response = await this.fetchImpl(this.apiUrl, { method: "POST", redirect: "manual", ...(input.signal ? { signal: input.signal } : {}),
+    const endpoint = artifact ? new URL("/internal/v1/artifacts", this.apiUrl) : this.apiUrl;
+    try { response = await this.fetchImpl(endpoint, { method: "POST", redirect: "manual", ...(input.signal ? { signal: input.signal } : {}),
       headers: { accept: "application/json", "content-type": "application/json", "x-tikdd-timestamp": timestamp,
         "x-tikdd-signature": sign(this.hmacSecret, timestamp, body) }, body: JSON.stringify(body) }); }
     catch { throw new ProviderError("The isolated yt-dlp Runner is unavailable.", "provider_unavailable", true, true); }
     if (!response.ok) throw new ProviderError("The isolated yt-dlp Runner could not resolve this media.", response.status >= 500 ? "provider_unavailable" : "unsupported_url", response.status >= 500, true);
+    if (artifact) {
+      let normalized: ReturnType<typeof YtDlpArtifactResponseSchema.parse>;
+      try { normalized = YtDlpArtifactResponseSchema.parse(JSON.parse(await readBoundedJson(response))); }
+      catch { throw new ProviderError("The isolated yt-dlp artifact response was invalid.", "provider_schema_changed", false, true); }
+      const result = ResolveResultSchema.parse({ schemaVersion: "1.0",
+        source: { platform: input.platform, canonicalUrl: input.canonicalUrl },
+        media: { id: createHash("sha256").update(input.canonicalUrl).digest("hex").slice(0, 16),
+          title: normalized.title, author: normalized.author, thumbnailUrl: normalized.thumbnailUrl,
+          durationSeconds: normalized.durationSeconds, isLive: false },
+        formats: [{ id: `fmt_${createHash("sha256").update(`${normalized.artifact.id}\0${normalized.artifact.quality}`).digest("hex").slice(0, 20)}`,
+          container: "mp4", mimeType: "video/mp4", quality: normalized.artifact.quality,
+          width: normalized.artifact.width, height: normalized.artifact.height, fps: null, bitrateKbps: null,
+          estimatedBytes: normalized.artifact.sizeBytes, videoCodec: null, audioCodec: null,
+          hasVideo: true, hasAudio: true }],
+        provenance: { provider: "ytdlp-isolated", kind: "yt-dlp", cacheHit: false, resolvedAt: new Date().toISOString() },
+        warnings: [] });
+      const safeSource = normalized.sourceId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 48) || "media";
+      const safeQuality = normalized.artifact.quality.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 24) || "video";
+      return ProviderResolutionSchema.parse({ result, candidates: [{ formatId: result.formats[0]!.id,
+        kind: "artifact", mode: "temporary-object", hostPolicyId: policyFor(platform, capability),
+        expiresAt: normalized.artifact.expiresAt,
+        artifact: { id: normalized.artifact.id, sizeBytes: normalized.artifact.sizeBytes,
+          sha256: normalized.artifact.sha256, mimeType: normalized.artifact.mimeType,
+          filename: `TikDD-Dailymotion-${safeSource}-${safeQuality}.mp4`.slice(0, 120) } }] });
+    }
     let normalized: ReturnType<typeof YtDlpRunnerResponseSchema.parse>;
     try { normalized = YtDlpRunnerResponseSchema.parse(JSON.parse(await readBoundedJson(response))); }
     catch { throw new ProviderError("The isolated yt-dlp response was invalid.", "provider_schema_changed", false, true); }

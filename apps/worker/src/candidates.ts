@@ -69,7 +69,9 @@ export function prepareEncryptedCandidates({
     const envelope = cipher.seal(
       candidate.kind === "processing"
         ? { kind: "processing", processing: candidate.processing }
-        : {
+        : candidate.kind === "artifact"
+          ? { kind: "artifact", artifact: candidate.artifact }
+          : {
             kind: "target",
             targetUrl: candidate.targetUrl,
             secretHeaders: candidate.secretHeaders

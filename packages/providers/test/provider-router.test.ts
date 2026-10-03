@@ -360,7 +360,8 @@ describe("ProviderRouter", () => {
     const originalResolve = invalid.resolve.bind(invalid);
     invalid.resolve = async (resolveInput) => {
       const resolution = await originalResolve(resolveInput);
-      return { ...resolution, candidates: resolution.candidates.map((candidate) => ({ ...candidate, mode: "proxy" as const })) };
+      return { ...resolution, candidates: resolution.candidates.map((candidate) =>
+        candidate.kind === "artifact" ? candidate : ({ ...candidate, mode: "proxy" as const })) };
     };
     const fallback = new TestProvider("valid-mode", 90, "success", calls);
     const router = new ProviderRouter([invalid, fallback], {

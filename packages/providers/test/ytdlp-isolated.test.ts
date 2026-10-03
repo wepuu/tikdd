@@ -32,4 +32,22 @@ describe("YtDlpIsolatedProvider", () => {
       deliveryVerifiedCapabilities: { dailymotion: "direct" }, fetchImpl: async () => new Response(JSON.stringify(separated), { status: 200 }) });
     await expect(provider.resolve(input)).rejects.toMatchObject({ failureCode: "invalid_result" });
   });
+  it("normalizes one prepared artifact without exposing its id or server path publicly", async () => {
+    const provider = new YtDlpIsolatedProvider({ enabled: true, hmacSecret: secret, approvedPlatforms: ["dailymotion"],
+      deliveryVerifiedCapabilities: { dailymotion: "artifact" }, fetchImpl: async (url, init) => {
+        expect(url.toString()).toContain("/internal/v1/artifacts");
+        expect(JSON.parse(String(init?.body))).toMatchObject({ maximumHeight: 720, deadlineMs: 175_000 });
+        return new Response(JSON.stringify({ platform: "dailymotion", sourceId: "x123", title: "Example", author: null,
+          thumbnailUrl: null, durationSeconds: 30, isLive: false, extractor: "Dailymotion",
+          artifact: { id: `yta_${"a".repeat(32)}`, container: "mp4", mimeType: "video/mp4", quality: "720p",
+            width: 1280, height: 720, sizeBytes: 1024, sha256: "b".repeat(64),
+            expiresAt: new Date(Date.now() + 600_000).toISOString() } }), { status: 200 });
+      } });
+    const resolved = await provider.resolve(input);
+    expect(resolved.candidates[0]).toMatchObject({ kind: "artifact", mode: "temporary-object",
+      hostPolicyId: "ytdlp-dailymotion-artifact-v1",
+      artifact: { filename: "TikDD-Dailymotion-x123-720p.mp4" } });
+    expect(JSON.stringify(resolved.result)).not.toContain("yta_");
+    expect(provider.manifest.timeoutMs).toBe(180_000);
+  });
 });

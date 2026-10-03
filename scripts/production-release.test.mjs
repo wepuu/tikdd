@@ -213,4 +213,17 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/export TIKDD_MAX_SWAP_GROWTH_KB="\$max_swap_growth_kb"/);
     expect(releaseScript).toMatch(/export TIKDD_MIN_AVAILABLE_MEMORY_KB="\$min_available_memory_kb"/);
   });
+
+  it("binds the yt-dlp artifact store read-write only to Runner and read-only to Delivery", () => {
+    const runnerBlock = productionCompose.split("  ytdlp-runner:", 2)[1]?.split("  cobalt-api:", 2)[0] ?? "";
+    const deliveryBlock = productionCompose.split("  delivery:", 2)[1]?.split("  admin-api:", 2)[0] ?? "";
+    expect(runnerBlock).toMatch(/TIKDD_YTDLP_ARTIFACT_DIR:-\/var\/lib\/tikdd\/ytdlp-artifacts/);
+    expect(runnerBlock).toMatch(/target: \/var\/lib\/tikdd-ytdlp-artifacts/);
+    expect(runnerBlock).not.toMatch(/read_only: true\s*$/m);
+    expect(deliveryBlock).toMatch(/TIKDD_YTDLP_ARTIFACT_DIR:-\/var\/lib\/tikdd\/ytdlp-artifacts/);
+    expect(deliveryBlock).toMatch(/target: \/var\/lib\/tikdd-ytdlp-artifacts[\s\S]*read_only: true/);
+    expect(releaseScript).toMatch(/install -d -o 1000 -g 1000 -m 0700 "\$artifact_dir"/);
+    expect(releaseScript).toMatch(/must stay below \/var\/lib\/tikdd/);
+    expect(releaseScript).toMatch(/cannot be a symbolic link/);
+  });
 });

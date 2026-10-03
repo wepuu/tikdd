@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  DAILYMOTION_RESOLVE_POLL_MAX_ATTEMPTS,
+  DAILYMOTION_RESOLVE_POLL_WINDOW_MS,
   RESOLVE_POLL_INTERVAL_MS,
   RESOLVE_POLL_MAX_ATTEMPTS,
   RESOLVE_POLL_WINDOW_MS,
@@ -22,5 +24,11 @@ describe("resolve polling budget", () => {
     expect(YOUTUBE_RESOLVE_POLL_WINDOW_MS).toBeGreaterThan(75_000);
     expect(resolvePollMaxAttempts("youtube")).toBe(YOUTUBE_RESOLVE_POLL_MAX_ATTEMPTS);
     expect(resolvePollMaxAttempts("instagram")).toBe(RESOLVE_POLL_MAX_ATTEMPTS);
+  });
+
+  it("keeps polling through the bounded Dailymotion artifact preparation", () => {
+    expect(DAILYMOTION_RESOLVE_POLL_WINDOW_MS).toBe(195_000);
+    expect(DAILYMOTION_RESOLVE_POLL_WINDOW_MS).toBeGreaterThan(180_000);
+    expect(resolvePollMaxAttempts("dailymotion")).toBe(DAILYMOTION_RESOLVE_POLL_MAX_ATTEMPTS);
   });
 });

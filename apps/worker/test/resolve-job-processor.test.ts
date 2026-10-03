@@ -36,6 +36,7 @@ describe("resolve route timeout budget", () => {
   it("gives the bounded YouTube primary and fallback enough shared route time", () => {
     expect(routeTimeoutMsForPlatform("youtube", 30_000)).toBe(YOUTUBE_ROUTE_TIMEOUT_FLOOR_MS);
     expect(routeTimeoutMsForPlatform("youtube", 120_000)).toBe(120_000);
+    expect(routeTimeoutMsForPlatform("dailymotion", 30_000)).toBe(180_000);
   });
 
   it("gives xHamster conversion Providers enough room for one bounded artifact job", () => {

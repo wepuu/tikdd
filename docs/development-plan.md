@@ -2319,3 +2319,18 @@ and single-upstream relay designs cannot deliver both correctly. The Runner is s
 remain closed, no rollout rule exists and Dailymotion remains planned. A bounded temporary-artifact
 and merge pipeline requires a separate ADR before activation. See
 [Work Item 141](work-item-141-ytdlp-dailymotion-qualification.md).
+
+### Work Item 142 - yt-dlp temporary artifact delivery and Dailymotion Beta readiness
+
+Work Item 142 adds the bounded complete-file path required by the Work Item 141 evidence. The
+isolated Runner prepares one MP4 up to 720p from muxed HLS or separate audio/video inputs and stores
+it in a dedicated 15-minute artifact directory. Delivery mounts that directory read-only and uses
+the existing `temporary-object` mode, an encrypted opaque artifact descriptor, byte-length and
+SHA-256 verification, and a one-use attachment response. Preparation is limited to one concurrent
+job, 180 seconds, 300 MiB per file and 1 GiB total storage. YouTube is outside this activation.
+
+All production gates remain closed until the exact-SHA image passes the two approved Dailymotion
+samples and a browser download audit. Only then may `dailymotion:artifact` and a unique NL rollout
+be enabled; Dailymotion remains planned and non-indexable before that evidence. See
+[Work Item 142](work-item-142-ytdlp-temporary-artifact-delivery.md) and
+[ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).

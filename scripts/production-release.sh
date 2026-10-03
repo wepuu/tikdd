@@ -283,6 +283,13 @@ start_cobalt_authenticated() {
 }
 
 start_ytdlp_runner() {
+  artifact_dir="$(release_value TIKDD_YTDLP_ARTIFACT_DIR "/var/lib/tikdd/ytdlp-artifacts")"
+  case "$artifact_dir" in
+    /var/lib/tikdd/*) ;;
+    *) echo "TIKDD_YTDLP_ARTIFACT_DIR must stay below /var/lib/tikdd." >&2; return 78 ;;
+  esac
+  [ ! -L "$artifact_dir" ] || { echo "TIKDD_YTDLP_ARTIFACT_DIR cannot be a symbolic link." >&2; return 78; }
+  install -d -o 1000 -g 1000 -m 0700 "$artifact_dir"
   compose --profile ytdlp up -d --force-recreate --wait ytdlp-runner
   compose --profile ytdlp exec -T ytdlp-runner node -e \
     'fetch("http://127.0.0.1:9100/healthz").then(async r=>{const b=await r.json();if(!r.ok||b.service!=="ytdlp-runner"||typeof b.version!=="string")process.exit(1)}).catch(()=>process.exit(1))'
