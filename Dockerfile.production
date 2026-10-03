@@ -46,6 +46,19 @@ USER node
 ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
 CMD ["pnpm", "--filter", "@tikdd/api", "start"]
 
+FROM production-dependencies AS ytdlp-runner
+ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
+LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
+LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
+LABEL org.opencontainers.image.title="tikdd-ytdlp-runner"
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates \
+    && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp==2026.8.19" \
+    && rm -rf /var/lib/apt/lists/*
+USER node
+ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]
+CMD ["pnpm", "--filter", "@tikdd/ytdlp-runner", "start"]
+
 FROM production-dependencies AS web
 ARG TIKDD_GIT_SHA=0000000000000000000000000000000000000000
 LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"

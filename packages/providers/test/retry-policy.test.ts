@@ -13,6 +13,11 @@ describe("provider automatic retry policy", () => {
     expect(resolveJobAttemptsForPlatform("xhamster")).toBe(1);
     expect(resolveJobAttemptsForPlatform("youtube")).toBe(1);
     expect(resolveJobAttemptsForPlatform("odnoklassniki")).toBe(1);
+    expect(resolveJobAttemptsForPlatform("dailymotion")).toBe(1);
+  });
+
+  it("does not replay an isolated yt-dlp process", () => {
+    expect(shouldAutomaticallyRetryProviderFailure({ platform: "dailymotion", providerId: "ytdlp-isolated", failureCode: "provider_timeout" })).toBe(false);
   });
 
   it("does not replay Vidomon OK.ru attempts", () => {

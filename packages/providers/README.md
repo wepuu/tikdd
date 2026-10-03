@@ -15,6 +15,10 @@ modes declared for that exact capability. Production formats each require one ma
 Add capability, error-decision, normalized-result, candidate-host, and sequential-fallback tests for
 every adapter change. New source and delivery hosts require explicit allowlists and redirect tests.
 
+The `ytdlp-isolated` adapter is a last-fallback integration. It talks only to the private signed
+Runner API. Each platform needs an explicit `direct` or `relay` capability; relay uses a versioned,
+bounded Delivery policy under ADR-0061. Never infer a capability from yt-dlp's extractor list.
+
 ### Cobalt OK.ru qualification
 
 The self-hosted Cobalt adapter remains fixture-verified for OK.ru. Work Item 125's authenticated

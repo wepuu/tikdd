@@ -211,8 +211,9 @@ services:
       PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL_FILE: /run/secrets/provider_rollout_cohort_key
       TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL_FILE: /run/secrets/internal_preflight_hmac_key
       TIKDD_INTERNAL_PREFLIGHT_ATTESTATION_FILE: /run/tikdd/preflight.attestation
+      YTDLP_RUNNER_HMAC_SECRET_FILE: /run/secrets/ytdlp_runner_hmac_secret
       TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL REDIS_URL DELIVERY_ENCRYPTION_KEY_BASE64URL PROVIDER_ROLLOUT_COHORT_KEY_BASE64URL TIKDD_INTERNAL_PREFLIGHT_HMAC_KEY_BASE64URL
-      TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION
+      TIKDD_OPTIONAL_SECRET_ENV_VARS: TIKDD_INTERNAL_PREFLIGHT_ATTESTATION YTDLP_RUNNER_HMAC_SECRET
     healthcheck:
       test: ["CMD", "/workspace/docker/secret-entrypoint.sh", "pnpm", "--filter", "@tikdd/worker", "probe:production"]
       interval: 30s
@@ -231,6 +232,7 @@ services:
       - delivery_encryption_key
       - provider_rollout_cohort_key
       - internal_preflight_hmac_key
+      - ytdlp_runner_hmac_secret
     networks:
       - data
       - provider-egress
@@ -241,6 +243,37 @@ services:
         condition: service_healthy
     mem_limit: ${TIKDD_WORKER_MEMORY_LIMIT:-384m}
     pids_limit: 192
+
+  ytdlp-runner:
+    <<: *application-base
+    profiles: ["ytdlp"]
+    image: ${TIKDD_YTDLP_IMAGE:-ghcr.io/example/tikdd-ytdlp-runner:git-0000000000000000000000000000000000000000}
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+      target: ytdlp-runner
+      args:
+        NODE_IMAGE: ${TIKDD_NODE_IMAGE:-node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8}
+        TIKDD_GIT_SHA: ${TIKDD_GIT_SHA:-0000000000000000000000000000000000000000}
+    restart: unless-stopped
+    stop_grace_period: 10s
+    environment:
+      YTDLP_RUNNER_HMAC_SECRET_FILE: /run/secrets/ytdlp_runner_hmac_secret
+      TIKDD_REQUIRED_SECRET_ENV_VARS: YTDLP_RUNNER_HMAC_SECRET
+      YTDLP_RUNNER_PORT: "9100"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9100/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 30s
+    secrets:
+      - ytdlp_runner_hmac_secret
+    networks:
+      - provider-egress
+    mem_limit: ${TIKDD_YTDLP_MEMORY_LIMIT:-768m}
+    cpus: ${TIKDD_YTDLP_CPUS:-1.0}
+    pids_limit: 96
 
   cobalt-api:
     profiles: ["cobalt"]
@@ -979,6 +1012,8 @@ secrets:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/pilot_evidence_diagnostics_token
   cobalt_api_keys:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/cobalt_api_keys
+  ytdlp_runner_hmac_secret:
+    file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/ytdlp_runner_hmac_secret
   admin_csrf_secret:
     file: ${TIKDD_SECRETS_DIR:-/etc/tikdd/secrets}/admin_csrf_secret
   admin_command_secret:

@@ -214,15 +214,28 @@ export const DeliveryHostPolicySchema = z.object({
     z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/)
   ).default([]),
   rejectQueryParameters: z.boolean().default(false),
-  browserHandoff: z.enum(["navigate", "cors-download", "client-process"]).default("navigate"),
+  browserHandoff: z.enum(["navigate", "cors-download", "client-process", "server-download"]).default("navigate"),
+  relay: z.object({
+    maximumBytes: z.number().int().positive().max(512 * 1_024 * 1_024),
+    maximumDurationMs: z.number().int().min(5_000).max(300_000),
+    allowedMimeTypes: z.array(z.string().min(1).max(100)).min(1).max(10)
+  }).optional(),
   queryValuePatterns: z.record(
     z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/),
     z.string().min(1).max(200)
   ).default({}),
   expiryQueryKey: z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/).optional(),
   maximumFutureExpiryMs: z.number().int().positive().max(86_400_000).optional()
-}).refine((policy) => policy.hosts.length > 0 || policy.hostSuffixes.length > 0, {
-  message: "A delivery host policy must include an exact host or reviewed suffix."
+}).superRefine((policy, context) => {
+  if (policy.hosts.length === 0 && policy.hostSuffixes.length === 0) {
+    context.addIssue({ code: "custom", message: "A delivery host policy must include an exact host or reviewed suffix." });
+  }
+  if (policy.browserHandoff === "server-download" && (!policy.modes.includes("proxy") || !policy.relay)) {
+    context.addIssue({ code: "custom", message: "Server download policies require proxy mode and bounded relay limits." });
+  }
+  if (policy.relay && policy.browserHandoff !== "server-download") {
+    context.addIssue({ code: "custom", message: "Relay limits are only valid for server download policies." });
+  }
 });
 export type DeliveryHostPolicy = z.infer<typeof DeliveryHostPolicySchema>;
 
@@ -474,6 +487,44 @@ export const COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY = DeliveryHostPolicy
   browserHandoff: "client-process"
 });
 
+export const YTDLP_DAILYMOTION_DIRECT_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-dailymotion-direct-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["redirect"],
+  hosts: ["vod-progressive.akamaized.net"],
+  hostSuffixes: ["dmcdn.net"],
+  browserHandoff: "navigate"
+});
+
+export const YTDLP_DAILYMOTION_RELAY_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-dailymotion-relay-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["proxy"],
+  hosts: ["vod-progressive.akamaized.net"],
+  hostSuffixes: ["dmcdn.net"],
+  browserHandoff: "server-download",
+  relay: { maximumBytes: 300 * 1_024 * 1_024, maximumDurationMs: 180_000, allowedMimeTypes: ["video/mp4"] }
+});
+
+export const YTDLP_YOUTUBE_DIRECT_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-youtube-direct-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["redirect"],
+  hosts: [],
+  hostSuffixes: ["googlevideo.com"],
+  browserHandoff: "navigate"
+});
+
+export const YTDLP_YOUTUBE_RELAY_HOST_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-youtube-relay-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["proxy"],
+  hosts: [],
+  hostSuffixes: ["googlevideo.com"],
+  browserHandoff: "server-download",
+  relay: { maximumBytes: 300 * 1_024 * 1_024, maximumDurationMs: 180_000, allowedMimeTypes: ["video/mp4"] }
+});
+
 /** @deprecated Use the explicit versioned policy constants. */
 export const FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY = FDOWN_ISURU_FACEBOOK_MEDIA_HOST_POLICY_V1;
 
@@ -505,7 +556,11 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PINTEREST_MEDIA_HOST_POLICY],
   [COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_VIMEO_MEDIA_HOST_POLICY],
   [COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_TUNNEL_MEDIA_HOST_POLICY],
-  [COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY]
+  [COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY],
+  [YTDLP_DAILYMOTION_DIRECT_HOST_POLICY.id, YTDLP_DAILYMOTION_DIRECT_HOST_POLICY],
+  [YTDLP_DAILYMOTION_RELAY_HOST_POLICY.id, YTDLP_DAILYMOTION_RELAY_HOST_POLICY],
+  [YTDLP_YOUTUBE_DIRECT_HOST_POLICY.id, YTDLP_YOUTUBE_DIRECT_HOST_POLICY],
+  [YTDLP_YOUTUBE_RELAY_HOST_POLICY.id, YTDLP_YOUTUBE_RELAY_HOST_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

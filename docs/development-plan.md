@@ -2297,3 +2297,12 @@ readiness passed, and Worker was force-recreated with only `odnoklassniki,tiktok
 `tiktok:tunnel`. No Dailymotion rollout rule or public content was created. Dailymotion remains
 planned and delivery-blocked pending a focused Tunnel Range compatibility repair. See
 [Work Item 139](work-item-139-dailymotion-production-qualification-closeout.md).
+
+### Work Item 140 - Isolated yt-dlp Runner POC and bounded relay
+
+Work Item 140 implements the Milestone 4 isolation boundary: a pinned private yt-dlp Runner,
+HMAC-only internal contract, manifest-owned Dailymotion/YouTube capabilities and fail-closed
+activation gates. Direct delivery remains preferred. A size/time/MIME/redirect bounded NL relay
+is available only as a separately audited last resort. No production route is enabled by this item.
+See [Work Item 140](work-item-140-isolated-ytdlp-runner-poc.md) and
+[ADR-0061](architecture/adr/0061-isolated-ytdlp-runner-and-bounded-relay.md).

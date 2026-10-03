@@ -21,6 +21,8 @@ interface DeliveryFixture {
   hostPolicyId: string;
   formatId: string;
   targetUrl: string;
+  mode?: "redirect" | "proxy";
+  secretHeaders?: Record<string, string>;
 }
 
 const defaultFixture: DeliveryFixture = {
@@ -44,10 +46,10 @@ function candidate(
     id: candidateId,
     formatId: fixture.formatId,
     providerId: fixture.providerId,
-    mode: "redirect",
+    mode: fixture.mode ?? "redirect",
     hostPolicyId: fixture.hostPolicyId,
     envelope: candidateCipher.seal(
-      { kind: "target", targetUrl: fixture.targetUrl, secretHeaders: {} },
+      { kind: "target", targetUrl: fixture.targetUrl, secretHeaders: fixture.secretHeaders ?? {} },
       { purpose: "delivery-candidate", candidateId, taskId, formatId: fixture.formatId }
     ),
     expiresAt: new Date(Date.now() + 10 * 60_000).toISOString()
@@ -90,7 +92,7 @@ class MemoryDeliveryRepository implements DeliveryRepository {
   async recordDeliveryRedemptionOutcome(): Promise<void> {}
 }
 
-async function appFor(address: string, fixture: DeliveryFixture = defaultFixture) {
+async function appFor(address: string, fixture: DeliveryFixture = defaultFixture, fetchImpl?: typeof fetch) {
   const candidateCipher = cipher();
   return createDeliveryApp({
     repository: new MemoryDeliveryRepository(candidate(candidateCipher, fixture)),
@@ -100,7 +102,8 @@ async function appFor(address: string, fixture: DeliveryFixture = defaultFixture
     readyCheck: async () => undefined,
     dnsLookup: async () => [{ address, family: 4 }],
     tokenFactory: () => token,
-    ticketIdFactory: () => "dddddddddddddddddddddddddddddddd"
+    ticketIdFactory: () => "dddddddddddddddddddddddddddddddd",
+    ...(fetchImpl ? { fetchImpl } : {})
   });
 }
 
@@ -139,6 +142,25 @@ async function processingApp() {
 }
 
 describe("delivery application", () => {
+  it("streams an audited server-download candidate as an attachment", async () => {
+    const app = await appFor("8.8.8.8", {
+      providerId: "ytdlp-isolated", hostPolicyId: "ytdlp-dailymotion-relay-v1", formatId,
+      targetUrl: "https://vod-progressive.akamaized.net/fixture.mp4", mode: "proxy",
+      secretHeaders: { Referer: "https://www.dailymotion.com/" }
+    }, async (_url, init) => {
+      expect(new Headers(init?.headers).get("referer")).toBe("https://www.dailymotion.com/");
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200,
+        headers: { "content-type": "video/mp4", "content-length": "3" } });
+    });
+    try {
+      await app.inject({ method: "POST", url: "/v1/deliveries", payload: { taskId, formatId } });
+      const response = await app.inject({ method: "GET", url: `/d/${token}` });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers["content-disposition"]).toContain("attachment");
+      expect(response.rawPayload.byteLength).toBe(3);
+    } finally { await app.close(); }
+  });
+
   it("returns the configured public Web origin for browser preflight", async () => {
     const app = await appFor("8.8.8.8");
     try {

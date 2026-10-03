@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: TikDD yt-dlp Runner Internal API
+  version: 1.0.0
+paths:
+  /healthz:
+    get:
+      responses:
+        "200":
+          description: Runner health and pinned dependency version.
+  /internal/v1/extractions:
+    post:
+      security:
+        - tikddHmac: []
+          tikddTimestamp: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtractionRequest"
+      responses:
+        "200":
+          description: Normalized internal extraction result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractionResponse"
+        "400":
+          description: Invalid or unsupported input.
+        "401":
+          description: Invalid internal signature.
+        "422":
+          description: Extractor returned no eligible formats.
+        "503":
+          description: Runner unavailable.
+components:
+  securitySchemes:
+    tikddHmac:
+      type: apiKey
+      in: header
+      name: x-tikdd-signature
+    tikddTimestamp:
+      type: apiKey
+      in: header
+      name: x-tikdd-timestamp
+  schemas:
+    ExtractionRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, platform, url, deadlineMs]
+      properties:
+        requestId:
+          type: string
+          maxLength: 100
+        platform:
+          type: string
+          enum: [dailymotion, youtube]
+        url:
+          type: string
+          format: uri
+          maxLength: 2048
+        deadlineMs:
+          type: integer
+          minimum: 5000
+          maximum: 35000
+    ExtractionResponse:
+      type: object
+      additionalProperties: false
+      required: [platform, sourceId, title, author, thumbnailUrl, durationSeconds, isLive, extractor, formats]
+      properties:
+        platform:
+          type: string
+          enum: [dailymotion, youtube]
+        sourceId: { type: string, maxLength: 200 }
+        title: { type: string, maxLength: 500 }
+        author: { type: [string, "null"], maxLength: 200 }
+        thumbnailUrl: { type: [string, "null"], format: uri }
+        durationSeconds: { type: [number, "null"], minimum: 0 }
+        isLive: { type: boolean }
+        extractor: { type: string, maxLength: 100 }
+        formats:
+          type: array
+          minItems: 1
+          maxItems: 40
+          items:
+            type: object
+            additionalProperties: false
+            required: [sourceFormatId, container, protocol, quality, width, height, fps, bitrateKbps, estimatedBytes, videoCodec, audioCodec, hasVideo, hasAudio, targetUrl, headers]
+            properties:
+              sourceFormatId: { type: string, maxLength: 160 }
+              container: { type: string, maxLength: 24 }
+              protocol: { type: string, enum: [https, hls, dash, unknown] }
+              quality: { type: string, maxLength: 80 }
+              width: { type: [integer, "null"] }
+              height: { type: [integer, "null"] }
+              fps: { type: [number, "null"] }
+              bitrateKbps: { type: [number, "null"] }
+              estimatedBytes: { type: [integer, "null"] }
+              videoCodec: { type: [string, "null"] }
+              audioCodec: { type: [string, "null"] }
+              hasVideo: { type: boolean }
+              hasAudio: { type: boolean }
+              targetUrl: { type: string, format: uri }
+              headers:
+                type: object
+                additionalProperties: false
+                properties:
+                  User-Agent: { type: string }
+                  Referer: { type: string }
+                  Origin: { type: string }

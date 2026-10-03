@@ -282,6 +282,12 @@ start_cobalt_authenticated() {
   verify_cobalt_auth_readiness
 }
 
+start_ytdlp_runner() {
+  compose --profile ytdlp up -d --force-recreate --wait ytdlp-runner
+  compose --profile ytdlp exec -T ytdlp-runner node -e \
+    'fetch("http://127.0.0.1:9100/healthz").then(async r=>{const b=await r.json();if(!r.ok||b.service!=="ytdlp-runner"||typeof b.version!=="string")process.exit(1)}).catch(()=>process.exit(1))'
+}
+
 verify_cobalt_qualification_input() {
   qualification_input="$(release_value TIKDD_COBALT_QUALIFICATION_INPUT "/run/tikdd/cobalt-qualification-input.json")"
   [ "$qualification_input" = "/run/tikdd/cobalt-qualification-input.json" ] || {
@@ -367,7 +373,7 @@ validate_public_web_origin() {
 
 validate() {
   validate_public_web_origin
-  compose --profile admin --profile ops --profile admin-ops --profile cobalt --profile cobalt-ops config --quiet
+  compose --profile admin --profile ops --profile admin-ops --profile cobalt --profile cobalt-ops --profile ytdlp config --quiet
 }
 
 acquire_lock() {
@@ -524,6 +530,11 @@ case "$action" in
       start_cobalt_authenticated
       run_stage_gate cobalt-api
     fi
+    if [ "$(release_value ENABLE_YTDLP_PROVIDER "false")" = "true" ]; then
+      compose --profile ytdlp pull ytdlp-runner
+      start_ytdlp_runner
+      run_stage_gate ytdlp-runner
+    fi
     stage_service worker
     stage_service web
     run_provider_preflight
@@ -535,6 +546,9 @@ case "$action" in
     validate
     if [ "$(release_value ENABLE_COBALT_PROVIDER "false")" = "true" ]; then
       start_cobalt_authenticated
+    fi
+    if [ "$(release_value ENABLE_YTDLP_PROVIDER "false")" = "true" ]; then
+      start_ytdlp_runner
     fi
     compose up -d --force-recreate --wait worker
     verify_worker_runtime_config

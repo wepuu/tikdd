@@ -1,0 +1,17 @@
+{
+  "name": "@tikdd/ytdlp-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tikdd/contracts": "workspace:*",
+    "@tikdd/platform": "workspace:*",
+    "fastify": "^5.0.0"
+  }
+}
