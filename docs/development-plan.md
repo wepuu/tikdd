@@ -2310,9 +2310,12 @@ See [Work Item 140](work-item-140-isolated-ytdlp-runner-poc.md) and
 ### Work Item 141 - yt-dlp Dailymotion qualification and impersonation repair
 
 The first closed-gate NL qualification proved the isolation and HMAC boundaries but both Dailymotion
-samples failed before media discovery because the pinned image omitted yt-dlp's optional Firefox
-impersonation runtime. Work Item 141 installs the official `curl-cffi` extra, asserts the target at
-image-build time and adds a sanitized runtime-dependency failure class. Qualification and rollout
-remain closed until the repaired exact-SHA image passes both samples and either direct delivery or
-the bounded relay is verified. See
+samples initially failed before media discovery because the pinned image omitted yt-dlp's optional
+Firefox impersonation runtime. Work Item 141 installed the official `curl-cffi` extra, asserted the
+target at image-build time and added a sanitized runtime-dependency failure class. The repaired
+exact-SHA production qualification resolved both samples but found only HLS: one sample was muxed,
+while the other required separate audio/video download and FFmpeg merge. The current progressive-MP4
+and single-upstream relay designs cannot deliver both correctly. The Runner is stopped, all gates
+remain closed, no rollout rule exists and Dailymotion remains planned. A bounded temporary-artifact
+and merge pipeline requires a separate ADR before activation. See
 [Work Item 141](work-item-141-ytdlp-dailymotion-qualification.md).
