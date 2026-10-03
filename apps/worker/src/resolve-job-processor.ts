@@ -28,6 +28,7 @@ type CompletionStage = "candidate_preparation" | "completion_persistence";
 export const INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS = 45_000;
 export const XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS = 90_000;
 export const YOUTUBE_ROUTE_TIMEOUT_FLOOR_MS = 75_000;
+export const DAILYMOTION_ROUTE_TIMEOUT_FLOOR_MS = 180_000;
 
 export function routeTimeoutMsForPlatform(
   platform: ResolveJobData["platform"],
@@ -36,6 +37,7 @@ export function routeTimeoutMsForPlatform(
   if (platform === "instagram") return Math.max(configuredTimeoutMs, INSTAGRAM_ROUTE_TIMEOUT_FLOOR_MS);
   if (platform === "xhamster") return Math.max(configuredTimeoutMs, XHAMSTER_ROUTE_TIMEOUT_FLOOR_MS);
   if (platform === "youtube") return Math.max(configuredTimeoutMs, YOUTUBE_ROUTE_TIMEOUT_FLOOR_MS);
+  if (platform === "dailymotion") return Math.max(configuredTimeoutMs, DAILYMOTION_ROUTE_TIMEOUT_FLOOR_MS);
   return configuredTimeoutMs;
 }
 

@@ -261,6 +261,7 @@ services:
       YTDLP_RUNNER_HMAC_SECRET_FILE: /run/secrets/ytdlp_runner_hmac_secret
       TIKDD_REQUIRED_SECRET_ENV_VARS: YTDLP_RUNNER_HMAC_SECRET
       YTDLP_RUNNER_PORT: "9100"
+      YTDLP_ARTIFACT_ROOT: /var/lib/tikdd-ytdlp-artifacts
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9100/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 30s
@@ -269,6 +270,10 @@ services:
       start_period: 30s
     secrets:
       - ytdlp_runner_hmac_secret
+    volumes:
+      - type: bind
+        source: ${TIKDD_YTDLP_ARTIFACT_DIR:-/var/lib/tikdd/ytdlp-artifacts}
+        target: /var/lib/tikdd-ytdlp-artifacts
     networks:
       - provider-egress
     mem_limit: ${TIKDD_YTDLP_MEMORY_LIMIT:-768m}
@@ -507,6 +512,7 @@ services:
       DATABASE_URL_FILE: /run/secrets/database_url
       DELIVERY_ENCRYPTION_KEY_BASE64URL_FILE: /run/secrets/delivery_encryption_key
       TIKDD_REQUIRED_SECRET_ENV_VARS: DATABASE_URL DELIVERY_ENCRYPTION_KEY_BASE64URL
+      YTDLP_ARTIFACT_ROOT: /var/lib/tikdd-ytdlp-artifacts
     ports:
       - 127.0.0.1:${TIKDD_DELIVERY_HOST_PORT:-3402}:4002
     healthcheck:
@@ -519,6 +525,11 @@ services:
       - source: delivery_database_url
         target: database_url
       - delivery_encryption_key
+    volumes:
+      - type: bind
+        source: ${TIKDD_YTDLP_ARTIFACT_DIR:-/var/lib/tikdd/ytdlp-artifacts}
+        target: /var/lib/tikdd-ytdlp-artifacts
+        read_only: true
     networks:
       - data
       - provider-egress

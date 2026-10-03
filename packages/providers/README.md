@@ -16,8 +16,10 @@ Add capability, error-decision, normalized-result, candidate-host, and sequentia
 every adapter change. New source and delivery hosts require explicit allowlists and redirect tests.
 
 The `ytdlp-isolated` adapter is a last-fallback integration. It talks only to the private signed
-Runner API. Each platform needs an explicit `direct` or `relay` capability; relay uses a versioned,
-bounded Delivery policy under ADR-0061. Never infer a capability from yt-dlp's extractor list.
+Runner API. Each platform needs an explicit `direct`, `relay`, or `artifact` capability; relay uses
+a versioned bounded Delivery policy under ADR-0061, while a complete temporary file uses the
+read-only Delivery mount and `temporary-object` boundary in ADR-0062. Never infer a capability from
+yt-dlp's extractor list.
 
 ### Cobalt OK.ru qualification
 

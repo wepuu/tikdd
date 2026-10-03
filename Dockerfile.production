@@ -52,10 +52,11 @@ LABEL org.opencontainers.image.source="https://github.com/wepuu/tikdd"
 LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-ytdlp-runner"
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates ffmpeg \
     && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" \
     && python3 -c 'import curl_cffi' \
     && yt-dlp --list-impersonate-targets | grep -Eiq 'firefox' \
+    && ffmpeg -version >/dev/null \
     && rm -rf /var/lib/apt/lists/*
 USER node
 ENTRYPOINT ["/workspace/docker/secret-entrypoint.sh"]

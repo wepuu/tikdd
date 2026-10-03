@@ -371,6 +371,10 @@ through the asynchronous mock route.
   [the canary authorization record](docs/providers/canary-authorization.md).
 - The yt-dlp supported-sites list is discovery input, not an automatic allowlist or reliability
   guarantee.
+- Work Item 142 adds a default-off, isolated yt-dlp temporary-artifact path for Dailymotion HLS.
+  The Runner alone downloads and remuxes/merges one bounded MP4; Delivery receives read-only access
+  and serves it through an encrypted one-use ticket. Dailymotion remains planned until the two
+  production samples and browser handoff pass.
 
 See [SECURITY.md](SECURITY.md) for the URL-ingestion and proxy threat model.
 

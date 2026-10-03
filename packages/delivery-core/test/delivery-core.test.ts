@@ -196,6 +196,10 @@ describe("reviewed delivery network policy", () => {
     expect(getDeliveryHostPolicy("cobalt-selfhosted-okru-media-v1")?.hostSuffixes).toEqual(["okcdn.ru"]);
     expect(getDeliveryHostPolicy("cobalt-selfhosted-x-media-v1")?.browserHandoff).toBe("navigate");
     expect(getDeliveryHostPolicy("ytdlp-dailymotion-relay-v1")?.browserHandoff).toBe("server-download");
+    expect(getDeliveryHostPolicy("ytdlp-dailymotion-artifact-v1")).toMatchObject({
+      modes: ["temporary-object"], browserHandoff: "server-download",
+      artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024 }
+    });
     expect(getDeliveryHostPolicy("ytdlp-dailymotion-relay-v1")?.relay?.maximumBytes).toBe(300 * 1_024 * 1_024);
   });
 

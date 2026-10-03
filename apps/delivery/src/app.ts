@@ -1,4 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { open, lstat, realpath } from "node:fs/promises";
+import { resolve, sep } from "node:path";
 import { Readable } from "node:stream";
 import cors from "@fastify/cors";
 import {
@@ -52,6 +54,7 @@ export interface CreateDeliveryAppOptions {
   tokenFactory?: () => string;
   ticketIdFactory?: () => string;
   fetchImpl?: typeof fetch;
+  artifactRoot?: string;
 }
 
 export async function createDeliveryApp(
@@ -118,7 +121,7 @@ export async function createDeliveryApp(
       tokenHash: hashDeliveryToken(token),
       maximumTtlMs: ticketTtlMs
     });
-    if (!issued || !["redirect", "proxy"].includes(issued.mode)) {
+    if (!issued || !["redirect", "proxy", "temporary-object"].includes(issued.mode)) {
       return reply.code(409).send({
         error: {
           code: "DELIVERY_CANDIDATE_NOT_AVAILABLE",
@@ -158,7 +161,7 @@ export async function createDeliveryApp(
       });
     }
     const redeemed = await options.repository.redeemDeliveryTicket(hashDeliveryToken(token.data));
-    if (!redeemed || !["redirect", "proxy"].includes(redeemed.candidate.mode)) {
+    if (!redeemed || !["redirect", "proxy", "temporary-object"].includes(redeemed.candidate.mode)) {
       return reply.code(410).send({
         error: { code: "DELIVERY_EXPIRED", message: "This delivery link is no longer valid." }
       });
@@ -201,6 +204,55 @@ export async function createDeliveryApp(
           message: "The delivery target failed its security validation."
         }
       });
+    }
+    if (secret.kind === "artifact") {
+      const artifactPolicy = policy.artifact;
+      if (!artifactPolicy || redeemed.candidate.mode !== "temporary-object" || policy.browserHandoff !== "server-download" ||
+          !artifactPolicy.allowedMimeTypes.includes(secret.artifact.mimeType) ||
+          secret.artifact.sizeBytes > artifactPolicy.maximumBytes || !options.artifactRoot) {
+        await options.repository.recordDeliveryRedemptionOutcome({ context: redeemed.evidence, result: "mode_rejected",
+          durationMs: Date.now()-startedAt, browserHandoff: false });
+        return reply.code(502).send({ error: { code: "DELIVERY_TARGET_REJECTED", message: "The temporary artifact was rejected." } });
+      }
+      let handle: Awaited<ReturnType<typeof open>> | null = null;
+      try {
+        const root = await realpath(options.artifactRoot);
+        const path = resolve(root, `${secret.artifact.id}.mp4`);
+        if (!path.startsWith(`${root}${sep}`)) throw new Error("Artifact path escaped its root.");
+        const link = await lstat(path);
+        if (!link.isFile() || link.isSymbolicLink()) throw new Error("Artifact is not a regular file.");
+        handle = await open(path, "r");
+        const details = await handle.stat();
+        if (!details.isFile() || details.size !== secret.artifact.sizeBytes || details.size <= 0 || details.size > artifactPolicy.maximumBytes) {
+          throw new Error("Artifact size mismatch.");
+        }
+        const hash = createHash("sha256");
+        for await (const chunk of handle.createReadStream({ start: 0, autoClose: false })) hash.update(chunk as Buffer);
+        if (hash.digest("hex") !== secret.artifact.sha256) throw new Error("Artifact checksum mismatch.");
+        reply.header("Content-Type", secret.artifact.mimeType);
+        reply.header("Content-Disposition", `attachment; filename="${secret.artifact.filename}"`);
+        reply.header("Content-Length", String(details.size));
+        const artifactHandle = handle;
+        const evidence = redeemed.evidence;
+        handle = null;
+        async function* artifactBody() {
+          try {
+            for await (const chunk of artifactHandle.createReadStream({ start: 0, autoClose: false })) yield chunk;
+            await options.repository.recordDeliveryRedemptionOutcome({ context: evidence, result: "passed",
+              durationMs: Date.now()-startedAt, browserHandoff: false });
+          } catch (error) {
+            await options.repository.recordDeliveryRedemptionOutcome({ context: evidence, result: "internal_error",
+              durationMs: Date.now()-startedAt, browserHandoff: false });
+            throw error;
+          } finally { await artifactHandle.close().catch(() => undefined); }
+        }
+        return reply.send(Readable.from(artifactBody()));
+      } catch {
+        await handle?.close().catch(() => undefined);
+        await options.repository.recordDeliveryRedemptionOutcome({ context: redeemed.evidence, result: "internal_error",
+          durationMs: Date.now()-startedAt, browserHandoff: false });
+        return reply.code(502).send({ error: { code: "DELIVERY_ARTIFACT_UNAVAILABLE", message: "The temporary media file is unavailable." } });
+      }
     }
     if (secret.kind === "processing") {
       if (policy.browserHandoff !== "client-process") {

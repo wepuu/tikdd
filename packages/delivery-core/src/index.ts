@@ -92,6 +92,17 @@ export const DeliveryCandidateInputSchema = z.union([
     kind: z.literal("processing"),
     mode: z.literal("proxy"),
     processing: DeliveryClientProcessingPlanSchema
+  }),
+  DeliveryCandidateBaseSchema.extend({
+    kind: z.literal("artifact"),
+    mode: z.literal("temporary-object"),
+    artifact: z.strictObject({
+      id: z.string().regex(/^yta_[a-f0-9]{32}$/),
+      sizeBytes: z.number().int().positive().max(300 * 1_024 * 1_024),
+      sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      mimeType: z.literal("video/mp4"),
+      filename: z.string().min(1).max(120).regex(/^[A-Za-z0-9._-]+\.mp4$/)
+    })
   })
 ]);
 export type DeliveryCandidateInput = z.infer<typeof DeliveryCandidateInputSchema>;
@@ -148,6 +159,16 @@ export const CandidateSecretSchema = z.union([
   z.object({
     kind: z.literal("processing"),
     processing: DeliveryClientProcessingPlanSchema
+  }),
+  z.object({
+    kind: z.literal("artifact"),
+    artifact: z.strictObject({
+      id: z.string().regex(/^yta_[a-f0-9]{32}$/),
+      sizeBytes: z.number().int().positive().max(300 * 1_024 * 1_024),
+      sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      mimeType: z.literal("video/mp4"),
+      filename: z.string().min(1).max(120).regex(/^[A-Za-z0-9._-]+\.mp4$/)
+    })
   })
 ]);
 export type CandidateSecret = z.infer<typeof CandidateSecretSchema>;
@@ -220,6 +241,11 @@ export const DeliveryHostPolicySchema = z.object({
     maximumDurationMs: z.number().int().min(5_000).max(300_000),
     allowedMimeTypes: z.array(z.string().min(1).max(100)).min(1).max(10)
   }).optional(),
+  artifact: z.object({
+    rootId: z.literal("ytdlp-artifacts-v1"),
+    maximumBytes: z.number().int().positive().max(512 * 1_024 * 1_024),
+    allowedMimeTypes: z.array(z.string().min(1).max(100)).min(1).max(10)
+  }).optional(),
   queryValuePatterns: z.record(
     z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/),
     z.string().min(1).max(200)
@@ -227,14 +253,18 @@ export const DeliveryHostPolicySchema = z.object({
   expiryQueryKey: z.string().min(1).max(80).regex(/^[A-Za-z0-9._~-]+$/).optional(),
   maximumFutureExpiryMs: z.number().int().positive().max(86_400_000).optional()
 }).superRefine((policy, context) => {
-  if (policy.hosts.length === 0 && policy.hostSuffixes.length === 0) {
+  if (policy.hosts.length === 0 && policy.hostSuffixes.length === 0 && !policy.artifact) {
     context.addIssue({ code: "custom", message: "A delivery host policy must include an exact host or reviewed suffix." });
   }
-  if (policy.browserHandoff === "server-download" && (!policy.modes.includes("proxy") || !policy.relay)) {
-    context.addIssue({ code: "custom", message: "Server download policies require proxy mode and bounded relay limits." });
+  if (policy.browserHandoff === "server-download" &&
+      !((policy.modes.includes("proxy") && policy.relay) || (policy.modes.includes("temporary-object") && policy.artifact))) {
+    context.addIssue({ code: "custom", message: "Server download policies require bounded relay or artifact limits." });
   }
   if (policy.relay && policy.browserHandoff !== "server-download") {
     context.addIssue({ code: "custom", message: "Relay limits are only valid for server download policies." });
+  }
+  if (policy.artifact && (!policy.modes.includes("temporary-object") || policy.browserHandoff !== "server-download")) {
+    context.addIssue({ code: "custom", message: "Artifact limits require temporary-object server download." });
   }
 });
 export type DeliveryHostPolicy = z.infer<typeof DeliveryHostPolicySchema>;
@@ -506,6 +536,15 @@ export const YTDLP_DAILYMOTION_RELAY_HOST_POLICY = DeliveryHostPolicySchema.pars
   relay: { maximumBytes: 300 * 1_024 * 1_024, maximumDurationMs: 180_000, allowedMimeTypes: ["video/mp4"] }
 });
 
+export const YTDLP_DAILYMOTION_ARTIFACT_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-dailymotion-artifact-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["temporary-object"],
+  hosts: [],
+  browserHandoff: "server-download",
+  artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024, allowedMimeTypes: ["video/mp4"] }
+});
+
 export const YTDLP_YOUTUBE_DIRECT_HOST_POLICY = DeliveryHostPolicySchema.parse({
   id: "ytdlp-youtube-direct-v1",
   providerId: "ytdlp-isolated",
@@ -559,6 +598,7 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY.id, COBALT_SELFHOSTED_PROCESSING_MEDIA_HOST_POLICY],
   [YTDLP_DAILYMOTION_DIRECT_HOST_POLICY.id, YTDLP_DAILYMOTION_DIRECT_HOST_POLICY],
   [YTDLP_DAILYMOTION_RELAY_HOST_POLICY.id, YTDLP_DAILYMOTION_RELAY_HOST_POLICY],
+  [YTDLP_DAILYMOTION_ARTIFACT_POLICY.id, YTDLP_DAILYMOTION_ARTIFACT_POLICY],
   [YTDLP_YOUTUBE_DIRECT_HOST_POLICY.id, YTDLP_YOUTUBE_DIRECT_HOST_POLICY],
   [YTDLP_YOUTUBE_RELAY_HOST_POLICY.id, YTDLP_YOUTUBE_RELAY_HOST_POLICY]
 ]);

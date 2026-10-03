@@ -34,6 +34,28 @@ paths:
           description: Extractor returned no eligible formats.
         "503":
           description: Runner unavailable.
+  /internal/v1/artifacts:
+    post:
+      security:
+        - tikddHmac: []
+          tikddTimestamp: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactRequest"
+      responses:
+        "200":
+          description: A bounded, complete temporary MP4 artifact.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactResponse"
+        "400": { description: Invalid or unsupported input. }
+        "401": { description: Invalid internal signature. }
+        "409": { description: Runner concurrency or storage budget exhausted. }
+        "422": { description: Media could not be prepared as a complete MP4. }
 components:
   securitySchemes:
     tikddHmac:
@@ -109,3 +131,40 @@ components:
                   User-Agent: { type: string }
                   Referer: { type: string }
                   Origin: { type: string }
+    ArtifactRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, platform, url, deadlineMs, maximumHeight]
+      properties:
+        requestId: { type: string, maxLength: 100 }
+        platform: { type: string, enum: [dailymotion, youtube] }
+        url: { type: string, format: uri, maxLength: 2048 }
+        deadlineMs: { type: integer, minimum: 30000, maximum: 180000 }
+        maximumHeight: { type: integer, minimum: 144, maximum: 720 }
+    ArtifactResponse:
+      type: object
+      additionalProperties: false
+      required: [platform, sourceId, title, author, thumbnailUrl, durationSeconds, isLive, extractor, artifact]
+      properties:
+        platform: { type: string, enum: [dailymotion, youtube] }
+        sourceId: { type: string, maxLength: 200 }
+        title: { type: string, maxLength: 500 }
+        author: { type: [string, "null"], maxLength: 200 }
+        thumbnailUrl: { type: [string, "null"], format: uri }
+        durationSeconds: { type: [number, "null"], minimum: 0 }
+        isLive: { type: boolean, const: false }
+        extractor: { type: string, maxLength: 100 }
+        artifact:
+          type: object
+          additionalProperties: false
+          required: [id, container, mimeType, quality, width, height, sizeBytes, sha256, expiresAt]
+          properties:
+            id: { type: string, pattern: '^yta_[a-f0-9]{32}$' }
+            container: { type: string, const: mp4 }
+            mimeType: { type: string, const: video/mp4 }
+            quality: { type: string, maxLength: 80 }
+            width: { type: [integer, "null"], minimum: 1 }
+            height: { type: [integer, "null"], minimum: 1, maximum: 720 }
+            sizeBytes: { type: integer, minimum: 1, maximum: 314572800 }
+            sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+            expiresAt: { type: string, format: date-time }

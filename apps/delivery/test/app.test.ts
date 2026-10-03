@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   AesGcmCandidateCipher,
@@ -141,7 +145,50 @@ async function processingApp() {
   });
 }
 
+async function artifactApp(root: string, bytes: Buffer, expectedHash = createHash("sha256").update(bytes).digest("hex")) {
+  const candidateCipher = cipher();
+  const artifactId = `yta_${"a".repeat(32)}`;
+  await writeFile(join(root, `${artifactId}.mp4`), bytes);
+  const encryptedCandidate: EncryptedDeliveryCandidate = {
+    id: candidateId, formatId, providerId: "ytdlp-isolated", mode: "temporary-object",
+    hostPolicyId: "ytdlp-dailymotion-artifact-v1",
+    envelope: candidateCipher.seal({ kind: "artifact", artifact: { id: artifactId,
+      sizeBytes: bytes.length, sha256: expectedHash, mimeType: "video/mp4",
+      filename: "TikDD-Dailymotion-example-720p.mp4" } },
+    { purpose: "delivery-candidate", candidateId, taskId, formatId }),
+    expiresAt: new Date(Date.now() + 120_000).toISOString()
+  };
+  return createDeliveryApp({ repository: new MemoryDeliveryRepository(encryptedCandidate), cipher: candidateCipher,
+    publicBaseUrl: "https://download.tikdd.test", webOrigin: "https://tikdd.test", artifactRoot: root,
+    readyCheck: async () => undefined, tokenFactory: () => token,
+    ticketIdFactory: () => "dddddddddddddddddddddddddddddddd" });
+}
+
 describe("delivery application", () => {
+  it("serves a checksum-verified temporary artifact through one opaque ticket", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tikdd-delivery-artifact-"));
+    const app = await artifactApp(root, Buffer.from([1, 2, 3, 4]));
+    try {
+      const created = await app.inject({ method: "POST", url: "/v1/deliveries", payload: { taskId, formatId } });
+      expect(created.json()).toMatchObject({ mode: "temporary-object", browserHandoff: "server-download" });
+      expect(created.body).not.toContain("yta_");
+      const delivered = await app.inject({ method: "GET", url: `/d/${token}` });
+      expect(delivered.statusCode).toBe(200);
+      expect(delivered.headers["content-disposition"]).toContain("TikDD-Dailymotion-example-720p.mp4");
+      expect(delivered.rawPayload).toEqual(Buffer.from([1, 2, 3, 4]));
+      expect((await app.inject({ method: "GET", url: `/d/${token}` })).statusCode).toBe(410);
+    } finally { await app.close(); await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("consumes the ticket but rejects an artifact checksum mismatch", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tikdd-delivery-artifact-"));
+    const app = await artifactApp(root, Buffer.from([1, 2, 3]), "f".repeat(64));
+    try {
+      await app.inject({ method: "POST", url: "/v1/deliveries", payload: { taskId, formatId } });
+      expect((await app.inject({ method: "GET", url: `/d/${token}` })).statusCode).toBe(502);
+      expect((await app.inject({ method: "GET", url: `/d/${token}` })).statusCode).toBe(410);
+    } finally { await app.close(); await rm(root, { recursive: true, force: true }); }
+  });
   it("streams an audited server-download candidate as an attachment", async () => {
     const app = await appFor("8.8.8.8", {
       providerId: "ytdlp-isolated", hostPolicyId: "ytdlp-dailymotion-relay-v1", formatId,

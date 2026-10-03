@@ -93,4 +93,26 @@ describe("yt-dlp Runner", () => {
       await app.close();
     }
   });
+
+  it("prepares an artifact only through the signed bounded endpoint", async () => {
+    const artifact = { platform: "dailymotion" as const, sourceId: "example", title: "Example", author: null,
+      thumbnailUrl: null, durationSeconds: 30, isLive: false as const, extractor: "Dailymotion",
+      artifact: { id: `yta_${"a".repeat(32)}`, container: "mp4" as const, mimeType: "video/mp4" as const,
+        quality: "720p", width: 1280, height: 720, sizeBytes: 1024, sha256: "b".repeat(64),
+        expiresAt: "2030-01-01T00:00:00.000Z" } };
+    const artifactBody = { requestId: "artifact-1", platform: "dailymotion" as const,
+      url: "https://www.dailymotion.com/video/example", deadlineMs: 175_000, maximumHeight: 720 };
+    const app = createYtDlpRunnerApp({ cli: cli(), artifactPreparer: { prepare: async () => artifact },
+      hmacSecret: secret, now: () => now });
+    try {
+      const response = await app.inject({ method: "POST", url: "/internal/v1/artifacts", payload: artifactBody,
+        headers: { "x-tikdd-timestamp": String(now),
+          "x-tikdd-signature": signRunnerRequest(secret, String(now), artifactBody) } });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ artifact: { id: `yta_${"a".repeat(32)}`, sizeBytes: 1024 } });
+      expect((await app.inject({ method: "POST", url: "/internal/v1/artifacts", payload: artifactBody,
+        headers: { "x-tikdd-timestamp": String(now),
+          "x-tikdd-signature": signRunnerRequest(secret, String(now), artifactBody) } })).statusCode).toBe(409);
+    } finally { await app.close(); }
+  });
 });
