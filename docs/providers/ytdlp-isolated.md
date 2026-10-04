@@ -34,4 +34,5 @@ Dailymotion is an experimental Beta route. The public page is available for huma
 Activation requires all three yt-dlp gates, the approved Dailymotion capability, and the unique
 `ytdlp-isolated / dailymotion / nl` rollout rule. Disable the rollout first, then clear the gates
 and force-recreate the Worker if the route produces unsafe delivery, capacity, or repeated upstream
-failures. YouTube remains an isolated capability under review and is not activated by this record.
+failures. YouTube remains an isolated capability under review and is not activated by this record;
+its artifact policy is reserved for Work Item 145 and does not itself authorize traffic.

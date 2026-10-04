@@ -51,4 +51,20 @@ describe("YtDlpIsolatedProvider", () => {
     expect(JSON.stringify(resolved.result)).not.toContain("yta_");
     expect(provider.manifest.timeoutMs).toBe(180_000);
   });
+
+  it("uses the platform label for a YouTube artifact candidate", async () => {
+    const provider = new YtDlpIsolatedProvider({ enabled: true, hmacSecret: secret, approvedPlatforms: ["youtube"],
+      deliveryVerifiedCapabilities: { youtube: "artifact" }, fetchImpl: async () => new Response(JSON.stringify({
+        platform: "youtube", sourceId: "short-fixture", title: "Example", author: null,
+        thumbnailUrl: "https://i.ytimg.com/vi/fixture/hqdefault.jpg", durationSeconds: 30, isLive: false, extractor: "Youtube",
+        artifact: { id: `yta_${"c".repeat(32)}`, container: "mp4", mimeType: "video/mp4", quality: "360p",
+          width: 640, height: 360, sizeBytes: 1024, sha256: "d".repeat(64),
+          expiresAt: new Date(Date.now() + 600_000).toISOString() }
+      }), { status: 200 }) });
+    const resolved = await provider.resolve({ ...input, platform: "youtube",
+      sourceUrl: "https://www.youtube.com/watch?v=fixture", canonicalUrl: "https://www.youtube.com/watch?v=fixture" });
+    expect(resolved.candidates[0]).toMatchObject({ hostPolicyId: "ytdlp-youtube-artifact-v1",
+      artifact: { filename: "TikDD-YouTube-short-fixture-360p.mp4" } });
+    expect(resolved.result.media.thumbnailUrl).toBe("https://i.ytimg.com/vi/fixture/hqdefault.jpg");
+  });
 });

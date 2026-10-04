@@ -2357,3 +2357,13 @@ to the platform icon without affecting MP4 preparation or temporary-object deliv
 contract, Delivery policy, gate, rollout, or production configuration changes are introduced.
 See [Work Item 144](work-item-144-ytdlp-artifact-thumbnail.md) and
 [ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
+
+### Work Item 145 - yt-dlp YouTube 最后级兜底准备
+
+Work Item 145 reserves `ytdlp-youtube-artifact-v1` beside the existing direct and bounded relay
+policies, and makes artifact filenames platform-aware so Dailymotion and YouTube cannot be mixed.
+The new policy is not an activation: NoAdsDL remains the YouTube primary, SnapYT remains closed,
+and no YouTube yt-dlp gate or rollout rule is created. The next qualification must use two existing
+owner-approved public samples, prefer a portable progressive MP4, and use the bounded 720p artifact
+only when YouTube exposes separated audio/video or HLS. Login, Cookie, challenge and unstable
+extractor results remain blocked. See [Work Item 145](work-item-145-ytdlp-youtube-fallback.md).

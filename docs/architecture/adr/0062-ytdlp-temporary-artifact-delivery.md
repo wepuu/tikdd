@@ -35,7 +35,9 @@ arbitrary filesystem or network proxy.
   1 GiB and lifetime to 15 minutes. Startup, periodic and pre-job cleanup remove expired complete
   files and abandoned work directories.
 - Dailymotion remains disabled until the exact production image passes both approved samples and a
-  browser download audit. YouTube is not approved for artifact preparation by this decision.
+  browser download audit. The versioned `ytdlp-youtube-artifact-v1` policy is reserved for a
+  separate YouTube qualification; defining the policy does not approve the platform or create a
+  rollout rule.
 
 ## Consequences
 

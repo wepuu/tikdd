@@ -18,6 +18,7 @@ export interface YtDlpIsolatedProviderOptions {
 const modeFor = (capability: YtDlpDeliveryCapability): ProviderDeliveryMode => capability === "relay" ? "proxy" : capability === "artifact" ? "temporary-object" : "redirect";
 const policyFor = (platform: YtDlpRunnerPlatform, capability: YtDlpDeliveryCapability) =>
   `ytdlp-${platform}-${capability === "relay" ? "relay" : capability === "artifact" ? "artifact" : "direct"}-v1`;
+const platformLabel = (platform: YtDlpRunnerPlatform): string => platform === "dailymotion" ? "Dailymotion" : "YouTube";
 function sign(secret: string, timestamp: string, body: YtDlpRunnerRequest | YtDlpArtifactRequest): string {
   return createHmac("sha256", secret).update(`${timestamp}\n${JSON.stringify(body)}`).digest("base64url");
 }
@@ -105,7 +106,7 @@ export class YtDlpIsolatedProvider implements ResolverProvider {
         expiresAt: normalized.artifact.expiresAt,
         artifact: { id: normalized.artifact.id, sizeBytes: normalized.artifact.sizeBytes,
           sha256: normalized.artifact.sha256, mimeType: normalized.artifact.mimeType,
-          filename: `TikDD-Dailymotion-${safeSource}-${safeQuality}.mp4`.slice(0, 120) } }] });
+          filename: `TikDD-${platformLabel(platform)}-${safeSource}-${safeQuality}.mp4`.slice(0, 120) } }] });
     }
     let normalized: ReturnType<typeof YtDlpRunnerResponseSchema.parse>;
     try { normalized = YtDlpRunnerResponseSchema.parse(JSON.parse(await readBoundedJson(response))); }

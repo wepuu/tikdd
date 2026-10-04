@@ -200,6 +200,10 @@ describe("reviewed delivery network policy", () => {
       modes: ["temporary-object"], browserHandoff: "server-download",
       artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024 }
     });
+    expect(getDeliveryHostPolicy("ytdlp-youtube-artifact-v1")).toMatchObject({
+      modes: ["temporary-object"], browserHandoff: "server-download",
+      artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024 }
+    });
     expect(getDeliveryHostPolicy("ytdlp-dailymotion-relay-v1")?.relay?.maximumBytes).toBe(300 * 1_024 * 1_024);
   });
 
