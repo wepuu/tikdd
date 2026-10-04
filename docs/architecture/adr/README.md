@@ -60,6 +60,7 @@
 - [ADR-0059: Cobalt multi-mode client delivery](0059-cobalt-multimode-client-delivery.md)
 - [ADR-0060: Topology-aware Cobalt delivery qualification](0060-cobalt-topology-aware-qualification.md)
 - [ADR-0063: yt-dlp YouTube closed-gate qualification](0063-ytdlp-youtube-qualification.md)
+- [ADR-0064: Isolated yt-dlp YouTube anonymous PO Token runtime](0064-ytdlp-youtube-anonymous-po-token-runtime.md)
 
 Create a new sequential ADR when a decision changes an established boundary. Do not rewrite an
 accepted ADR to hide a later change; supersede it.

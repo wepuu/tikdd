@@ -1,13 +1,14 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { YtDlpArtifactRequestSchema, YtDlpRunnerRequestSchema, type YtDlpArtifactResponse } from "@tikdd/contracts";
+import { YtDlpArtifactRequestSchema, YtDlpRunnerRequestSchema, type YtDlpArtifactResponse, type YtDlpRunnerFailureCode } from "@tikdd/contracts";
 import { detectPlatform } from "@tikdd/platform";
 import {
   RUNNER_SIGNATURE_HEADER,
   RUNNER_TIMESTAMP_HEADER,
   verifyRunnerRequestSignature
 } from "./auth";
-import type { YtDlpCli } from "./cli";
+import { YtDlpProcessError, type YtDlpCli } from "./cli";
 import { ArtifactCapacityError } from "./artifact";
+import { YtDlpAdmissionGate } from "./admission";
 
 export interface YtDlpArtifactPreparer {
   prepare(input: ReturnType<typeof YtDlpArtifactRequestSchema.parse> & { signal?: AbortSignal }): Promise<YtDlpArtifactResponse>;
@@ -18,6 +19,17 @@ export interface CreateYtDlpRunnerAppOptions {
   artifactPreparer?: YtDlpArtifactPreparer;
   hmacSecret: string;
   now?: () => number;
+  youtubeAdmissionGate?: YtDlpAdmissionGate;
+}
+
+function failureCode(error: unknown, fallback: YtDlpRunnerFailureCode): YtDlpRunnerFailureCode {
+  if (error instanceof YtDlpProcessError) return error.failureCode;
+  if (error instanceof Error && /timed out|cancelled/i.test(error.message)) return "timeout";
+  return fallback;
+}
+
+function failureStatus(code: YtDlpRunnerFailureCode): number {
+  return code === "rate_limited" ? 429 : code === "capacity_unavailable" ? 409 : 422;
 }
 
 export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): FastifyInstance {
@@ -25,6 +37,10 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
   const app = Fastify({ logger: true, bodyLimit: 4_096, trustProxy: false });
   const usedRequests = new Map<string, number>();
   const now = options.now ?? Date.now;
+  const youtubeAdmissionGate = options.youtubeAdmissionGate ?? new YtDlpAdmissionGate(
+    Number.parseInt(process.env.YTDLP_YOUTUBE_MIN_INTERVAL_MS ?? "15000", 10) || 15_000,
+    now
+  );
 
   app.addHook("onSend", async (_request, reply) => {
     reply.header("Cache-Control", "private, no-store");
@@ -58,6 +74,8 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
       return reply.code(409).send({ error: { code: "request_replayed" } });
     }
     usedRequests.set(parsed.data.requestId, current + 60_000);
+    const releaseAdmission = youtubeAdmissionGate.tryAcquire(parsed.data.platform);
+    if (!releaseAdmission) return reply.code(429).send({ error: { code: "rate_limited" } });
     try {
       const detected = detectPlatform(parsed.data.url);
       if (detected.platform !== parsed.data.platform) {
@@ -69,13 +87,12 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
         event: "ytdlp_runner_failure",
         platform: parsed.data.platform,
         requestId: parsed.data.requestId,
-        failure: error instanceof Error && /timed out|cancelled/i.test(error.message)
-          ? "timeout"
-          : error instanceof Error && /impersonation runtime is unavailable/i.test(error.message)
-            ? "runtime_dependency_unavailable"
-          : "extractor_error"
+        failure: failureCode(error, "extractor_error")
       });
-      return reply.code(422).send({ error: { code: "extraction_failed" } });
+      const code = failureCode(error, "extractor_error");
+      return reply.code(failureStatus(code)).send({ error: { code } });
+    } finally {
+      releaseAdmission();
     }
   });
 
@@ -93,6 +110,8 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
     for (const [id, expiresAt] of usedRequests) if (expiresAt <= current) usedRequests.delete(id);
     if (usedRequests.has(parsed.data.requestId)) return reply.code(409).send({ error: { code: "request_replayed" } });
     usedRequests.set(parsed.data.requestId, current + 5 * 60_000);
+    const releaseAdmission = youtubeAdmissionGate.tryAcquire(parsed.data.platform);
+    if (!releaseAdmission) return reply.code(429).send({ error: { code: "rate_limited" } });
     const controller = new AbortController();
     const abort = () => controller.abort();
     request.raw.once("aborted", abort);
@@ -101,13 +120,13 @@ export function createYtDlpRunnerApp(options: CreateYtDlpRunnerAppOptions): Fast
       if (detected.platform !== parsed.data.platform) return reply.code(400).send({ error: { code: "platform_mismatch" } });
       return await options.artifactPreparer.prepare({ ...parsed.data, signal: controller.signal });
     } catch (error) {
-      const failure = error instanceof ArtifactCapacityError ? "capacity_unavailable"
-        : error instanceof Error && /timed out|cancelled/i.test(error.message) ? "timeout" : "artifact_failed";
+      const failure = error instanceof ArtifactCapacityError ? "capacity_unavailable" : failureCode(error, "extractor_error");
       request.log.warn({ event: "ytdlp_artifact_failure", platform: parsed.data.platform,
         requestId: parsed.data.requestId, failure });
-      return reply.code(error instanceof ArtifactCapacityError ? 409 : 422).send({ error: { code: failure } });
+      return reply.code(failureStatus(failure)).send({ error: { code: failure } });
     } finally {
       request.raw.removeListener("aborted", abort);
+      releaseAdmission();
     }
   });
   return app;

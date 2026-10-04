@@ -378,6 +378,10 @@ through the asynchronous mock route.
 
 See [SECURITY.md](SECURITY.md) for the URL-ingestion and proxy threat model.
 
+Work Item 148 hardens the isolated yt-dlp YouTube fallback with a private, digest-pinned anonymous
+PO Token sidecar, typed upstream failure diagnostics and a one-at-a-time admission gate. It does
+not enable YouTube traffic; NoAdsDL remains the primary and yt-dlp remains the last gated fallback.
+
 Work Item 53 changes free-Provider qualification to use technical protocol evidence rather than
 landing-page marketing copy. Work Item 54 enabled TikCD's strict redirect adapter as the TikTok
 secondary route after delivery checks. Work Item 55 confirms that GramSnap's Instagram flow requires

@@ -244,6 +244,32 @@ services:
     mem_limit: ${TIKDD_WORKER_MEMORY_LIMIT:-384m}
     pids_limit: 192
 
+  ytdlp-pot-provider:
+    profiles: ["ytdlp-youtube"]
+    image: ${TIKDD_YTDLP_POT_IMAGE:-brainicism/bgutil-ytdlp-pot-provider:2.0.1}
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 10s
+    expose:
+      - "4416"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4416/ping').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 30s
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    networks:
+      - provider-egress
+    mem_limit: ${TIKDD_YTDLP_POT_MEMORY_LIMIT:-384m}
+    cpus: ${TIKDD_YTDLP_POT_CPUS:-0.5}
+    pids_limit: 96
+
   ytdlp-runner:
     <<: *application-base
     profiles: ["ytdlp"]
@@ -262,6 +288,9 @@ services:
       TIKDD_REQUIRED_SECRET_ENV_VARS: YTDLP_RUNNER_HMAC_SECRET
       YTDLP_RUNNER_PORT: "9100"
       YTDLP_ARTIFACT_ROOT: /var/lib/tikdd-ytdlp-artifacts
+      YTDLP_YOUTUBE_POT_PROVIDER_URL: ${YTDLP_YOUTUBE_POT_PROVIDER_URL:-http://ytdlp-pot-provider:4416}
+      YTDLP_YOUTUBE_PLAYER_CLIENT: ${YTDLP_YOUTUBE_PLAYER_CLIENT:-mweb}
+      YTDLP_YOUTUBE_MIN_INTERVAL_MS: ${YTDLP_YOUTUBE_MIN_INTERVAL_MS:-15000}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9100/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 30s

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { YtDlpRunnerPlatform, YtDlpRunnerResponse } from "@tikdd/contracts";
+import type { YtDlpRunnerFailureCode, YtDlpRunnerPlatform, YtDlpRunnerResponse } from "@tikdd/contracts";
 import { normalizeYtDlpOutput } from "./normalize";
 
 const MAXIMUM_OUTPUT_BYTES = 2 * 1_024 * 1_024;
@@ -8,11 +8,41 @@ const EXTRACTORS: Readonly<Record<YtDlpRunnerPlatform, string>> = {
   youtube: "Youtube,YoutubeYtBe,-youtube:tab,-generic"
 };
 
-export function classifyYtDlpProcessFailure(errorOutput: string, code: number | null): string {
-  if (/impersonat(?:e|ion).*unavailable|none of these impersonate targets are available/i.test(errorOutput)) {
-    return "yt-dlp impersonation runtime is unavailable.";
+export interface ClassifiedYtDlpFailure {
+  code: YtDlpRunnerFailureCode;
+  message: string;
+}
+
+export class YtDlpProcessError extends Error {
+  constructor(readonly failureCode: YtDlpRunnerFailureCode, message: string) {
+    super(message);
+    this.name = "YtDlpProcessError";
   }
-  return `yt-dlp exited with status ${code ?? "unknown"}.`;
+}
+
+export function classifyYtDlpProcessFailure(errorOutput: string, code: number | null): ClassifiedYtDlpFailure {
+  if (/impersonat(?:e|ion).*unavailable|none of these impersonate targets are available/i.test(errorOutput)) {
+    return { code: "runtime_dependency_unavailable", message: "yt-dlp impersonation runtime is unavailable." };
+  }
+  if (/http\s*429|too many requests|rate.?limit/i.test(errorOutput)) {
+    return { code: "rate_limited", message: "yt-dlp upstream rate limit was reached." };
+  }
+  if (/sign in to confirm|not a bot|captcha|login_required|confirm you.?re not a bot/i.test(errorOutput)) {
+    return { code: "bot_challenge", message: "yt-dlp upstream requested an anonymous bot check." };
+  }
+  if (/po\s*token|visitor data|missing required visitor|gvs/i.test(errorOutput)) {
+    return { code: "po_token_required", message: "yt-dlp could not obtain the required YouTube proof-of-origin data." };
+  }
+  if (/requested format is not available|requested format not available|format.*not available/i.test(errorOutput)) {
+    return { code: "format_unavailable", message: "yt-dlp found no requested media format." };
+  }
+  if (/no video formats found|requested media is not available|no formats found/i.test(errorOutput)) {
+    return { code: "no_media", message: "yt-dlp found no downloadable media." };
+  }
+  if (/unsupported url|not a valid url|does not support this url/i.test(errorOutput)) {
+    return { code: "extractor_unsupported", message: "yt-dlp does not support this URL." };
+  }
+  return { code: "extractor_error", message: `yt-dlp exited with status ${code ?? "unknown"}.` };
 }
 
 export interface YtDlpCliInput {
@@ -70,27 +100,47 @@ export function runProcess(command: string, args: readonly string[], timeoutMs: 
     child.once("error", (error) => finish(error));
     child.once("close", (code) => {
       if (code === 0) finish();
-      else finish(new Error(classifyYtDlpProcessFailure(errorOutput.toString("utf8"), code)));
+      else {
+        const classified = classifyYtDlpProcessFailure(errorOutput.toString("utf8"), code);
+        finish(new YtDlpProcessError(classified.code, classified.message));
+      }
     });
   });
+}
+
+export function buildYtDlpPlatformArgs(platform: YtDlpRunnerPlatform): string[] {
+  if (platform === "dailymotion") return ["--no-plugin-dirs", "--use-extractors", EXTRACTORS[platform]];
+  const playerClient = process.env.YTDLP_YOUTUBE_PLAYER_CLIENT?.trim() || "mweb";
+  const potProviderUrl = process.env.YTDLP_YOUTUBE_POT_PROVIDER_URL?.trim();
+  const args = ["--use-extractors", EXTRACTORS[platform], "--extractor-args", `youtube:player-client=${playerClient}`];
+  if (potProviderUrl) args.push("--extractor-args", `youtubepot-bgutilhttp:base_url=${potProviderUrl}`);
+  return args;
 }
 
 export class SubprocessYtDlpCli implements YtDlpCli {
   constructor(private readonly command = process.env.YTDLP_COMMAND ?? "yt-dlp") {}
 
-  async extract(input: YtDlpCliInput): Promise<YtDlpRunnerResponse> {
-    const output = await runProcess(this.command, [
+  private commonArgs(platform: YtDlpRunnerPlatform): string[] {
+    const args = [
       "--ignore-config",
       "--no-config-locations",
-      "--no-plugin-dirs",
       "--no-playlist",
       "--no-cache-dir",
       "--skip-download",
       "--dump-single-json",
       "--no-warnings",
       "--socket-timeout", "10",
-      "--js-runtimes", "node",
-      "--use-extractors", EXTRACTORS[input.platform],
+      "--js-runtimes", "node"
+    ];
+    // YouTube's PO Token Provider is a yt-dlp plugin. Dailymotion remains
+    // plugin-free so its existing deterministic behavior is unchanged.
+    args.push(...buildYtDlpPlatformArgs(platform));
+    return args;
+  }
+
+  async extract(input: YtDlpCliInput): Promise<YtDlpRunnerResponse> {
+    const output = await runProcess(this.command, [
+      ...this.commonArgs(input.platform),
       "--",
       input.url
     ], input.deadlineMs, input.signal);

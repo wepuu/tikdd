@@ -2389,3 +2389,25 @@ yt-dlp capability remains priority 250, below NoAdsDL 740 and SnapYT 720, so it 
 existing YouTube primary. A failed proof closes the rule and clears only the YouTube capability;
 the Dailymotion artifact route and all existing production traffic remain unchanged. See [Work Item
 147](work-item-147-ytdlp-youtube-beta-closeout.md).
+
+### Work Item 148 - yt-dlp YouTube upstream stability
+
+Work Item 148 repairs the anonymous YouTube fallback inside the isolated Runner. Production
+diagnostics showed that the pinned current yt-dlp image was receiving HTTP 429, LOGIN_REQUIRED,
+missing Visitor Data and no GVS PO Token provider from the NL egress; the old adapter flattened all
+of those states into `unsupported_url`. The Runner now has a private, digest-pinned PO Token sidecar
+boundary, deterministic `mweb` configuration, sanitized failure codes and a YouTube-only one-at-a-
+time admission gate with minimum spacing. No account cookies, browser profiles, CAPTCHA interaction
+or manual tokens are accepted. YouTube remains closed until a separate two-sample artifact and
+browser Delivery proof succeeds; NoAdsDL remains primary and Dailymotion is unchanged. See [Work
+Item 148](work-item-148-ytdlp-youtube-stability.md) and [ADR-0064](architecture/adr/0064-ytdlp-youtube-anonymous-po-token-runtime.md).
+
+### Work Item 149 - yt-dlp YouTube release qualification
+
+Work Item 149 closes the release-script gap between a closed-gate qualification and production
+traffic authorization. The qualification operation can start the digest-pinned private PO Token
+sidecar while YouTube remains absent from Worker approved platforms. After merge and exact-image
+deployment, one ordinary video and one Shorts sample must pass the bounded artifact, Delivery-ticket
+and browser-save checks before the unique YouTube fallback rule can be enabled. NoAdsDL remains
+priority 740, yt-dlp remains priority 250, SnapYT remains closed, and a failure closes only the
+YouTube capability. See [Work Item 149](work-item-149-ytdlp-youtube-release-qualification.md).

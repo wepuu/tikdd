@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import { ResolveResultSchema, YtDlpArtifactRequestSchema, YtDlpArtifactResponseSchema, YtDlpRunnerRequestSchema, YtDlpRunnerResponseSchema,
+import { ResolveResultSchema, YtDlpArtifactRequestSchema, YtDlpArtifactResponseSchema, YtDlpRunnerErrorResponseSchema, YtDlpRunnerRequestSchema, YtDlpRunnerResponseSchema,
   type ProviderDeliveryMode, type YtDlpArtifactRequest, type YtDlpRunnerPlatform, type YtDlpRunnerRequest } from "@tikdd/contracts";
 import { ProviderResolutionSchema, assertDeliveryTargetPolicy } from "@tikdd/delivery-core";
 import { ProviderError } from "../errors";
@@ -43,6 +43,16 @@ async function readBoundedJson(response: Response): Promise<string> {
   return new TextDecoder().decode(joined);
 }
 
+async function readRunnerFailure(response: Response): Promise<string | null> {
+  try {
+    const body = JSON.parse(await readBoundedJson(response));
+    const parsed = YtDlpRunnerErrorResponseSchema.safeParse(body);
+    return parsed.success ? parsed.data.error.code : null;
+  } catch {
+    return null;
+  }
+}
+
 export class YtDlpIsolatedProvider implements ResolverProvider {
   readonly manifest: ProviderManifest;
   private readonly apiUrl: URL;
@@ -82,7 +92,21 @@ export class YtDlpIsolatedProvider implements ResolverProvider {
       headers: { accept: "application/json", "content-type": "application/json", "x-tikdd-timestamp": timestamp,
         "x-tikdd-signature": sign(this.hmacSecret, timestamp, body) }, body: JSON.stringify(body) }); }
     catch { throw new ProviderError("The isolated yt-dlp Runner is unavailable.", "provider_unavailable", true, true); }
-    if (!response.ok) throw new ProviderError("The isolated yt-dlp Runner could not resolve this media.", response.status >= 500 ? "provider_unavailable" : "unsupported_url", response.status >= 500, true);
+    if (!response.ok) {
+      const failure = await readRunnerFailure(response);
+      if (failure === "rate_limited") throw new ProviderError("The isolated yt-dlp Runner is rate limited.", "provider_rate_limited", true, true);
+      if (failure === "bot_challenge" || failure === "po_token_required" || failure === "visitor_data_missing") {
+        throw new ProviderError("The isolated yt-dlp Runner encountered a YouTube access challenge.", "provider_challenge", true, true);
+      }
+      if (failure === "timeout") throw new ProviderError("The isolated yt-dlp Runner timed out.", "provider_timeout", true, true);
+      if (failure === "format_unavailable" || failure === "no_media") {
+        throw new ProviderError("The isolated yt-dlp Runner returned no usable media.", "invalid_result", false, true);
+      }
+      if (failure === "extractor_unsupported") {
+        throw new ProviderError("The isolated yt-dlp Runner does not support this URL.", "unsupported_url", false, true);
+      }
+      throw new ProviderError("The isolated yt-dlp Runner could not resolve this media.", "provider_unavailable", response.status >= 500 || failure !== null, true);
+    }
     if (artifact) {
       let normalized: ReturnType<typeof YtDlpArtifactResponseSchema.parse>;
       try { normalized = YtDlpArtifactResponseSchema.parse(JSON.parse(await readBoundedJson(response))); }

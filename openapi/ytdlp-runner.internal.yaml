@@ -31,7 +31,17 @@ paths:
         "401":
           description: Invalid internal signature.
         "422":
-          description: Extractor returned no eligible formats.
+          description: Extractor returned no eligible formats or a sanitized upstream failure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The YouTube admission gate or upstream rate limit is active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: Runner unavailable.
   /internal/v1/artifacts:
@@ -55,7 +65,18 @@ paths:
         "400": { description: Invalid or unsupported input. }
         "401": { description: Invalid internal signature. }
         "409": { description: Runner concurrency or storage budget exhausted. }
-        "422": { description: Media could not be prepared as a complete MP4. }
+        "422":
+          description: Media could not be prepared as a complete MP4.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The YouTube admission gate or upstream rate limit is active.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     tikddHmac:
@@ -67,6 +88,19 @@ components:
       in: header
       name: x-tikdd-timestamp
   schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [rate_limited, bot_challenge, po_token_required, visitor_data_missing, format_unavailable, no_media, extractor_unsupported, runtime_dependency_unavailable, timeout, capacity_unavailable, extractor_error]
     ExtractionRequest:
       type: object
       additionalProperties: false
