@@ -39,12 +39,12 @@ export interface StarterPageRecord {
   seo: AdminSeoFields;
 }
 
-type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "youtube" | "xhamster";
+type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "youtube" | "xhamster" | "dailymotion";
 type StarterPageKey = "home" | StarterPlatform | "faq" | "help" | "privacy" | "terms";
 
 const PLATFORM_NAMES: Record<StarterPlatform, string> = {
   x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook",
-  vimeo: "Vimeo", pinterest: "Pinterest", youtube: "YouTube", xhamster: "xHamster"
+  vimeo: "Vimeo", pinterest: "Pinterest", youtube: "YouTube", xhamster: "xHamster", dailymotion: "Dailymotion"
 };
 
 type Text = {
@@ -133,6 +133,10 @@ const TEXT: Record<StarterLocale, Text> = {
 const YOUTUBE_PLATFORM_LINK: Record<StarterLocale, string> = {
   en: "video or Short", "zh-CN": "视频或 Shorts", es: "vídeo o Short", fr: "vidéo ou Short",
   de: "Video oder Short", it: "video o Short", tr: "video veya Short", pl: "film lub Short", ja: "動画またはShorts"
+};
+
+const DAILYMOTION_PLATFORM_LINK: Record<StarterLocale, string> = {
+  en: "video", "zh-CN": "视频", es: "vídeo", fr: "vidéo", de: "Video", it: "video", tr: "video", pl: "film", ja: "動画"
 };
 
 const YOUTUBE_HOME_COPY: Record<StarterLocale, {
@@ -286,7 +290,7 @@ const platformContent = (locale: StarterLocale, platform: StarterPlatform): Admi
   const text = TEXT[locale];
   const name = PLATFORM_NAMES[platform];
   const stable = platform === "tiktok";
-  const link = text.platformLink[platform] ?? YOUTUBE_PLATFORM_LINK[locale];
+  const link = text.platformLink[platform] ?? (platform === "dailymotion" ? DAILYMOTION_PLATFORM_LINK[locale] : YOUTUBE_PLATFORM_LINK[locale]);
   return AdminPageContentSchema.parse({
     template: "platform", eyebrow: `${name} ${stable ? "Stable" : "Beta"}`,
     title: text.platformTitle(name, stable), introduction: text.platformIntro(name, link),
@@ -347,7 +351,7 @@ const legalContent = (locale: StarterLocale, kind: "privacy" | "terms"): AdminPa
 const PATHS: Record<StarterPageKey, string> = {
   home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader",
   facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", youtube: "/youtube-downloader",
-  xhamster: "/xhamster-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms"
+  xhamster: "/xhamster-downloader", dailymotion: "/dailymotion-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms"
 };
 
 const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
@@ -365,7 +369,7 @@ const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
     ? `${description} ${text.footer} ${text.failureAnswer}`
     : description).slice(0, 180);
   const safeTitle = title.slice(0, 70);
-  const publicSearchPage = page === "home" || isPlatform;
+  const publicSearchPage = page === "home" || (isPlatform && page !== "dailymotion");
   return AdminSeoFieldsSchema.parse({
     localPath: PATHS[page], searchTitle: safeTitle, searchDescription: reviewedDescription,
     socialTitle: page === "home" ? safeTitle : null, socialDescription: page === "home" ? reviewedDescription : null,

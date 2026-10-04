@@ -76,7 +76,7 @@ export const DEFAULT_PLATFORM_CATALOG: readonly PlatformDefinition[] = [
   {
     id: "dailymotion",
     displayName: "Dailymotion",
-    status: "planned",
+    status: "experimental",
     source: "yt-dlp",
     hosts: [host("dailymotion.com"), host("dai.ly", false)],
     extractorKeys: ["dailymotion", "dailymotion:playlist"]
