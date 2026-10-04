@@ -10,5 +10,8 @@ describe("yt-dlp activation", () => {
     expect(loadYtDlpActivationConfiguration({ ENABLE_YTDLP_PROVIDER: "true", YTDLP_RUNTIME_APPROVED: "true", YTDLP_DELIVERY_AUDIT_APPROVED: "true",
       YTDLP_APPROVED_PLATFORMS: "dailymotion", YTDLP_DELIVERY_VERIFIED_CAPABILITIES: "dailymotion:artifact" }))
       .toMatchObject({ deliveryVerifiedCapabilities: { dailymotion: "artifact" } });
+    expect(loadYtDlpActivationConfiguration({ ENABLE_YTDLP_PROVIDER: "true", YTDLP_RUNTIME_APPROVED: "true", YTDLP_DELIVERY_AUDIT_APPROVED: "true",
+      YTDLP_APPROVED_PLATFORMS: "dailymotion,youtube", YTDLP_DELIVERY_VERIFIED_CAPABILITIES: "dailymotion:artifact,youtube:artifact" }))
+      .toMatchObject({ approvedPlatforms: ["dailymotion", "youtube"], deliveryVerifiedCapabilities: { dailymotion: "artifact", youtube: "artifact" } });
   });
 });

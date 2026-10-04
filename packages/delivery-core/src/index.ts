@@ -545,6 +545,15 @@ export const YTDLP_DAILYMOTION_ARTIFACT_POLICY = DeliveryHostPolicySchema.parse(
   artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024, allowedMimeTypes: ["video/mp4"] }
 });
 
+export const YTDLP_YOUTUBE_ARTIFACT_POLICY = DeliveryHostPolicySchema.parse({
+  id: "ytdlp-youtube-artifact-v1",
+  providerId: "ytdlp-isolated",
+  modes: ["temporary-object"],
+  hosts: [],
+  browserHandoff: "server-download",
+  artifact: { rootId: "ytdlp-artifacts-v1", maximumBytes: 300 * 1_024 * 1_024, allowedMimeTypes: ["video/mp4"] }
+});
+
 export const YTDLP_YOUTUBE_DIRECT_HOST_POLICY = DeliveryHostPolicySchema.parse({
   id: "ytdlp-youtube-direct-v1",
   providerId: "ytdlp-isolated",
@@ -600,7 +609,8 @@ const HOST_POLICIES = new Map<string, DeliveryHostPolicy>([
   [YTDLP_DAILYMOTION_RELAY_HOST_POLICY.id, YTDLP_DAILYMOTION_RELAY_HOST_POLICY],
   [YTDLP_DAILYMOTION_ARTIFACT_POLICY.id, YTDLP_DAILYMOTION_ARTIFACT_POLICY],
   [YTDLP_YOUTUBE_DIRECT_HOST_POLICY.id, YTDLP_YOUTUBE_DIRECT_HOST_POLICY],
-  [YTDLP_YOUTUBE_RELAY_HOST_POLICY.id, YTDLP_YOUTUBE_RELAY_HOST_POLICY]
+  [YTDLP_YOUTUBE_RELAY_HOST_POLICY.id, YTDLP_YOUTUBE_RELAY_HOST_POLICY],
+  [YTDLP_YOUTUBE_ARTIFACT_POLICY.id, YTDLP_YOUTUBE_ARTIFACT_POLICY]
 ]);
 
 export function getDeliveryHostPolicy(id: string): DeliveryHostPolicy | null {

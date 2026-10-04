@@ -7,6 +7,7 @@ import {
   type YtDlpArtifactRequest,
   type YtDlpArtifactResponse
 } from "@tikdd/contracts";
+import { reviewedYtDlpThumbnailUrl } from "./normalize";
 
 export const MAXIMUM_ARTIFACT_BYTES = 300 * 1_024 * 1_024;
 export const MAXIMUM_ARTIFACT_STORE_BYTES = 1_024 * 1_024 * 1_024;
@@ -28,6 +29,7 @@ interface ArtifactMetadata {
   author?: unknown;
   durationSeconds?: unknown;
   extractor?: unknown;
+  thumbnail?: unknown;
   width?: unknown;
   height?: unknown;
 }
@@ -91,7 +93,7 @@ export class YtDlpArtifactStore {
       await mkdir(work, { mode: 0o700 });
       const outputTemplate = join(work, "media.%(ext)s");
       const format = `bv*[height<=${input.maximumHeight}][ext=mp4]+ba[ext=m4a]/b[height<=${input.maximumHeight}][ext=mp4]/bv*[height<=${input.maximumHeight}]+ba/b[height<=${input.maximumHeight}]`;
-      const printed = "after_move:{\"sourceId\":%(id)j,\"title\":%(title)j,\"author\":%(uploader)j,\"durationSeconds\":%(duration)j,\"extractor\":%(extractor_key)j,\"width\":%(width)j,\"height\":%(height)j}";
+      const printed = "after_move:{\"sourceId\":%(id)j,\"title\":%(title)j,\"author\":%(uploader)j,\"durationSeconds\":%(duration)j,\"extractor\":%(extractor_key)j,\"thumbnail\":%(thumbnail)j,\"width\":%(width)j,\"height\":%(height)j}";
       const stdout = await this.run(this.command, [
         "--ignore-config", "--no-config-locations", "--no-plugin-dirs", "--no-playlist", "--no-cache-dir",
         "--quiet", "--no-warnings", "--no-simulate", "--socket-timeout", "10", "--js-runtimes", "node",
@@ -114,7 +116,7 @@ export class YtDlpArtifactStore {
         sourceId: safeText(metadata.sourceId, "media", 200).replace(/[^A-Za-z0-9._-]/g, "_") || "media",
         title: safeText(metadata.title, "Public video", 500),
         author: typeof metadata.author === "string" ? metadata.author.slice(0, 200) : null,
-        thumbnailUrl: null,
+        thumbnailUrl: reviewedYtDlpThumbnailUrl(input.platform, metadata.thumbnail),
         durationSeconds: safeNumber(metadata.durationSeconds),
         isLive: false,
         extractor: safeText(metadata.extractor, input.platform, 100),

@@ -2347,3 +2347,45 @@ artifact limits, one-attempt routing, rollout rule, and existing platform traffi
 The next phase is natural-traffic observation and a separate Stable-promotion review. It must not
 be simulated with repeated synthetic downloads. YouTube yt-dlp activation and any new yt-dlp
 platform remain separate work items.
+
+### Work Item 144 - yt-dlp Dailymotion artifact thumbnail repair
+
+The Dailymotion artifact path now prints yt-dlp's optional thumbnail metadata and applies the same
+strict `s1.dmcdn.net`/`s2.dmcdn.net` HTTPS allowlist already used by normal extraction. Valid
+thumbnails reach the normalized public result; missing, malformed, or unapproved values fall back
+to the platform icon without affecting MP4 preparation or temporary-object delivery. No public
+contract, Delivery policy, gate, rollout, or production configuration changes are introduced.
+See [Work Item 144](work-item-144-ytdlp-artifact-thumbnail.md) and
+[ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
+
+### Work Item 145 - yt-dlp YouTube 最后级兜底准备
+
+Work Item 145 reserves `ytdlp-youtube-artifact-v1` beside the existing direct and bounded relay
+policies, and makes artifact filenames platform-aware so Dailymotion and YouTube cannot be mixed.
+The new policy is not an activation: NoAdsDL remains the YouTube primary, SnapYT remains closed,
+and no YouTube yt-dlp gate or rollout rule is created. The next qualification must use two existing
+owner-approved public samples, prefer a portable progressive MP4, and use the bounded 720p artifact
+only when YouTube exposes separated audio/video or HLS. Login, Cookie, challenge and unstable
+extractor results remain blocked. See [Work Item 145](work-item-145-ytdlp-youtube-fallback.md).
+
+### Work Item 146 - yt-dlp YouTube 闭门资格验证
+
+Work Item 146 adds a one-shot preflight runner for at most two reviewed YouTube samples. It runs
+sequentially against the isolated Runner with an explicit `direct`, `relay`, or `artifact`
+capability, refuses any YouTube platform already active in Worker configuration, and emits only
+sanitized format, candidate, policy, delivery-mode, thumbnail and failure facts. The production
+release script requires a mode-600 UID-1000 runtime input and a dedicated `ytdlp-ops` service; it
+does not create a rollout or change NoAdsDL, SnapYT or Dailymotion traffic. Delivery redemption and
+browser saving remain a separately authorized release gate. See [Work Item 146](work-item-146-ytdlp-youtube-qualification.md)
+and [ADR-0063](architecture/adr/0063-ytdlp-youtube-qualification.md).
+
+### Work Item 147 - yt-dlp YouTube 末级兜底验证与受控收口
+
+Work Item 147 is the next release phase for the stacked WI144–WI146 changes. It keeps NoAdsDL as
+the YouTube primary and SnapYT closed, then uses the closed-gate Runner qualification for one
+ordinary video and one Shorts sample. Only a capability that passes two-sample Delivery-ticket and
+browser-save proof may be added to the unique `ytdlp-isolated / youtube / nl` fallback rule. The
+yt-dlp capability remains priority 250, below NoAdsDL 740 and SnapYT 720, so it cannot replace the
+existing YouTube primary. A failed proof closes the rule and clears only the YouTube capability;
+the Dailymotion artifact route and all existing production traffic remain unchanged. See [Work Item
+147](work-item-147-ytdlp-youtube-beta-closeout.md).

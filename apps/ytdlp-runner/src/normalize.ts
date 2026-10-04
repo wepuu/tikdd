@@ -60,7 +60,11 @@ function safeHeaders(value: unknown): Record<"User-Agent" | "Referer" | "Origin"
   return output as Record<"User-Agent" | "Referer" | "Origin", string>;
 }
 
-function thumbnailUrl(platform: YtDlpRunnerPlatform, value: unknown): string | null {
+/**
+ * Keep thumbnails on the same reviewed boundary as normal media metadata.
+ * The URL is optional presentation data; rejecting it must never reject media.
+ */
+export function reviewedYtDlpThumbnailUrl(platform: YtDlpRunnerPlatform, value: unknown): string | null {
   const candidate = text(value, 4_096);
   if (!candidate) return null;
   try {
@@ -117,7 +121,7 @@ export function normalizeYtDlpOutput(
     sourceId: text(payload.id, 200) ?? "unknown",
     title: text(payload.title, 500) ?? `${platform} media`,
     author: text(payload.uploader, 200) ?? text(payload.channel, 200),
-    thumbnailUrl: thumbnailUrl(platform, payload.thumbnail),
+    thumbnailUrl: reviewedYtDlpThumbnailUrl(platform, payload.thumbnail),
     durationSeconds: number(payload.duration),
     isLive: payload.is_live === true,
     extractor: text(payload.extractor_key, 100) ?? text(payload.extractor, 100) ?? platform,

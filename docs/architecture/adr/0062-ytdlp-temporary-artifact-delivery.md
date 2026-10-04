@@ -20,7 +20,11 @@ arbitrary filesystem or network proxy.
 - The Runner writes to a dedicated host bind mount. Runner receives read/write access and Delivery
   receives read-only access; Web, API and Worker do not mount it.
 - The internal response contains only an opaque artifact id, bounded metadata, size, SHA-256 and
-  expiry. Paths, upstream URLs, headers and yt-dlp payloads never cross the Runner boundary.
+  expiry. It may also contain an optional reviewed thumbnail URL for the active platform; paths,
+  upstream media URLs, headers and yt-dlp payloads never cross the Runner boundary.
+- Artifact thumbnails use the same platform-owned allowlist as normal extraction metadata. For
+  Dailymotion this is HTTPS on the exact `s1.dmcdn.net` or `s2.dmcdn.net` host, with no credentials
+  or custom port. Missing or rejected thumbnails become `null` and never fail a prepared MP4.
 - Delivery candidates use the existing `temporary-object` mode and the versioned
   `ytdlp-dailymotion-artifact-v1` policy. The encrypted candidate contains the opaque id, expected
   size/hash/MIME and safe filename. Public resolve results contain none of those credentials.
@@ -31,7 +35,9 @@ arbitrary filesystem or network proxy.
   1 GiB and lifetime to 15 minutes. Startup, periodic and pre-job cleanup remove expired complete
   files and abandoned work directories.
 - Dailymotion remains disabled until the exact production image passes both approved samples and a
-  browser download audit. YouTube is not approved for artifact preparation by this decision.
+  browser download audit. The versioned `ytdlp-youtube-artifact-v1` policy is reserved for a
+  separate YouTube qualification; defining the policy does not approve the platform or create a
+  rollout rule.
 
 ## Consequences
 
@@ -39,4 +45,3 @@ The NL VPS carries media bytes only for an explicitly enabled last-resort capabi
 abandoned task may leave a bounded file until the janitor removes it. One artifact is produced
 before the result becomes ready, so the first resolution can take up to three minutes. Existing
 redirect, client-processing and bounded relay behavior is unchanged.
-

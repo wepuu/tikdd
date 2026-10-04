@@ -206,6 +206,12 @@ HTTP, timeout, schema, host or image-load failure leaves `thumbnailUrl` null and
 existing Cobalt formats and Delivery candidates. The enrichment does not create a Provider route,
 proxy an image or broaden a media Host policy.
 
+Work Item 144 carries the optional thumbnail emitted by the isolated yt-dlp artifact path through
+the existing normalized result. The Runner, rather than the provider adapter, validates Dailymotion
+images against the exact `s1.dmcdn.net` and `s2.dmcdn.net` hosts. A missing or rejected image is
+represented as `thumbnailUrl: null` and never blocks the prepared MP4 or its temporary-object
+delivery.
+
 Work Item 137 adds a closed-gate Dailymotion, Reddit and VK qualification batch. Dailymotion resolved
 both samples as Cobalt Tunnel results, but descriptors from the isolated validation instance could
 not be redeemed by the production media origin, so it remains `delivery-blocked`. The adapter accepts

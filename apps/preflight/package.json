@@ -9,6 +9,7 @@
     "cobalt:auth-readiness": "tsx src/run-cobalt-auth-readiness.ts",
     "cobalt:qualify": "tsx src/run-cobalt-qualification.ts",
     "cobalt:tunnel-audit": "tsx src/run-cobalt-tunnel-audit.ts",
+    "ytdlp:qualify": "tsx src/run-ytdlp-qualification.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json"
   },

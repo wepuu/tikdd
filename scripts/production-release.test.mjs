@@ -215,7 +215,7 @@ describe("production release Admin lifecycle", () => {
   });
 
   it("binds the yt-dlp artifact store read-write only to Runner and read-only to Delivery", () => {
-    const runnerBlock = productionCompose.split("  ytdlp-runner:", 2)[1]?.split("  cobalt-api:", 2)[0] ?? "";
+    const runnerBlock = productionCompose.split("  ytdlp-runner:", 2)[1]?.split("  ytdlp-qualification:", 2)[0] ?? "";
     const deliveryBlock = productionCompose.split("  delivery:", 2)[1]?.split("  admin-api:", 2)[0] ?? "";
     expect(runnerBlock).toMatch(/TIKDD_YTDLP_ARTIFACT_DIR:-\/var\/lib\/tikdd\/ytdlp-artifacts/);
     expect(runnerBlock).toMatch(/target: \/var\/lib\/tikdd-ytdlp-artifacts/);
@@ -225,5 +225,18 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/install -d -o 1000 -g 1000 -m 0700 "\$artifact_dir"/);
     expect(releaseScript).toMatch(/must stay below \/var\/lib\/tikdd/);
     expect(releaseScript).toMatch(/cannot be a symbolic link/);
+  });
+
+  it("keeps YouTube qualification closed-gate, bounded and isolated", () => {
+    const qualificationBlock = productionCompose.split("  ytdlp-qualification:", 2)[1]?.split("  cobalt-api:", 2)[0] ?? "";
+    expect(qualificationBlock).toMatch(/profiles: \["ytdlp-ops"\]/);
+    expect(qualificationBlock).toMatch(/ytdlp:qualify/);
+    expect(qualificationBlock).toMatch(/YTDLP_RUNNER_HMAC_SECRET_FILE/);
+    expect(qualificationBlock).toMatch(/target: \/run\/tikdd[\s\S]*read_only: true/);
+    expect(qualificationBlock).toMatch(/provider-egress/);
+    expect(releaseScript).toMatch(/verify_ytdlp_qualification_input\(\)/);
+    expect(releaseScript).toMatch(/ytdlp-youtube-qualification\)/);
+    expect(releaseScript).toMatch(/compose --profile ytdlp --profile ytdlp-ops run --rm ytdlp-qualification/);
+    expect(releaseScript).toMatch(/qualification input must have mode 600/);
   });
 });
