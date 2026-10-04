@@ -2378,3 +2378,14 @@ release script requires a mode-600 UID-1000 runtime input and a dedicated `ytdlp
 does not create a rollout or change NoAdsDL, SnapYT or Dailymotion traffic. Delivery redemption and
 browser saving remain a separately authorized release gate. See [Work Item 146](work-item-146-ytdlp-youtube-qualification.md)
 and [ADR-0063](architecture/adr/0063-ytdlp-youtube-qualification.md).
+
+### Work Item 147 - yt-dlp YouTube 末级兜底验证与受控收口
+
+Work Item 147 is the next release phase for the stacked WI144–WI146 changes. It keeps NoAdsDL as
+the YouTube primary and SnapYT closed, then uses the closed-gate Runner qualification for one
+ordinary video and one Shorts sample. Only a capability that passes two-sample Delivery-ticket and
+browser-save proof may be added to the unique `ytdlp-isolated / youtube / nl` fallback rule. The
+yt-dlp capability remains priority 250, below NoAdsDL 740 and SnapYT 720, so it cannot replace the
+existing YouTube primary. A failed proof closes the rule and clears only the YouTube capability;
+the Dailymotion artifact route and all existing production traffic remain unchanged. See [Work Item
+147](work-item-147-ytdlp-youtube-beta-closeout.md).

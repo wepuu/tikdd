@@ -34,5 +34,20 @@ Dailymotion is an experimental Beta route. The public page is available for huma
 Activation requires all three yt-dlp gates, the approved Dailymotion capability, and the unique
 `ytdlp-isolated / dailymotion / nl` rollout rule. Disable the rollout first, then clear the gates
 and force-recreate the Worker if the route produces unsafe delivery, capacity, or repeated upstream
-failures. YouTube remains an isolated capability under review and is not activated by this record;
-its artifact policy is reserved for Work Item 145 and does not itself authorize traffic.
+failures. YouTube remains a last-level fallback under review. Its reserved direct, relay, and artifact
+policies do not authorize traffic by themselves. It may only be added to the Worker approved
+platform list after the closed-gate qualification, two-sample Delivery audit, and browser save
+proof described by Work Item 147. NoAdsDL remains the YouTube primary and SnapYT remains closed.
+
+## YouTube fallback boundary
+
+When activated, the isolated Runner uses priority `250`, below NoAdsDL (`740`) and SnapYT (`720`).
+The route is therefore eligible only after a higher-priority Provider returns a typed retryable or
+fallback-allowed failure. Login, Cookie, challenge, private-content, schema, and other terminal
+errors do not trigger fallback. The approved capability must be exactly one of `direct`, `relay`, or
+`artifact`, and its versioned Delivery policy must be recorded in the release evidence.
+
+The qualification runner accepts at most two owner-approved YouTube samples, executes sequentially
+with a ten-second interval, and emits sanitized facts only. Its temporary input is mode 600, owned
+by service UID 1000, and deleted after the one-shot run. Qualification does not create a rollout
+rule or change NoAdsDL traffic.
