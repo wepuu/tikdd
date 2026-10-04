@@ -14,8 +14,11 @@ The runtime remains fail closed after merge and deployment. `ENABLE_YTDLP_PROVID
 `YTDLP_RUNTIME_APPROVED`, and `YTDLP_DELIVERY_AUDIT_APPROVED` default false;
 `YTDLP_APPROVED_PLATFORMS` and `YTDLP_DELIVERY_VERIFIED_CAPABILITIES` default empty. Production may
 set `dailymotion:artifact` only after two isolated samples produce playable files with both audio
-and video and the browser handoff succeeds. Until then no rollout rule, public Dailymotion page,
-sitemap entry or SEO promotion is allowed.
+and video and the browser handoff succeeds. The exact-SHA production image passed those two
+samples and the controlled Delivery audit: each task produced one successful `ytdlp-isolated`
+attempt, a non-zero MP4 attachment, and a `410` response when its ticket was replayed. The
+resulting rollout is enabled only in NL at 10000 bps. Work Item 143 aligns the catalog and Beta
+page with this production fact; the page remains noindex and outside the sitemap until Stable
+promotion.
 
 See [ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
-

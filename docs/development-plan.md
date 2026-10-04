@@ -2329,8 +2329,21 @@ the existing `temporary-object` mode, an encrypted opaque artifact descriptor, b
 SHA-256 verification, and a one-use attachment response. Preparation is limited to one concurrent
 job, 180 seconds, 300 MiB per file and 1 GiB total storage. YouTube is outside this activation.
 
-All production gates remain closed until the exact-SHA image passes the two approved Dailymotion
-samples and a browser download audit. Only then may `dailymotion:artifact` and a unique NL rollout
-be enabled; Dailymotion remains planned and non-indexable before that evidence. See
-[Work Item 142](work-item-142-ytdlp-temporary-artifact-delivery.md) and
-[ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
+The exact-SHA image passed the two approved Dailymotion samples and the controlled Delivery audit
+after merge. Both tasks produced one successful `ytdlp-isolated` attempt, complete non-zero MP4
+artifacts, one-use attachment responses, and `410` ticket replay responses. The NL rollout is now
+enabled at 10000 bps for Dailymotion only; YouTube remains outside activation. The catalog/page
+status and multilingual Beta content are completed in Work Item 143. See [Work Item 142](work-item-142-ytdlp-temporary-artifact-delivery.md)
+and [ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
+
+### Work Item 143 - Dailymotion Beta productization and production-truth closeout
+
+Work Item 143 aligns the product catalog and Admin starter content with the successful Dailymotion
+artifact qualification. Dailymotion moves from `planned` to `experimental`, receives a reviewed
+nine-locale `/dailymotion-downloader` Beta page, and remains explicitly excluded from indexing,
+structured-data promotion, and the sitemap under the Stable-only SEO policy. The internal Runner,
+artifact limits, one-attempt routing, rollout rule, and existing platform traffic remain unchanged.
+
+The next phase is natural-traffic observation and a separate Stable-promotion review. It must not
+be simulated with repeated synthetic downloads. YouTube yt-dlp activation and any new yt-dlp
+platform remain separate work items.

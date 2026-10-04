@@ -82,6 +82,13 @@ describe("detectPlatform", () => {
     expect(pinterest).toMatchObject({ status: "experimental", source: "yt-dlp" });
   });
 
+  it("reports Dailymotion as an experimental Beta after artifact Delivery qualification", () => {
+    const dailymotion = listPlatformDefinitions().find((platform) => platform.id === "dailymotion");
+    expect(dailymotion).toMatchObject({ status: "experimental", source: "yt-dlp" });
+    expect(detectPlatform("https://www.dailymotion.com/video/x9othdg").platform).toBe("dailymotion");
+    expect(isSupportedPlatformUrl("https://dailymotion.com.attacker.example/video/x9othdg")).toBe(false);
+  });
+
   it("reports xHamster as a curated experimental platform without stable SEO status", () => {
     const xhamster = listPlatformDefinitions().find((platform) => platform.id === "xhamster");
     expect(xhamster).toMatchObject({ status: "experimental", source: "curated" });
