@@ -280,6 +280,36 @@ services:
     cpus: ${TIKDD_YTDLP_CPUS:-1.0}
     pids_limit: 96
 
+  ytdlp-qualification:
+    <<: *application-base
+    profiles: ["ytdlp-ops"]
+    image: ${TIKDD_SERVICE_IMAGE:-ghcr.io/example/tikdd-service:git-0000000000000000000000000000000000000000}
+    build: *service-build
+    command: ["pnpm", "--filter", "@tikdd/preflight", "ytdlp:qualify"]
+    restart: "no"
+    environment:
+      TIKDD_YTDLP_QUALIFICATION_INPUT: ${TIKDD_YTDLP_QUALIFICATION_INPUT:-/run/tikdd/ytdlp-qualification-input.json}
+      YTDLP_RUNNER_HMAC_SECRET_FILE: /run/secrets/ytdlp_runner_hmac_secret
+      YTDLP_RUNNER_API_URL: http://ytdlp-runner:9100/
+      ENABLE_YTDLP_PROVIDER: ${ENABLE_YTDLP_PROVIDER:-false}
+      YTDLP_APPROVED_PLATFORMS: ${YTDLP_APPROVED_PLATFORMS:-}
+      YTDLP_DELIVERY_VERIFIED_CAPABILITIES: ${YTDLP_DELIVERY_VERIFIED_CAPABILITIES:-}
+      TIKDD_REQUIRED_SECRET_ENV_VARS: YTDLP_RUNNER_HMAC_SECRET
+    volumes:
+      - type: bind
+        source: ${TIKDD_RUNTIME_DIR:-/run/tikdd}
+        target: /run/tikdd
+        read_only: true
+    secrets:
+      - ytdlp_runner_hmac_secret
+    networks:
+      - provider-egress
+    depends_on:
+      ytdlp-runner:
+        condition: service_healthy
+    mem_limit: ${TIKDD_JOB_MEMORY_LIMIT:-384m}
+    pids_limit: 96
+
   cobalt-api:
     profiles: ["cobalt"]
     image: ${TIKDD_COBALT_IMAGE:-ghcr.io/imputnet/cobalt:11@sha256:df14a3b3fe4390d4e1c2d4761ed58981d34aa5fc82d0df2091bab890e7dfaa8b}

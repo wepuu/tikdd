@@ -2367,3 +2367,14 @@ and no YouTube yt-dlp gate or rollout rule is created. The next qualification mu
 owner-approved public samples, prefer a portable progressive MP4, and use the bounded 720p artifact
 only when YouTube exposes separated audio/video or HLS. Login, Cookie, challenge and unstable
 extractor results remain blocked. See [Work Item 145](work-item-145-ytdlp-youtube-fallback.md).
+
+### Work Item 146 - yt-dlp YouTube 闭门资格验证
+
+Work Item 146 adds a one-shot preflight runner for at most two reviewed YouTube samples. It runs
+sequentially against the isolated Runner with an explicit `direct`, `relay`, or `artifact`
+capability, refuses any YouTube platform already active in Worker configuration, and emits only
+sanitized format, candidate, policy, delivery-mode, thumbnail and failure facts. The production
+release script requires a mode-600 UID-1000 runtime input and a dedicated `ytdlp-ops` service; it
+does not create a rollout or change NoAdsDL, SnapYT or Dailymotion traffic. Delivery redemption and
+browser saving remain a separately authorized release gate. See [Work Item 146](work-item-146-ytdlp-youtube-qualification.md)
+and [ADR-0063](architecture/adr/0063-ytdlp-youtube-qualification.md).

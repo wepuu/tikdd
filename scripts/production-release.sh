@@ -359,6 +359,28 @@ verify_cobalt_tunnel_audit_input() {
   }
 }
 
+verify_ytdlp_qualification_input() {
+  qualification_input="$(release_value TIKDD_YTDLP_QUALIFICATION_INPUT "/run/tikdd/ytdlp-qualification-input.json")"
+  [ "$qualification_input" = "/run/tikdd/ytdlp-qualification-input.json" ] || {
+    echo "yt-dlp qualification input must use the reviewed runtime path." >&2
+    return 78
+  }
+  [ -f "$qualification_input" ] && [ -r "$qualification_input" ] || {
+    echo "yt-dlp qualification input is missing or unreadable." >&2
+    return 78
+  }
+  input_mode="$(stat -c '%a' "$qualification_input" 2>/dev/null || true)"
+  [ "$input_mode" = "600" ] || {
+    echo "yt-dlp qualification input must have mode 600." >&2
+    return 78
+  }
+  input_uid="$(stat -c '%u' "$qualification_input" 2>/dev/null || true)"
+  [ "$input_uid" = "1000" ] || {
+    echo "yt-dlp qualification input must be owned by service UID 1000." >&2
+    return 78
+  }
+}
+
 validate_public_web_origin() {
   public_origin="$(release_value TIKDD_WEB_PUBLIC_ORIGIN "")"
   case "$public_origin" in
@@ -380,7 +402,7 @@ validate_public_web_origin() {
 
 validate() {
   validate_public_web_origin
-  compose --profile admin --profile ops --profile admin-ops --profile cobalt --profile cobalt-ops --profile ytdlp config --quiet
+  compose --profile admin --profile ops --profile admin-ops --profile cobalt --profile cobalt-ops --profile ytdlp --profile ytdlp-ops config --quiet
 }
 
 acquire_lock() {
@@ -613,6 +635,18 @@ case "$action" in
     rm -f "$tunnel_audit_input"
     trap - EXIT HUP INT TERM
     ;;
+  ytdlp-youtube-qualification)
+    acquire_lock
+    validate
+    verify_ytdlp_qualification_input
+    qualification_input="$(release_value TIKDD_YTDLP_QUALIFICATION_INPUT "/run/tikdd/ytdlp-qualification-input.json")"
+    trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
+    compose --profile ytdlp pull ytdlp-runner
+    start_ytdlp_runner
+    compose --profile ytdlp --profile ytdlp-ops run --rm ytdlp-qualification
+    rm -f "$qualification_input"
+    trap - EXIT HUP INT TERM
+    ;;
   rollback)
     acquire_lock
     : "${TIKDD_ROLLBACK_ENV:?Set TIKDD_ROLLBACK_ENV to the previous approved release environment file.}"
@@ -670,7 +704,7 @@ case "$action" in
     compose --profile admin-ops run --rm admin-account "$@"
     ;;
   *)
-    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|cobalt-multimode-qualification|cobalt-tunnel-audit|rollback|admin-start|admin-stop|admin-account}" >&2
+    echo "Usage: $0 {validate|deploy|worker-config-apply|cobalt-runtime-probe|cobalt-runtime-stop|cobalt-multimode-qualification|cobalt-tunnel-audit|ytdlp-youtube-qualification|rollback|admin-start|admin-stop|admin-account}" >&2
     exit 64
     ;;
 esac
