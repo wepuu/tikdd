@@ -10,6 +10,12 @@ Delivery serves it once as a temporary attachment.
 The public result contains normalized media metadata only. Provider URLs, upstream headers,
 filesystem paths, cookies, and yt-dlp payloads remain inside the Runner/Delivery boundary.
 
+Artifact metadata may include an optional Dailymotion thumbnail. The Runner applies the same
+reviewed image boundary as its normal extraction path: HTTPS with no credentials or custom port
+on the exact `s1.dmcdn.net` or `s2.dmcdn.net` host. Missing, malformed, or unapproved images are
+discarded and the Web fallback icon remains in effect; thumbnail handling never changes MP4
+preparation or Delivery.
+
 ## Dailymotion Beta limits
 
 - Public, individually addressable Dailymotion videos only.

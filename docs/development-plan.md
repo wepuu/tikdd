@@ -2347,3 +2347,13 @@ artifact limits, one-attempt routing, rollout rule, and existing platform traffi
 The next phase is natural-traffic observation and a separate Stable-promotion review. It must not
 be simulated with repeated synthetic downloads. YouTube yt-dlp activation and any new yt-dlp
 platform remain separate work items.
+
+### Work Item 144 - yt-dlp Dailymotion artifact thumbnail repair
+
+The Dailymotion artifact path now prints yt-dlp's optional thumbnail metadata and applies the same
+strict `s1.dmcdn.net`/`s2.dmcdn.net` HTTPS allowlist already used by normal extraction. Valid
+thumbnails reach the normalized public result; missing, malformed, or unapproved values fall back
+to the platform icon without affecting MP4 preparation or temporary-object delivery. No public
+contract, Delivery policy, gate, rollout, or production configuration changes are introduced.
+See [Work Item 144](work-item-144-ytdlp-artifact-thumbnail.md) and
+[ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).

@@ -13,18 +13,37 @@ describe("yt-dlp temporary artifact store", () => {
       const store = new YtDlpArtifactStore(root, async (_command, args) => {
         const output = args[args.indexOf("--output") + 1]!;
         expect(args.join(" ")).toContain("height<=720");
+        expect(args.join(" ")).toContain('"thumbnail":%(thumbnail)j');
         await writeFile(output.replace("%(ext)s", "mp4"), Buffer.from([0, 1, 2, 3]));
         return JSON.stringify({ sourceId: "sample", title: "Sample", author: null,
-          durationSeconds: 12, extractor: "Dailymotion", width: 640, height: 360 });
+          durationSeconds: 12, extractor: "Dailymotion",
+          thumbnail: "https://s1.dmcdn.net/v/fixture/x720.jpg#fragment", width: 640, height: 360 });
       }, "yt-dlp", () => current, () => "a".repeat(32));
       const result = await store.prepare({ requestId: "req-1", platform: "dailymotion",
         url: "https://www.dailymotion.com/video/sample", deadlineMs: 175_000, maximumHeight: 720 });
       expect(result.artifact).toMatchObject({ id: `yta_${"a".repeat(32)}`, sizeBytes: 4,
         mimeType: "video/mp4", quality: "360p" });
+      expect(result.thumbnailUrl).toBe("https://s1.dmcdn.net/v/fixture/x720.jpg");
       expect(existsSync(join(root, `${result.artifact.id}.mp4`))).toBe(true);
       current += ARTIFACT_TTL_MS + 1;
       await store.cleanup();
       expect(existsSync(join(root, `${result.artifact.id}.mp4`))).toBe(false);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("keeps a valid artifact when the optional thumbnail is missing or unsafe", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tikdd-ytdlp-"));
+    try {
+      const store = new YtDlpArtifactStore(root, async (_command, args) => {
+        const output = args[args.indexOf("--output") + 1]!;
+        await writeFile(output.replace("%(ext)s", "mp4"), Buffer.from([0, 1]));
+        return JSON.stringify({ sourceId: "sample", title: "Sample", extractor: "Dailymotion",
+          thumbnail: "https://evil.example.test/fixture.jpg", width: 320, height: 180 });
+      }, "yt-dlp", Date.now, () => "d".repeat(32));
+      const result = await store.prepare({ requestId: "req-thumbnail", platform: "dailymotion",
+        url: "https://www.dailymotion.com/video/sample", deadlineMs: 175_000, maximumHeight: 720 });
+      expect(result.thumbnailUrl).toBeNull();
+      expect(result.artifact.sizeBytes).toBe(2);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
