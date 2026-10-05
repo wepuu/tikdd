@@ -282,7 +282,26 @@ start_cobalt_authenticated() {
   verify_cobalt_auth_readiness
 }
 
+verify_ytdlp_pot_image() {
+  pot_image="$(release_value TIKDD_YTDLP_POT_IMAGE "")"
+  if printf '%s\n' "$pot_image" | grep -Eq '@sha256:[a-f0-9]{64}$'; then
+    printf '%s' "$pot_image"
+  else
+    echo "TIKDD_YTDLP_POT_IMAGE must be pinned by a 64-character digest before enabling YouTube or running qualification." >&2
+    return 78
+  fi
+}
+
+start_ytdlp_pot_provider() {
+  verify_ytdlp_pot_image >/dev/null
+  compose --profile ytdlp-youtube up -d --force-recreate --wait ytdlp-pot-provider
+}
+
 start_ytdlp_runner() {
+  ytdlp_approved_platforms="$(release_value YTDLP_APPROVED_PLATFORMS "")"
+  case ",$ytdlp_approved_platforms," in
+    *,youtube,*) start_ytdlp_pot_provider ;;
+  esac
   artifact_dir="$(release_value TIKDD_YTDLP_ARTIFACT_DIR "/var/lib/tikdd/ytdlp-artifacts")"
   case "$artifact_dir" in
     /var/lib/tikdd/*) ;;
@@ -561,6 +580,9 @@ case "$action" in
     fi
     if [ "$(release_value ENABLE_YTDLP_PROVIDER "false")" = "true" ]; then
       compose --profile ytdlp pull ytdlp-runner
+      case ",$(release_value YTDLP_APPROVED_PLATFORMS "")," in
+        *,youtube,*) compose --profile ytdlp-youtube pull ytdlp-pot-provider ;;
+      esac
       start_ytdlp_runner
       run_stage_gate ytdlp-runner
     fi
@@ -642,6 +664,7 @@ case "$action" in
     qualification_input="$(release_value TIKDD_YTDLP_QUALIFICATION_INPUT "/run/tikdd/ytdlp-qualification-input.json")"
     trap 'rm -f "$qualification_input"' EXIT HUP INT TERM
     compose --profile ytdlp pull ytdlp-runner
+    start_ytdlp_pot_provider
     start_ytdlp_runner
     compose --profile ytdlp --profile ytdlp-ops run --rm ytdlp-qualification
     rm -f "$qualification_input"

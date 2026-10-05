@@ -67,4 +67,16 @@ describe("YtDlpIsolatedProvider", () => {
       artifact: { filename: "TikDD-YouTube-short-fixture-360p.mp4" } });
     expect(resolved.result.media.thumbnailUrl).toBe("https://i.ytimg.com/vi/fixture/hqdefault.jpg");
   });
+
+  it("preserves sanitized Runner rate-limit and challenge semantics", async () => {
+    const rateLimited = new YtDlpIsolatedProvider({ enabled: true, hmacSecret: secret,
+      approvedPlatforms: ["dailymotion"], deliveryVerifiedCapabilities: { dailymotion: "direct" },
+      fetchImpl: async () => new Response(JSON.stringify({ error: { code: "rate_limited" } }), { status: 429 }) });
+    await expect(rateLimited.resolve(input)).rejects.toMatchObject({ failureCode: "provider_rate_limited", retryable: true });
+
+    const challenged = new YtDlpIsolatedProvider({ enabled: true, hmacSecret: secret,
+      approvedPlatforms: ["dailymotion"], deliveryVerifiedCapabilities: { dailymotion: "direct" },
+      fetchImpl: async () => new Response(JSON.stringify({ error: { code: "po_token_required" } }), { status: 422 }) });
+    await expect(challenged.resolve(input)).rejects.toMatchObject({ failureCode: "provider_challenge", fallbackAllowed: true });
+  });
 });

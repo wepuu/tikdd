@@ -293,6 +293,33 @@ export const YtDlpRunnerRequestSchema = z.strictObject({
 });
 export type YtDlpRunnerRequest = z.infer<typeof YtDlpRunnerRequestSchema>;
 
+/**
+ * Sanitized failure categories emitted by the isolated yt-dlp Runner. These
+ * are internal routing signals; raw yt-dlp stderr, URLs, tokens and response
+ * bodies must never cross the Runner boundary.
+ */
+export const YtDlpRunnerFailureCodeSchema = z.enum([
+  "rate_limited",
+  "bot_challenge",
+  "po_token_required",
+  "visitor_data_missing",
+  "format_unavailable",
+  "no_media",
+  "extractor_unsupported",
+  "runtime_dependency_unavailable",
+  "timeout",
+  "capacity_unavailable",
+  "extractor_error"
+]);
+export type YtDlpRunnerFailureCode = z.infer<typeof YtDlpRunnerFailureCodeSchema>;
+
+export const YtDlpRunnerErrorResponseSchema = z.strictObject({
+  error: z.strictObject({
+    code: YtDlpRunnerFailureCodeSchema
+  })
+});
+export type YtDlpRunnerErrorResponse = z.infer<typeof YtDlpRunnerErrorResponseSchema>;
+
 export const YtDlpRunnerHeadersSchema = z.partialRecord(
   z.enum(["User-Agent", "Referer", "Origin"]),
   z.string().min(1).max(1_024)

@@ -51,3 +51,17 @@ The qualification runner accepts at most two owner-approved YouTube samples, exe
 with a ten-second interval, and emits sanitized facts only. Its temporary input is mode 600, owned
 by service UID 1000, and deleted after the one-shot run. Qualification does not create a rollout
 rule or change NoAdsDL traffic.
+
+## YouTube anonymous upstream stability
+
+Work Item 148 adds the official-style `mweb` PO Token path behind a private
+`bgutil-ytdlp-pot-provider` sidecar. The sidecar has no public port and is only reachable from the
+Runner's provider-egress network. The Runner image pins the matching plugin version, while a
+YouTube-enabled production release must pin the sidecar image by digest. A YouTube request is
+accepted only one at a time with configurable minimum spacing; the Runner does not replay a task.
+
+The Runner exposes only sanitized failure categories such as rate limit, bot challenge, PO Token
+missing, no media, timeout and runtime dependency failure. Account cookies, OAuth, browser profiles,
+CAPTCHA interaction, manually copied tokens and raw upstream diagnostics remain prohibited. NoAdsDL
+continues to outrank yt-dlp, and the YouTube capability remains closed until the separate artifact
+and browser Delivery proof succeeds.

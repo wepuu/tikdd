@@ -8,6 +8,7 @@ import {
   type YtDlpArtifactResponse
 } from "@tikdd/contracts";
 import { reviewedYtDlpThumbnailUrl } from "./normalize";
+import { buildYtDlpPlatformArgs } from "./cli";
 
 export const MAXIMUM_ARTIFACT_BYTES = 300 * 1_024 * 1_024;
 export const MAXIMUM_ARTIFACT_STORE_BYTES = 1_024 * 1_024 * 1_024;
@@ -95,9 +96,9 @@ export class YtDlpArtifactStore {
       const format = `bv*[height<=${input.maximumHeight}][ext=mp4]+ba[ext=m4a]/b[height<=${input.maximumHeight}][ext=mp4]/bv*[height<=${input.maximumHeight}]+ba/b[height<=${input.maximumHeight}]`;
       const printed = "after_move:{\"sourceId\":%(id)j,\"title\":%(title)j,\"author\":%(uploader)j,\"durationSeconds\":%(duration)j,\"extractor\":%(extractor_key)j,\"thumbnail\":%(thumbnail)j,\"width\":%(width)j,\"height\":%(height)j}";
       const stdout = await this.run(this.command, [
-        "--ignore-config", "--no-config-locations", "--no-plugin-dirs", "--no-playlist", "--no-cache-dir",
+        "--ignore-config", "--no-config-locations", "--no-playlist", "--no-cache-dir",
         "--quiet", "--no-warnings", "--no-simulate", "--socket-timeout", "10", "--js-runtimes", "node",
-        "--use-extractors", input.platform === "dailymotion" ? "Dailymotion,-generic" : "Youtube,YoutubeYtBe,-youtube:tab,-generic",
+        ...buildYtDlpPlatformArgs(input.platform),
         "--max-filesize", String(MAXIMUM_ARTIFACT_BYTES), "--format", format,
         "--merge-output-format", "mp4", "--remux-video", "mp4", "--output", outputTemplate,
         "--print", printed, "--", input.url

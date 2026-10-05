@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { YtDlpRunnerResponse } from "@tikdd/contracts";
 import { createYtDlpRunnerApp } from "../src/app";
 import { signRunnerRequest } from "../src/auth";
-import type { YtDlpCli } from "../src/cli";
+import { YtDlpProcessError, type YtDlpCli } from "../src/cli";
 
 const secret = "runner-test-secret-that-is-long-enough";
 const now = 1_800_000_000_000;
@@ -113,6 +113,22 @@ describe("yt-dlp Runner", () => {
       expect((await app.inject({ method: "POST", url: "/internal/v1/artifacts", payload: artifactBody,
         headers: { "x-tikdd-timestamp": String(now),
           "x-tikdd-signature": signRunnerRequest(secret, String(now), artifactBody) } })).statusCode).toBe(409);
+    } finally { await app.close(); }
+  });
+
+  it("returns only the sanitized upstream failure code", async () => {
+    const failing: YtDlpCli = {
+      extract: async () => { throw new YtDlpProcessError("bot_challenge", "raw URL and token must not escape"); },
+      version: async () => "2026.08.19"
+    };
+    const app = createYtDlpRunnerApp({ cli: failing, hmacSecret: secret, now: () => now });
+    const request = { ...body, requestId: "challenge-1" };
+    try {
+      const response = await app.inject({ method: "POST", url: "/internal/v1/extractions", payload: request,
+        headers: { "x-tikdd-timestamp": String(now), "x-tikdd-signature": signRunnerRequest(secret, String(now), request) } });
+      expect(response.statusCode).toBe(422);
+      expect(response.json()).toEqual({ error: { code: "bot_challenge" } });
+      expect(response.body).not.toContain("raw URL");
     } finally { await app.close(); }
   });
 });

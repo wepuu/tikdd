@@ -239,4 +239,31 @@ describe("production release Admin lifecycle", () => {
     expect(releaseScript).toMatch(/compose --profile ytdlp --profile ytdlp-ops run --rm ytdlp-qualification/);
     expect(releaseScript).toMatch(/qualification input must have mode 600/);
   });
+
+  it("keeps the anonymous YouTube PO Token sidecar private and digest-gated", () => {
+    const potBlock = productionCompose.split("  ytdlp-pot-provider:", 2)[1]?.split("  ytdlp-runner:", 2)[0] ?? "";
+    expect(potBlock).toMatch(/profiles: \["ytdlp-youtube"\]/);
+    expect(potBlock).toMatch(/brainicism\/bgutil-ytdlp-pot-provider:2\.0\.1/);
+    expect(potBlock).toMatch(/expose:/);
+    expect(potBlock).not.toMatch(/ports:/);
+    expect(potBlock).toMatch(/read_only: true/);
+    expect(potBlock).toMatch(/no-new-privileges:true/);
+    expect(potBlock).toMatch(/\/ping/);
+    expect(productionCompose.split("  ytdlp-runner:", 2)[1]?.split("  ytdlp-qualification:", 2)[0] ?? "")
+      .not.toMatch(/depends_on:[\s\S]*ytdlp-pot-provider/);
+    expect(releaseScript).toMatch(/TIKDD_YTDLP_POT_IMAGE must be pinned by a 64-character digest/);
+    expect(releaseScript).toMatch(/compose --profile ytdlp-youtube up -d --force-recreate --wait ytdlp-pot-provider/);
+    expect(releaseScript).toMatch(/compose --profile ytdlp up -d --force-recreate --wait ytdlp-runner/);
+  });
+
+  it("starts the PO Token sidecar for closed-gate qualification without approving YouTube traffic", () => {
+    expect(releaseScript).toMatch(/verify_ytdlp_pot_image\(\)/);
+    expect(releaseScript).toMatch(/before enabling YouTube or running qualification/);
+    expect(releaseScript).toMatch(/start_ytdlp_pot_provider\(\)/);
+    const qualificationBlock = releaseScript.split("  ytdlp-youtube-qualification)", 2)[1]?.split("  rollback)", 2)[0] ?? "";
+    expect(qualificationBlock).toMatch(/start_ytdlp_pot_provider\n\s+start_ytdlp_runner/);
+    expect(qualificationBlock).not.toMatch(/YTDLP_APPROVED_PLATFORMS.*youtube/);
+    const runnerBlock = releaseScript.split("start_ytdlp_runner()", 2)[1]?.split("verify_cobalt_qualification_input", 2)[0] ?? "";
+    expect(runnerBlock).toMatch(/\*,youtube,\*\) start_ytdlp_pot_provider/);
+  });
 });

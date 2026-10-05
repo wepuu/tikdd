@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   YtDlpArtifactRequestSchema,
   YtDlpArtifactResponseSchema,
+  YtDlpRunnerErrorResponseSchema,
   YtDlpRunnerRequestSchema,
   YtDlpRunnerResponseSchema
 } from "../src";
@@ -14,6 +15,7 @@ describe("yt-dlp Runner internal contract", () => {
     expect(openapi).toContain("name: x-tikdd-timestamp");
     expect(openapi).toContain("$ref: \"#/components/schemas/ExtractionResponse\"");
     expect(openapi).toContain("$ref: \"#/components/schemas/ArtifactResponse\"");
+    expect(openapi).toContain("po_token_required");
   });
 
   it("accepts only bounded, opaque temporary artifact metadata", () => {
@@ -100,5 +102,12 @@ describe("yt-dlp Runner internal contract", () => {
         headers: { Cookie: "secret" }
       }]
     })).toThrow();
+  });
+
+  it("accepts only sanitized Runner failure codes", () => {
+    expect(YtDlpRunnerErrorResponseSchema.parse({ error: { code: "rate_limited" } })).toEqual({
+      error: { code: "rate_limited" }
+    });
+    expect(() => YtDlpRunnerErrorResponseSchema.parse({ error: { code: "raw_stderr" } })).toThrow();
   });
 });

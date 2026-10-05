@@ -53,7 +53,7 @@ LABEL org.opencontainers.image.revision=${TIKDD_GIT_SHA}
 LABEL org.opencontainers.image.title="tikdd-ytdlp-runner"
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates ffmpeg \
-    && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" \
+    && python3 -m pip install --break-system-packages --no-cache-dir "yt-dlp[default,curl-cffi]==2026.8.19" "bgutil-ytdlp-pot-provider==2.0.1" \
     && python3 -c 'import curl_cffi' \
     && yt-dlp --list-impersonate-targets | grep -Eiq 'firefox' \
     && ffmpeg -version >/dev/null \
