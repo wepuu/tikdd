@@ -14,7 +14,7 @@ alone. YouTube may return progressive MP4, provider-bound URLs, HLS, or separate
 
 - Qualification input accepts only one or two reviewed public YouTube samples and one explicit
   Runner capability: `direct`, `relay`, or `artifact`.
-- Samples execute sequentially with a ten-second interval and produce only sanitized facts: sample
+- Samples execute sequentially with a fifteen-second interval matching the Runner's minimum YouTube admission interval and produce only sanitized facts: sample
   identifier, capability, format/candidate counts, reviewed policy IDs, delivery modes, thumbnail
   presence, duration and typed failure code.
 - Source URLs, media URLs, artifact IDs, signed query values, headers and response bodies never

@@ -22,7 +22,8 @@
    `/run/tikdd/ytdlp-qualification-input.json`，权限为 `0600`、服务 UID 为 `1000`，执行后删除。
 3. 保持 YouTube 不在 Worker 的批准平台和交付能力列表中，运行：
    `scripts/production-release.sh ytdlp-youtube-qualification`。
-4. 以 `capability=artifact` 顺序执行两条样本，间隔至少 10 秒且不自动重试。
+4. 以 `capability=artifact` 顺序执行两条样本，间隔至少 15 秒且不自动重试；该间隔与 Runner
+   的 YouTube admission guard 一致，避免资格程序触发自身限流。
 5. 只接受脱敏结果：两条均为 `resolved`、存在非零可播放 MP4、PO Token sidecar 实际可用，
    且结果不含源 URL、媒体 URL、Cookie、Token、请求头或响应正文。
 

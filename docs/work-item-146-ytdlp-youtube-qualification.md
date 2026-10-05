@@ -9,7 +9,7 @@
 
 - 新增 `@tikdd/preflight` 的 `ytdlp:qualify` 命令。
 - 输入只允许一到两条 YouTube 样本和一个显式交付能力：`direct`、`relay` 或 `artifact`。
-- 样本按顺序执行，间隔 10 秒；输出不含源 URL、媒体 URL、artifact ID、签名参数、Cookie、
+- 样本按顺序执行，间隔至少 15 秒（与 Runner 的 YouTube admission guard 对齐）；输出不含源 URL、媒体 URL、artifact ID、签名参数、Cookie、
   请求头或响应正文。
 - 若 YouTube 已出现在 Worker approved platforms 或 verified capabilities 中，资格验证立即拒绝。
 - 新增 `ytdlp-qualification` 一次性 Compose 服务，使用只读运行目录、Runner HMAC secret 和

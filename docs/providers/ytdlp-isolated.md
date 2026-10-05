@@ -50,7 +50,7 @@ errors do not trigger fallback. The approved capability must be exactly one of `
 `artifact`, and its versioned Delivery policy must be recorded in the release evidence.
 
 The qualification runner accepts at most two owner-approved YouTube samples, executes sequentially
-with a ten-second interval, and emits sanitized facts only. Its temporary input is mode 600, owned
+with a fifteen-second interval matching the Runner admission guard, and emits sanitized facts only. Its temporary input is mode 600, owned
 by service UID 1000, and deleted after the one-shot run. Qualification does not create a rollout
 rule or change NoAdsDL traffic.
 

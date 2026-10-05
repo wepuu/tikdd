@@ -24,6 +24,10 @@ const makeProvider = (): ResolverProvider => ({
 });
 
 describe("yt-dlp YouTube qualification", () => {
+  it("matches the Runner YouTube admission interval", () => {
+    expect(YTDLP_QUALIFICATION_INTERVAL_MS).toBe(15_000);
+  });
+
   it("accepts at most two YouTube samples and rejects other platforms", () => {
     const plan = parseYtDlpQualificationPlan({ capability: "artifact", samples: [
       { id: "ordinary", url: "https://www.youtube.com/watch?v=fixture" },
