@@ -2411,3 +2411,16 @@ deployment, one ordinary video and one Shorts sample must pass the bounded artif
 and browser-save checks before the unique YouTube fallback rule can be enabled. NoAdsDL remains
 priority 740, yt-dlp remains priority 250, SnapYT remains closed, and a failure closes only the
 YouTube capability. See [Work Item 149](work-item-149-ytdlp-youtube-release-qualification.md).
+
+### Work Item 150 - yt-dlp YouTube 闭门验证与末级路由启用
+
+Work Item 150 is the next operational release stage. The deployed WI148/149 runtime is not
+treated as YouTube production capability merely because the Runner is present; the two user
+tests that resolved through NoAdsDL do not exercise yt-dlp. First run the protected qualification
+with one ordinary public video and one Shorts sample while YouTube remains absent from Worker
+approved capabilities. Only if both artifact results are valid may a separately authorized window
+temporarily remove NoAdsDL from the test path, enable the unique `ytdlp-isolated / youtube / nl`
+rule, and perform two browser Delivery checks. Afterward NoAdsDL returns as priority 740 and yt-dlp
+is retained at priority 250 as the last sequential fallback. Any failure closes the yt-dlp rule
+first, restores NoAdsDL, removes YouTube approval, and recreates only the Worker. See [Work Item
+150](work-item-150-ytdlp-youtube-fallback-activation.md).

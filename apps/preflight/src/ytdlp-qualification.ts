@@ -10,7 +10,8 @@ const SUPPORTED_PLATFORM = "youtube" as const;
 const CAPABILITIES = ["direct", "relay", "artifact"] as const;
 const SAMPLE_ID_PATTERN = /^[a-z0-9](?:[a-z0-9_-]{0,38}[a-z0-9])?$/;
 const MAXIMUM_SAMPLES = 2;
-export const YTDLP_QUALIFICATION_INTERVAL_MS = 10_000;
+// Keep qualification spacing at or above the Runner's YouTube admission guard.
+export const YTDLP_QUALIFICATION_INTERVAL_MS = 15_000;
 
 export type YtDlpQualificationCapability = (typeof CAPABILITIES)[number];
 

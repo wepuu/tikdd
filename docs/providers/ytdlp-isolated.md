@@ -35,9 +35,11 @@ Activation requires all three yt-dlp gates, the approved Dailymotion capability,
 `ytdlp-isolated / dailymotion / nl` rollout rule. Disable the rollout first, then clear the gates
 and force-recreate the Worker if the route produces unsafe delivery, capacity, or repeated upstream
 failures. YouTube remains a last-level fallback under review. Its reserved direct, relay, and artifact
-policies do not authorize traffic by themselves. It may only be added to the Worker approved
-platform list after the closed-gate qualification, two-sample Delivery audit, and browser save
-proof described by Work Item 147. NoAdsDL remains the YouTube primary and SnapYT remains closed.
+policies do not authorize traffic by themselves. Work Item 150 requires a closed-gate ordinary
+video plus Shorts qualification, followed by a separately authorized two-sample browser Delivery
+check. During that check NoAdsDL is temporarily removed from the test path so the attempt ledger
+proves that yt-dlp was actually exercised; after success NoAdsDL returns as priority 740 and
+yt-dlp remains priority 250. SnapYT remains closed.
 
 ## YouTube fallback boundary
 
@@ -48,7 +50,7 @@ errors do not trigger fallback. The approved capability must be exactly one of `
 `artifact`, and its versioned Delivery policy must be recorded in the release evidence.
 
 The qualification runner accepts at most two owner-approved YouTube samples, executes sequentially
-with a ten-second interval, and emits sanitized facts only. Its temporary input is mode 600, owned
+with a fifteen-second interval matching the Runner admission guard, and emits sanitized facts only. Its temporary input is mode 600, owned
 by service UID 1000, and deleted after the one-shot run. Qualification does not create a rollout
 rule or change NoAdsDL traffic.
 
