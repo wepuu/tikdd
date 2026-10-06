@@ -2340,7 +2340,7 @@ and [ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).
 
 Work Item 143 aligns the product catalog and Admin starter content with the successful Dailymotion
 artifact qualification. Dailymotion moves from `planned` to `experimental`, receives a reviewed
-nine-locale `/dailymotion-downloader` Beta page, and remains explicitly excluded from indexing,
+the initial nine-locale `/dailymotion-downloader` Beta page, which was explicitly excluded from indexing,
 structured-data promotion, and the sitemap under the Stable-only SEO policy. The internal Runner,
 artifact limits, one-attempt routing, rollout rule, and existing platform traffic remain unchanged.
 
@@ -2424,3 +2424,14 @@ rule, and perform two browser Delivery checks. Afterward NoAdsDL returns as prio
 is retained at priority 250 as the last sequential fallback. Any failure closes the yt-dlp rule
 first, restores NoAdsDL, removes YouTube approval, and recreates only the Worker. See [Work Item
 150](work-item-150-ytdlp-youtube-fallback-activation.md).
+
+### Work Item 151 - yt-dlp 平台扩展、SEO 收录与主备 Provider 路由
+
+Work Item 151 将 yt-dlp 的上游 extractor 清单与 TikDD 产品支持边界分开：清单只用于候选
+发现，不能直接产生生产 Provider、Host policy 或 SEO 页面。当前已审查并有活动路由的平台
+继续使用各自 manifest 的主 Provider；yt-dlp 只作为经过资格验证的顺序备用。Dailymotion
+的九语言页面和本地化 `/platforms` 目录进入 Admin 内容快照、canonical、hreflang、结构化
+数据和 sitemap；计划中的 extractor 不生成页面。已退休的根级 downloader URL 由 Nginx
+受限映射发出一次 301 到 `/en/*-downloader` 正式页面，任意新路径不做 catch-all 跳转。
+本项不新增适配器、数据库迁移、门禁、rollout 或媒体交付模式。详见
+[Work Item 151](work-item-151-ytdlp-platform-seo-expansion.md)。

@@ -8,6 +8,20 @@ log_format tikdd_no_query '$remote_addr - $host [$time_local] "$request_method $
 # Exact root-level slugs exported from the retired WordPress site's published English pages/posts.
 # The only pattern is the retired opaque-result family. Queries are intentionally not propagated.
 # Current localized routes use /<locale>/... and therefore cannot collide with these root keys.
+map $uri $tikdd_legacy_content_target {
+    default "";
+    ~^/x-video-downloader/?$ /en/x-downloader;
+    ~^/instagram-downloader/?$ /en/instagram-downloader;
+    ~^/tiktok-downloader/?$ /en/tiktok-downloader;
+    ~^/facebook-video-downloader/?$ /en/facebook-downloader;
+    ~^/vimeo-video-downloader/?$ /en/vimeo-downloader;
+    ~^/pinterest-video-downloader/?$ /en/pinterest-downloader;
+    ~^/youtube-downloader/?$ /en/youtube-downloader;
+    ~^/dailymotion-downloader/?$ /en/dailymotion-downloader;
+    ~^/dailymotion-video-downloader/?$ /en/dailymotion-downloader;
+    ~^/xhamster-downloader/?$ /en/xhamster-downloader;
+}
+
 map $uri $tikdd_legacy_home_redirect {
     default 0;
     ~^/i(?:/[^/]+)?/?$ 1;
@@ -24,16 +38,13 @@ map $uri $tikdd_legacy_home_redirect {
     ~^/buzzfeed-video-downloader/?$ 1;
     ~^/capcut-downloader/?$ 1;
     ~^/chingari-downloader/?$ 1;
-    ~^/dailymotion-video-downloader/?$ 1;
     ~^/douyin-downloader/?$ 1;
     ~^/espn-downloader/?$ 1;
-    ~^/facebook-video-downloader/?$ 1;
     ~^/febspot-downloader/?$ 1;
     ~^/flickr-downloader/?$ 1;
     ~^/ifunny-video-downloader/?$ 1;
     ~^/imdb-downloader/?$ 1;
     ~^/imgur-downloader/?$ 1;
-    ~^/instagram-downloader/?$ 1;
     ~^/izlesene-downloader/?$ 1;
     ~^/kwai-video-downloader/?$ 1;
     ~^/lemon8-downloader/?$ 1;
@@ -47,7 +58,6 @@ map $uri $tikdd_legacy_home_redirect {
     ~^/moj-video-downloader/?$ 1;
     ~^/mxtakatak-video-downloader/?$ 1;
     ~^/ok-ru-video-downloader/?$ 1;
-    ~^/pinterest-video-downloader/?$ 1;
     ~^/puhutv-downloader/?$ 1;
     ~^/reddit-video-downloader/?$ 1;
     ~^/rumble-downloader/?$ 1;
@@ -59,13 +69,9 @@ map $uri $tikdd_legacy_home_redirect {
     ~^/ted-video-downloader/?$ 1;
     ~^/telegram-video-downloader/?$ 1;
     ~^/threads-video-downloader/?$ 1;
-    ~^/tiktok-downloader/?$ 1;
     ~^/tumblr-video-downloader/?$ 1;
     ~^/twitch-video-downloader/?$ 1;
-    ~^/vimeo-video-downloader/?$ 1;
     ~^/vk-video-downloader/?$ 1;
-    ~^/x-video-downloader/?$ 1;
-    ~^/youtube-downloader/?$ 1;
     ~^/how-to-download-clips-from-medal-without-watermark/?$ 1;
     ~^/how-to-download-douyin-videos-without-watermark/?$ 1;
     ~^/how-to-download-gifs-and-videos-from-imgur/?$ 1;
@@ -130,6 +136,7 @@ server {
     real_ip_header CF-Connecting-IP;
     real_ip_recursive off;
 
+    if ($tikdd_legacy_content_target) { return 301 https://__TIKDD_WEB_HOST__$tikdd_legacy_content_target; }
     if ($tikdd_legacy_home_redirect) { return 301 https://__TIKDD_WEB_HOST__/; }
 
     location / {
@@ -147,6 +154,7 @@ server {
     listen 127.0.0.1:__TIKDD_NGINX_ORIGIN_PORT__;
     server_name __TIKDD_WEB_APEX_HOST__;
 
+    if ($tikdd_legacy_content_target) { return 301 https://__TIKDD_WEB_HOST__$tikdd_legacy_content_target; }
     if ($tikdd_legacy_home_redirect) { return 301 https://__TIKDD_WEB_HOST__/; }
     return 301 https://__TIKDD_WEB_HOST__$request_uri;
 }

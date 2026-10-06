@@ -17,8 +17,8 @@ set `dailymotion:artifact` only after two isolated samples produce playable file
 and video and the browser handoff succeeds. The exact-SHA production image passed those two
 samples and the controlled Delivery audit: each task produced one successful `ytdlp-isolated`
 attempt, a non-zero MP4 attachment, and a `410` response when its ticket was replayed. The
-resulting rollout is enabled only in NL at 10000 bps. Work Item 143 aligns the catalog and Beta
-page with this production fact; the page remains noindex and outside the sitemap until Stable
-promotion.
+resulting rollout is enabled only in NL at 10000 bps. Work Item 143 aligned the catalog and Beta
+page with this production fact; its initial publication remained noindex and outside the sitemap.
+Work Item 151 later supersedes that editorial decision without promoting the runtime to Stable.
 
 See [ADR-0062](architecture/adr/0062-ytdlp-temporary-artifact-delivery.md).

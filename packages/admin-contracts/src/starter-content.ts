@@ -40,7 +40,7 @@ export interface StarterPageRecord {
 }
 
 type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "youtube" | "xhamster" | "dailymotion";
-type StarterPageKey = "home" | StarterPlatform | "faq" | "help" | "privacy" | "terms";
+type StarterPageKey = "home" | StarterPlatform | "platforms" | "faq" | "help" | "privacy" | "terms";
 
 const PLATFORM_NAMES: Record<StarterPlatform, string> = {
   x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook",
@@ -351,7 +351,27 @@ const legalContent = (locale: StarterLocale, kind: "privacy" | "terms"): AdminPa
 const PATHS: Record<StarterPageKey, string> = {
   home: "/", x: "/x-downloader", instagram: "/instagram-downloader", tiktok: "/tiktok-downloader",
   facebook: "/facebook-downloader", vimeo: "/vimeo-downloader", pinterest: "/pinterest-downloader", youtube: "/youtube-downloader",
-  xhamster: "/xhamster-downloader", dailymotion: "/dailymotion-downloader", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms"
+  xhamster: "/xhamster-downloader", dailymotion: "/dailymotion-downloader", platforms: "/platforms", faq: "/faq", help: "/help", privacy: "/privacy", terms: "/terms"
+};
+
+const platformDirectoryContent = (locale: StarterLocale): AdminPageContent => {
+  const text = TEXT[locale];
+  const youtube = YOUTUBE_HOME_COPY[locale];
+  const sections = Object.keys(PLATFORM_NAMES).map((platform) => {
+    const key = platform as StarterPlatform;
+    const link = text.platformLink[key] ?? (key === "dailymotion" ? DAILYMOTION_PLATFORM_LINK[locale] : YOUTUBE_PLATFORM_LINK[locale]);
+    return {
+      id: `${key}-downloader`,
+      heading: PLATFORM_NAMES[key],
+      bodyMarkdown: `${PATHS[key]} — ${text.platformIntro(PLATFORM_NAMES[key], link)}`
+    };
+  });
+  return AdminPageContentSchema.parse({
+    template: "guide",
+    title: text.supportedTitle,
+    introduction: youtube.supportedAnswer,
+    sections
+  });
 };
 
 const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
@@ -359,17 +379,21 @@ const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
   const youtube = YOUTUBE_HOME_COPY[locale];
   const isPlatform = page in PLATFORM_NAMES;
   const stable = page === "tiktok";
+  const directoryTitle = `${text.supportedTitle} | TikDD`;
+  const directoryDescription = `${youtube.supportedAnswer} ${text.guideIntro}`;
   const title = page === "home" ? youtube.homeSeoTitle
     : isPlatform ? text.platformSeoTitle(PLATFORM_NAMES[page as StarterPlatform], stable)
-      : text.genericSeoTitle[page as "faq" | "help" | "privacy" | "terms"];
+      : page === "platforms" ? directoryTitle
+        : text.genericSeoTitle[page as "faq" | "help" | "privacy" | "terms"];
   const description = page === "home" ? youtube.homeSeoDescription
     : isPlatform ? text.platformSeoDescription(PLATFORM_NAMES[page as StarterPlatform], stable)
-      : text.genericSeoDescription[page as "faq" | "help" | "privacy" | "terms"];
+      : page === "platforms" ? directoryDescription
+        : text.genericSeoDescription[page as "faq" | "help" | "privacy" | "terms"];
   const reviewedDescription = (description.length < 40
     ? `${description} ${text.footer} ${text.failureAnswer}`
     : description).slice(0, 180);
   const safeTitle = title.slice(0, 70);
-  const publicSearchPage = page === "home" || (isPlatform && page !== "dailymotion");
+  const publicSearchPage = page === "home" || page === "platforms" || isPlatform;
   return AdminSeoFieldsSchema.parse({
     localPath: PATHS[page], searchTitle: safeTitle, searchDescription: reviewedDescription,
     socialTitle: page === "home" ? safeTitle : null, socialDescription: page === "home" ? reviewedDescription : null,
@@ -382,6 +406,7 @@ export function starterPages(locale: StarterLocale): readonly StarterPageRecord[
     { pageId: "page_home", locale, pageType: "homepage", platform: null, content: homepageContent(locale), seo: seo(locale, "home") },
     { pageId: "page_faq", locale, pageType: "faq", platform: null, content: faqContent(locale), seo: seo(locale, "faq") },
     { pageId: "page_help", locale, pageType: "guide", platform: null, content: guideContent(locale), seo: seo(locale, "help") },
+    { pageId: "page_platforms", locale, pageType: "guide", platform: null, content: platformDirectoryContent(locale), seo: seo(locale, "platforms") },
     { pageId: "page_privacy", locale, pageType: "legal", platform: null, content: legalContent(locale, "privacy"), seo: seo(locale, "privacy") },
     { pageId: "page_terms", locale, pageType: "legal", platform: null, content: legalContent(locale, "terms"), seo: seo(locale, "terms") },
     ...Object.keys(PLATFORM_NAMES).map((platform) => ({

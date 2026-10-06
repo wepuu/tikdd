@@ -5,12 +5,14 @@ import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 describe("public sitemap", () => {
   it("emits canonical absolute URLs for every indexable localized platform page", () => {
     const entries = sitemapEntries(BUNDLED_PUBLIC_CONTENT_SNAPSHOT, "https://www.tikdd.cc/path-is-ignored");
-    expect(entries).toHaveLength(81);
+    expect(entries).toHaveLength(99);
     expect(new Set(entries.map((entry) => entry.url)).size).toBe(entries.length);
     expect(entries.every((entry) => entry.url.startsWith("https://www.tikdd.cc/"))).toBe(true);
     expect(entries.some((entry) => entry.url === "https://www.tikdd.cc/es/instagram-downloader")).toBe(true);
     expect(entries.some((entry) => entry.url === "https://www.tikdd.cc/en/youtube-downloader")).toBe(true);
     expect(entries.some((entry) => entry.url === "https://www.tikdd.cc/ja/xhamster-downloader")).toBe(true);
+    expect(entries.some((entry) => entry.url === "https://www.tikdd.cc/en/dailymotion-downloader")).toBe(true);
+    expect(entries.some((entry) => entry.url === "https://www.tikdd.cc/ja/platforms")).toBe(true);
     expect(entries.some((entry) => /\/(faq|help|privacy|terms)$/.test(entry.url))).toBe(false);
     const vimeo = entries.find((entry) => entry.url === "https://www.tikdd.cc/fr/vimeo-downloader");
     expect(vimeo?.alternates?.languages).toMatchObject({

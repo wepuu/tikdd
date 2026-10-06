@@ -10,7 +10,7 @@ describe("public published-content loader", () => {
     expect(instagramPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(81);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(99);
   });
 
   it("bundles the X Beta landing page with the same route-gated index intent", () => {
@@ -29,13 +29,19 @@ describe("public published-content loader", () => {
   });
 
   it("bundles the remaining available Beta platforms as multilingual index pages", () => {
-    for (const platform of ["facebook", "vimeo", "pinterest", "youtube", "xhamster"] as const) {
+    for (const platform of ["facebook", "vimeo", "pinterest", "youtube", "xhamster", "dailymotion"] as const) {
       const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === platform);
       expect(pages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
       expect(pages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
       expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
     }
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(81);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(99);
+  });
+
+  it("publishes a localized supported-platform directory", () => {
+    const directories = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.pageId === "page_platforms");
+    expect(directories.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
+    expect(directories.every((page) => page.pageType === "guide" && page.content.template === "guide" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
   });
 
   it("keeps xHamster off homepage promotion while publishing its dedicated search page", () => {
