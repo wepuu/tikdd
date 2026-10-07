@@ -42,6 +42,10 @@ export interface StarterPageRecord {
 type StarterPlatform = "x" | "instagram" | "tiktok" | "facebook" | "vimeo" | "pinterest" | "youtube" | "xhamster" | "dailymotion";
 type StarterPageKey = "home" | StarterPlatform | "platforms" | "faq" | "help" | "privacy" | "terms";
 
+// Platform pages can be prepared for editorial review before a route is stable, but only
+// explicitly promoted platforms may be exposed to search engines or enter a sitemap.
+const INDEXABLE_PLATFORM_PAGES: ReadonlySet<StarterPlatform> = new Set(["tiktok"]);
+
 const PLATFORM_NAMES: Record<StarterPlatform, string> = {
   x: "X", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook",
   vimeo: "Vimeo", pinterest: "Pinterest", youtube: "YouTube", xhamster: "xHamster", dailymotion: "Dailymotion"
@@ -379,6 +383,7 @@ const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
   const youtube = YOUTUBE_HOME_COPY[locale];
   const isPlatform = page in PLATFORM_NAMES;
   const stable = page === "tiktok";
+  const indexablePlatform = isPlatform && INDEXABLE_PLATFORM_PAGES.has(page as StarterPlatform);
   const directoryTitle = `${text.supportedTitle} | TikDD`;
   const directoryDescription = `${youtube.supportedAnswer} ${text.guideIntro}`;
   const title = page === "home" ? youtube.homeSeoTitle
@@ -393,7 +398,7 @@ const seo = (locale: StarterLocale, page: StarterPageKey): AdminSeoFields => {
     ? `${description} ${text.footer} ${text.failureAnswer}`
     : description).slice(0, 180);
   const safeTitle = title.slice(0, 70);
-  const publicSearchPage = page === "home" || page === "platforms" || isPlatform;
+  const publicSearchPage = page === "home" || page === "platforms" || indexablePlatform;
   return AdminSeoFieldsSchema.parse({
     localPath: PATHS[page], searchTitle: safeTitle, searchDescription: reviewedDescription,
     socialTitle: page === "home" ? safeTitle : null, socialDescription: page === "home" ? reviewedDescription : null,

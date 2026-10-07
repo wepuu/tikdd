@@ -14,11 +14,14 @@ have been verified.
 ## Product and SEO changes
 
 - Dailymotion keeps its existing experimental runtime route and receives the same nine-locale
-  `/dailymotion-downloader` publication treatment as the other reviewed Beta pages.
+  `/dailymotion-downloader` editorial page treatment as the other reviewed Beta pages. The page
+  remains `noindex` and absent from the sitemap until the catalog is explicitly promoted to
+  `stable`.
 - A localized `/platforms` directory is seeded for every enabled locale. It links to the current
   catalog-backed platform pages and does not claim support for planned yt-dlp extractors.
-- The generated sitemap, canonical metadata, reciprocal hreflang, and structured data include the
-  Dailymotion pages and the directory after the existing Admin publication snapshot is promoted.
+- The generated sitemap, canonical metadata, reciprocal hreflang, and structured data include only
+  stable platform pages and the directory after the existing Admin publication snapshot is
+  promoted. Experimental pages remain available for review but are not indexable.
 - Task/result/private operational routes remain noindex. Provider IDs, upstream URLs, cookies,
   headers, and Delivery credentials never enter public content.
 
@@ -38,9 +41,10 @@ allowlists, rollout rules, or SEO claims in this item.
 
 ## Verification and release boundary
 
-- Starter contracts cover 135 localized records, 99 indexable/sitemap entries, the Dailymotion
-  pages, and the platform directory.
-- Web tests cover Dailymotion sitemap/hreflang output and directory publication.
+- Starter contracts cover 135 localized records, 27 indexable/sitemap entries, the Dailymotion
+  editorial pages, and the platform directory.
+- Web tests cover the stable-only sitemap boundary, Dailymotion exclusion, and directory
+  publication.
 - Nginx tests cover the target map, one-hop 301 status, query removal, and the existing bounded
   legacy-home behavior.
 - Run the targeted Vitest suites, `pnpm check`, `git diff --check`, and production Compose

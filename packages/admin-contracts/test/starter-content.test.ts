@@ -12,9 +12,9 @@ describe("starter content", () => {
     const pages = starterPageRecords();
     expect(STARTER_LOCALES).toEqual(["en", "zh-CN", "es", "fr", "de", "it", "tr", "pl", "ja"]);
     expect(pages).toHaveLength(135);
-    expect(pages.filter((page) => page.seo.indexable)).toHaveLength(99);
+    expect(pages.filter((page) => page.seo.indexable)).toHaveLength(27);
     expect(pages.filter((page) => page.pageId === "page_home" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(9);
-    expect(pages.filter((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(81);
+    expect(pages.filter((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toHaveLength(9);
     expect(pages.filter((page) => page.pageId === "page_platforms")).toHaveLength(9);
     expect(pages.filter((page) => page.pageId === "page_platforms").every((page) => page.pageType === "guide" && page.content.template === "guide" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
     for (const platform of ["x", "instagram", "tiktok", "facebook", "vimeo", "pinterest", "youtube", "xhamster", "dailymotion"] as const) {
@@ -22,7 +22,8 @@ describe("starter content", () => {
       expect(localizedPages.map(({ locale }) => locale)).toEqual(STARTER_LOCALES);
       expect(localizedPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
     }
-    expect(pages.filter((page) => page.platform === "dailymotion").every((page) => page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(pages.filter((page) => page.platform === "tiktok").every((page) => page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(pages.filter((page) => page.platform === "dailymotion").every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     for (const page of pages) {
       expect(AdminPageDraftCommandSchema.parse({
         ...page,

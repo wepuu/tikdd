@@ -25,15 +25,14 @@ describe("published structured data", () => {
     expect(JSON.stringify(faq)).toContain("Which links can I use?");
   });
 
-  it("builds structured data for a route-qualified Instagram Beta page", () => {
+  it("suppresses structured data for an unindexed Instagram Beta page", () => {
     const document = buildStructuredData({
       page: instagram,
       copy: copyForPage(instagram),
       siteName: "TikDD",
       siteUrl: "https://www.tikdd.cc"
     });
-    expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
-    expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/instagram-downloader");
+    expect(document).toBeNull();
   });
 
   it("builds structured data for the stable TikTok landing page", () => {
@@ -47,15 +46,14 @@ describe("published structured data", () => {
     expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/tiktok-downloader");
   });
 
-  it("builds structured data for the YouTube Beta landing page", () => {
+  it("suppresses structured data for the YouTube Beta landing page", () => {
     const document = buildStructuredData({
       page: youtube,
       copy: copyForPage(youtube),
       siteName: "TikDD",
       siteUrl: "https://www.tikdd.cc"
     });
-    expect(document?.["@graph"].map((node) => node["@type"])).toEqual(["FAQPage", "HowTo", "BreadcrumbList"]);
-    expect(JSON.stringify(document)).toContain("https://www.tikdd.cc/en/youtube-downloader");
+    expect(document).toBeNull();
   });
 
   it("adds breadcrumbs only after an eligible platform page is indexable", () => {

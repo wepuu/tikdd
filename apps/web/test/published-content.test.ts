@@ -4,19 +4,19 @@ import { PublishedContentLoader, findPublishedPage, resetPublishedContentStateFo
 import { BUNDLED_PUBLIC_CONTENT_SNAPSHOT } from "../lib/seed-snapshot";
 
 describe("public published-content loader", () => {
-  it("bundles a reviewed multilingual Instagram page in the public index set", () => {
+  it("bundles a reviewed multilingual Instagram page for editorial review without indexing it", () => {
     const instagramPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "instagram");
     expect(instagramPages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
-    expect(instagramPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(instagramPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(instagramPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(99);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(27);
   });
 
-  it("bundles the X Beta landing page with the same route-gated index intent", () => {
+  it("bundles the X Beta landing page without indexing it", () => {
     const xPages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "x");
     expect(xPages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
-    expect(xPages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(xPages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(xPages.every((page) => page.content.template === "platform" && page.content.howToSteps.length >= 2)).toBe(true);
     expect(xPages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
@@ -28,14 +28,14 @@ describe("public published-content loader", () => {
     expect(tiktokPages.every((page) => page.content.template === "platform" && page.content.eyebrow.includes("TikTok") && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
   });
 
-  it("bundles the remaining available Beta platforms as multilingual index pages", () => {
+  it("bundles the remaining available Beta platforms as multilingual editorial pages", () => {
     for (const platform of ["facebook", "vimeo", "pinterest", "youtube", "xhamster", "dailymotion"] as const) {
       const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === platform);
       expect(pages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
-      expect(pages.every((page) => page.pageType === "platform" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+      expect(pages.every((page) => page.pageType === "platform" && !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
       expect(pages.every((page) => page.content.template === "platform" && page.content.geo?.reviewStatus === "reviewed")).toBe(true);
     }
-    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(99);
+    expect(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.seo.includeInSitemap)).toHaveLength(27);
   });
 
   it("publishes a localized supported-platform directory", () => {
@@ -44,10 +44,10 @@ describe("public published-content loader", () => {
     expect(directories.every((page) => page.pageType === "guide" && page.content.template === "guide" && page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
   });
 
-  it("keeps xHamster off homepage promotion while publishing its dedicated search page", () => {
+  it("keeps xHamster off homepage promotion while publishing its dedicated noindex page", () => {
     const pages = BUNDLED_PUBLIC_CONTENT_SNAPSHOT.pages.filter((page) => page.platform === "xhamster");
     expect(pages.map((page) => page.locale)).toEqual(BUNDLED_PUBLIC_CONTENT_SNAPSHOT.locales.map(({ locale }) => locale));
-    expect(pages.every((page) => page.seo.indexable && page.seo.includeInSitemap)).toBe(true);
+    expect(pages.every((page) => !page.seo.indexable && !page.seo.includeInSitemap)).toBe(true);
     expect(pages.every((page) => page.seo.localPath === "/xhamster-downloader")).toBe(true);
   });
 
