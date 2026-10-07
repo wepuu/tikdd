@@ -72,6 +72,7 @@ export class AdminContentManagementService {
     {pageId:"page_home",pageType:"homepage",platform:null,label:"Homepage",required:true,templateVersion:1},
     {pageId:"page_faq",pageType:"faq",platform:null,label:"FAQ",required:true,templateVersion:1},
     {pageId:"page_help",pageType:"guide",platform:null,label:"Help guide",required:true,templateVersion:1},
+    {pageId:"page_platforms",pageType:"guide",platform:null,label:"Supported platforms",required:true,templateVersion:1},
     {pageId:"page_privacy",pageType:"legal",platform:null,label:"Privacy",required:true,templateVersion:1},
     {pageId:"page_terms",pageType:"legal",platform:null,label:"Terms",required:true,templateVersion:1},
     ...this.options.platforms.map(platform=>({pageId:`page_${platform.id.replaceAll("-","_")}`,pageType:"platform" as const,platform:platform.id,label:platform.displayName,required:platform.status==="stable",templateVersion:1}))

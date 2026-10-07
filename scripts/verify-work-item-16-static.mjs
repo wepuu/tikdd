@@ -58,7 +58,9 @@ export function verifyWorkItem16Static() {
   assert(/listen 127\.0\.0\.1:__TIKDD_NGINX_ORIGIN_PORT__/g.test(nginxTemplate), "The Tunnel origin must bind to loopback.");
   assert(!/listen (?:0\.0\.0\.0|\[::\]|80|443)/.test(nginxTemplate), "The TikDD Tunnel origin must not create a public listener.");
   assert(/server_name __TIKDD_WEB_HOST__;/.test(nginxTemplate), "The canonical Web host is missing from the Tunnel origin.");
-  assert((nginxTemplate.match(/^\s+~\^\/[a-z0-9-]+\/\?\$ 1;$/gm) ?? []).length === 108, "The evidence-derived legacy slug allowlist must remain exact and complete.");
+  assert((nginxTemplate.match(/^\s+~\^\/[a-z0-9-]+\/\?\$ 1;$/gm) ?? []).length === 100, "The evidence-derived legacy slug allowlist must remain exact and complete.");
+  assert(/map \$uri \$tikdd_legacy_content_target \{[\s\S]*~\^\/youtube-downloader\/\?\$ \/en\/youtube-downloader;/.test(nginxTemplate), "The canonical YouTube legacy target is missing.");
+  assert(/if \(\$tikdd_legacy_content_target\) \{ return 301 https:\/\/__TIKDD_WEB_HOST__\$tikdd_legacy_content_target; \}/g.test(nginxTemplate), "The localized legacy target must use a one-hop 301.");
   assert(!/map_hash_bucket_size/.test(nginxTemplate), "The TikDD include must not override shared Nginx hash settings.");
   assert(/map \$uri \$tikdd_legacy_home_redirect \{[\s\S]*~\^\/i\(\?:\/\[\^\/\]\+\)\?\/\?\$ 1;/.test(nginxTemplate), "The bounded legacy result redirect is missing.");
   assert((nginxTemplate.match(/if \(\$tikdd_legacy_home_redirect\) \{ return 301 https:\/\/__TIKDD_WEB_HOST__\/; \}/g) ?? []).length === 2, "Legacy redirects must be one-hop and limited to canonical Web plus apex.");

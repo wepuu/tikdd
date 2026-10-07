@@ -44,10 +44,11 @@ flowchart LR
 The current repository implements the catalog, provider manifests, deterministic ranking,
 sequential fallback, normalized-result validation, an attempt ledger, transactional encrypted
 delivery candidates, and fixture-tested provider adapters. The production release currently runs
-reviewed redirect Delivery paths for X, Instagram, TikTok, Facebook, Vimeo, and Pinterest. TikTok
-is stable; the other five platform families remain experimental and outside the sitemap. Work Item
-90 aligns their catalog/public-content truth and adds a read-only Admin support ledger without
-changing runtime traffic. TwitterSaver and DLPanda remain disabled.
+reviewed Delivery paths for X, Instagram, TikTok, Facebook, Vimeo, Pinterest, YouTube, and
+Dailymotion. TikTok is stable; the remaining platform families remain experimental and are
+published only through reviewed content snapshots. Work Item 151 adds the localized platform
+directory and Dailymotion SEO publication without changing runtime traffic. TwitterSaver and
+DLPanda remain disabled.
 ADR-0006 defines tuple-keyed health aggregation and
 distributed circuit behavior. Attempts persist the concrete worker region; the opt-in worker health
 loop aggregates distinct tasks into revisioned Redis snapshots; and the router enforces exact-key

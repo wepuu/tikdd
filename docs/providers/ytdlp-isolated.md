@@ -26,8 +26,9 @@ preparation or Delivery.
 - MP4 output is prepared up to 720p; no video transcoding is introduced.
 - Private, removed, restricted, live, playlist, or otherwise unsupported pages may fail.
 
-Dailymotion is an experimental Beta route. The public page is available for human use, but remains
-`noindex` and is excluded from the sitemap until a separate Stable promotion review.
+Dailymotion is an experimental Beta route. Its reviewed localized page is publicly discoverable
+under Work Item 151, but that editorial availability does not promote the runtime lifecycle to
+Stable or change Provider routing. Task/result pages remain noindex.
 
 ## Activation and rollback
 

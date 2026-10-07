@@ -13,8 +13,9 @@ with that already-approved production capability.
 - Dailymotion moves from `planned` to `experimental`.
 - Every enabled starter locale receives `/dailymotion-downloader` content with a public-video,
   Beta-specific limitation explanation.
-- The page is human-accessible but has `indexable=false` and `includeInSitemap=false`.
-- No homepage claim, Stable badge, structured-data promotion, or sitemap entry is added.
+- The page was initially human-accessible with `indexable=false` and `includeInSitemap=false`.
+- No homepage claim or Stable badge was added; the initial release also omitted structured data
+  and sitemap entries until the later Work Item 151 publication review.
 - The page uses the existing resolver and does not expose the internal Runner, artifact path,
   upstream URL, headers, or provider identity.
 
@@ -31,8 +32,8 @@ with that already-approved production capability.
 ## Verification
 
 - Platform catalog and spoof-host tests cover the experimental Dailymotion state.
-- Starter content tests cover all nine locales, the new route, Beta copy, and noindex/sitemap
-  exclusion.
+- Starter content tests cover all nine locales, the new route, Beta copy, and the original
+  noindex/sitemap exclusion.
 - Web metadata, sitemap, structured-data, Admin readiness, and public content regressions pass.
 - `pnpm check` and `git diff --check` are required before merge.
 
@@ -43,3 +44,7 @@ Provider samples; the two controlled samples are already recorded in the Work It
 manifest. After publication, observe natural Dailymotion traffic through the existing sanitized
 attempt ledger. Stable promotion, sitemap inclusion, and YouTube yt-dlp activation are separate
 future decisions.
+
+Work Item 151 supersedes only the initial noindex decision: the reviewed Dailymotion landing page
+and its localized alternates are now published in the sitemap while the runtime remains
+experimental. The Provider, Delivery, and rollout boundaries above are unchanged.
