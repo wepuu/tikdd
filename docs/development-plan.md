@@ -2430,8 +2430,23 @@ first, restores NoAdsDL, removes YouTube approval, and recreates only the Worker
 Work Item 151 将 yt-dlp 的上游 extractor 清单与 TikDD 产品支持边界分开：清单只用于候选
 发现，不能直接产生生产 Provider、Host policy 或 SEO 页面。当前已审查并有活动路由的平台
 继续使用各自 manifest 的主 Provider；yt-dlp 只作为经过资格验证的顺序备用。Dailymotion
-的九语言页面和本地化 `/platforms` 目录进入 Admin 内容快照、canonical、hreflang、结构化
-数据和 sitemap；计划中的 extractor 不生成页面。已退休的根级 downloader URL 由 Nginx
-受限映射发出一次 301 到 `/en/*-downloader` 正式页面，任意新路径不做 catch-all 跳转。
+的九语言编辑页面和本地化 `/platforms` 目录进入 Admin 内容快照；实验平台页面保持
+`noindex`，只有明确提升为 `stable` 的平台才进入 canonical、hreflang、结构化数据和
+sitemap。计划中的 extractor 不生成页面。已退休的根级 downloader URL 由 Nginx 受限映射
+发出一次 301 到 `/en/*-downloader` 正式页面，任意新路径不做 catch-all 跳转。
 本项不新增适配器、数据库迁移、门禁、rollout 或媒体交付模式。详见
 [Work Item 151](work-item-151-ytdlp-platform-seo-expansion.md)。
+
+### Work Item 152 - yt-dlp 批量平台资格验证与分层接入
+
+Work Item 152 先使用生产固定版本的隔离 Runner，按批验证 Streamable、Rumble、公开
+Twitch Clip/VOD、SoundCloud、Bilibili 和 OK.ru。每个平台使用两个匿名公开样本，顺序执行、
+不使用 Cookie/登录态，不因 extractor 清单存在就自动开放路由。验证记录解析结果、媒体
+交付模式、缩略图边界、跨出口可用性和失败分类；只有通过 Delivery 与浏览器保存验证的
+平台才进入实现批次。
+
+接入时保持“已验证第三方 Provider → 已验证 Cobalt → yt-dlp isolated”的顺序。每个平台
+使用独立 manifest、门禁、rollout 和版本化 Delivery policy；需要服务器中转时仅允许
+平台级、受限的临时产物或 relay，不创建通用代理。Reddit/VK 因现有样本需要登录态而
+暂缓。实验平台页面可以提前准备，但在 stable 提升前不进入 sitemap 或搜索索引。详见
+[Work Item 152](work-item-152-ytdlp-platform-qualification-batch.md)。
